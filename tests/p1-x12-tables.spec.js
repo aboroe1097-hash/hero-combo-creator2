@@ -63,11 +63,15 @@ for (const width of [390, 1280]) {
     await open(page, 'heroes');
     // Hero Tables is an Atlas view, not a sub-tab of its own — three sibling
     // sub-tabs that all opened this panel read as three separate tools.
+    const root = page.locator('#heroesTabContent');
+    // The Heroes panel is lazy-loaded after the shell becomes ready. Wait for
+    // its first render so the Atlas mode switch has installed its click handler
+    // before exercising it; the static header buttons exist before that.
+    await expect(root.locator('#heroesTabSearch')).toBeVisible();
     const tab = page.locator('[data-atlas-mode="codex"]');
     await expect(tab).toHaveText('Hero Tables');
     await tab.click();
     await expect(page.locator('#heroAtlasTitle')).toHaveText('Hero Tables');
-    const root = page.locator('#heroesTabContent');
     await expect(root.locator('[data-codex-state]')).toHaveAttribute('data-codex-state', 'ready');
     await root.locator('[data-hero-season="all"]').click();
     const season = root.locator('[data-hero-season="X12"]');
@@ -106,6 +110,28 @@ for (const width of [390, 1280]) {
     );
   });
 }
+
+test('a Hero Tables click made before the Atlas has loaded is not lost', async ({ page }) => {
+  // Hold the lazily loaded Atlas module so the click lands while only the
+  // static view switch is on screen.
+  let releaseAtlas;
+  const atlasHeld = new Promise((resolve) => {
+    releaseAtlas = resolve;
+  });
+  await page.route('**/app-hero-atlas.js*', async (route) => {
+    await atlasHeld;
+    await route.continue();
+  });
+  await open(page, 'heroes');
+  await expect(page.locator('[data-hub-subtab="heroes"]')).toHaveAttribute('aria-selected', 'true');
+  const root = page.locator('#heroesTabContent');
+  await expect(root.locator('#heroesTabSearch')).toHaveCount(0);
+  await page.locator('[data-atlas-mode="codex"]').click();
+  releaseAtlas();
+  await expect(page.locator('#heroAtlasTitle')).toHaveText('Hero Tables');
+  await expect(page.locator('[data-atlas-mode="codex"]')).toHaveAttribute('aria-selected', 'true');
+  await expect(root.locator('[data-codex-state]')).toHaveAttribute('data-codex-state', 'ready');
+});
 
 test('research planner retains X12 level costs at the UI boundary', async ({ page }) => {
   await open(page, 'research');

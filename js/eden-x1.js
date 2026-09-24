@@ -65,6 +65,7 @@ import {
   normalizeEdenVoteClosesAt,
 } from './eden-vote-deadline.js';
 import { resolveIntlLocale } from './utils.js';
+import { bindPublicPlayerLinks } from './eden-x1-public-player-links.js';
 import {
   cachedEdenDashboardSeasonIsObsolete,
   dashboardCacheVersion,
@@ -85,7 +86,7 @@ import {
   resolveEdenAccountPlayer,
 } from './eden-account-link.js';
 
-export const APP_VERSION = '16.5.4';
+export const APP_VERSION = '16.5.5';
 // Season-configured viewer: eden-x1.html keeps its archive defaults, while
 // eden-x2.html marks the body with data-eden-workspace="x2" and this renderer
 // switches to the published-projection read path, X2 vote collections, and
@@ -3097,8 +3098,17 @@ function setEdenPanelLoading(loading) {
   }
 }
 
-function shouldScrollRewardTableOnClick() {
-  return window.matchMedia?.('(max-width: 768px)').matches === true;
+// Whether the reward table is already on screen, which is what decides if a
+// category click also scrolls. This used to be a 768px width test, so on a
+// desktop or a laptop the card click swapped the table in below the fold and
+// looked like nothing had happened.
+function rewardTableIsOnScreen() {
+  const target = $('dashWeightedContributionPanel')?.querySelector('.eden-x1-weighted-card');
+  if (!target) return false;
+  const rect = target.getBoundingClientRect();
+  const viewport = window.innerHeight || 0;
+  // Require a useful slice of the table rather than a sliver at the edge.
+  return rect.top >= 0 && rect.top <= viewport - 120;
 }
 
 function scrollRewardTableIntoView() {
@@ -3367,18 +3377,25 @@ function scheduleCurrentTableRender(renderOptions = {}) {
 }
 
 function bindRewardFlowControls() {
+  bindPublicPlayerLinks(document, (key) => showPublicDetail('player', key));
   document.querySelectorAll('[data-reward-view]').forEach((button) => {
     if (button.dataset.rewardBound) return;
     button.dataset.rewardBound = '1';
     button.addEventListener('click', () => {
       if (!rewardFlowReady) return;
       const view = button.dataset.rewardView || 'all';
-      if (view === currentRewardView) return;
+      // Clicking the card that is already active has nothing to re-render, but
+      // the click still means "show me that table", so scroll rather than
+      // silently doing nothing.
+      if (view === currentRewardView) {
+        queueRewardTableScroll();
+        return;
+      }
       runEdenNavigationTransition(() => {
         currentTableSort = null;
         resetWeightedTablePagination(weightedTablePagination);
         currentRewardView = view;
-        scheduleCurrentTableRender({ scrollIntoView: shouldScrollRewardTableOnClick() });
+        scheduleCurrentTableRender({ scrollIntoView: !rewardTableIsOnScreen() });
       });
     });
   });
@@ -3451,7 +3468,7 @@ function getSupportRewardRows() {
           String(a.playerName || '').localeCompare(String(b.playerName || ''))
       )
   );
-  // The R5 holds the guild-master reward outside the support quota, found by
+  // The R5 fills one support-quota slot for the guild-master reward, found by
   // family so an alias or banner account of theirs still counts as them.
   const r5Name = String(currentRewardSettings.r5PlayerKey || '').trim();
   const r5Key = compactPlayerIdentity(r5Name);
@@ -5937,6 +5954,16 @@ function openPublicModal(title, subtitle, body) {
   }
 }
 
+// Whether showPublicDetail('player', key) has anything to show.
+function publicPlayerDetailAvailable(key) {
+  const normalizedKey = String(key || '');
+  if (!normalizedKey) return false;
+  return (
+    publicPlayerRows.some((row) => row.key === normalizedKey) ||
+    Boolean(findPublicWeightedRow(normalizedKey))
+  );
+}
+
 function showPublicDetail(type, key) {
   const normalizedKey = String(key || '');
   if (type === 'player') {
@@ -6081,11 +6108,6 @@ function bindPublicDashboardControls(host) {
     const sortHeader = event.target.closest('th[data-public-weighted-sort]');
     if (sortHeader) {
       setPublicWeightedSort(sortHeader.dataset.publicWeightedSort, host);
-      return;
-    }
-    const playerButton = event.target.closest('[data-public-player]');
-    if (playerButton) {
-      showPublicDetail('player', playerButton.getAttribute('data-public-player'));
       return;
     }
     const structureButton = event.target.closest('[data-public-structure]');
@@ -6648,9 +6670,20 @@ function renderAnnouncementTable() {
           <tbody>${rows
             .map((row) => {
               const meta = announcementCategoryMeta(row.category);
+              // The announcement names the same players as the weighted table,
+              // so they open the same player detail. A row with no entry (a
+              // quota slot nobody fills yet) stays plain text, and so does a
+              // name with no detail to open (a vote winner who matches no
+              // season row and has no hits), rather than a button that does
+              // nothing.
+              const canOpenPlayer = !row.placeholder && publicPlayerDetailAvailable(row.playerKey);
               const name = row.placeholder
                 ? esc(t('edenX1Tba'))
-                : `<strong>${renderTaggedPlayerName(row)}</strong>`;
+                : `<strong>${
+                    canOpenPlayer
+                      ? publicPlayerButton(row.playerName, row.playerKey, 'eden-x1-table-name')
+                      : renderTaggedPlayerName(row)
+                  }</strong>`;
               return `<tr class="eden-x1-announcement-row--${row.category}">
                 <td data-label="${esc(t('edenX1ThNumber'))}">${row.rank}</td>
                  <td data-label="${esc(t('adminContributionMember'))}">${name}</td>

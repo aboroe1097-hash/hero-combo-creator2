@@ -174,6 +174,8 @@ const pt = {
   adminConductSeasonLabel: 'Temporada: {season}',
   adminConductPlayer: 'Jogador',
   adminConductCategory: 'Categoria',
+  adminConductFilterCategory: 'Filtrar por categoria',
+  adminConductNoMatch: 'Nenhum ajuste desta temporada corresponde a estes filtros.',
   adminConductPoints: 'Pontos',
   adminConductNote: 'Nota',
   adminConductNotePh: 'Motivo opcional',
@@ -3145,7 +3147,7 @@ const pt = {
     'A contribuição no jogo é a do ranking mais os pontos fora da guilda. O peso de apoio escala todo o trabalho de apoio — muralhas de escudo, rotas, estandartes e os pontos bônus do formulário —, então 2 o dobra. 0,5 na contribuição a reduz pela metade. 1 mantém ambos os termos como estão hoje.',
   adminRewardSettingsTitle: 'Distribuição de recompensas',
   adminRewardSettingsNote:
-    'Quantos jogadores cada categoria recompensa nesta temporada. Alterar isso renumera as vagas de recompensa; a página publicada mostra a nova distribuição após a próxima publicação.',
+    'Define quantos jogadores cada categoria recompensa. A recompensa de líder da guilda para o R5 conta como uma vaga em Trabalho de apoio; com cota 0, a linha do R5 é mantida. As alterações renumeram as vagas; a página pública mostra a nova distribuição após a próxima publicação.',
   adminRewardSettingsCategory: 'Categoria',
   adminRewardSettingsSlots: 'Vagas',
   adminRewardSettingsGuildMaster: 'A recompensa de mestre da guilda vai para',
@@ -3153,7 +3155,7 @@ const pt = {
   adminRewardSettingsGuildMasterTop1: 'O melhor no apoio',
   adminRewardSettingsR5Label: 'Jogador R5',
   adminRewardSettingsHint:
-    'Se o R5 indicado não estiver na lista de apoio, a recompensa de mestre da guilda fica com o melhor no apoio em vez de ficar sem titular.',
+    'Um R5 sem trabalho de apoio próprio continua com a recompensa de líder da guilda pelo nome; a linha aparece com pontuações zeradas. A cota de Trabalho de apoio inclui esse R5 e, mesmo com 0, um jogador recebe a recompensa.',
   adminRewardSettingsSave: 'Salvar distribuição',
   adminRewardSettingsSaved:
     'Distribuição salva. Publique a temporada para atualizar a página pública.',

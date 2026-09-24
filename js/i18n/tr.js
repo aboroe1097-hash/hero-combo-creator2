@@ -173,6 +173,8 @@ const tr = {
   adminConductSeasonLabel: 'Sezon: {season}',
   adminConductPlayer: 'Oyuncu',
   adminConductCategory: 'Kategori',
+  adminConductFilterCategory: 'Kategoriye göre filtrele',
+  adminConductNoMatch: 'Bu sezon bu filtrelerle eşleşen ayarlama yok.',
   adminConductPoints: 'Puan',
   adminConductNote: 'Not',
   adminConductNotePh: 'İsteğe bağlı neden',
@@ -3689,7 +3691,7 @@ Object.assign(tr, {
     'Oyun içi katkı, sıralama katkısı ile lonca dışı puanların toplamıdır. Destek ağırlığı tüm destek işini — kalkan duvarları, yol açma, sancaklar ve formun bonus puanları — ölçekler, yani 2 onu ikiye katlar. Katkıda 0,5 onu yarıya indirir. 1 her iki terimi bugünkü gibi bırakır.',
   adminRewardSettingsTitle: 'Ödül dağılımı',
   adminRewardSettingsNote:
-    'Bu sezon her kategorinin kaç oyuncuyu ödüllendireceği. Değiştirmek ödül slotlarını yeniden numaralandırır; yayınlanan sayfa yeni dağılımı bir sonraki yayından sonra gösterir.',
+    'Her kategoride ödül alacak oyuncu sayısını belirler. R5’e verilen lonca başkanı ödülü Destek çalışması kotasında bir yer kaplar; kota 0 olsa da R5 satırı korunur. Değişiklikler sıraları yeniden numaralandırır; herkese açık sayfa yeni dağılımı sonraki yayından sonra gösterir.',
   adminRewardSettingsCategory: 'Kategori',
   adminRewardSettingsSlots: 'Slot',
   adminRewardSettingsGuildMaster: 'Guild master ödülü kime gider',
@@ -3697,7 +3699,7 @@ Object.assign(tr, {
   adminRewardSettingsGuildMasterTop1: 'En iyi destek oyuncusu',
   adminRewardSettingsR5Label: 'R5 oyuncusu',
   adminRewardSettingsHint:
-    'Belirtilen R5 destek listesinde yoksa guild master ödülü sahipsiz kalmak yerine en iyi destek oyuncusunda kalır.',
+    'Kendi destek çalışması olmayan bir R5 de lonca başkanı ödülünü adıyla alır; satırı sıfır puanla görünür. Destek çalışması kotası bu R5’i de kapsar ve kota 0 olsa bile ödülü bir oyuncu alır.',
   adminRewardSettingsSave: 'Dağılımı kaydet',
   adminRewardSettingsSaved: 'Dağılım kaydedildi. Genel sayfayı güncellemek için sezonu yayınlayın.',
   adminRewardSettingsResetConfirm:

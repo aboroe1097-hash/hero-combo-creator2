@@ -18,10 +18,11 @@ import { translations } from './translations.js';
 import { currentLanguage } from './state.js';
 import { edenWorkspaceFirestorePath, isPublishedEdenProjection } from './eden-workspaces.js';
 import { mountHubPdfPanel } from './hub-pdf-tab.js';
+import { resolveEdenHubInitialRoute } from './eden-hub-routing.js';
 
-const LOYALTY_SRC = 'tabs/loyalty.html?v=20260924_155646';
-const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260924_155646';
-const PLAYBOOK_SRC = 'tabs/eden-playbook.html?v=20260924_155646';
+const LOYALTY_SRC = 'tabs/loyalty.html?v=20260924_211945';
+const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260924_211945';
+const PLAYBOOK_SRC = 'tabs/eden-playbook.html?v=20260924_211945';
 const PREVIOUS_SRC = 'eden-x1.html?embed=1';
 const SEASON_SRC = 'eden-x2.html?embed=1';
 // How long the hub waits for the season publication check before landing on
@@ -107,7 +108,7 @@ function refreshMapViewport() {
   requestAnimationFrame(() => {
     // Use the same module identity as the planner boot. A different query
     // string creates a second module instance with no canvas state to refresh.
-    import('./eden-map.js?v=20260924_155646')
+    import('./eden-map.js?v=20260924_211945')
       .then((module) => module.refreshEdenMapViewport?.())
       .catch(() => {
         /* Eden map boot reports its own load errors. */
@@ -159,7 +160,7 @@ async function loadLoyalty(root, panel) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
     localizeFragment(panel);
-    const module = await import('./loyalty-spa.js?v=20260924_155646');
+    const module = await import('./loyalty-spa.js?v=20260924_211945');
     module.initLoyaltyCalculator?.();
     loyaltyLoaded = true;
   } catch (error) {
@@ -254,7 +255,7 @@ async function loadBounty(panel) {
     const response = await fetch(BOUNTY_SRC);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
-    const module = await import('./bounty-guide.js?v=20260924_155646');
+    const module = await import('./bounty-guide.js?v=20260924_211945');
     const mount = panel.querySelector('#bountyGuideRoot');
     if (mount) module.renderBountyGuide(mount);
     bountyLoaded = true;
@@ -336,6 +337,35 @@ function readSubtabIntent() {
   return null;
 }
 
+// Clicking a sub-tab writes the hash so the URL matches what is on screen, but
+// that must not become the hub's default: without this marker, one click on
+// Royal Bounty made every later visit land there and skip the season entirely.
+// history.state travels with the session but never with a shared link, so a
+// pasted URL still opens the sub-tab it names.
+const SUBTAB_CLICK_STATE_KEY = 'edenHubSubtabClicked';
+
+function subTabClickedThisSession() {
+  try {
+    const clicked = window.history.state?.[SUBTAB_CLICK_STATE_KEY];
+    return EDEN_HUB_SUBTABS.includes(clicked) ? clicked : null;
+  } catch {
+    return null;
+  }
+}
+
+function rememberSubTabClick(name) {
+  const hash = `#edenHub?subtab=${name}`;
+  try {
+    window.history.replaceState(
+      { ...(window.history.state || {}), [SUBTAB_CLICK_STATE_KEY]: name },
+      '',
+      hash
+    );
+  } catch {
+    window.history.replaceState(window.history.state, '', hash);
+  }
+}
+
 export function bootEdenHub() {
   if (booted) return;
   const root = document.getElementById('edenMapRoot');
@@ -401,14 +431,24 @@ export function bootEdenHub() {
   // Deferring the first paint instead left the hub able to yank a panel away
   // from someone who had already clicked, which is a worse bug than a brief
   // flash of the wrong tab.
-  const intent = readSubtabIntent();
+  const requested = readSubtabIntent();
+  // A sub-tab this session clicked is not a request for it: the click only
+  // owned the URL. The hub's default stays the current season, so a visit that
+  // follows a click still lands there — while a shared link, which carries no
+  // history state, still opens exactly the sub-tab it names.
+  const clicked = subTabClickedThisSession();
+  const { intent, useCurrentSeasonDefault } = resolveEdenHubInitialRoute(
+    requested,
+    clicked,
+    window.history
+  );
   if (intent === 'season' || intent === 'vote') {
     if (!openIntent(intent, { scroll: true })) openSeasonIntentWhenPublished(intent);
   } else if (intent) {
     openIntent(intent);
     void revealPublishedSeason(root);
   }
-  if (!intent) {
+  if (useCurrentSeasonDefault) {
     openIntent('bounty');
     void Promise.race([
       revealPublishedSeason(root),
@@ -424,7 +464,7 @@ export function bootEdenHub() {
     if (!button) return;
     userPickedSubtab = true;
     const name = button.dataset.edenSubtab;
-    window.history.replaceState(window.history.state, '', `#edenHub?subtab=${name}`);
+    rememberSubTabClick(name);
     openIntent(name, { scroll: true });
   });
 

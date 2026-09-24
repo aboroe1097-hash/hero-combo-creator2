@@ -204,6 +204,8 @@ const fr = {
   adminConductSeasonLabel: 'Saison : {season}',
   adminConductPlayer: 'Joueur',
   adminConductCategory: 'Catégorie',
+  adminConductFilterCategory: 'Filtrer par catégorie',
+  adminConductNoMatch: 'Aucun ajustement de cette saison ne correspond à ces filtres.',
   adminConductPoints: 'Points',
   adminConductNote: 'Note',
   adminConductNotePh: 'Raison facultative',
@@ -3605,7 +3607,7 @@ const fr = {
     'La contribution en jeu comprend le classement plus les points hors guilde. Le poids du soutien ajuste tout le travail de soutien — murs de boucliers, tracés, bannières et points bonus du formulaire —, donc 2 le double. 0,5 sur la contribution la divise par deux. 1 laisse les deux termes inchangés.',
   adminRewardSettingsTitle: 'Répartition des récompenses',
   adminRewardSettingsNote:
-    'Combien de joueurs chaque catégorie récompense cette saison. La modifier renumérote les places de récompense ; la page publiée affichera la nouvelle répartition après la prochaine publication.',
+    'Définit le nombre de joueurs récompensés par catégorie. La récompense de chef de guilde du R5 compte comme une place de Travail de soutien ; avec un quota de 0, la ligne du R5 reste présente. Les changements renumérotent les places ; la page publique affiche la nouvelle répartition après la prochaine publication.',
   adminRewardSettingsCategory: 'Catégorie',
   adminRewardSettingsSlots: 'Places',
   adminRewardSettingsGuildMaster: 'La récompense de maître de guilde revient à',
@@ -3613,7 +3615,7 @@ const fr = {
   adminRewardSettingsGuildMasterTop1: 'Le meilleur au soutien',
   adminRewardSettingsR5Label: 'Joueur R5',
   adminRewardSettingsHint:
-    'Si le R5 indiqué ne figure pas dans la liste de soutien, la récompense de maître de guilde reste au meilleur au soutien plutôt que de rester sans titulaire.',
+    'Un R5 sans travail de soutien personnel reçoit tout de même la récompense de chef de guilde par son nom ; la ligne apparaît avec des scores à zéro. Le quota de Travail de soutien inclut ce R5 et, même à 0, un joueur reçoit la récompense.',
   adminRewardSettingsSave: 'Enregistrer la répartition',
   adminRewardSettingsSaved:
     'Répartition enregistrée. Publiez la saison pour mettre à jour la page publique.',

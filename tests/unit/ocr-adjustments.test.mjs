@@ -27,6 +27,7 @@ const {
   deleteR5Adjustment,
   deleteLocalR5Adjustment,
   defaultR5PointsForCategory,
+  filterR5Adjustments,
   loadLocalR5Adjustments,
   mergeSeededR5Adjustments,
   normalizeR5Adjustment,
@@ -514,4 +515,79 @@ test('conduct bulk paste reports unreadable rows and caps the batch size', () =>
   const capped = parseConductBulkText(flood, { defaultCategory: 'merit_other' });
   assert.equal(capped.rows.length, CONDUCT_BULK_MAX_ROWS);
   assert.equal(capped.truncated, true);
+});
+
+test('the recent adjustments filter has a localized category label and is wired to both controls', async () => {
+  const { readFileSync } = await import('node:fs');
+  const html = readFileSync('tabs/admin.html', 'utf8');
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+
+  // The control sits in the list head beside player search, with a label that
+  // names the category filter for both sighted and assistive-technology users.
+  assert.match(html, /id="dashConductCategoryFilter"/);
+  assert.match(
+    html,
+    /for="dashConductCategoryFilter"[\s\S]*?data-i18n="adminConductFilterCategory"[\s\S]*?<select[\s\S]*?id="dashConductCategoryFilter"/
+  );
+  assert.match(
+    html,
+    /aria-label="Filter by category"[\s\S]*?data-i18n-aria="adminConductFilterCategory"/
+  );
+
+  // Options come from the same category list the entry form uses, so a new
+  // category needs no change here, and labels re-translate in place.
+  assert.match(dashboard, /function renderConductCategoryFilter\(\)/);
+  assert.match(
+    dashboard,
+    /R5_ADJUSTMENT_CATEGORY_KEYS\.map\(\s*\(key\) => `<option value="\$\{esc\(key\)\}">\$\{esc\(conductCategoryLabel\(key\)\)\}<\/option>`/
+  );
+  assert.match(dashboard, /`<option value="">\$\{esc\(allLabel\)\}<\/option>`/);
+  assert.match(dashboard, /const allLabel = dashT\('adminSuggestFilterAll'\)/);
+
+  // Rendered with the list and applied together with player-name search.
+  assert.match(
+    dashboard,
+    /renderConductCategoryPicker\(\);\s*\n\s*renderConductCategoryFilter\(\);/
+  );
+  assert.match(
+    dashboard,
+    /const categoryFilter = \$id\('dashConductCategoryFilter'\)\?\.value \|\| '';/
+  );
+  assert.match(
+    dashboard,
+    /filterR5Adjustments\(state\.r5Adjustments,\s*\{\s*season: state\.r5Season,\s*category: categoryFilter,\s*playerQuery: searchQuery,/s
+  );
+  assert.match(
+    dashboard,
+    /\$id\('dashConductCategoryFilter'\)\?\.addEventListener\('change', \(\) => renderConductAdjustments\(\)\)/
+  );
+  // An empty value is "every category", which is what keeps All working.
+  assert.match(
+    dashboard,
+    /select\.value = R5_ADJUSTMENT_CATEGORY_KEYS\.includes\(previous\) \? previous : '';/
+  );
+});
+
+test('recent adjustments apply category and player search together', () => {
+  const records = [
+    { id: 'match', season: 'season-a', playerName: 'Zarif', category: 'banner_help' },
+    { id: 'player-mismatch', season: 'season-a', playerName: 'Zarina', category: 'extra_effort' },
+    { id: 'category-mismatch', season: 'season-a', playerName: 'Kika', category: 'banner_help' },
+    { id: 'season-mismatch', season: 'season-b', playerName: 'Zarif', category: 'banner_help' },
+  ];
+
+  assert.deepEqual(
+    filterR5Adjustments(records, {
+      season: 'season-a',
+      category: 'banner_help',
+      playerQuery: '  ZAR  ',
+    }).map((record) => record.id),
+    ['match']
+  );
+  assert.deepEqual(
+    filterR5Adjustments(records, { season: 'season-a', category: '', playerQuery: 'zar' }).map(
+      (record) => record.id
+    ),
+    ['match', 'player-mismatch']
+  );
 });

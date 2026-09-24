@@ -883,6 +883,8 @@ function wireHeroAtlasModeSwitch() {
   const bar = document.querySelector('[data-atlas-mode]')?.closest('[role="tablist"]');
   if (!bar) return;
   _heroAtlasModeSwitchWired = true;
+  // Hands the switch over from the hub's early-click fallback to this listener.
+  bar.dataset.atlasModeWired = '1';
   bar.addEventListener('click', (event) => {
     const button = event.target.closest('[data-atlas-mode]');
     if (!button) return;

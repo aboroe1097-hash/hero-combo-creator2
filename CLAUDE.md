@@ -22,6 +22,10 @@ Follow AGENTS.md's fast-fix versus high-risk checks. Use npm run version:check f
 
 Preserve raw source values, credits, and ambiguity notes. Mark archived plans as historical rather than treating their checkboxes as current tasks. Never rewrite a sent message, grant approval through a documentation edit, or promote private operational material into public Velo knowledge.
 
+## Firebase deploys
+
+Rules and Functions are deployed by the owner after merge, per [docs/firebase-deploy-runbook.md](docs/firebase-deploy-runbook.md). Read its incident log before diagnosing a failed rules deploy or superadmin permission errors: check the live rules with `npm run rules:status` first, and treat a 503/409 from the Rules API as transient.
+
 ## Delivery
 
 Open a PR into gh-pages and leave normal merging to the owner. Explicit fast-merge uses the same protected PR path. Never publish credentials, private member records, debug tokens, or unrelated scratch output.

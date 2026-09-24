@@ -679,6 +679,16 @@ function modeHint() {
   return copy('pathingHintWaypoint');
 }
 
+// A step row shows the tiles its leg adds to the route, so the rows add up to
+// the total; when the leg walks over ground already counted, the full walked
+// length follows in parentheses.
+function legCopy(item) {
+  if (item.legWalked != null && item.legWalked !== item.legTiles) {
+    return copy('pathingLegTilesWalked', { tiles: num(item.legTiles), walked: num(item.legWalked) });
+  }
+  return copy('pathingLegTiles', { tiles: num(item.legTiles) });
+}
+
 function renderSteps() {
   const box = root?.querySelector('[data-path-steps]');
   if (!box) return;
@@ -691,7 +701,7 @@ function renderSteps() {
           const legText =
             item.legTiles == null
               ? ''
-              : `<span class="eden-path-leg${item.legBlocked ? ' is-blocked' : ''}">${escapeHtml(copy('pathingLegTiles', { tiles: num(item.legTiles) }))}</span>`;
+              : `<span class="eden-path-leg${item.legBlocked ? ' is-blocked' : ''}">${escapeHtml(legCopy(item))}</span>`;
           return `<li class="eden-path-stop is-${item.role}">
             <span class="eden-path-badge" style="--route:${routeColor(route)}" aria-hidden="true">${escapeHtml(item.badge)}</span>
             <span class="eden-path-stop-text"><strong>${escapeHtml(item.label)}</strong>${legText}</span>
@@ -706,7 +716,7 @@ function renderSteps() {
     : `<p class="eden-path-empty">${escapeHtml(copy('pathingNoStops'))}</p>`;
   const summary =
     items.length >= 2
-      ? `<div class="eden-path-summary"><p class="eden-path-line">${escapeHtml(state.steps.line)}</p><p class="eden-path-total">${escapeHtml(copy('pathingTotalTiles', { tiles: num(state.tiles) }))}</p>${state.blocked ? `<p class="eden-path-warn" role="note">${escapeHtml(copy('pathingBlocked'))}</p>` : ''}</div>`
+      ? `<div class="eden-path-summary"><p class="eden-path-line">${escapeHtml(state.steps.line)}</p><p class="eden-path-total">${escapeHtml(copy('pathingTotalTiles', { tiles: num(state.tiles) }))}</p><p class="eden-path-pathers">${escapeHtml(copy('pathingPathers', { count: num(state.pathers), each: num(state.tilesPerPather) }))}</p>${state.overlapTiles ? `<p class="eden-path-muted">${escapeHtml(copy('pathingRepeatTiles', { tiles: num(state.overlapTiles) }))}</p>` : ''}${state.blocked ? `<p class="eden-path-warn" role="note">${escapeHtml(copy('pathingBlocked'))}</p>` : ''}</div>`
       : items.length === 1
         ? `<p class="eden-path-muted">${escapeHtml(copy('pathingNeedTwo'))}</p>`
         : '';
@@ -719,7 +729,7 @@ function renderSteps() {
   if (handleSummary) {
     handleSummary.textContent =
       items.length >= 2
-        ? `${routeName(route, plan().active)} · ${copy('pathingTotalTiles', { tiles: num(state.tiles) })}`
+        ? `${routeName(route, plan().active)} · ${copy('pathingTotalTiles', { tiles: num(state.tiles) })} · ${copy('pathingPathers', { count: num(state.pathers), each: num(state.tilesPerPather) })}`
         : routeName(route, plan().active);
   }
 }
@@ -1132,11 +1142,23 @@ async function exportPng(button) {
       const steps = states[i].steps;
       measure.font = '600 18px Inter, system-ui, sans-serif';
       const lines = steps.items.map((item) => {
-        const leg = item.legTiles == null ? '' : `  ${copy('pathingLegTiles', { tiles: num(item.legTiles) })}`;
+        const leg = item.legTiles == null ? '' : `  ${legCopy(item)}`;
         return wrapLines(measure, `${item.badge} · ${item.label}${leg}`, colW - 60);
       });
-      const height = 64 + lines.reduce((sum, l) => sum + l.length * 26, 0) + 14;
-      return { route, index, steps, state: states[i], lines, height };
+      // The totals sit on their own muted line under the route name, so a long
+      // estimate never runs into a long route name in a two-column export.
+      measure.font = '600 16px Inter, system-ui, sans-serif';
+      const totals =
+        steps.items.length >= 2
+          ? wrapLines(
+              measure,
+              `${copy('pathingTotalTiles', { tiles: num(states[i].tiles) })} · ${copy('pathingPathers', { count: num(states[i].pathers), each: num(states[i].tilesPerPather) })}`,
+              colW - 52
+            )
+          : [];
+      const totalsH = totals.length ? totals.length * 22 + 8 : 0;
+      const height = 64 + totalsH + lines.reduce((sum, l) => sum + l.length * 26, 0) + 14;
+      return { route, index, steps, state: states[i], lines, totals, totalsH, height };
     });
     const rowsHeight = [];
     for (let i = 0; i < blocks.length; i += cols) {
@@ -1202,11 +1224,10 @@ async function exportPng(button) {
       g.fillText(routeName(block.route, block.index), startX(x + 26, colW - 52), y + 36);
       g.fillStyle = colors.muted;
       g.font = '600 16px Inter, system-ui, sans-serif';
-      const total = block.steps.items.length >= 2 ? copy('pathingTotalTiles', { tiles: num(block.state.tiles) }) : '';
-      g.textAlign = rtl ? 'left' : 'right';
-      g.fillText(total, rtl ? x + 26 : x + colW - 22, y + 36);
-      g.textAlign = rtl ? 'right' : 'left';
-      let ly = y + 70;
+      block.totals.forEach((text, lineIndex) => {
+        g.fillText(text, startX(x + 26, colW - 52), y + 62 + lineIndex * 22);
+      });
+      let ly = y + 70 + block.totalsH;
       g.font = '600 18px Inter, system-ui, sans-serif';
       block.lines.forEach((wrapped, stepIndex) => {
         const item = block.steps.items[stepIndex];

@@ -352,6 +352,42 @@ function isFirebaseUnavailableError(error) {
   );
 }
 
+// A signed-in member usually files under their own name, so prefill the
+// identity field with the name their account chip shows (game name, then
+// profile display name, then the Auth display name) instead of making them
+// retype it. The field stays editable because the complaint may be filed on
+// someone else's behalf. The value is only sent when the member unchecks the
+// anonymous box; an anonymous filing drops the name before the document is
+// built. The lookup is abandoned as soon as the member edits the field, so a
+// slow profile read can never overwrite (or refill) what they typed.
+export async function prefillComplainantName(
+  nameInput,
+  loadAccountServices = () => import('./account-profile-service.js')
+) {
+  if (!nameInput || text(nameInput.value).trim()) return false;
+  let touched = false;
+  const markTouched = () => {
+    touched = true;
+  };
+  nameInput.addEventListener?.('input', markTouched);
+  try {
+    const { peekAccountState, loadAccountProfile } = await loadAccountServices();
+    const account = (await peekAccountState?.()) || null;
+    if (touched || !account || account.isGuest) return false;
+    const profile = await loadAccountProfile();
+    const name = text(profile?.gameName || profile?.displayName || account.displayName).trim();
+    if (name && !touched && !text(nameInput.value).trim()) {
+      nameInput.value = name.slice(0, EDEN_COMPLAINT_MAX_NAME);
+      return true;
+    }
+  } catch {
+    // Not signed in, or the profile lookup failed: the field stays theirs to fill.
+  } finally {
+    nameInput.removeEventListener?.('input', markTouched);
+  }
+  return false;
+}
+
 function bindComplaintForm(root) {
   const openButton = root.querySelector('#edenX1ComplaintOpen');
   const cancelButton = root.querySelector('#edenX1ComplaintCancel');
@@ -393,7 +429,10 @@ function bindComplaintForm(root) {
     const opening = form.hidden;
     form.hidden = !opening;
     openButton.setAttribute('aria-expanded', opening ? 'true' : 'false');
-    if (opening) descriptionInput?.focus?.({ preventScroll: true });
+    if (opening) {
+      void prefillComplainantName(nameInput);
+      descriptionInput?.focus?.({ preventScroll: true });
+    }
   });
 
   cancelButton?.addEventListener('click', () => {

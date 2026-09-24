@@ -17,6 +17,11 @@ export const PATHING_SHARE_VERSION = 1;
 // The share code is part of a URL; anything longer than a full plan could be
 // is rejected before it is decoded.
 export const PATHING_SHARE_MAX_LENGTH = 6000;
+// Pathers are assigned in blocks of this many tiles. This is an estimate on a
+// stated assumption, not a game constant: leadership assigns pathers by hand
+// today, so the figure is shown with the assumption beside it rather than
+// asserted as fact.
+export const DEFAULT_TILES_PER_PATHER = 40;
 
 const KIND_CODES = Object.freeze(['point', 'structure', 'pass']);
 export const STOP_KINDS = KIND_CODES;
@@ -134,6 +139,49 @@ export function pathLength(path = []) {
   return total;
 }
 
+/**
+ * Every tile an integer step between two grid points passes through, both ends
+ * included. A routed leg is already a chain of adjacent tiles, but the straight
+ * fallback for a pending leg and the join back from a stop that sat on a
+ * mountain are not, so every consecutive pair is walked through here before it
+ * is counted.
+ */
+export function rasterizeStep(a, b) {
+  const x1 = clampTile(a.x);
+  const y1 = clampTile(a.y);
+  const x2 = clampTile(b.x);
+  const y2 = clampTile(b.y);
+  const dx = Math.abs(x2 - x1);
+  const dy = Math.abs(y2 - y1);
+  const stepX = x1 < x2 ? 1 : x1 > x2 ? -1 : 0;
+  const stepY = y1 < y2 ? 1 : y1 > y2 ? -1 : 0;
+  const tiles = [];
+  let x = x1;
+  let y = y1;
+  let error = dx - dy;
+  for (;;) {
+    tiles.push({ x, y });
+    if (x === x2 && y === y2) break;
+    const doubled = error * 2;
+    if (doubled > -dy) {
+      error -= dy;
+      x += stepX;
+    }
+    if (doubled < dx) {
+      error += dx;
+      y += stepY;
+    }
+  }
+  return tiles;
+}
+
+/** How many pathers a tile count needs at the stated capacity. */
+export function estimatePathers(tiles, tilesPerPather = DEFAULT_TILES_PER_PATHER) {
+  const capacity = Math.max(1, Math.round(Number(tilesPerPather) || DEFAULT_TILES_PER_PATHER));
+  const count = Math.max(0, Math.round(Number(tiles) || 0));
+  return count === 0 ? 0 : Math.ceil(count / capacity);
+}
+
 export function legKey(a, b) {
   return `${a.x},${a.y}>${b.x},${b.y}`;
 }
@@ -192,7 +240,11 @@ export function createTerrainRouter({ findRoute, isImpassable = () => false, cac
  */
 export function buildRouteLegs(stops = [], router, canRoute = () => true) {
   const legs = [];
-  let tiles = 0;
+  // Tiles are counted on the grid the members actually walk, and each tile is
+  // counted once: consecutive legs share their junction, and a route that
+  // crosses itself or doubles back does not occupy the same ground twice.
+  const occupied = new Set();
+  let walkedTiles = 0;
   let blocked = false;
   let pending = false;
   for (let i = 0; i < stops.length - 1; i += 1) {
@@ -201,17 +253,52 @@ export function buildRouteLegs(stops = [], router, canRoute = () => true) {
     let leg;
     if (canRoute(from, to)) {
       const result = router(from, to);
-      leg = { from, to, path: result.path, blocked: Boolean(result.blocked), pending: false };
+      // A router that finds nothing (an empty or missing path) falls back to
+      // the straight line, so the tile count and the renderers never read an
+      // empty path.
+      const path = Array.isArray(result?.path) && result.path.length ? result.path : [from, to];
+      leg = { from, to, path, blocked: Boolean(result?.blocked), pending: false };
     } else {
       leg = { from, to, path: [from, to], blocked: false, pending: true };
       pending = true;
     }
-    leg.tiles = Math.round(pathLength(leg.path));
-    tiles += leg.tiles;
+
+    const walked = [];
+    for (let p = 1; p < leg.path.length; p += 1) {
+      const step = rasterizeStep(leg.path[p - 1], leg.path[p]);
+      // The first point of the next step is the last point of this one.
+      for (let t = p === 1 ? 0 : 1; t < step.length; t += 1) walked.push(step[t]);
+    }
+    if (!walked.length) walked.push(rasterizeStep(leg.path[0], leg.path[0])[0]);
+
+    let newTiles = 0;
+    for (const tile of walked) {
+      const key = `${tile.x},${tile.y}`;
+      if (!occupied.has(key)) {
+        occupied.add(key);
+        newTiles += 1;
+      }
+    }
+
+    leg.tiles = walked.length;
+    leg.newTiles = newTiles;
+    walkedTiles += walked.length;
     blocked = blocked || leg.blocked;
     legs.push(leg);
   }
-  return { legs, tiles, blocked, pending };
+  const tiles = occupied.size;
+  return {
+    legs,
+    // Tiles the route occupies — the number a pather plan is built from.
+    tiles,
+    // Tiles walked in total, so the difference is ground covered twice.
+    walkedTiles,
+    overlapTiles: Math.max(0, walkedTiles - tiles),
+    pathers: estimatePathers(tiles),
+    tilesPerPather: DEFAULT_TILES_PER_PATHER,
+    blocked,
+    pending,
+  };
 }
 
 /**
@@ -270,14 +357,18 @@ export function formatSteps(stops = [], legs = [], { structureLabel = (type) => 
       badge,
       name,
       label,
-      legTiles: leg ? leg.tiles : null,
+      // The tiles this leg adds to the route, so the rows sum to the total;
+      // `legWalked` is the full leg length, shown when it differs.
+      legTiles: leg ? (leg.newTiles ?? leg.tiles) : null,
+      legWalked: leg ? leg.tiles : null,
       legBlocked: leg ? Boolean(leg.blocked) : false,
     };
   });
   const line = items
     .map((item) => (item.role === 'waypoint' ? item.name : `${item.badge} · ${item.name}`))
     .join(' → ');
-  const tiles = legs.reduce((sum, leg) => sum + (leg.tiles || 0), 0);
+  // Match the route-level summary: shared or revisited ground counts once.
+  const tiles = legs.reduce((sum, leg) => sum + (leg.newTiles ?? leg.tiles ?? 0), 0);
   return { items, line, tiles };
 }
 

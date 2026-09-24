@@ -149,6 +149,7 @@ import {
   defaultR5PointsForCategory,
   deleteR5Adjustment,
   deleteLocalR5Adjustment,
+  filterR5Adjustments,
   loadR5Adjustments,
   loadLocalR5Adjustments,
   normalizeR5Adjustment,
@@ -2766,6 +2767,30 @@ function renderConductCategoryPicker() {
   select.value = R5_ADJUSTMENT_CATEGORY_KEYS.includes(previous) ? previous : 'banner_help';
 }
 
+// The list filter mirrors the picker above: options are rebuilt only when their
+// labels change, so a language switch re-labels them in place.
+function renderConductCategoryFilter() {
+  const select = $id('dashConductCategoryFilter');
+  if (!select) return;
+  const previous = select.value;
+  const allLabel = dashT('adminSuggestFilterAll');
+  const signature = [`all:${allLabel}`]
+    .concat(R5_ADJUSTMENT_CATEGORY_KEYS.map((key) => `${key}:${conductCategoryLabel(key)}`))
+    .join('|');
+  if (select.dataset.signature !== signature) {
+    select.dataset.signature = signature;
+    select.innerHTML = [
+      `<option value="">${esc(allLabel)}</option>`,
+      ...R5_ADJUSTMENT_CATEGORY_KEYS.map(
+        (key) => `<option value="${esc(key)}">${esc(conductCategoryLabel(key))}</option>`
+      ),
+    ].join('');
+  }
+  // An unknown value falls back to All rather than leaving a filter selected
+  // that matches nothing.
+  select.value = R5_ADJUSTMENT_CATEGORY_KEYS.includes(previous) ? previous : '';
+}
+
 function resetConductForm() {
   state.r5EditingId = '';
   state._r5EditingFingerprint = '';
@@ -2810,6 +2835,7 @@ function renderConductAdjustments() {
   const list = $id('dashConductList');
   if (!list) return;
   renderConductCategoryPicker();
+  renderConductCategoryFilter();
   renderConductPlayerPicker();
   const seasonEl = $id('dashConductSeason');
   if (seasonEl) seasonEl.textContent = dashT('adminConductSeasonLabel', { season: state.r5Season });
@@ -2818,14 +2844,16 @@ function renderConductAdjustments() {
   if (points && !points.value) points.value = defaultR5PointsForCategory(category);
 
   const searchEl = $id('dashConductSearch');
-  const searchQuery = (searchEl?.value || '').trim().toLowerCase();
+  const searchQuery = searchEl?.value || '';
+  // Empty means every category. The filter answers "which bonus?" — before it,
+  // a season of merits and penalties could only be read by scrolling.
+  const categoryFilter = $id('dashConductCategoryFilter')?.value || '';
 
-  const rows = (Array.isArray(state.r5Adjustments) ? state.r5Adjustments : [])
-    .filter(
-      (record) =>
-        record?.season === state.r5Season &&
-        (!searchQuery || (record.playerName || '').toLowerCase().includes(searchQuery))
-    )
+  const rows = filterR5Adjustments(state.r5Adjustments, {
+    season: state.r5Season,
+    category: categoryFilter,
+    playerQuery: searchQuery,
+  })
     .slice()
     .sort((a, b) => {
       const aMs =
@@ -2844,14 +2872,19 @@ function renderConductAdjustments() {
   renderConductSuggestionReview();
   renderConductSummary(rows);
   if (!rows.length) {
-    list.innerHTML = `<div class="dash-empty">${esc(dashT('adminConductEmpty'))}</div>`;
+    // "Nothing this season yet" is only true with no filter narrowing the list;
+    // a category with no entries is the common case now that it can be picked.
+    const filtered = Boolean(categoryFilter || searchQuery.trim());
+    list.innerHTML = `<div class="dash-empty">${esc(
+      dashT(filtered ? 'adminConductNoMatch' : 'adminConductEmpty')
+    )}</div>`;
     return;
   }
   // A season accumulates hundreds of adjustments; the list pages like the
   // other long admin tables instead of pushing everything below it off-screen.
   const conductPage = resolveAdminTablePage(
     'conduct',
-    `${state.r5Season || ''}|${searchQuery}|${rows.length}`,
+    `${state.r5Season || ''}|${categoryFilter}|${searchQuery}|${rows.length}`,
     rows
   );
   list.innerHTML =
@@ -2861,7 +2894,7 @@ function renderConductAdjustments() {
         return `<article class="dash-conduct-row">
         <div>
           <strong>${esc(record.playerName)}</strong>
-          <span>${esc(conductCategoryLabel(record.category))} Â· ${esc(conductCreatedAtLabel(record))}</span>
+          <span>${esc(conductCategoryLabel(record.category))} · ${esc(conductCreatedAtLabel(record))}</span>
           ${record.note ? `<p>${esc(record.note)}</p>` : ''}
         </div>
         <div class="dash-conduct-row-actions">
@@ -3751,6 +3784,7 @@ function bindConductControls() {
   void loadRewardSettings();
   $id('dashConductCancelEditBtn')?.addEventListener('click', resetConductForm);
   $id('dashConductSearch')?.addEventListener('input', () => renderConductAdjustments());
+  $id('dashConductCategoryFilter')?.addEventListener('change', () => renderConductAdjustments());
   const playerSearchButton = $id('dashConductPlayerSearchBtn');
   const playerSearchInput = $id('dashConductPlayerSearchInput');
   playerSearchButton?.addEventListener('click', () => {
@@ -4075,7 +4109,7 @@ window.getVtsAdminFirestoreContext = async function () {
 
 // --- Roster ---
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ Sub-tab Switching Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ── Sub-tab Switching ────────────────────────────────────
 // These two were behind a shared PIN, which protected nothing: firestore.rules
 // had no concept of it, so any admin could read and write eden vote settings
 // and conduct adjustments directly. They are now gated on the superadmin claim,
@@ -5427,7 +5461,7 @@ window.getAllianceViewStateForTest = function getAllianceViewStateForTest() {
   return isLocalAdminTestBypass() ? allianceViewController?.getState?.() || null : null;
 };
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ Roster Snapshots (local + Firestore) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ── Roster Snapshots (local + Firestore) ──────────────────
 const ROSTER_SNAPSHOTS_BACKUP_KEY = 'vts_roster_snapshots_backup_v1';
 
 function rosterCloudUpdated(data) {
@@ -5618,7 +5652,7 @@ async function loadRosterSnapshotsFromFirestore() {
   }
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ Roster Image OCR Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ── Roster Image OCR ─────────────────────────────────────
 async function processRosterImages(files) {
   if (state._rosterProcessing) {
     logDashboardEvent('adminLogRosterAlreadyRunning', 'warn', {}, { source: 'roster' });
@@ -5774,7 +5808,7 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
   }
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ Banner Records Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ── Banner Records ────────────────────────────────────────
 
 function isLocalAdminTestBypass() {
   if (typeof location === 'undefined') return false;
@@ -9709,7 +9743,7 @@ export async function bootOcrDashboard() {
     };
   }
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ API status watcher Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // ── API status watcher ──────────────────────────────────
   let ocrReady = false;
   let lastLoggedOcrStatusKey = '';
   function summarizeOcrStatusReason(reason) {
@@ -10398,7 +10432,7 @@ window.showPlayer = function (pNameEncoded) {
   if (p) {
     showModal('player', p);
   } else {
-    // Player exists in attack but not aggregated yet Ã¢â‚¬â€ build a minimal view
+    // Player exists in attack but not aggregated yet — build a minimal view
     const minimalPlayer = {
       name: pName,
       total_demolition: 0,

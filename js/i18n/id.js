@@ -173,6 +173,8 @@ const id = {
   adminConductSeasonLabel: 'Musim: {season}',
   adminConductPlayer: 'Pemain',
   adminConductCategory: 'Kategori',
+  adminConductFilterCategory: 'Saring berdasarkan kategori',
+  adminConductNoMatch: 'Tidak ada penyesuaian musim ini yang cocok dengan filter ini.',
   adminConductPoints: 'Poin',
   adminConductNote: 'Catatan',
   adminConductNotePh: 'Alasan opsional',
@@ -3542,7 +3544,7 @@ Object.assign(id, {
     'Kontribusi dalam game adalah kontribusi papan peringkat ditambah poin luar guild. Bobot dukungan menskalakan semua kerja dukungan — dinding perisai, jalur, panji, dan poin bonus formulir — jadi 2 menggandakannya. 0,5 pada kontribusi memangkasnya separuh. 1 membiarkan keduanya seperti sekarang.',
   adminRewardSettingsTitle: 'Distribusi hadiah',
   adminRewardSettingsNote:
-    'Berapa banyak pemain yang diganjar tiap kategori musim ini. Mengubahnya menomori ulang slot hadiah; halaman publik menampilkan distribusi baru setelah publikasi berikutnya.',
+    'Menentukan jumlah pemain yang mendapat hadiah dari tiap kategori. Hadiah ketua guild untuk R5 dihitung sebagai satu slot Kerja dukungan; kuota 0 tetap menampilkan baris R5. Perubahan menomori ulang slot; halaman publik menampilkan distribusi baru setelah publikasi berikutnya.',
   adminRewardSettingsCategory: 'Kategori',
   adminRewardSettingsSlots: 'Slot',
   adminRewardSettingsGuildMaster: 'Hadiah guild master diberikan kepada',
@@ -3550,7 +3552,7 @@ Object.assign(id, {
   adminRewardSettingsGuildMasterTop1: 'Penyumbang dukungan teratas',
   adminRewardSettingsR5Label: 'Pemain R5',
   adminRewardSettingsHint:
-    'Jika R5 yang disebut tidak ada dalam daftar dukungan, hadiah guild master tetap pada penyumbang dukungan teratas agar tidak kosong.',
+    'R5 yang tidak punya kerja dukungan sendiri tetap memegang hadiah ketua guild berdasarkan namanya; barisnya tampil dengan skor nol. Kuota Kerja dukungan sudah termasuk R5 tersebut, dan bahkan pada 0 tetap ada satu pemain yang memegang hadiah.',
   adminRewardSettingsSave: 'Simpan distribusi',
   adminRewardSettingsSaved:
     'Distribusi tersimpan. Publikasikan musim untuk memperbarui halaman publik.',

@@ -173,6 +173,8 @@ const ar = {
   adminConductSeasonLabel: 'الموسم: {season}',
   adminConductPlayer: 'اللاعب',
   adminConductCategory: 'الفئة',
+  adminConductFilterCategory: 'تصفية حسب الفئة',
+  adminConductNoMatch: 'لا توجد تعديلات في هذا الموسم تطابق عوامل التصفية هذه.',
   adminConductPoints: 'النقاط',
   adminConductNote: 'ملاحظة',
   adminConductNotePh: 'سبب اختياري',
@@ -3437,7 +3439,7 @@ Object.assign(ar, {
     'المساهمة داخل اللعبة هي مساهمة القائمة بالإضافة إلى نقاط خارج التحالف. وزن الدعم يضبط كل عمل الدعم — جدران الدروع والمسارات والرايات ونقاط النموذج الإضافية — فالقيمة 2 تضاعفه. القيمة 0.5 على المساهمة تخفضها للنصف. القيمة 1 تُبقي الحدّين كما هما الآن.',
   adminRewardSettingsTitle: 'توزيع المكافآت',
   adminRewardSettingsNote:
-    'عدد اللاعبين الذين تكافئهم كل فئة هذا الموسم. تغيير ذلك يعيد ترقيم فتحات المكافآت؛ وتظهر الصفحة المنشورة التوزيع الجديد بعد النشر التالي.',
+    'يحدد عدد اللاعبين الذين تكافئهم كل فئة. تحتسب مكافأة قائد النقابة R5 كخانة واحدة ضمن عمل الدعم؛ وحتى عند ضبط الحصة على 0 يبقى صف R5. تعيد التغييرات ترقيم الخانات، وتعرض الصفحة العامة التوزيع الجديد بعد النشر التالي.',
   adminRewardSettingsCategory: 'الفئة',
   adminRewardSettingsSlots: 'الفتحات',
   adminRewardSettingsGuildMaster: 'مكافأة سيد التحالف تذهب إلى',
@@ -3445,7 +3447,7 @@ Object.assign(ar, {
   adminRewardSettingsGuildMasterTop1: 'الأعلى في أعمال الدعم',
   adminRewardSettingsR5Label: 'لاعب R5',
   adminRewardSettingsHint:
-    'إذا لم يكن قائد التحالف المحدد ضمن قائمة الدعم، تبقى مكافأة سيد التحالف على الأعلى في أعمال الدعم بدلًا من أن تبقى بلا صاحب.',
+    'قائد R5 الذي ليس لديه عمل دعم خاص به يحتفظ مع ذلك بمكافأة قائد النقابة باسمه؛ ويظهر صفه بنقاط صفرية. تشمل حصة عمل الدعم هذا القائد R5، وحتى عند 0 يحصل لاعب واحد على المكافأة.',
   adminRewardSettingsSave: 'حفظ التوزيع',
   adminRewardSettingsSaved: 'تم حفظ التوزيع. انشر الموسم لتحديث الصفحة العامة.',
   adminRewardSettingsResetConfirm:

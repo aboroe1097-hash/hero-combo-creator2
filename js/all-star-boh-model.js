@@ -528,6 +528,10 @@ export function normalizeBohEpicShowdownPreferences(input = {}, options = {}) {
   };
 }
 
+function isBlankOptionalValue(value) {
+  return value == null || (typeof value === 'string' && !value.trim());
+}
+
 function firstDefined(...values) {
   return values.find((value) => value !== undefined && value !== null && value !== '');
 }
@@ -724,10 +728,12 @@ export function normalizeBohSignup(input = {}, options = {}) {
       unitSpecialtyPower: nonNegativeNumber(
         firstDefined(rawStats.unitSpecialtyPower, rawStats.specialtyPower)
       ),
-      ...(rawStats.artifactPower == null
+      // Optional powers: a missing or blank value stays absent rather than
+      // being stored as a zero that the growth board would read as data.
+      ...(isBlankOptionalValue(rawStats.artifactPower)
         ? {}
         : { artifactPower: nonNegativeNumber(rawStats.artifactPower) }),
-      ...(rawStats.royalTechPower == null
+      ...(isBlankOptionalValue(rawStats.royalTechPower)
         ? {}
         : { royalTechPower: nonNegativeNumber(rawStats.royalTechPower) }),
       t9TroopTypes,

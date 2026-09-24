@@ -2,6 +2,7 @@ import {
   allocateSupportRewards,
   normalizePublishedRewardSettings,
   rewardQuota,
+  supportSlotCount,
 } from '../eden-reward-settings.js';
 import { readMaterialPlanState, readResearchProgressState } from './saved-state.js';
 import {
@@ -1063,7 +1064,7 @@ export async function getEdenContextAdapter(rawArguments, context = {}) {
             rewardQuota(rewardSettings, 'contribution') +
             ' Core reward slots, excluding support winners; forfeited premium rows are skipped.',
           support:
-            rewardQuota(rewardSettings, 'support') +
+            supportSlotCount(rewardSettings) +
             ' Support slots; the current setting determines whether Guild Master follows the R5 or top support scorer.',
           management:
             'Up to ' +

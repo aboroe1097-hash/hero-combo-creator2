@@ -97,6 +97,8 @@ const kr = {
   adminConductSeasonLabel: '시즌: {season}',
   adminConductPlayer: '플레이어',
   adminConductCategory: '카테고리',
+  adminConductFilterCategory: '카테고리별 필터',
+  adminConductNoMatch: '이번 시즌에 이 필터와 일치하는 조정이 없습니다.',
   adminConductPoints: '포인트',
   adminConductNote: '메모',
   adminConductNotePh: '선택적 사유',
@@ -3383,7 +3385,7 @@ Object.assign(kr, {
     '게임 내 기여는 순위표 기여에 길드 외 점수를 더한 값입니다. 지원 가중치는 방패벽, 길 안내, 배너, 양식 보너스 점수 등 모든 지원 작업을 조정하므로 2는 두 배가 됩니다. 기여에 0.5를 넣으면 절반이 됩니다. 1은 두 항목을 지금 그대로 둡니다.',
   adminRewardSettingsTitle: '보상 분배',
   adminRewardSettingsNote:
-    '이번 시즌 각 항목이 보상하는 인원 수입니다. 변경하면 보상 슬롯 번호가 다시 매겨지고, 공개 페이지는 다음 발행 후 새 분배를 표시합니다.',
+    '각 카테고리의 보상 인원 수를 정합니다. R5 길드장 보상은 지원 작업 슬롯 하나로 계산되며, 쿼터가 0이어도 R5 행은 유지됩니다. 변경하면 슬롯 번호가 다시 매겨지고, 공개 페이지는 다음 게시 후 새 분배를 표시합니다.',
   adminRewardSettingsCategory: '항목',
   adminRewardSettingsSlots: '슬롯',
   adminRewardSettingsGuildMaster: '길드 마스터 보상 대상',
@@ -3391,7 +3393,7 @@ Object.assign(kr, {
   adminRewardSettingsGuildMasterTop1: '지원 작업 1위',
   adminRewardSettingsR5Label: 'R5 플레이어',
   adminRewardSettingsHint:
-    '지정한 R5가 지원 목록에 없으면 길드 마스터 보상은 비어 있지 않도록 지원 작업 1위에게 남습니다.',
+    '자신의 지원 작업이 없는 R5도 이름으로 길드장 보상을 받으며, 해당 행은 점수 0으로 표시됩니다. 지원 작업 쿼터에는 그 R5가 포함되며, 쿼터가 0이어도 한 명은 보상을 받습니다.',
   adminRewardSettingsSave: '분배 저장',
   adminRewardSettingsSaved: '분배가 저장되었습니다. 공개 페이지를 갱신하려면 시즌을 발행하세요.',
   adminRewardSettingsResetConfirm:

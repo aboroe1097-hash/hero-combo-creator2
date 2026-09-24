@@ -1,5 +1,5 @@
 /* =============================================================
-   app.css â€” RoC VTS Toolkit  10.0.0
+   app.css — RoC VTS Toolkit  10.0.0
    Desktop-first. Mobile overrides in mobile.css.
    ============================================================= */
 
@@ -11,7 +11,7 @@
   display: none;
 }
 
-/* â”€â”€ Base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Base ────────────────────────────────────────────────── */
 *,
 *::before,
 *::after {
@@ -77,7 +77,7 @@ button,
     transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* â”€â”€ Scrollbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Scrollbar ───────────────────────────────────────────── */
 /* Firefox parity for the themed scrollbar (pairs with the
    ::-webkit-scrollbar rules below). scrollbar-color takes
    <thumb> <track>. */
@@ -127,7 +127,7 @@ html {
   scrollbar-width: none;
 }
 
-/* â”€â”€ App container â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── App container ───────────────────────────────────────── */
 #app {
   position: relative;
   background: var(--app-bg);
@@ -144,7 +144,7 @@ html {
     0 0 0 1px rgba(0, 0, 0, 0.04);
 }
 
-/* â”€â”€ Keyframes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Keyframes ───────────────────────────────────────────── */
 @keyframes fade-in-up {
   from {
     opacity: 0;
@@ -214,7 +214,7 @@ html {
   animation: fade-in-up 0.32s ease both;
 }
 
-/* â”€â”€ Boot splash & first-visit intro â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Boot splash & first-visit intro ─────────────────────── */
 @keyframes boot-orbit-spin {
   to {
     transform: rotate(360deg);
@@ -1237,7 +1237,7 @@ html.maintenance-mode .maintenance-preload {
   box-shadow: 0 5px 14px rgb(35 66 91 / 9%) !important;
 }
 
-/* â”€â”€ Logo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Logo ────────────────────────────────────────────────── */
 .logo-container {
   position: relative;
   display: flex;
@@ -1308,7 +1308,7 @@ html.maintenance-mode .maintenance-preload {
   }
 }
 
-/* â”€â”€â”€ Tab switch â€” subtle fade only â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Tab switch — subtle fade only ─────────────────────── */
 @keyframes tab-fade-in {
   from {
     opacity: 0;
@@ -1329,7 +1329,7 @@ html[data-initial-tab-pending] #generatorSection {
   display: none !important;
 }
 
-/* â”€â”€ Tab pills â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Tab pills ───────────────────────────────────────────── */
 .tab-pill {
   position: relative;
   z-index: 10;
@@ -1397,7 +1397,7 @@ html[data-initial-tab-pending] #generatorSection {
   color: #fff;
 }
 
-/* â”€â”€ Filter pills â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Filter pills ────────────────────────────────────────── */
 .filter-pill {
   display: inline-flex;
   align-items: center;
@@ -1518,7 +1518,7 @@ html[data-initial-tab-pending] #generatorSection {
   border-color: #9ca3af;
 }
 
-/* â”€â”€ Skin toggle & badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Skin toggle & badge ─────────────────────────────────── */
 .toggle-switch {
   position: relative;
   display: inline-block;
@@ -1746,7 +1746,7 @@ html[data-initial-tab-pending] #generatorSection {
   }
 }
 
-/* â”€â”€ Hero cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Hero cards ──────────────────────────────────────────── */
 .hero-card {
   display: flex;
   flex-direction: column;
@@ -1778,7 +1778,7 @@ html[data-initial-tab-pending] #generatorSection {
   border-color: var(--brand-light);
   background: var(--surface-3);
 }
-/* â”€â”€ Hero tag â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Hero tag ────────────────────────────────────────────── */
 .hero-tag {
   position: absolute;
   top: 6px;
@@ -1872,7 +1872,7 @@ html[data-initial-tab-pending] #generatorSection {
   background: linear-gradient(135deg, #22d3ee, #a78bfa);
 }
 
-/* â”€â”€ Generator cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Generator cards ─────────────────────────────────────── */
 .generator-card {
   cursor: pointer;
   transition:
@@ -1897,7 +1897,7 @@ html[data-initial-tab-pending] #generatorSection {
   border-color: #7dd3fc !important;
 }
 
-/* â”€â”€ Combo slots â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Combo slots ─────────────────────────────────────────── */
 .combo-slot {
   display: flex;
   flex-direction: column;
@@ -1941,7 +1941,7 @@ html[data-initial-tab-pending] #generatorSection {
   border-radius: 0.5rem;
 }
 
-/* â”€â”€ Saved combos & generated â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Saved combos & generated ────────────────────────────── */
 .saved-combo-display {
   display: flex;
   flex-direction: row;
@@ -2088,7 +2088,7 @@ html[data-initial-tab-pending] #generatorSection {
   flex-shrink: 0;
 }
 
-/* â”€â”€ Remove combo button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Remove combo button ─────────────────────────────────── */
 .remove-combo-btn {
   position: absolute;
   top: 6px;
@@ -2120,7 +2120,7 @@ html[data-initial-tab-pending] #generatorSection {
   transform: scale(1.1);
 }
 
-/* â”€â”€ Hero search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Hero search ─────────────────────────────────────────── */
 .hero-search-wrap {
   position: relative;
   margin-bottom: 0.75rem;
@@ -2160,7 +2160,7 @@ html[data-initial-tab-pending] #generatorSection {
   right: 0.65rem;
 }
 
-/* â”€â”€ Hero count badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Hero count badge ────────────────────────────────────── */
 #manualHeroCount,
 #genSelectedCount {
   transition:
@@ -2172,7 +2172,7 @@ html[data-initial-tab-pending] #generatorSection {
     opacity var(--t-fast);
 }
 
-/* â”€â”€ Hero grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Hero grid ───────────────────────────────────────────── */
 #availableHeroes,
 #generatorHeroes {
   display: grid;
@@ -2181,7 +2181,7 @@ html[data-initial-tab-pending] #generatorSection {
   justify-items: center;
 }
 
-/* â”€â”€ Scroll-to-top â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Scroll-to-top ───────────────────────────────────────── */
 #scrollTopBtn {
   position: fixed;
   bottom: 5rem;
@@ -2220,7 +2220,7 @@ html[data-initial-tab-pending] #generatorSection {
   box-shadow: 0 6px 22px rgba(37, 99, 235, 0.55);
 }
 
-/* â”€â”€ Toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Toast ───────────────────────────────────────────────── */
 #toastContainer {
   position: fixed;
   bottom: 5rem;
@@ -2264,7 +2264,7 @@ html[data-initial-tab-pending] #generatorSection {
   color: #60a5fa;
 }
 
-/* â”€â”€ Loading spinner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Loading spinner ─────────────────────────────────────── */
 .loading-spinner {
   position: fixed;
   inset: 0;
@@ -2305,7 +2305,7 @@ html[data-initial-tab-pending] #generatorSection {
   animation: spin 0.72s linear infinite;
 }
 
-/* â”€â”€ Message box â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Message box ─────────────────────────────────────────── */
 #messageBox {
   backdrop-filter: blur(6px);
 }
@@ -2326,19 +2326,19 @@ html[data-initial-tab-pending] #generatorSection {
   border-color: #475569;
 }
 
-/* â”€â”€ Sticky footer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Sticky footer ───────────────────────────────────────── */
 #comboFooterBar {
   background: linear-gradient(to top, rgba(2, 6, 23, 0.99) 0%, rgba(15, 23, 42, 0.97) 100%);
   border-top: 1px solid rgba(59, 130, 246, 0.22);
   box-shadow: 0 -12px 42px rgba(0, 0, 0, 0.65);
 }
 
-/* â”€â”€ Hero info toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Hero info toggle ────────────────────────────────────── */
 body.hide-hero-info .info-btn {
   display: none !important;
 }
 
-/* â”€â”€ Number input â€” hide spinners â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Number input — hide spinners ────────────────────────── */
 input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -2348,7 +2348,7 @@ input[type='number'] {
   -moz-appearance: textfield;
 }
 
-/* â”€â”€ Tech node â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Tech node ───────────────────────────────────────────── */
 .tech-node-container {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -2857,7 +2857,7 @@ input[type='number'] {
   transform: translateY(-3px) !important;
 }
 
-/* â”€â”€ Tab badges â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Tab badges ──────────────────────────────────────────── */
 .tab-badge-wrap {
   position: relative;
   display: inline-flex;
@@ -2917,7 +2917,7 @@ input[type='number'] {
   border: 1px solid #67e8f9;
 }
 
-/* â”€â”€ Research tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Research tab ────────────────────────────────────────── */
 @keyframes research-card-enter {
   from {
     opacity: 0;
@@ -4087,7 +4087,7 @@ input[type='number'] {
   }
 }
 
-/* â”€â”€ Research game tree (in-game style) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Research game tree (in-game style) ──────────────────── */
 .research-game-shell {
   position: relative;
   border-radius: 16px;
@@ -4500,7 +4500,7 @@ input[type='number'] {
   background: rgba(8, 12, 20, 0.9);
 }
 
-/* â”€â”€ SEO / crawlable content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── SEO / crawlable content ─────────────────────────────── */
 .seo-intro {
   max-width: 52rem;
   margin: 0 auto 1.25rem;
@@ -4528,7 +4528,7 @@ input[type='number'] {
 .seo-noscript a {
   color: #93c5fd;
 }
-/* â”€â”€ Alliance Banner Footer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Alliance Banner Footer ──────────────────────────────── */
 body.admin-standalone-page .admin-footer.roc-footer {
   margin-top: 3rem;
   background: linear-gradient(to bottom, #090e1a 0%, #02040a 100%);
@@ -4690,9 +4690,9 @@ body.admin-standalone-page .admin-footer .footer-divider {
   font-weight: 500;
 }
 
-/* â”€â”€ Feedback button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-/* â”€â”€ Reply form smooth reveal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-/* â”€â”€ Loyalty calculator (b6.4) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Feedback button ─────────────────────────────────────── */
+/* ── Reply form smooth reveal ────────────────────────────── */
+/* ── Loyalty calculator (b6.4) ───────────────────────────── */
 .loyalty-root {
   max-width: 1180px;
   margin: 0 auto;
@@ -5398,7 +5398,7 @@ body.admin-standalone-page .admin-footer .footer-divider {
   }
 }
 
-/* â”€â”€ Responsive hero grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Responsive hero grid ────────────────────────────────── */
 @media (min-width: 769px) {
   #availableHeroes,
   #generatorHeroes {
@@ -5406,7 +5406,7 @@ body.admin-standalone-page .admin-footer .footer-divider {
   }
 }
 
-/* â”€â”€ X2 Season pill â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── X2 Season pill ──────────────────────────────────────── */
 .x2-pill:has(input:checked) {
   background: #065f46;
   border-color: #34d399;
@@ -5422,7 +5422,7 @@ body.admin-standalone-page .admin-footer .footer-divider {
    4. Eden Map planner (fully revamped)
    ============================================================ */
 
-/* â”€â”€ 1. Paid badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── 1. Paid badge ───────────────────────────────────────── */
 .paid-badge {
   position: absolute;
   top: 4px;
@@ -5467,7 +5467,7 @@ body.admin-standalone-page .admin-footer .footer-divider {
   display: block;
 }
 
-/* â”€â”€ 3a. Heroes tab â€” toolbar & filters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── 3a. Heroes tab — toolbar & filters ─────────────────── */
 #heroesSection,
 #heroesTabContent,
 .heroes-tab-inner {
@@ -5654,7 +5654,7 @@ body.admin-standalone-page .admin-footer .footer-divider {
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
 }
 
-/* â”€â”€ 3a2. Heroes tab â€” season selector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── 3a2. Heroes tab — season selector ──────────────────── */
 .heroes-season-tabs {
   display: flex;
   gap: 5px;
@@ -5820,7 +5820,7 @@ body.admin-standalone-page .admin-footer .footer-divider {
   }
 }
 
-/* â”€â”€ 3b. Heroes layout â€” list + detail side by side â”€â”€â”€â”€â”€â”€â”€ */
+/* ── 3b. Heroes layout — list + detail side by side ─────── */
 .heroes-layout {
   display: flex;
   flex-direction: column;
@@ -5870,7 +5870,7 @@ body.admin-standalone-page .admin-footer .footer-divider {
   }
 }
 
-/* â”€â”€ 3c. Ranking list rows (polished) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── 3c. Ranking list rows (polished) ───────────────────── */
 .heroes-ranking-list {
   display: flex;
   flex-direction: column;
@@ -6019,7 +6019,7 @@ body.admin-standalone-page .admin-footer .footer-divider {
   color: #1e293b;
 }
 
-/* â”€â”€ 3d. Hero detail panel (polished) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── 3d. Hero detail panel (polished) ───────────────────── */
 .hero-detail-panel {
   background: rgba(13, 20, 38, 0.95);
   border: 1px solid rgba(99, 102, 241, 0.25);
@@ -6599,7 +6599,7 @@ body.admin-standalone-page .admin-footer .footer-divider {
   transform: translate(-50%, 0);
 }
 
-/* â”€â”€ Skins â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Skins ──────────────────────────────────────────────── */
 .detail-skins {
   display: flex;
   flex-direction: column;
@@ -7465,7 +7465,7 @@ body.admin-standalone-page .admin-footer .footer-divider {
   color: white;
   box-shadow: 0 0 6px #a855f7;
 }
-/* â”€â”€ 4. Eden Map planner (fully revamped) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── 4. Eden Map planner (fully revamped) ───────────────── */
 .eden-dataset-badge {
   display: inline-block;
   margin-top: 6px;
@@ -7733,7 +7733,7 @@ body.admin-standalone-page .admin-footer .footer-divider {
   margin-bottom: 12px;
 }
 
-/* â”€â”€ Eden control deck + hover tooltips (b6.3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Eden control deck + hover tooltips (b6.3) ─────────── */
 .eden-floating-tip {
   position: fixed;
   z-index: 10050;
@@ -8091,7 +8091,7 @@ body.admin-standalone-page .admin-footer .footer-divider {
   display: none;
 }
 .eden-plans-panel summary::before {
-  content: 'â–¸ ';
+  content: '▸ ';
   display: inline-block;
   transition: transform 0.18s ease;
   color: #6366f1;
@@ -9094,7 +9094,7 @@ body.admin-standalone-page .admin-footer .footer-divider {
   display: none;
 }
 .eden-team-panel summary::before {
-  content: 'â–¸ ';
+  content: '▸ ';
   display: inline-block;
   transition: transform var(--t-fast);
 }
@@ -9625,7 +9625,7 @@ body.admin-standalone-page .admin-footer .footer-divider {
   display: none;
 }
 .eden-help-summary::before {
-  content: 'â–¸ ';
+  content: '▸ ';
   display: inline-block;
   transition: transform var(--t-fast);
 }
@@ -11059,7 +11059,7 @@ button:active,
    LIGHT THEME OVERRIDES: HERO ATLAS & EDEN LOYALTY
    ============================================================= */
 
-/* â”€â”€ Hero Atlas Tab Overrides â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Hero Atlas Tab Overrides ────────────────────────────── */
 [data-theme='light'] .heroes-filter-pills {
   background: #f8fafc !important;
   border-color: #e2e8f0 !important;
@@ -11295,7 +11295,7 @@ button:active,
   color: #64748b !important;
 }
 
-/* â”€â”€ Hero Atlas â€” additional missing overrides â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Hero Atlas — additional missing overrides ───────────── */
 [data-theme='light'] .heroes-toolbar-sticky {
   background: linear-gradient(
     180deg,
@@ -11365,7 +11365,7 @@ button:active,
   background-color: #e2e8f0 !important;
 }
 
-/* â”€â”€ Eden Loyalty Tab Overrides â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Eden Loyalty Tab Overrides ──────────────────────────── */
 [data-theme='light'] .loyalty-title {
   color: #0f172a !important;
 }
@@ -12426,7 +12426,7 @@ body.admin-standalone-page .command-kicker {
   display: none;
 }
 
-/* â”€â”€ Strife over Dragon tool â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Strife over Dragon tool ─────────────────────────────── */
 .strife-tool-root {
   display: grid;
   gap: 1rem;
