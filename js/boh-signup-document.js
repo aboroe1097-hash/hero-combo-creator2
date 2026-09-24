@@ -143,6 +143,9 @@ export const BOH_SIGNUP_FIELD_PATHS = Object.freeze({
   roles: Object.freeze(['commitment.preferredRole', 'commitment.secondaryRole']),
   availability: 'commitment.availability',
   fightingTimes: 'commitment.fightingTimeIds',
+  bohTimeSlots: 'commitment.bohTimeSlots',
+  epicTimeSlots: 'commitment.epicTimeSlots',
+  publicComparisonConsent: 'commitment.publicComparisonConsent',
   member: 'commitment.vts1097Member',
   texts: Object.freeze([
     'commitment.contactNumber',
@@ -160,6 +163,14 @@ function fieldElements(root) {
 function elementValue(element) {
   if (element?.type === 'checkbox') return Boolean(element.checked);
   const raw = element?.value;
+  // An ordered choice list kept in one hidden input ("+20,+8"): the slot
+  // pickers write it, and the order is the member's preference.
+  if (element?.dataset?.bohList === 'true') {
+    return String(raw ?? '')
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean);
+  }
   if (element?.dataset?.bohBoolean === 'true') {
     const text = typeof raw === 'string' ? raw.trim() : '';
     if (text === '') return null;
@@ -211,6 +222,11 @@ function writePathValue(root, path, value) {
     (element) => textValue(element?.dataset?.bohField) === path
   );
   if (!elements.length) return false;
+  if (Array.isArray(value) && elements.length === 1 && elements[0].dataset?.bohList === 'true') {
+    elements[0].value = value.map((part) => String(part)).join(',');
+    elements[0].dispatchEvent?.(new Event('change', { bubbles: true }));
+    return true;
+  }
   if (Array.isArray(value)) {
     elements.forEach((element, index) => {
       element.value =
@@ -247,6 +263,9 @@ export function writeBohSignupFormValues(root, signup = {}) {
     ...BOH_SIGNUP_FIELD_PATHS.roles,
     BOH_SIGNUP_FIELD_PATHS.availability,
     BOH_SIGNUP_FIELD_PATHS.fightingTimes,
+    BOH_SIGNUP_FIELD_PATHS.bohTimeSlots,
+    BOH_SIGNUP_FIELD_PATHS.epicTimeSlots,
+    BOH_SIGNUP_FIELD_PATHS.publicComparisonConsent,
     BOH_SIGNUP_FIELD_PATHS.member,
     ...BOH_SIGNUP_FIELD_PATHS.texts,
   ];
@@ -303,7 +322,10 @@ export function buildBohSignupDocument(input = {}) {
       // firestore.rules asserts `playerId == uid == path uid`.
       { ...(isPlainObject(input.values) ? input.values : {}), playerId: uid, status },
       {
-        requireFightingTimeIds: true,
+        // The member form is Competition #12's: BoH and Epic Showdown slots
+        // replace the two classic fighting times.
+        requireCompetitionSlots: input.requireCompetitionSlots !== false,
+        requireFightingTimeIds: input.requireCompetitionSlots === false,
         heroNames: input.heroNames,
         researchTreeIds: input.researchTreeIds,
       }
@@ -487,9 +509,12 @@ export function validateBohSignupDocument(documentInput) {
     if (![...BOH_PREFERRED_ROLES, ''].includes(commitment.preferredRole)) {
       problems.push('commitment.preferredRole');
     }
+    const hasCompetitionSlots =
+      Array.isArray(commitment.bohTimeSlots) && Array.isArray(commitment.epicTimeSlots);
     if (
       !Array.isArray(commitment.fightingTimeIds) ||
-      commitment.fightingTimeIds.length !== 2 ||
+      commitment.fightingTimeIds.length > 2 ||
+      (commitment.fightingTimeIds.length !== 2 && !hasCompetitionSlots) ||
       commitment.fightingTimeIds.some((timeId) => !BOH_FIGHTING_TIME_IDS.includes(timeId))
     ) {
       problems.push('commitment.fightingTimeIds');

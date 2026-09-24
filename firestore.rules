@@ -944,6 +944,51 @@ service cloud.firestore {
         && get(configPath).data.open == true;
     }
 
+    // Competition #12 closes new sign-ups at phase1ClosesAt while members who
+    // already signed up may still edit until the deadline. The syncCompetitionPhase
+    // Function sets `open` and `acceptNewSignups` from the schedule; the member
+    // write path only reads that flag from the config it already loads, because
+    // the submission validator runs within a few expressions of the per-request
+    // evaluation limit (measured with the emulator).
+    function allStarBohAcceptsNewSignups() {
+      return get(/databases/$(database)/documents/boh_allstar_config/current)
+        .data.get('acceptNewSignups', true) == true;
+    }
+
+    function validAllStarBohCompetitionSchedule() {
+      let d = request.resource.data;
+      return d.keys().hasOnly([
+        'seasonId', 'title', 'opensAt', 'phase1ClosesAt', 'deadlineAt',
+        'reuploadOpensAt', 'reuploadClosesAt', 'winnersStartAt', 'winnersEndAt',
+        'updatedAt', 'updatedBy'
+      ])
+      && d.keys().hasAll([
+        'seasonId', 'title', 'opensAt', 'phase1ClosesAt', 'deadlineAt',
+        'reuploadOpensAt', 'reuploadClosesAt', 'winnersStartAt', 'winnersEndAt',
+        'updatedAt', 'updatedBy'
+      ])
+      && d.seasonId is string
+      && d.seasonId.matches('^[A-Za-z0-9_-]{1,80}$')
+      && d.title is string
+      && d.title.size() <= 80
+      && d.opensAt is timestamp
+      && d.phase1ClosesAt is timestamp
+      && d.deadlineAt is timestamp
+      && d.reuploadOpensAt is timestamp
+      && d.reuploadClosesAt is timestamp
+      && d.winnersStartAt is timestamp
+      && d.winnersEndAt is timestamp
+      && d.opensAt < d.phase1ClosesAt
+      && d.phase1ClosesAt <= d.deadlineAt
+      && d.deadlineAt <= d.reuploadOpensAt
+      && d.reuploadOpensAt < d.reuploadClosesAt
+      && d.reuploadClosesAt <= d.winnersStartAt
+      && d.winnersStartAt < d.winnersEndAt
+      && d.updatedAt == request.time
+      && d.updatedBy == request.auth.uid;
+    }
+
+
     function validAllStarBohConfig() {
       // `scoringProfileId` is the season's scoring version, chosen by a
       // superadmin in the 2027 Signups tab and validated against the registry
@@ -952,7 +997,8 @@ service cloud.firestore {
       // has no expression budget to spare; one version per season is also what
       // the comparison actually means.
       return request.resource.data.keys().hasOnly([
-        'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId'
+        'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId',
+        'acceptNewSignups'
       ])
       && request.resource.data.keys().hasAll([
         'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId'
@@ -964,7 +1010,8 @@ service cloud.firestore {
       && request.resource.data.grantDurationMinutes >= 5
       && request.resource.data.grantDurationMinutes <= 10080
       && request.resource.data.scoringProfileId is string
-      && request.resource.data.scoringProfileId.matches('^[A-Za-z0-9._-]{1,80}$');
+      && request.resource.data.scoringProfileId.matches('^[A-Za-z0-9._-]{1,80}$')
+      && request.resource.data.get('acceptNewSignups', true) is bool;
     }
 
     function validBohMapperPublish(season) {
@@ -2293,14 +2340,15 @@ service cloud.firestore {
         'availability', 'preferredRole', 'secondaryRole', 'canHelpLead',
         'unavailableTimes', 'canTeleport', 'canUseVoice', 'planCommitment',
         'notes', 'fightingTimeIds', 'teamNamePreferences',
-        'vts1097Member', 'contactNumber', 'currentState', 'joinReason'
+        'vts1097Member', 'contactNumber', 'currentState', 'joinReason',
+        'bohTimeSlots', 'epicTimeSlots', 'publicComparisonConsent'
       ])
       && commitment.availability in ['all', 'most', 'backup', 'unavailable', '']
       && commitment.preferredRole in [
         'flexible', 'offensive', 'rune', 'top', 'bottom', 'backup', ''
       ]
       && commitment.fightingTimeIds is list
-      && commitment.fightingTimeIds.size() == 2
+      && commitment.fightingTimeIds.size() <= 2
       && commitment.teamNamePreferences is list
       && commitment.teamNamePreferences.size() <= 6
       && commitment.vts1097Member is bool
@@ -2597,6 +2645,16 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Competition #12 schedule. Any signed-in visitor (members are anonymous
+    // until they unlock) may read it, so the page can show the current phase;
+    // only a superadmin may set it.
+    match /boh_allstar_competition/current {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create, update: if isSuperAdmin() && validAllStarBohCompetitionSchedule();
+      allow delete: if false;
+    }
+
     match /boh_allstar_config/current {
       allow get: if isAdmin();
       allow list: if false;
@@ -2635,6 +2693,7 @@ service cloud.firestore {
         allow create: if isOwner(uid)
           && hasActiveAllStarBohGrant(season)
           && isAllStarBohRegistrationOpen(season)
+          && allStarBohAcceptsNewSignups()
           && validAllStarBohSubmissionCreate(season, uid);
         allow update: if isOwner(uid)
           && hasActiveAllStarBohGrant(season)

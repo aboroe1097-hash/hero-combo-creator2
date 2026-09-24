@@ -57,7 +57,10 @@ const FORM_VALUES = {
     rocLevel: '61',
   },
   commitment: {
-    fightingTimeIds: ['+12', '+16'],
+    fightingTimeIds: [],
+    bohTimeSlots: ['+14', '+8'],
+    epicTimeSlots: ['+19', '+10'],
+    publicComparisonConsent: false,
     preferredRole: 'offensive',
     vts1097Member: true,
     notes: 'Sent by DM',
@@ -340,7 +343,11 @@ test('create derives the account id and writes the pinned document', async () =>
   assert.equal(document.entryMethod, 'manual');
   assert.equal(document.status, 'submitted');
   assert.equal(document.revision, 1);
-  assert.deepEqual(document.commitment.fightingTimeIds, ['+12', '+16']);
+  // A Competition #12 entry names BoH and Epic Showdown slots in order, not
+  // the two classic fighting times.
+  assert.deepEqual(document.commitment.fightingTimeIds, []);
+  assert.deepEqual(document.commitment.bohTimeSlots, ['+14', '+8']);
+  assert.deepEqual(document.commitment.epicTimeSlots, ['+19', '+10']);
   assert.equal(document.commitment.notes, 'Sent by DM');
   assert.equal(document.commitment.availability, BOH_SIGNUP_ADMIN_DEFAULTS.commitment.availability);
   assert.equal(
@@ -377,7 +384,10 @@ test('create derives the account id and writes the pinned document', async () =>
       commitment: {
         availability: 'all',
         preferredRole: 'offensive',
-        fightingTimeIds: ['+12', '+16'],
+        fightingTimeIds: [],
+        bohTimeSlots: ['+14', '+8'],
+        epicTimeSlots: ['+19', '+10'],
+        publicComparisonConsent: false,
         vts1097Member: true,
         notes: 'Sent by DM',
       },
@@ -510,7 +520,8 @@ test('the admin panel request carries every key the Function pins', () => {
   assert.equal(create.stats.level50HeroCount, 9);
   assert.deepEqual(create.stats.t9TroopTypes, ['Spearman', 'Archer']);
   assert.deepEqual(create.stats.readySpeedHeroes, []);
-  assert.equal(create.commitment.fightingTimeIds.length, 2);
+  assert.equal(create.commitment.fightingTimeIds.length, 0);
+  assert.deepEqual(create.commitment.bohTimeSlots, ['+14', '+8']);
   assert.equal(create.commitment.availability, BOH_SIGNUP_ADMIN_DEFAULTS.commitment.availability);
   assert.equal(create.commitment.vts1097Member, true);
 
@@ -640,4 +651,30 @@ test('the signup list renders an edit action per row', () => {
     BOH_SIGNUP_ADMIN_ERROR_KEYS.admin_required,
     BOH_SIGNUP_ADMIN_ERROR_KEYS.invalid_auth
   );
+});
+
+test('the Function accepts both the 2026 shape and Competition #12 slots, and nothing else', async () => {
+  const { handler } = handlerWith();
+  const post = async (body) => {
+    const response = fakeResponse();
+    await handler(fakeRequest({ body }), response);
+    return response;
+  };
+  const base = createBody();
+  const legacyCommitment = { ...base.commitment, fightingTimeIds: ['+12', '+16'] };
+  delete legacyCommitment.bohTimeSlots;
+  delete legacyCommitment.epicTimeSlots;
+  delete legacyCommitment.publicComparisonConsent;
+  const legacy = await post({ ...base, gameName: 'Legacy', commitment: legacyCommitment });
+  assert.equal(legacy.statusCode, 200, JSON.stringify(legacy.payload));
+
+  for (const commitment of [
+    { ...base.commitment, bohTimeSlots: ['+10'] },
+    { ...base.commitment, bohTimeSlots: [] },
+    { ...base.commitment, epicTimeSlots: ['+8'] },
+    { ...base.commitment, epicTimeSlots: ['+10', '+13', '+16', '+19', '+22'] },
+  ]) {
+    const response = await post({ ...base, gameName: 'Bad Slots', commitment });
+    assert.equal(response.payload?.error, 'invalid_request', JSON.stringify(commitment));
+  }
 });

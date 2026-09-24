@@ -48,7 +48,8 @@
     "sheets:watch": "node scripts/sheets/watch.mjs",
     "preview": "vite preview",
     "siege:dev": "vite --open /eden-siege.html",
-    "siege:test": "playwright test --config=playwright.siege.config.js --reporter=line"
+    "siege:test": "playwright test --config=playwright.siege.config.js --reporter=line",
+    "rules:emulator": "firebase emulators:exec --only firestore --project demo-comp12 \"node scripts/rules-emulator/competition12.mjs\""
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

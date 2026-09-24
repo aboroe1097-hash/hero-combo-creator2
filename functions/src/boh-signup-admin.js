@@ -80,15 +80,27 @@ export const BOH_SIGNUP_ADMIN_STAT_KEYS = Object.freeze([
 ]);
 export const BOH_SIGNUP_ADMIN_COMMITMENT_KEYS = Object.freeze([
   'availability',
+  'bohTimeSlots',
   'contactNumber',
   'currentState',
+  'epicTimeSlots',
   'fightingTimeIds',
   'joinReason',
   'notes',
   'preferredRole',
+  'publicComparisonConsent',
   'secondaryRole',
   'vts1097Member',
 ]);
+// The 2026 request shape: the same keys without the Competition #12 slots.
+export const BOH_SIGNUP_ADMIN_LEGACY_COMMITMENT_KEYS = Object.freeze(
+  BOH_SIGNUP_ADMIN_COMMITMENT_KEYS.filter(
+    (key) => !['bohTimeSlots', 'epicTimeSlots', 'publicComparisonConsent'].includes(key)
+  )
+);
+// Competition #12 slots, mirrored from js/competition-schedule.js.
+export const COMPETITION_BOH_SLOT_IDS = Object.freeze(['+8', '+12', '+14', '+20']);
+export const COMPETITION_EPIC_SLOT_IDS = Object.freeze(['+10', '+13', '+16', '+19']);
 const REQUIRED_STAT_KEYS = Object.freeze([
   'totalCastlePower',
   'troopPower',
@@ -258,6 +270,20 @@ function textList(value, maximum, label, options = {}) {
   return list;
 }
 
+/** An ordered, duplicate-free list of 1–4 slots from `allowed`. */
+function timeSlots(value, allowed, label) {
+  const list = textList(value, 8, label, { maxLength: 8 });
+  const unique = [...new Set(list)];
+  if (
+    !unique.length ||
+    unique.length > allowed.length ||
+    unique.some((id) => !allowed.includes(id))
+  ) {
+    throw adminError(400, 'invalid_request', label);
+  }
+  return unique;
+}
+
 function fightingTimes(value) {
   const list = textList(value, 3, 'Invalid fighting times.', { maxLength: 8 });
   if (list.length !== 2 || list.some((timeId) => !FIGHTING_TIME_IDS.includes(timeId))) {
@@ -341,7 +367,10 @@ export function readBohSignupAdminRequest(request) {
   if (
     !strictKeys(body, expectedKeys) ||
     !strictKeys(body.stats, BOH_SIGNUP_ADMIN_STAT_KEYS) ||
-    !strictKeys(body.commitment, BOH_SIGNUP_ADMIN_COMMITMENT_KEYS)
+    !(
+      strictKeys(body.commitment, BOH_SIGNUP_ADMIN_COMMITMENT_KEYS) ||
+      strictKeys(body.commitment, BOH_SIGNUP_ADMIN_LEGACY_COMMITMENT_KEYS)
+    )
   ) {
     throw adminError(400, 'invalid_request', 'Invalid signup request.');
   }
@@ -411,7 +440,28 @@ export function readBohSignupAdminRequest(request) {
       '',
       'Invalid secondary role.'
     ),
-    fightingTimeIds: fightingTimes(body.commitment.fightingTimeIds),
+    // Competition #12 entries name BoH and Epic Showdown slots instead of the
+    // two classic fighting times; the 2026 shape still requires those two.
+    ...(body.commitment.bohTimeSlots !== undefined || body.commitment.epicTimeSlots !== undefined
+      ? {
+          fightingTimeIds:
+            Array.isArray(body.commitment.fightingTimeIds) &&
+            body.commitment.fightingTimeIds.length === 0
+              ? []
+              : fightingTimes(body.commitment.fightingTimeIds),
+          bohTimeSlots: timeSlots(
+            body.commitment.bohTimeSlots,
+            COMPETITION_BOH_SLOT_IDS,
+            'Pick at least one BoH time slot.'
+          ),
+          epicTimeSlots: timeSlots(
+            body.commitment.epicTimeSlots,
+            COMPETITION_EPIC_SLOT_IDS,
+            'Pick at least one Epic Showdown time slot.'
+          ),
+          publicComparisonConsent: body.commitment.publicComparisonConsent === true,
+        }
+      : { fightingTimeIds: fightingTimes(body.commitment.fightingTimeIds) }),
     vts1097Member: booleanValue(body.commitment.vts1097Member, 'Invalid VTS 1097 membership flag.'),
     contactNumber: optionalText(body.commitment.contactNumber, 160, 'Invalid contact.'),
     currentState: optionalText(body.commitment.currentState, 160, 'Invalid current state.'),
@@ -493,6 +543,13 @@ export function buildBohAdminSubmissionDocument(input) {
       planCommitment: null,
       notes: input.commitment.notes,
       fightingTimeIds: [...input.commitment.fightingTimeIds],
+      ...(input.commitment.bohTimeSlots
+        ? {
+            bohTimeSlots: [...input.commitment.bohTimeSlots],
+            epicTimeSlots: [...input.commitment.epicTimeSlots],
+            publicComparisonConsent: input.commitment.publicComparisonConsent,
+          }
+        : {}),
       teamNamePreferences: [],
       vts1097Member: input.commitment.vts1097Member,
       contactNumber: input.commitment.contactNumber,

@@ -60,6 +60,9 @@ function signupValues(overrides = {}) {
       preferredRole: 'offensive',
       secondaryRole: 'rune',
       fightingTimeIds: ['+12', '+14'],
+      bohTimeSlots: ['+20', '+8'],
+      epicTimeSlots: ['+10'],
+      publicComparisonConsent: true,
       vts1097Member: true,
       contactNumber: '',
       joinReason: 'Team fight in Eden',
@@ -174,9 +177,12 @@ test('the built document matches the shape firestore.rules enforces', () => {
   for (const key of commitmentKeys) {
     assert.ok(commitmentHasOnly.includes(key), `commitment.${key} allowed`);
   }
-  // The rules require exactly two distinct fighting times.
-  assert.equal(document.commitment.fightingTimeIds.length, 2);
-  assert.equal(new Set(document.commitment.fightingTimeIds).size, 2);
+  // Competition #12: the BoH and Epic Showdown slots keep the member's order,
+  // and the growth-board consent is a real boolean.
+  assert.deepEqual(document.commitment.bohTimeSlots, ['+20', '+8']);
+  assert.deepEqual(document.commitment.epicTimeSlots, ['+10']);
+  assert.equal(document.commitment.publicComparisonConsent, true);
+  assert.ok(document.commitment.fightingTimeIds.length <= 2);
 });
 
 test('signup validation rejects what the rules would reject, with reasons', () => {

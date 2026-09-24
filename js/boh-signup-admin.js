@@ -93,6 +93,14 @@ export function buildBohSignupAdminRequest(input = {}) {
       vts1097Member: commitment.vts1097Member === true,
     },
   };
+  // Competition #12 entries carry the BoH and Epic Showdown slots (in the
+  // member's order) and the growth-board consent; the Function then accepts
+  // an empty fightingTimeIds list.
+  if (commitment.bohTimeSlots !== undefined || commitment.epicTimeSlots !== undefined) {
+    request.commitment.bohTimeSlots = stringList(commitment.bohTimeSlots);
+    request.commitment.epicTimeSlots = stringList(commitment.epicTimeSlots);
+    request.commitment.publicComparisonConsent = commitment.publicComparisonConsent === true;
+  }
   if (input.submissionUid) request.submissionUid = String(input.submissionUid);
   return request;
 }

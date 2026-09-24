@@ -4,6 +4,12 @@
  * dependency so every persisted value can be normalized and tested first.
  */
 
+import {
+  COMPETITION_BOH_SLOTS,
+  COMPETITION_EPIC_SLOTS,
+  normalizeSlotSelection,
+} from './competition-schedule.js';
+
 export const BOH_SIGNUP_SCHEMA_VERSION = 1;
 export const BOH_PLAN_SCHEMA_VERSION = 1;
 export const BOH_EPIC_SHOWDOWN_SCHEMA_VERSION = 1;
@@ -658,10 +664,39 @@ export function normalizeBohSignup(input = {}, options = {}) {
   const eligibleRoleIds = normalizeStringList(
     firstDefined(input.eligibleRoleIds, input.eligibleRoles, rawStats.eligibleRoleIds)
   ).map((role) => normalizeBohId(role));
+  const requireCompetitionSlots = options.requireCompetitionSlots === true;
   const fightingTimeIds = normalizeFightingTimeIds(
     firstDefined(input.fightingTimeIds, rawCommitment.fightingTimeIds),
-    { allowLegacyEmpty: options.requireFightingTimeIds !== true }
+    { allowLegacyEmpty: requireCompetitionSlots || options.requireFightingTimeIds !== true }
   );
+  // Competition #12: BoH and Epic Showdown slots in the member's order of
+  // preference, plus the opt-in to show their values on the growth board.
+  // They are written only when the form asks for them, so a 2026 record keeps
+  // exactly the keys it was stored with.
+  const competitionCommitment = {};
+  const rawBohSlots = firstDefined(input.bohTimeSlots, rawCommitment.bohTimeSlots);
+  const rawEpicSlots = firstDefined(input.epicTimeSlots, rawCommitment.epicTimeSlots);
+  if (requireCompetitionSlots || rawBohSlots !== undefined || rawEpicSlots !== undefined) {
+    try {
+      competitionCommitment.bohTimeSlots = normalizeSlotSelection(
+        rawBohSlots,
+        COMPETITION_BOH_SLOTS
+      );
+      competitionCommitment.epicTimeSlots = normalizeSlotSelection(
+        rawEpicSlots,
+        COMPETITION_EPIC_SLOTS
+      );
+    } catch (error) {
+      throw modelError(
+        error.code === 'competition_slot_required'
+          ? 'boh_signup_time_slots_required'
+          : 'boh_signup_time_slot_invalid'
+      );
+    }
+    competitionCommitment.publicComparisonConsent =
+      firstDefined(input.publicComparisonConsent, rawCommitment.publicComparisonConsent) ===
+      true;
+  }
 
   return {
     schemaVersion: BOH_SIGNUP_SCHEMA_VERSION,
@@ -749,6 +784,7 @@ export function normalizeBohSignup(input = {}, options = {}) {
         { multiline: true }
       ),
       fightingTimeIds,
+      ...competitionCommitment,
       teamNamePreferences: normalizeCatalogSelection(
         firstDefined(input.teamNamePreferences, rawCommitment.teamNamePreferences),
         BOH_TEAM_NAME_PREFERENCES,
