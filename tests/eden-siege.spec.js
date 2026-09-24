@@ -167,9 +167,15 @@ test.describe('Eden Siege', () => {
         projectiles: state.projectiles.length,
         element: state.player.element,
         coreHp: state.core.hp,
+        wavesCleared: state.stats.wavesCleared,
       };
     });
-    expect(scene.phase).toBe('wave');
+    // The run uses the daily seed, so wave one's size changes every day. On
+    // some days the engagement clears it inside the test window and the run
+    // has moved on to the build phase before wave two; both mean wave one was
+    // played.
+    expect(['wave', 'build']).toContain(scene.phase);
+    if (scene.phase === 'build') expect(scene.wavesCleared).toBe(1);
     expect(scene.wave).toBe(1);
     expect(scene.timeMs).toBeGreaterThan(9000);
     expect(scene.kills, 'engaging wave one kills something').toBeGreaterThan(0);
