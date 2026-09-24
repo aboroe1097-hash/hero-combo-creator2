@@ -173,7 +173,11 @@ const LIMITS = {
   // panel), Eden Pathing, the motion P2 modules, the per-hub PDF builders with
   // their 12 lazy locale packs, and the Eden Siege fun pass. Measured
   // 11590.8 KiB locally; retain ~20 KiB for CI's admin-auth injection.
-  totalJsBytes: 11611 * 1024,
+  // 16.5.6: the 82 X8 catch-up lanes restored to the combo database, each
+  // carrying the tier and source score it was ranked by (+1.3 KiB gzip, ~7 KiB
+  // built). CI measured 11612.1 KiB; retain ~20 KiB for CI's admin-auth
+  // injection.
+  totalJsBytes: 11633 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
