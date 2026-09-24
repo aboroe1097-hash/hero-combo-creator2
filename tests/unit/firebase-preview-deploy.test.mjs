@@ -33,7 +33,10 @@ test('Firebase prerelease deploy is Hosting-only and gated by the full local che
     packageJson.scripts['firebase:preview'],
     'npm run check && node scripts/deploy-firebase-preview.mjs'
   );
-  assert.equal(packageJson.devDependencies['firebase-tools'], '15.22.4');
+  const packageLock = JSON.parse(readFileSync('package-lock.json', 'utf8'));
+  const firebaseToolsVersion = packageJson.devDependencies['firebase-tools'];
+  assert.equal(packageLock.packages[''].devDependencies['firebase-tools'], firebaseToolsVersion);
+  assert.equal(packageLock.packages['node_modules/firebase-tools'].version, firebaseToolsVersion);
   assert.deepEqual(Object.keys(config), ['hosting']);
   assert.equal(config.hosting.site, site);
   assert.equal(config.hosting.public, 'dist');
