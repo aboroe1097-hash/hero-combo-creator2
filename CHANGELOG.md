@@ -2,6 +2,9 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.5 - 2026-09-24
+
+- The Support Work reward quota now covers the guild-master reward instead of sitting under it: with "The R5" chosen and an R5 named, a quota of 6 rewards the R5 plus 5 others, where it used to reward the R5 plus 6 and show 7 rows. The Support Work table, the announced total and the published distribution all follow. A quota of 0 still shows the R5 alone, so a season never ends with nobody holding the reward.
 ## 16.5.4 - 2026-09-24
 
 - VtsScore is now **Competition #12**, a pre-season growth competition. Members sign up with their BoH time slots (+8, +12, +14, +20) and Epic Showdown time slots (+10, +13, +16, +19) in order of preference, all in game time, and can opt in to the public comparison. Each player is compared with their Season 2026 data (28/29 July) once a superadmin confirms the name match; without a match, the sign-up values are the baseline. Winners are ranked by castle power growth between the baseline and the re-upload, and the comparison board shows only players who agreed to it.
