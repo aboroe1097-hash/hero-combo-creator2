@@ -22,8 +22,49 @@ import {
   resolveVtsScorePlayer,
   VTS_SCORE_POWER_FIELDS,
 } from './vts-score-model.js';
-import { BOH_SIGNUP_FIELD_PATHS } from './boh-signup-document.js';
-import { BOH_SIGNUP_SAVE_ERROR, createBohSignupSession } from './boh-signup-form.js';
+import {
+  BOH_SIGNUP_SAVE_ERROR,
+  createBohSignupSession,
+  loadBohSignupFirestore,
+} from './boh-signup-form.js';
+import {
+  COMPETITION_SCHEDULE_DOC_PATH,
+  getCompetitionPhase,
+  getCompetitionPhaseEndsAt,
+  normalizeCompetitionSchedule,
+} from './competition-schedule.js';
+import {
+  formatGameTime,
+  formatLocalTime,
+  getCompetitionPageState,
+  mountSlotPicker,
+  phaseCopyKeys,
+  splitCountdown,
+  VTS_SCORE_SLOT_CATALOGS,
+} from './vts-score-competition.js';
+
+const SCHEDULE_READ_TIMEOUT_MS = 8000;
+
+/**
+ * The Competition #12 schedule document. Any signed-in account (the page's
+ * anonymous one included) may read it; a missing document means "no schedule"
+ * and the page keeps its unscheduled behaviour.
+ */
+async function readCompetitionSchedule(loadFirestore = loadBohSignupFirestore) {
+  const { firestore, db } = await loadFirestore();
+  const snapshot = await firestore.getDoc(firestore.doc(db, COMPETITION_SCHEDULE_DOC_PATH));
+  return snapshot?.exists?.() ? snapshot.data() : null;
+}
+
+function withTimeout(promise, ms) {
+  let timer;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error('timeout')), ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
 
 const POWER_FIELD_I18N = Object.freeze({
   totalCastlePower: 'fieldTotalCastlePower',
@@ -163,6 +204,9 @@ function setBusy(button, busy, busyText) {
   if (!button.dataset.defaultText) button.dataset.defaultText = button.textContent;
   button.disabled = Boolean(busy);
   button.textContent = busy ? busyText : button.dataset.defaultText;
+  // Re-captured on the next busy spell, so a language or phase relabel in
+  // between is kept.
+  if (!busy) delete button.dataset.defaultText;
 }
 
 export async function bootVtsScore(options = {}) {
@@ -180,7 +224,12 @@ export async function bootVtsScore(options = {}) {
     signup: null,
     signupSession: null,
     scoreWorkspaceOpen: false,
+    schedule: null,
+    phase: 'unconfigured',
+    pickers: {},
+    countdownTimer: 0,
   };
+  const now = () => (typeof options.now === 'function' ? options.now() : Date.now());
   const pinPanel = element('vtsScoreGate');
   const signupPanel = element('vtsScoreSignup');
   const signupSuccess = element('vtsScoreSignupSuccess');
@@ -283,7 +332,7 @@ export async function bootVtsScore(options = {}) {
     state.selectedPlayer = player;
     playerInput.value = player.gameName;
     closePlayerResults();
-    setStatus(`${player.gameName} selected.`, 'success');
+    setStatus(i18n.text('statusPlayerSelected', { name: player.gameName }), 'success');
   }
 
   function highlightPlayer(index) {
@@ -362,11 +411,11 @@ export async function bootVtsScore(options = {}) {
     setHidden(pinPanel, true);
     setHidden(scorePanel, true);
     await openSignupStep(grant);
-    if (state.signup) await openScoreWorkspace();
+    await applyPhaseGating();
   }
 
   async function openScoreWorkspace() {
-    setStatus('Loading eligible season signups…');
+    setStatus(i18n.text('statusLoadingPlayers'));
     const result = await state.client.getVtsScorePlayers();
     state.players = [...result.players];
     state.scoreWorkspaceOpen = true;
@@ -375,11 +424,173 @@ export async function bootVtsScore(options = {}) {
     fileInput.disabled = false;
     setStatus(
       state.players.length
-        ? `${state.players.length} signed-up players are ready for final score upload.`
-        : 'No eligible signups were found.',
+        ? i18n.text('statusPlayersReady', { count: i18n.formatNumber(state.players.length) })
+        : i18n.text('statusNoPlayers'),
       state.players.length ? 'success' : 'warning'
     );
   }
+
+  /* ---------------------------------------------------------------- *
+   * Competition #12: schedule, phase gating and slot pickers
+   * ---------------------------------------------------------------- */
+
+  for (const [key, catalog] of Object.entries(VTS_SCORE_SLOT_CATALOGS)) {
+    const fieldset = element(key === 'boh' ? 'vtsScoreBohSlots' : 'vtsScoreEpicSlots');
+    const input = element(key === 'boh' ? 'vtsScoreSignupBohSlots' : 'vtsScoreSignupEpicSlots');
+    const list = fieldset?.querySelector('[data-slot-list]');
+    if (input && list) {
+      state.pickers[key] = mountSlotPicker({ list, input, catalog, text: i18n.text });
+    }
+  }
+
+  function phaseEndsAt() {
+    return getCompetitionPhaseEndsAt(state.schedule, state.phase);
+  }
+
+  function describeInstant(ms) {
+    const locale = i18n.language;
+    return `${i18n.text('gameTimeAt', { time: formatGameTime(ms, locale) })} · ${i18n.text(
+      'localTimeAt',
+      { time: formatLocalTime(ms, locale) }
+    )}`;
+  }
+
+  function currentPageState() {
+    return getCompetitionPageState(state.phase, { hasSignup: Boolean(state.signup) });
+  }
+
+  function renderCountdown() {
+    const endsAt = phaseEndsAt();
+    const countdown = element('vtsScoreCountdown');
+    if (!Number.isFinite(endsAt)) {
+      setHidden(countdown, true);
+      return;
+    }
+    if (now() >= endsAt) {
+      refreshPhase();
+      return;
+    }
+    const { days, clock } = splitCountdown(endsAt - now());
+    element('vtsScoreCountdownLabel').textContent = i18n.text(
+      state.phase === 'upcoming' ? 'countdownOpensIn' : 'countdownEndsIn'
+    );
+    element('vtsScoreCountdownValue').textContent = days
+      ? i18n.text('countdownDays', { days, clock })
+      : clock;
+    setHidden(countdown, false);
+  }
+
+  /** The hero's schedule box: phase, what members can do now, countdown. */
+  function renderSchedule() {
+    const box = element('vtsScoreSchedule');
+    if (!box) return;
+    const keys = phaseCopyKeys(state.phase);
+    box.dataset.phase = state.phase;
+    element('vtsScorePhaseName').textContent = i18n.text(keys.name);
+    element('vtsScorePhaseNow').textContent = i18n.text(keys.now);
+    const endsAt = phaseEndsAt();
+    element('vtsScorePhaseEnds').textContent = Number.isFinite(endsAt)
+      ? describeInstant(endsAt)
+      : '';
+    clearInterval(state.countdownTimer);
+    state.countdownTimer = 0;
+    renderCountdown();
+    setHidden(box, false);
+    if (Number.isFinite(endsAt) && !state.countdownTimer) {
+      state.countdownTimer = setInterval(renderCountdown, 1000);
+    }
+    setHidden(element('vtsScoreGrowthBoard'), !getCompetitionPageState(state.phase).growthBoard);
+  }
+
+  function renderPhaseNotice() {
+    const notice = element('vtsScorePhaseNotice');
+    const key = state.grant ? currentPageState().notice : '';
+    const endsAt = phaseEndsAt();
+    element('vtsScorePhaseNoticeText').textContent = key
+      ? i18n.text(key, { date: Number.isFinite(endsAt) ? describeInstant(endsAt) : '' })
+      : '';
+    setHidden(notice, !key);
+  }
+
+  function setSignupReadOnly(readOnly) {
+    signupPanel.dataset.readonly = String(readOnly);
+    for (const control of signupForm?.elements || []) {
+      if (control.type !== 'hidden') control.disabled = readOnly;
+    }
+    for (const picker of Object.values(state.pickers)) picker.setDisabled(readOnly);
+    setHidden(signupButton, readOnly);
+  }
+
+  function setUploadMode(mode) {
+    const reupload = mode === 'reupload';
+    const relabel = (id, key) => {
+      const node = element(id);
+      if (!node) return;
+      node.dataset.vtsI18n = key;
+      node.textContent = i18n.text(key);
+    };
+    relabel('vtsScoreUploadKicker', reupload ? 'uploadKickerReupload' : 'uploadKickerFinal');
+    relabel('vtsScoreUploadTitle', reupload ? 'uploadTitleReupload' : 'uploadTitleFinal');
+    relabel('vtsScoreSubmitButton', reupload ? 'submitReupload' : 'submit');
+    relabel('vtsScoreSavedKicker', reupload ? 'savedReupload' : 'saved');
+  }
+
+  /**
+   * Shows what the current phase allows. UX only: the rules and the vtsScore
+   * Function refuse the same writes outside their windows.
+   */
+  async function applyPhaseGating() {
+    if (!state.grant) return;
+    const view = currentPageState();
+    setHidden(signupPanel, view.signup === 'hidden');
+    setSignupReadOnly(view.signup === 'readonly');
+    renderPhaseNotice();
+    if (view.upload === 'none') {
+      setHidden(scorePanel, true);
+      return;
+    }
+    setUploadMode(view.upload);
+    if (!state.scoreWorkspaceOpen) {
+      try {
+        await openScoreWorkspace();
+      } catch (error) {
+        setStatus(friendlyError(error), 'error');
+      }
+    } else {
+      setHidden(scorePanel, false);
+    }
+  }
+
+  function refreshPhase() {
+    const phase = getCompetitionPhase(state.schedule, now());
+    const changed = phase !== state.phase;
+    state.phase = phase;
+    renderSchedule();
+    if (changed) applyPhaseGating();
+  }
+
+  async function loadSchedule() {
+    let raw = null;
+    try {
+      raw = await withTimeout(
+        (options.loadCompetitionSchedule || readCompetitionSchedule)(options.loadSignupFirestore),
+        SCHEDULE_READ_TIMEOUT_MS
+      );
+    } catch (error) {
+      // Unreadable schedule: keep the unscheduled flow; the server still
+      // enforces the real windows.
+      console.warn('VtsScore schedule unavailable', error);
+    }
+    state.schedule = normalizeCompetitionSchedule(raw);
+    state.phase = getCompetitionPhase(state.schedule, now());
+    renderSchedule();
+  }
+
+  element('vtsScoreLanguage')?.addEventListener('change', () => {
+    for (const picker of Object.values(state.pickers)) picker.render();
+    renderSchedule();
+    renderPhaseNotice();
+  });
 
   /**
    * The registration step, in front of the score upload: same season, same
@@ -395,7 +606,7 @@ export async function bootVtsScore(options = {}) {
     try {
       if (!state.signupSession) {
         state.signupSession = createBohSignupSession({
-          uid: getCurrentUser()?.uid || '',
+          uid: (options.getCurrentUser || getCurrentUser)()?.uid || '',
           season: grant.seasonId,
           loadFirestore: options.loadSignupFirestore,
         });
@@ -437,6 +648,7 @@ export async function bootVtsScore(options = {}) {
   if (!initialized?.configured) throw new Error('Firebase is not configured.');
   const initialUser = await (options.ensureAnonymousAuth || ensureAnonymousAuth)();
   if (!initialUser?.uid) throw new Error('Secure member sign-in is unavailable.');
+  await loadSchedule();
   state.client = (options.createAccessClient || createAllStarBohAccessClient)({
     getUser: async () => {
       const currentUser =
@@ -450,8 +662,8 @@ export async function bootVtsScore(options = {}) {
   pinForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const button = pinForm.querySelector('button[type="submit"]');
-    setBusy(button, true, 'Unlocking…');
-    setStatus('Checking member access…');
+    setBusy(button, true, i18n.text('statusUnlocking'));
+    setStatus(i18n.text('statusChecking'));
     try {
       const grant = await state.client.unlock(element('vtsScorePin').value);
       element('vtsScorePin').value = '';
@@ -468,7 +680,7 @@ export async function bootVtsScore(options = {}) {
       state.file = getSingleBohStatsScreenshot(fileInput.files);
       state.review = null;
       clearPowerFields();
-      setStatus(`${state.file.name} is ready to read.`, 'success');
+      setStatus(i18n.text('statusFileReady', { name: state.file.name }), 'success');
     } catch (error) {
       state.file = null;
       fileInput.value = '';
@@ -480,22 +692,22 @@ export async function bootVtsScore(options = {}) {
     if (state.grant) renderSignupState();
   });
 
-  function readSignupFightingTimes(values) {
-    const raw = values?.commitment?.fightingTimeIds;
-    const picks = (Array.isArray(raw) ? raw : [raw]).map((value) => String(value || '').trim());
-    return picks.filter(Boolean);
-  }
-
   signupForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (!['open', 'edit'].includes(currentPageState().signup)) return;
     const values = state.signupSession?.readForm(signupPanel) || {};
-    // "Two different times" is a real rule, not a nicety: the stored document
-    // must carry exactly two distinct picks, so say so before the write.
-    const times = readSignupFightingTimes(values);
-    if (new Set(times).size !== 2) {
-      setStatus(i18n.text('signupErrorFightingTimes'), 'error');
-      element('vtsScoreSignupFightingTime2')?.focus();
-      return;
+    // At least one slot per event is required by the stored document; say
+    // which picker is empty before the write instead of a generic failure.
+    for (const [key, path, message] of [
+      ['boh', 'bohTimeSlots', 'signupErrorBohSlots'],
+      ['epic', 'epicTimeSlots', 'signupErrorEpicSlots'],
+    ]) {
+      const slots = values?.commitment?.[path];
+      if (!Array.isArray(slots) || !slots.length) {
+        setStatus(i18n.text(message), 'error');
+        state.pickers[key]?.focus();
+        return;
+      }
     }
     setBusy(signupButton, true, i18n.text('signupSaving'));
     try {
@@ -506,7 +718,7 @@ export async function bootVtsScore(options = {}) {
       element('vtsScoreSignupSuccessRevision').textContent = String(saved.revision || 1);
       setHidden(signupSuccess, false);
       setStatus(i18n.text('signupSaved'), 'success');
-      if (!state.scoreWorkspaceOpen) await openScoreWorkspace();
+      await applyPhaseGating();
       signupSuccess.focus();
     } catch (error) {
       setStatus(signupErrorMessage(error), 'error');
@@ -517,16 +729,16 @@ export async function bootVtsScore(options = {}) {
 
   readButton?.addEventListener('click', async () => {
     if (!state.file) {
-      setStatus('Choose one power screenshot first.', 'error');
+      setStatus(i18n.text('statusChooseScreenshot'), 'error');
       fileInput?.focus();
       return;
     }
     if (!element('vtsScoreConsent')?.checked) {
-      setStatus('Confirm the OCR processing notice first.', 'error');
+      setStatus(i18n.text('statusConfirmConsent'), 'error');
       element('vtsScoreConsent')?.focus();
       return;
     }
-    setBusy(readButton, true, 'Reading screenshot…');
+    setBusy(readButton, true, i18n.text('statusReading'));
     setProgress(true);
     try {
       const prepared = await prepareBohStatsScreenshot(state.file);
@@ -537,7 +749,7 @@ export async function bootVtsScore(options = {}) {
       const response = await state.client.processOcr(request);
       state.review = buildBohStatsReviewModel(response?.result || response);
       renderPowerFields();
-      setStatus('Power breakdown is ready. Check every value, then submit.', 'success');
+      setStatus(i18n.text('statusReviewReady'), 'success');
       powerInput(VTS_SCORE_POWER_FIELDS[0])?.focus();
     } catch (error) {
       state.review = null;
@@ -548,7 +760,7 @@ export async function bootVtsScore(options = {}) {
       ) {
         setHidden(scorePanel, true);
         setHidden(pinPanel, false);
-        setStatus('Enter the VTS member PIN to continue.', 'error');
+        setStatus(i18n.text('statusEnterPin'), 'error');
       } else {
         setStatus(friendlyError(error), 'error');
       }
@@ -573,8 +785,8 @@ export async function bootVtsScore(options = {}) {
       setStatus(friendlyError(error), 'error');
       return;
     }
-    setBusy(submitButton, true, 'Submitting…');
-    setStatus('Saving your final Competition #11 score…');
+    setBusy(submitButton, true, i18n.text('statusSubmitting'));
+    setStatus(i18n.text('statusSavingScore'));
     try {
       const saved = await state.client.submitVtsScore(payload);
       element('vtsScoreSuccessName').textContent = saved.gameName;
@@ -583,7 +795,7 @@ export async function bootVtsScore(options = {}) {
       );
       setHidden(scoreForm, true);
       setHidden(element('vtsScoreSuccess'), false);
-      setStatus('Full power breakdown submitted successfully.', 'success');
+      setStatus(i18n.text('statusSubmitted'), 'success');
       element('vtsScoreSuccess')?.focus();
     } catch (error) {
       if (
@@ -604,15 +816,16 @@ export async function bootVtsScore(options = {}) {
     if (grant) await openWorkspace(grant);
     else {
       setHidden(pinPanel, false);
-      setStatus('Enter the VTS member PIN to continue.');
+      setStatus(i18n.text('statusEnterPin'));
     }
   } catch {
     setHidden(pinPanel, false);
-    setStatus('Enter the VTS member PIN to continue.');
+    setStatus(i18n.text('statusEnterPin'));
   }
 
   return Object.freeze({
     destroy() {
+      clearInterval(state.countdownTimer);
       state.client?.destroy?.();
       state.file = null;
       state.review = null;
@@ -620,8 +833,20 @@ export async function bootVtsScore(options = {}) {
   });
 }
 
+/**
+ * Local QA only: on localhost a test harness may inject the same dependencies
+ * the unit tests use (Firebase init, auth, access client, schedule loader,
+ * clock) through `window.__VTS_SCORE_TEST__`. Never read on any other host.
+ */
+function localTestOptions() {
+  const host = typeof window !== 'undefined' ? window.location?.hostname : '';
+  if (host !== 'localhost' && host !== '127.0.0.1') return {};
+  const hook = window.__VTS_SCORE_TEST__;
+  return hook && typeof hook === 'object' ? hook : {};
+}
+
 if (typeof document !== 'undefined' && document.getElementById('vtsScoreApp')) {
-  bootVtsScore().catch((error) => {
+  bootVtsScore(localTestOptions()).catch((error) => {
     console.error('VtsScore failed to start', error);
     setHidden(element('vtsScoreGate'), false);
     element('vtsScorePinForm')

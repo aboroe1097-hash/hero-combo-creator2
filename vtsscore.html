@@ -6,10 +6,10 @@
     <meta name="vts-app-version" content="16.5.4" />
     <meta
       name="description"
-      content="VTS 1097 2027 season registration and the member power breakdown submission for VtsScore."
+      content="VTS 1097 Competition #12: register your BoH and Epic Showdown active times, upload your data, and re-upload later to measure your growth."
     />
     <meta id="themeColorMeta" name="theme-color" content="#08111f" />
-    <title>VtsScore · 2027 season registration</title>
+    <title>VtsScore · Competition #12</title>
     <link rel="icon" href="images/logo.png" />
     <link rel="stylesheet" href="css/_tokens.css?v=20260924_141306.3.5" />
     <link rel="stylesheet" href="css/vts-score.css?v=20260924_141306.3.5" />
@@ -22,7 +22,7 @@
         <div class="vts-score-topbar">
           <a class="vts-score-brand" href="index.html" aria-label="VTS 1097 toolkit home">
             <img src="images/logo.png" alt="" width="64" height="64" />
-            <span><strong>VtsScore</strong><small>VTS 1097 · 2027 season</small></span>
+            <span><strong>VtsScore</strong><small>VTS 1097 · Competition #12</small></span>
           </a>
           <div class="vts-score-preferences">
             <label class="vts-score-language" for="vtsScoreLanguage">
@@ -48,18 +48,30 @@
           </div>
         </div>
         <div class="vts-score-hero__copy">
-          <p class="vts-score-kicker" data-vts-i18n="kicker">2027 SEASON · REGISTER AND FINAL CHECK</p>
-          <h1 data-vts-i18n="title">Register for the season, then upload your final score</h1>
+          <p class="vts-score-kicker" data-vts-i18n="kicker">VTS 1097 · COMPETITION #12</p>
+          <h1 data-vts-i18n="title">Competition #12 · Pre-season prep</h1>
           <p data-vts-i18n="intro">
-            Unlock with the VTS member PIN, fill the season registration once, and come back any
-            time registration is open to update it. When leadership calls for the final check,
-            upload one power screenshot and confirm every value against your registration.
+            Unlock with the member PIN, register your BoH and Epic Showdown active times and upload
+            your data. Later, a re-upload measures your growth.
           </p>
         </div>
-        <div class="vts-score-deadline">
-          <span data-vts-i18n="deadlineLabel">Final deadline</span>
-          <strong data-vts-i18n="deadline">Wednesday, 29 July · 20:00 Game Time</strong>
-        </div>
+        <!-- The live schedule: phase, what members can do now, and a countdown
+             to the phase end in game time (UTC+2) and local time. Filled from
+             boh_allstar_competition/current once the page has signed in. -->
+        <section
+          id="vtsScoreSchedule"
+          class="vts-score-deadline"
+          aria-labelledby="vtsScorePhaseName"
+          hidden
+        >
+          <span id="vtsScorePhaseName"></span>
+          <strong id="vtsScorePhaseNow"></strong>
+          <p id="vtsScoreCountdown" class="vts-score-countdown" hidden>
+            <span id="vtsScoreCountdownLabel"></span>
+            <b id="vtsScoreCountdownValue"></b>
+          </p>
+          <small id="vtsScorePhaseEnds"></small>
+        </section>
       </header>
 
       <div
@@ -76,10 +88,9 @@
 
       <section id="vtsScoreGate" class="vts-score-card vts-score-gate" hidden>
         <p class="vts-score-kicker" data-vts-i18n="members">VTS MEMBERS</p>
-        <h2 data-vts-i18n="unlockTitle">Unlock the season registration</h2>
+        <h2 data-vts-i18n="unlockTitle">Unlock Competition #12</h2>
         <p data-vts-i18n="unlockHelp">
-          Use the VTS member PIN leadership shared with you. It opens the registration form and the
-          final score upload.
+          Use the VTS member PIN leadership shared with you.
         </p>
         <form id="vtsScorePinForm">
           <label for="vtsScorePin" data-vts-i18n="pin">Member PIN</label>
@@ -96,19 +107,22 @@
         </form>
       </section>
 
+      <section id="vtsScorePhaseNotice" class="vts-score-card vts-score-phase-notice" hidden>
+        <p id="vtsScorePhaseNoticeText" role="status"></p>
+      </section>
+
       <!-- Season registration: the retired All-Star BoH form, revived for the
            active season. It lives on this route instead of a page of its own so
            the member PIN, the OCR worker and the member-grant rules keep exactly
            one surface. -->
       <section id="vtsScoreSignup" class="vts-score-card vts-score-signup" hidden>
-        <p class="vts-score-kicker" data-vts-i18n="signupKicker">2027 SEASON · MEMBER REGISTRATION</p>
+        <p class="vts-score-kicker" data-vts-i18n="signupKicker">COMPETITION #12 · REGISTRATION</p>
         <h2>
-          <span data-vts-i18n="signupTitle">Fill your season registration</span>
+          <span data-vts-i18n="signupTitle">Register for Competition #12</span>
           <span id="vtsScoreSignupSeason" class="vts-score-signup-season"></span>
         </h2>
         <p data-vts-i18n="signupIntro">
-          Answer once for the new season: your power numbers, the roles you play, and the times you
-          can fight. Leadership builds the teams from these answers.
+          Your power, roles and active times. This is your baseline for the growth re-upload.
         </p>
         <p id="vtsScoreSignupState" class="vts-score-field-hint" role="status">
           <span data-vts-i18n="signupStateNone"
@@ -305,7 +319,7 @@
           <div class="vts-score-step">
             <span class="vts-score-step__number" aria-hidden="true">4</span>
             <div>
-              <h2 data-vts-i18n="signupRolesTitle">Roles, times, and commitment</h2>
+              <h2 data-vts-i18n="signupRolesTitle">Roles, active times, and commitment</h2>
               <div class="vts-score-signup-grid">
                 <label for="vtsScoreSignupPreferredRole">
                   <span data-vts-i18n="signupPreferredRole">Preferred role</span>
@@ -356,22 +370,6 @@
                     <option value="false" data-vts-i18n="signupNo">No</option>
                   </select>
                 </label>
-                <label for="vtsScoreSignupFightingTime1">
-                  <span data-vts-i18n="signupFightingFirst">First fighting time</span>
-                  <select id="vtsScoreSignupFightingTime1" data-boh-field="commitment.fightingTimeIds">
-                    <option value="+12">+12</option>
-                    <option value="+14" selected>+14</option>
-                    <option value="+16">+16</option>
-                  </select>
-                </label>
-                <label for="vtsScoreSignupFightingTime2">
-                  <span data-vts-i18n="signupFightingSecond">Second fighting time</span>
-                  <select id="vtsScoreSignupFightingTime2" data-boh-field="commitment.fightingTimeIds">
-                    <option value="+12" selected>+12</option>
-                    <option value="+14">+14</option>
-                    <option value="+16">+16</option>
-                  </select>
-                </label>
                 <label for="vtsScoreSignupContact">
                   <span data-vts-i18n="signupContact">Contact (optional)</span>
                   <input
@@ -383,8 +381,33 @@
                   />
                 </label>
               </div>
-              <p class="vts-score-field-hint" data-vts-i18n="signupFightingTimesHelp">
-                Pick two different fighting times; leadership uses them to schedule your team.
+              <!-- Ordered slot pickers: each tap appends a slot to the member's
+                   preference order; the hidden list input is what the signup
+                   document reads ("+20,+8"). -->
+              <fieldset id="vtsScoreBohSlots" class="vts-score-slots" data-slot-catalog="boh">
+                <legend data-vts-i18n="slotBohLegend">Battle of Honor (BoH) active times</legend>
+                <div class="vts-score-slot-list" data-slot-list></div>
+                <input
+                  id="vtsScoreSignupBohSlots"
+                  type="hidden"
+                  data-boh-list="true"
+                  data-boh-field="commitment.bohTimeSlots"
+                  value=""
+                />
+              </fieldset>
+              <fieldset id="vtsScoreEpicSlots" class="vts-score-slots" data-slot-catalog="epic">
+                <legend data-vts-i18n="slotEpicLegend">Epic Showdown active times</legend>
+                <div class="vts-score-slot-list" data-slot-list></div>
+                <input
+                  id="vtsScoreSignupEpicSlots"
+                  type="hidden"
+                  data-boh-list="true"
+                  data-boh-field="commitment.epicTimeSlots"
+                  value=""
+                />
+              </fieldset>
+              <p class="vts-score-field-hint" data-vts-i18n="slotHelp">
+                Tap in order of preference; tap again to remove.
               </p>
               <label class="vts-score-signup-block" for="vtsScoreSignupJoinReason">
                 <span data-vts-i18n="signupJoinReason">Why you want to join (optional)</span>
@@ -406,6 +429,22 @@
               </label>
             </div>
           </div>
+
+          <label class="vts-score-consent" for="vtsScoreSignupPublicConsent">
+            <input
+              id="vtsScoreSignupPublicConsent"
+              type="checkbox"
+              data-boh-field="commitment.publicComparisonConsent"
+            />
+            <span>
+              <span data-vts-i18n="publicConsent"
+                >Show my values and growth to alliance members on the growth board</span
+              >
+              <small class="vts-score-field-hint" data-vts-i18n="publicConsentHelp"
+                >Off by default; you can change it later.</small
+              >
+            </span>
+          </label>
 
           <button
             id="vtsScoreSignupSubmit"
@@ -437,6 +476,10 @@
       </section>
 
       <section id="vtsScoreWorkspace" class="vts-score-card" hidden>
+        <p id="vtsScoreUploadKicker" class="vts-score-kicker" data-vts-i18n="uploadKickerFinal">
+          FINAL SCORE
+        </p>
+        <h2 id="vtsScoreUploadTitle" data-vts-i18n="uploadTitleFinal">Upload your final score</h2>
         <form id="vtsScoreForm">
           <div class="vts-score-step">
             <span class="vts-score-step__number" aria-hidden="true">1</span>
@@ -528,7 +571,9 @@
 
         <section id="vtsScoreSuccess" class="vts-score-success" tabindex="-1" hidden>
           <span aria-hidden="true">✓</span>
-          <p class="vts-score-kicker" data-vts-i18n="saved">FINAL SCORE SAVED</p>
+          <p id="vtsScoreSavedKicker" class="vts-score-kicker" data-vts-i18n="saved">
+            FINAL SCORE SAVED
+          </p>
           <h2>
             <span data-vts-i18n="thankYou">Thank you,</span>
             <strong id="vtsScoreSuccessName"></strong>
@@ -543,6 +588,14 @@
         </section>
       </section>
 
+      <!-- Growth board mount point, visible in the results-pending and winners
+           phases. Its content is rendered by the growth board module. -->
+      <section id="vtsScoreGrowthBoard" class="vts-score-card vts-score-growth-board" hidden>
+        <p class="vts-score-kicker" data-vts-i18n="growthBoardKicker">GROWTH BOARD</p>
+        <p data-vts-i18n="growthBoardPending">
+          The growth board appears here once results are published.
+        </p>
+      </section>
     </main>
     <script type="module" src="js/vts-score.js?v=20260924_141306.3.5"></script>
       <script type="module" src="js/account-chip-bootstrap.js"></script>
