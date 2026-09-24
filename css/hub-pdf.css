@@ -1,0 +1,266 @@
+/* Hub PDFs tab: the document builder form. Loaded with the lazy panel chunk. */
+.hub-pdf {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+  gap: var(--space-4, 16px);
+  align-items: start;
+  color: var(--ff-text);
+}
+
+.hub-pdf-head h2 {
+  margin: 0 0 4px;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.hub-pdf-head p,
+.hub-pdf-hint,
+.hub-pdf-note {
+  margin: 0 0 12px;
+  color: var(--ff-text-dim);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.hub-pdf-form,
+.hub-pdf-quick {
+  display: grid;
+  gap: 12px;
+}
+
+.hub-pdf-fieldset {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--ff-border);
+  border-radius: var(--radius-md, 10px);
+  background: var(--ff-surface-soft);
+}
+
+.hub-pdf-fieldset > legend {
+  padding: 0 6px;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.hub-pdf-subhead {
+  margin: 6px 0 -4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ff-border-subtle);
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--ff-text-dim);
+}
+
+.hub-pdf-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.hub-pdf-field > legend,
+.hub-pdf-field > span {
+  padding: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.hub-pdf-field select,
+.hub-pdf-field input[type='number'] {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--ff-border);
+  border-radius: var(--radius-md, 10px);
+  background: var(--ff-surface);
+  color: var(--ff-text);
+  font: inherit;
+}
+
+.hub-pdf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.hub-pdf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hub-pdf-chip,
+.hub-pdf-toggle {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 1px solid var(--ff-border);
+  border-radius: var(--radius-md, 10px);
+  background: var(--ff-surface);
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.hub-pdf-chip:has(input:checked) {
+  border-color: var(--ff-border-hover);
+  background: var(--ff-surface-selected);
+}
+
+.hub-pdf-chip:has(input:disabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.hub-pdf-chip input,
+.hub-pdf-toggle input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.hub-pdf-toggle {
+  justify-self: start;
+}
+
+.hub-pdf-bulk {
+  display: inline-flex;
+  gap: 6px;
+  margin-inline-start: 8px;
+}
+
+.hub-pdf-bulk button,
+.hub-pdf-btn {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--ff-border);
+  border-radius: var(--radius-md, 10px);
+  background: var(--ff-surface);
+  color: var(--ff-text);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hub-pdf-range {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.hub-pdf-range > legend {
+  grid-column: 1 / -1;
+}
+
+.hub-pdf-range label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--ff-text-dim);
+}
+
+.hub-pdf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hub-pdf-actions .hub-pdf-btn {
+  min-height: 44px;
+  padding: 10px 18px;
+  font-size: 0.95rem;
+}
+
+.hub-pdf-btn--primary {
+  border-color: var(--ff-border-hover);
+  background: var(--ff-surface-selected);
+}
+
+.hub-pdf-btn:hover,
+.hub-pdf-bulk button:hover {
+  border-color: var(--ff-border-hover);
+}
+
+.hub-pdf-btn:focus-visible,
+.hub-pdf-bulk button:focus-visible,
+.hub-pdf-chip:focus-within,
+.hub-pdf-toggle:focus-within {
+  outline: 2px solid var(--ff-focus-ring, var(--ff-border-hover));
+  outline-offset: 2px;
+}
+
+.hub-pdf-btn[aria-busy='true'] {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.hub-pdf-status {
+  min-height: 1.3em;
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.hub-pdf-status[data-tone='error'] {
+  color: var(--ff-danger, #f87171);
+}
+
+.hub-pdf-quick {
+  padding: 14px;
+  border: 1px solid var(--ff-border-subtle);
+  border-radius: var(--radius-md, 10px);
+}
+
+.hub-pdf-quick h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.hub-pdf-quick p {
+  margin: 0;
+  color: var(--ff-text-dim);
+  font-size: 0.85rem;
+}
+
+.hub-pdf-quick ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hub-pdf-quick a {
+  color: var(--ff-text);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 860px) {
+  .hub-pdf {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .hub-pdf-fieldset {
+    padding: 12px 10px;
+  }
+
+  .hub-pdf-actions .hub-pdf-btn {
+    flex: 1 1 100%;
+  }
+
+  .hub-pdf-bulk {
+    margin-inline-start: 0;
+  }
+}

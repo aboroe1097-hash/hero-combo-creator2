@@ -220,8 +220,11 @@ test('mobile writing mode reacts to focus before the visual viewport and clears 
   );
 });
 
-test('mobile install prompt is brief and gets out of the way when writing begins', () => {
+test('mobile install prompt is brief, touch-safe, and gets out of the way when writing begins', () => {
   assert.match(pwaSource, /const A2HS_VISIBLE_MS = 20_000/);
+  assert.match(mobileCss, /\.a2hs-banner-install \{[\s\S]*?min-height: 44px/);
+  assert.match(mobileCss, /\.a2hs-banner-close \{[\s\S]*?width: 44px;[\s\S]*?height: 44px/);
+  assert.match(mobileCss, /padding: 0\.65rem 3rem 0\.65rem 0\.65rem/);
   assert.match(
     pwaSource,
     /autoDismissTimer = setTimeout\(\(\) => dismissA2hs\(\{ remember: false \}\), A2HS_VISIBLE_MS\)/
@@ -257,7 +260,7 @@ test('Combo Generator mobile controls stay in document flow without an empty Vel
   assert.match(aiLauncherCss, /\.ai-drawer-launcher \.velo-mascot__stage \{\s*animation: none;/);
   assert.match(
     aiLauncherCss,
-    /body:has\(#generatorSection:not\(\.hidden\)\):has\(#shellMoreTools\) \.ai-drawer-launcher-shell \{[\s\S]*?position: relative;/
+    /body:has\(#generatorSection:not\(\[hidden\]\):not\(\.hidden\)\):has\(#shellMoreTools\) \.ai-drawer-launcher-shell \{[\s\S]*?position: relative;/
   );
 });
 

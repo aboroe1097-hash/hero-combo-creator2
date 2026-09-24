@@ -71,7 +71,13 @@ test('Eden desktop dashboard spans both columns after the voting guidance row', 
   assert.match(edenCss, /'overview rail'[\s\S]*'public\s+public'/);
   assert.match(edenCss, /#edenX1PublicOverview\s*{\s*grid-area: overview;/);
   assert.match(edenCss, /#edenX1PublicDashboard\s*{\s*grid-area: public;/);
-  assert.match(eden, /overviewHost\.innerHTML = renderEdenTopNamesOverview\(\)/);
+  // The overview host renders the season signup invitation ahead of the voting
+  // guidance in the same pass; both are required for the row to be complete.
+  assert.match(eden, /renderEdenSignupPrompt\(\)/);
+  assert.match(
+    eden,
+    /overviewHost\.innerHTML = `\$\{renderEdenSignupPrompt\(\)\}\$\{renderEdenTopNamesOverview\(\)\}`/
+  );
 });
 
 test('Eden voting uses only the native form submit activation path', () => {
@@ -156,7 +162,7 @@ test('Eden vote winner details stay aggregate, shared, and publication-gated', (
   );
   assert.match(
     eden,
-    /function getEligibleTeamVoteWinners\(\)\s*{\s*if \(currentManagementVoteResults\.status !== 'loaded'\) return \[\];[\s\S]*?return selectEligibleVoteWinners\(results\.rankings, reserved\);/
+    /function getEligibleTeamVoteWinners\(\)\s*{[\s\S]*?if \(managementStatus !== 'loaded' && managementStatus !== 'hidden'\) return \[\];[\s\S]*?return selectEligibleVoteWinners\(results\.rankings, reserved\);/
   );
   assert.match(
     eden,
@@ -199,9 +205,11 @@ test('Eden keeps the last verified contribution authority when live settings are
     /requireAuthoritativeEdenVoteSettings\(\s*voteSettingsSnap,\s*dashboardData\?\.r5Season\s*\)/
   );
   assert.match(eden, /season: String\(settings\.season \|\| ''\)\.trim\(\)/);
+  // The cached members'-ballot results are only trusted while that ballot is
+  // being published; the switch that governs it split from the management one.
   assert.match(
     eden,
-    /verifiedVoteSettings\.showPublicResults !== true[\s\S]*?cachedData\?\.publicEdenX1VoteResults/
+    /verifiedVoteSettings\.showMemberResults !== true[\s\S]*?cachedData\?\.publicEdenX1VoteResults/
   );
   assert.doesNotMatch(
     eden,

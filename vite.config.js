@@ -28,6 +28,8 @@ function chunkNameFor(id) {
     normalizedId.includes('node_modules/@firebase')
   )
     return 'firebase';
+  if (normalizedPath.includes('/js/eden-siege/')) return 'eden-siege-engine';
+  if (normalizedPath.includes('/node_modules/three/')) return 'eden-siege-three';
   // VtsScore loads the access client behind its own server-verified
   // gate, so it stays a chunk of its own rather than being inlined.
   if (normalizedPath.endsWith('/js/all-star-boh-access.js')) {
@@ -98,11 +100,19 @@ export default defineConfig({
         admin: resolve(__dirname, 'admin.html'),
         vtsscore: resolve(__dirname, 'vtsscore.html'),
         'vtsscore/index': resolve(__dirname, 'vtsscore/index.html'),
+        // Short share links: roc-vts.com/vote opens the Eden X2 ballot directly,
+        // roc-vts.com/eden opens the current season view.
+        'vote/index': resolve(__dirname, 'vote/index.html'),
+        'eden/index': resolve(__dirname, 'eden/index.html'),
         'eden-x1': resolve(__dirname, 'eden-x1.html'),
         'eden-x2': resolve(__dirname, 'eden-x2.html'),
         arcade: resolve(__dirname, 'arcade.html'),
         'battle-simulator': resolve(__dirname, 'battle-simulator.html'),
         'specialization-towers': resolve(__dirname, 'specialization-towers.html'),
+        downloads: resolve(__dirname, 'downloads.html'),
+        // Eden Siege is the Arcade's first real-time route: its own canvas shell,
+        // with three.js behind a lazy import — see docs/plans/arcade-live-arena.md.
+        'eden-siege': resolve(__dirname, 'eden-siege.html'),
       },
       output: {
         codeSplitting: {

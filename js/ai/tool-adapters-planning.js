@@ -1,3 +1,8 @@
+import {
+  allocateSupportRewards,
+  normalizePublishedRewardSettings,
+  rewardQuota,
+} from '../eden-reward-settings.js';
 import { readMaterialPlanState, readResearchProgressState } from './saved-state.js';
 import {
   AiToolInputError,
@@ -722,6 +727,14 @@ function edenRowSummary(row) {
   };
 }
 
+function edenFamilyKey(value) {
+  const identity =
+    value && typeof value === 'object'
+      ? value.familyKey || value.playerKey || value.playerName
+      : value;
+  return String(identity || '').trim().toLowerCase();
+}
+
 function edenSupportTotal(row) {
   return (
     Number(row.shieldWalls || 0) +
@@ -731,7 +744,11 @@ function edenSupportTotal(row) {
   );
 }
 
-function edenRewardRows(rows) {
+function edenRewardRows(publicData, rows) {
+  const settings = normalizePublishedRewardSettings(publicData.rewardSettings);
+  const r5Key = String(settings.r5PlayerKey || '').trim();
+  const r5FamilyKey = edenFamilyKey(r5Key);
+  const r5Row = r5FamilyKey ? rows.find((row) => edenFamilyKey(row) === r5FamilyKey) || null : null;
   const supportRows = rows
     .filter((row) => edenSupportTotal(row) > 0)
     .slice()
@@ -740,25 +757,43 @@ function edenRewardRows(rows) {
         b.weightedScore - a.weightedScore ||
         edenSupportTotal(b) - edenSupportTotal(a) ||
         a.finalRank - b.finalRank
-    )
-    .slice(0, 4);
-  const support = supportRows.map((row, index) => ({
-    ...edenRowSummary(row),
+    );
+  const supportAssignments = allocateSupportRewards(settings, supportRows, {
+    familyKeyOf: edenFamilyKey,
+    r5FamilyKey,
+    r5Row,
+  });
+  const support = supportAssignments.map(({ row, reward }, index) => ({
+    ...(row
+      ? edenRowSummary(row)
+      : { playerName: null, playerKey: r5Key || null, familyKey: r5FamilyKey || null }),
     rewardSlot: index + 1,
-    plannedReward: index === 0 ? 'guild_master' : 'core',
+    plannedReward: reward,
   }));
-  const supportKeys = new Set(supportRows.map((row) => row.playerKey || row.playerName));
+  const supportKeys = new Set();
+  const supportFamilies = new Set();
+  supportAssignments.forEach(({ row }) => {
+    if (!row) return;
+    if (row.playerKey || row.playerName) supportKeys.add(row.playerKey || row.playerName);
+    if (row.familyKey) supportFamilies.add(row.familyKey);
+  });
+  if (r5Key) supportKeys.add(r5Key);
+  if (r5FamilyKey) supportFamilies.add(r5FamilyKey);
   const contribution = [];
   let rewardSlot = 0;
   for (const row of rows
     .filter(
       (candidate) =>
-        candidate.currentRank && !supportKeys.has(candidate.playerKey || candidate.playerName)
+        candidate.currentRank &&
+        !supportKeys.has(candidate.playerKey || candidate.playerName) &&
+        !supportFamilies.has(
+          edenFamilyKey(candidate)
+        )
     )
     .slice()
     .sort((a, b) => b.weightedScore - a.weightedScore || a.finalRank - b.finalRank)) {
     if (row.rewardReason === 'forfeit_premium') {
-      if (rewardSlot < 10) {
+      if (rewardSlot < rewardQuota(settings, 'contribution')) {
         contribution.push({
           ...edenRowSummary(row),
           rewardSlot: null,
@@ -768,7 +803,7 @@ function edenRewardRows(rows) {
       }
       continue;
     }
-    if (rewardSlot >= 10) break;
+    if (rewardSlot >= rewardQuota(settings, 'contribution')) break;
     rewardSlot += 1;
     contribution.push({
       ...edenRowSummary(row),
@@ -792,9 +827,10 @@ function edenVoteRewardRows(publicData, rewardRows, rows) {
   rows.filter((row) => row.rewardReason === 'forfeit_premium').forEach(reserve);
   const available = (row) =>
     !reservedKeys.has(row?.playerKey) && (!row?.familyKey || !reservedFamilies.has(row.familyKey));
+  const settings = normalizePublishedRewardSettings(publicData.rewardSettings);
   const management = (publicData.managementVoteResults?.rankings || [])
     .filter(available)
-    .slice(0, 3)
+    .slice(0, rewardQuota(settings, 'management'))
     .map((row, index) => ({ ...row, rewardSlot: index + 1, plannedReward: 'core' }));
   management.forEach(reserve);
   const teamSource =
@@ -803,7 +839,7 @@ function edenVoteRewardRows(publicData, rewardRows, rows) {
       : [];
   const team = teamSource
     .filter(available)
-    .slice(0, 3)
+    .slice(0, rewardQuota(settings, 'team'))
     .map((row, index) => ({ ...row, rewardSlot: index + 1, plannedReward: 'core' }));
   return { management, team };
 }
@@ -814,6 +850,18 @@ async function resolveEdenPublicData(context) {
   }
   const { loadEdenPublicData } = await import('./eden-public-data.js');
   return loadEdenPublicData();
+}
+
+function edenSeasonWarnings(season, publicData) {
+  if (!season) return [];
+  const requestedSeason = normalizeLookupToken(season);
+  const activeSeasonNames = [publicData.season, publicData.seasonLabel, 'X2', 'Eden X2']
+    .filter(Boolean)
+    .map(normalizeLookupToken);
+  if (activeSeasonNames.includes(requestedSeason)) return [];
+  return [
+    `The current published Eden ${publicData.seasonLabel || 'X2'} data is for ${publicData.season || publicData.seasonLabel || 'X2'}, not ${season}.`,
+  ];
 }
 
 export async function getEdenContextAdapter(rawArguments, context = {}) {
@@ -846,45 +894,60 @@ export async function getEdenContextAdapter(rawArguments, context = {}) {
   const season =
     args.season === undefined
       ? ''
-      : boundedString(args.season, 'season', { maximum: 40 }).toLowerCase();
-  const action = { id: 'open_eden_x1', label: 'Open Eden X1', hash: '#eden-x1' };
+      : boundedString(args.season, 'season', { maximum: 40 });
+  const action = { id: 'open_eden_x2', label: 'Open Eden X2', hash: '#edenHub' };
 
   if (kind === 'guide') {
+    const publicData = await resolveEdenPublicData(context);
+    const warnings = edenSeasonWarnings(season, publicData);
+    const seasonLabel = publicData.seasonLabel || 'X2';
     return result(
       {
         kind,
-        season: season || 'X1',
+        season: seasonLabel,
         howToPlay: [
           'Build contribution through the season and help with banners, paths, and shield walls.',
           'Public ranking combines contribution, credited duties, and public conduct adjustments.',
           'Team voting accepts one to four unique teammates while voting is open.',
-          'The planned Top 20 flow is 4 Support, 10 Contribution, 3 Management, then 3 Team vote rewards; higher-priority winners are skipped from later tracks.',
+          `Reward slot counts and eligibility follow the current published Eden ${seasonLabel} settings; higher-priority winners are skipped from later tracks.`,
         ],
         action,
       },
-      'eden-guide'
+      'eden-guide',
+      {
+        filters: { season },
+        completeness: warnings.length ? 'partial' : 'complete',
+        warnings,
+      }
     );
   }
 
   if (kind === 'scoring_rules') {
-    const { WEIGHTED_CONTRIBUTION_WEIGHTS, DEFAULT_WEIGHTED_CONTRIBUTION_PREMIUM_CUTOFF } =
-      await import('../contribution-weighting.js');
+    const publicData = await resolveEdenPublicData(context);
+    const warnings = edenSeasonWarnings(season, publicData);
+    if (!publicData.sourceRevision) {
+      warnings.push('The current season has no published source revision.');
+    }
     return result(
       {
         kind,
-        weights: { ...WEIGHTED_CONTRIBUTION_WEIGHTS },
-        defaultPremiumCutoff: DEFAULT_WEIGHTED_CONTRIBUTION_PREMIUM_CUTOFF,
+        season: publicData.seasonLabel || 'X2',
+        seasonId: publicData.season || null,
+        sourceRevision: publicData.sourceRevision || null,
+        weights: publicData.weights || null,
+        premiumCutoff: publicData.premiumCutoff || null,
+        scoring: publicData.scoring || null,
+        rewardSettings: publicData.rewardSettings || null,
         calculation:
-          'weightedScore = contribution + ex-guild contribution + 10,000 per credited banner/path/shield wall + 10,000 per conduct point',
-        rankTiers: [
-          { ranks: '1-20', reward: 'core' },
-          { ranks: '21-110', reward: 'power_house' },
-          { ranks: '111-200', reward: 'members' },
-          { ranks: '201+', reward: 'standard' },
-        ],
+          'Weighted score uses the published season contribution, duty, conduct, and demolition settings.',
         action,
       },
-      'eden-scoring-rules'
+      'eden-scoring-rules',
+      {
+        filters: { season },
+        completeness: warnings.length ? 'partial' : 'complete',
+        warnings,
+      }
     );
   }
 
@@ -892,18 +955,13 @@ export async function getEdenContextAdapter(rawArguments, context = {}) {
   const rows = Array.isArray(publicData.rows) ? publicData.rows : [];
   const publicResults = publicData.publicVoteResults || {};
   const warnings = [];
-  if (
-    season &&
-    publicData.season &&
-    normalizeLookupToken(season) !== normalizeLookupToken(publicData.season)
-  ) {
-    warnings.push(`The current public data is for ${publicData.season}, not ${season}.`);
-  }
+  warnings.push(...edenSeasonWarnings(season, publicData));
   const base = {
     kind,
     available: true,
-    season: publicData.season || season || 'X1',
+    season: publicData.seasonLabel || publicData.season || season || 'X2',
     asOf: publicData.asOf || null,
+    sourceRevision: publicData.sourceRevision || null,
     action,
   };
 
@@ -994,19 +1052,28 @@ export async function getEdenContextAdapter(rawArguments, context = {}) {
   }
 
   if (kind === 'rewards') {
-    const rewardRows = edenRewardRows(rows);
+    const rewardRows = edenRewardRows(publicData, rows);
     const voteRewardRows = edenVoteRewardRows(publicData, rewardRows, rows);
+    const rewardSettings = normalizePublishedRewardSettings(publicData.rewardSettings);
     return result(
       {
         ...base,
         distribution: {
           contribution:
-            '10 Core reward slots, excluding support winners; forfeited premium rows are skipped.',
-          support: 'Top support row receives Guild Master; support rows 2-4 receive Core.',
+            rewardQuota(rewardSettings, 'contribution') +
+            ' Core reward slots, excluding support winners; forfeited premium rows are skipped.',
+          support:
+            rewardQuota(rewardSettings, 'support') +
+            ' Support slots; the current setting determines whether Guild Master follows the R5 or top support scorer.',
           management:
-            'Top 3 eligible management-vote names after Support and Contribution winners are reserved.',
-          team: 'Top 3 eligible public team-vote names after earlier reward-track winners are reserved.',
-          rankTiers: '1-20 Core, 21-110 Power House, 111-200 Members, 201+ Standard.',
+            'Up to ' +
+            rewardQuota(rewardSettings, 'management') +
+            ' eligible management-vote names after Support and Contribution winners are reserved.',
+          team:
+            'Up to ' +
+            rewardQuota(rewardSettings, 'team') +
+            ' eligible public team-vote names after earlier reward-track winners are reserved.',
+          rankTiers: 'Reward tiers follow the published Eden X2 season settings.',
         },
         ...rewardRows,
         ...voteRewardRows,
@@ -1029,7 +1096,7 @@ export async function getEdenContextAdapter(rawArguments, context = {}) {
       closesAt,
       rules:
         'Choose 1-4 unique VTS teammates. You may edit only while voting is open and editing is allowed.',
-      help: 'Open Eden X1, enter your name, choose one to four unique teammates, review each resolved name, then submit.',
+      help: 'Open Eden X2, enter your name, choose one to four unique teammates, review each resolved name, then submit.',
       publicResults: {
         published: publicResults.published === true,
         totalBallots: Number(publicResults.totalBallots) || 0,

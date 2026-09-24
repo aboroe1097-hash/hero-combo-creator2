@@ -690,6 +690,587 @@
   font-size: 0.74rem;
 }
 
+/* How-to strip, operation board, milestone chips, staffing counters, hub links. */
+.eden-ops-how {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0.2rem 0 0.8rem;
+  padding: 0;
+  list-style: none;
+  counter-reset: ops-how;
+}
+
+.eden-ops-how li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding-block: 0.4rem;
+  padding-inline: 0.4rem 0.7rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 2rem;
+  background: var(--ops-panel-2);
+  color: var(--ops-text);
+  font-size: 0.78rem;
+  line-height: 1.3;
+  counter-increment: ops-how;
+}
+
+.eden-ops-how li::before {
+  content: counter(ops-how);
+  display: grid;
+  place-items: center;
+  flex: 0 0 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  background: var(--ops-accent);
+  color: var(--ops-bg);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.eden-ops-board,
+.eden-ops-more {
+  margin-block-start: 0.75rem;
+  padding: clamp(0.85rem, 2vw, 1.3rem);
+  border: 1px solid var(--ops-line);
+  border-radius: 1.15rem;
+  background: var(--ops-panel);
+}
+
+.eden-ops-board h3,
+.eden-ops-more h3 {
+  margin: 0;
+  color: var(--ops-text);
+  font-size: 1.1rem;
+}
+
+.eden-ops-board > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.eden-ops-board > summary::-webkit-details-marker {
+  display: none;
+}
+
+.eden-ops-board > summary:focus-visible {
+  outline: 2px solid var(--ops-accent);
+  outline-offset: 4px;
+  border-radius: 0.5rem;
+}
+
+.eden-ops-chevron {
+  display: grid;
+  place-items: center;
+  flex: 0 0 2.4rem;
+  height: 2.4rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 50%;
+  background: var(--ops-panel-2);
+  color: var(--ops-text);
+  transition: transform 0.2s ease;
+}
+
+.eden-ops-chevron::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-block-start: -0.2rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.eden-ops-board[open] .eden-ops-chevron {
+  transform: rotate(180deg);
+}
+
+.eden-ops-board-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1.2rem;
+  margin-block: 0.9rem 0.6rem;
+}
+
+.eden-ops-search {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 0 1 18rem;
+  min-width: 0;
+  padding-inline: 0.7rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.7rem;
+  background: var(--ops-panel-2);
+  color: var(--ops-muted);
+}
+
+.eden-ops-search:focus-within {
+  border-color: var(--ops-accent);
+  outline: 2px solid color-mix(in srgb, var(--ops-accent) 20%, transparent);
+}
+
+.eden-ops-search input {
+  flex: 1;
+  min-width: 0;
+  min-height: 2.75rem;
+  border: 0;
+  outline: 0;
+  color: var(--ops-text);
+  background: transparent;
+  font: inherit;
+  font-size: 0.86rem;
+}
+
+.eden-ops-search input::placeholder {
+  color: var(--ops-muted);
+}
+
+.eden-ops-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.2rem;
+}
+
+.eden-ops-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.eden-ops-chip-group > span {
+  margin-inline-end: 0.2rem;
+  color: var(--ops-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.eden-ops-chip-group button,
+.eden-ops-route-next button {
+  min-height: 2.25rem;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 2rem;
+  color: var(--ops-text);
+  background: var(--ops-panel-2);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.eden-ops-chip-group button[aria-pressed='true'] {
+  border-color: var(--ops-accent);
+  color: var(--ops-bg);
+  background: var(--ops-accent);
+}
+
+.eden-ops-chip-group button:focus-visible,
+.eden-ops-route-next button:focus-visible,
+.eden-ops-op button:focus-visible,
+.eden-ops-counter button:focus-visible,
+.eden-ops-empty button:focus-visible,
+.eden-ops-hub-link:focus-visible,
+.eden-ops-more-card:focus-visible {
+  outline: 2px solid var(--ops-accent);
+  outline-offset: 2px;
+}
+
+.eden-ops-count {
+  margin: 0 0 0.5rem;
+  color: var(--ops-muted);
+  font-size: 0.72rem;
+}
+
+.eden-ops-op-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17.5rem), 1fr));
+  align-items: start;
+  gap: 0.65rem;
+}
+
+.eden-ops-op {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+  padding: 0.85rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.9rem;
+  background: var(--ops-panel-2);
+}
+
+.eden-ops-op.is-current {
+  border-color: color-mix(in srgb, var(--ops-accent) 55%, var(--ops-line));
+}
+
+.eden-ops-op > header {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.eden-ops-op-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 2.3rem;
+  height: 2.3rem;
+  border-radius: 0.7rem;
+  background: color-mix(in srgb, var(--ops-accent) 13%, transparent);
+  font-size: 1.1rem;
+}
+
+.eden-ops-op h4 {
+  margin: 0;
+  color: var(--ops-text);
+  font-size: 0.95rem;
+}
+
+.eden-ops-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.eden-ops-tag {
+  padding: 0.18rem 0.5rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 2rem;
+  color: var(--ops-muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.eden-ops-tag--opening {
+  color: var(--ops-green);
+  border-color: color-mix(in srgb, var(--ops-green) 45%, transparent);
+}
+
+.eden-ops-tag--growth {
+  color: var(--ops-accent);
+  border-color: color-mix(in srgb, var(--ops-accent) 45%, transparent);
+}
+
+.eden-ops-tag--war {
+  color: var(--ops-red);
+  border-color: color-mix(in srgb, var(--ops-red) 45%, transparent);
+}
+
+.eden-ops-op details {
+  border-block-start: 1px solid var(--ops-line);
+  padding-block-start: 0.45rem;
+}
+
+.eden-ops-op summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 2.2rem;
+  color: var(--ops-text);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.eden-ops-progress {
+  padding: 0.12rem 0.5rem;
+  border-radius: 2rem;
+  background: color-mix(in srgb, var(--ops-accent) 12%, transparent);
+  color: var(--ops-text);
+  font-size: 0.68rem;
+}
+
+.eden-ops-op.is-complete .eden-ops-progress {
+  background: color-mix(in srgb, var(--ops-green) 22%, transparent);
+}
+
+.eden-ops-steps {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eden-ops-steps label {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  padding: 0.4rem 0.45rem;
+  border-radius: 0.55rem;
+  color: var(--ops-text);
+  cursor: pointer;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.eden-ops-steps label:hover {
+  background: color-mix(in srgb, var(--ops-accent) 7%, transparent);
+}
+
+.eden-ops-steps input {
+  flex: 0 0 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0.1rem 0 0;
+  accent-color: var(--ops-green);
+}
+
+.eden-ops-steps input:checked + span {
+  color: var(--ops-muted);
+  text-decoration: line-through;
+}
+
+.eden-ops-op-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block-start: auto;
+}
+
+.eden-ops-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.6rem;
+  padding: 0.45rem 0.9rem;
+  border: 0;
+  border-radius: 0.7rem;
+  color: #03131d;
+  background: linear-gradient(135deg, #7dd3fc, #38bdf8);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.eden-ops-hub-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.6rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.7rem;
+  color: var(--ops-accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.eden-ops-hub-link:hover {
+  border-color: var(--ops-accent);
+}
+
+.eden-ops-card .eden-ops-hub-link {
+  margin-block-start: 0.75rem;
+}
+
+[dir='rtl'] .eden-ops-arrow {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+
+.eden-ops-empty {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  padding: 1.6rem 1rem;
+  border: 1px dashed var(--ops-line);
+  border-radius: 0.9rem;
+  text-align: center;
+}
+
+.eden-ops-empty > span {
+  font-size: 1.6rem;
+}
+
+.eden-ops-empty button {
+  min-height: 2.5rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.7rem;
+  color: var(--ops-text);
+  background: var(--ops-panel-2);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.eden-ops-route-next {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.eden-ops-route-next button {
+  min-height: 2rem;
+  padding: 0.2rem 0.55rem;
+  color: var(--ops-muted);
+  font-size: 0.68rem;
+}
+
+.eden-ops-route-next button[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--tree-color) 65%, transparent);
+  color: var(--ops-text);
+  background: color-mix(in srgb, var(--tree-color) 16%, transparent);
+}
+
+.eden-ops-staffing {
+  display: grid;
+  gap: 0.55rem;
+  margin-block-start: 0.85rem;
+  padding-block-start: 0.75rem;
+  border-block-start: 1px solid var(--ops-line);
+}
+
+.eden-ops-staffing h5 {
+  margin: 0;
+  color: var(--ops-text);
+  font-size: 0.85rem;
+}
+
+.eden-ops-counter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.35rem 0.6rem;
+  color: var(--ops-muted);
+  font-size: 0.78rem;
+}
+
+.eden-ops-counter-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.eden-ops-counter-controls output {
+  min-width: 4.5rem;
+  color: var(--ops-muted);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.eden-ops-counter-controls strong {
+  color: var(--ops-text);
+  font-size: 1rem;
+}
+
+.eden-ops-counter button {
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.7rem;
+  color: var(--ops-text);
+  background: var(--ops-panel);
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.eden-ops-counter button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.eden-ops-counter-track {
+  grid-column: 1 / -1;
+  display: block;
+  height: 0.3rem;
+  overflow: hidden;
+  border-radius: 2rem;
+  background: var(--ops-line);
+}
+
+.eden-ops-counter-track b {
+  display: block;
+  width: var(--progress);
+  height: 100%;
+  background: var(--ops-accent);
+}
+
+.eden-ops-counter.is-met .eden-ops-counter-track b {
+  background: var(--ops-green);
+}
+
+.eden-ops-staff-status {
+  margin: 0;
+  color: var(--ops-red);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.eden-ops-staff-ok,
+.eden-ops-empty-inline {
+  color: var(--ops-green);
+}
+
+.eden-ops-more-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 0.6rem;
+  margin-block-start: 0.7rem;
+}
+
+.eden-ops-more-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.15rem 0.6rem;
+  align-items: center;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.85rem;
+  color: var(--ops-text);
+  background: var(--ops-panel-2);
+  text-decoration: none;
+}
+
+.eden-ops-more-card > span {
+  grid-row: span 2;
+  font-size: 1.3rem;
+}
+
+.eden-ops-more-card strong {
+  font-size: 0.88rem;
+}
+
+.eden-ops-more-card small {
+  color: var(--ops-muted);
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+a.eden-ops-more-card:hover {
+  border-color: var(--ops-accent);
+}
+
+.eden-ops-source-grid em {
+  color: var(--ops-text);
+  font-size: 0.74rem;
+  font-style: normal;
+}
+
+.eden-ops-op summary > span:first-child::after {
+  content: ' ▾';
+  color: var(--ops-muted);
+}
+
+.eden-ops-op details[open] summary > span:first-child::after {
+  content: ' ▴';
+}
+
 @media (max-width: 900px) {
   .eden-ops-tree-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -765,6 +1346,46 @@
 
   .eden-ops-objective {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .eden-ops-board-head {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .eden-ops-search {
+    flex-basis: auto;
+  }
+
+  /* One swipeable row per filter instead of chips wrapping onto three lines. */
+  .eden-ops-chip-group {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-block: 2px;
+    scrollbar-width: none;
+  }
+
+  .eden-ops-chip-group > * {
+    flex: 0 0 auto;
+  }
+
+  .eden-ops-filters {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .eden-ops-board-head > *,
+  .eden-ops-filters > * {
+    min-width: 0;
+  }
+
+  .eden-ops-how {
+    display: grid;
+  }
+
+  .eden-ops-how li {
+    border-radius: 0.75rem;
   }
 }
 

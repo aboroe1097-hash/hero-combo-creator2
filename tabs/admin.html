@@ -321,6 +321,48 @@
                   <circle cx="12" cy="13" r="4" /></svg
                 ><span data-i18n="adminExpPng">PNG Dashboard</span>
               </button>
+              <button id="dashExpDutyPngBanner" data-duty-export-png="banner">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" /></svg
+                ><span data-i18n="adminExpPngBanners">PNG Banners List</span>
+              </button>
+              <button id="dashExpDutyPngPather" data-duty-export-png="pather">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" /></svg
+                ><span data-i18n="adminExpPngPathing">PNG Pathing List</span>
+              </button>
+              <button id="dashExpDutyPngShieldWall" data-duty-export-png="shield_wall">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" /></svg
+                ><span data-i18n="adminExpPngShieldWalls">PNG Shield Walls List</span>
+              </button>
               <button id="dashExpJson">
                 <svg
                   width="12"
@@ -635,6 +677,29 @@
                 <path d="M20 17V5" /></svg
               ><span data-i18n="adminEdenWorkspaceTab">Eden Workspace</span>
             </button>
+            <!-- Superadmin only. Ending a season archives its workspace for
+                 good, so the rollover panel (end, start, rename, browse, recall)
+                 is revealed from the claim like Users &amp; Roles; firestore.rules
+                 checks the same claim again on every write it makes. -->
+            <button
+              class="dash-subtab-btn"
+              data-subtab="seasonLifecycle"
+              data-requires-superadmin
+              hidden
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="8" />
+                <path d="M12 8v4l3 2" /></svg
+              ><span data-i18n="adminSeasonLifecycleTab">Season Lifecycle</span>
+            </button>
             <button class="dash-subtab-btn" data-subtab="conduct">
               <svg
                 width="14"
@@ -662,6 +727,22 @@
                 <path d="M10 21h4" />
                 <path d="M12 6a5 5 0 0 1 3 9v3H9v-3a5 5 0 0 1 3-9z" /></svg
               ><span data-i18n="adminSuggestTab">Suggest Points</span>
+            </button>
+            <button class="dash-subtab-btn" data-subtab="bohSignups">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <path d="M16 3h4v18h-4" />
+                <path d="M4 7h8" />
+                <path d="M4 12h8" />
+                <path d="M4 17h8" /></svg
+              ><span data-i18n="adminBohSignupsTab">2027 Signups</span>
             </button>
           </div>
         </section>
@@ -731,10 +812,16 @@
               ><span data-i18n="adminVtsScoreTab">VtsScore</span>
             </button>
             <button class="dash-subtab-btn" data-subtab="throneBuffs"><span data-i18n="adminThroneTab">Throne Buffs</span></button>
+            <button class="dash-subtab-btn" data-subtab="accounts"><span data-i18n="adminAccountsTab">Accounts</span></button>
             <!-- Superadmin only. Hidden by default and revealed from the claim,
                  so an admin without the level never sees it; the callable and
                  firestore.rules enforce the boundary independently. -->
             <button class="dash-subtab-btn" data-subtab="userRoles" data-requires-superadmin hidden><span data-i18n="adminRolesTab">Users &amp; Roles</span></button>
+            <!-- Superadmin only, same gate and same reasoning as Users & Roles.
+                 The submissions themselves are unreadable to anyone else:
+                 firestore.rules restricts complaints/records to isSuperAdmin(),
+                 so this button is presentation, not the boundary. -->
+            <button class="dash-subtab-btn" data-subtab="complaints" data-requires-superadmin hidden><span data-i18n="adminComplaintsTab">Complaints</span></button>
           </div>
         </section>
       </div>
@@ -1901,10 +1988,365 @@
           </section>
         </div>
       </div>
-      <div class="dash-subtab-panel hidden" id="dashSubtabThroneBuffs"><section id="dashThroneRoot"></section></div>
-      <div class="dash-subtab-panel hidden" id="dashSubtabUserRoles"><section id="dashUserRolesRoot"></section></div>
+      <!-- Sub-tab: Eden 2027 signups. The season/scoring-version picker is the
+           only writer of boh_allstar_config/current; the manual add/edit form
+           posts to the bohSignupAdmin Cloud Function so the owner-only signup
+           rule stays exactly as it was. -->
+      <div class="dash-subtab-panel hidden" id="dashSubtabBohSignups">
+        <div id="dashBohSignupsRoot" class="dash-boh-signups-root">
+          <div class="dash-card">
+            <div class="dash-card-hdr">
+              <div>
+                <h2 class="dash-card-title">
+                  <span data-i18n="adminBohSignupsTitle">Season signup registrations</span>
+                </h2>
+                <p class="dash-card-subtitle" data-i18n="adminBohSignupsSubtitle">
+                  Choose the season members sign up into, and file or correct a signup for a member
+                  who sent their numbers to leadership directly.
+                </p>
+              </div>
+              <div class="dash-card-actions">
+                <button id="dashBohSignupsRefreshBtn" class="dash-btn" type="button">
+                  <span data-i18n="adminVtsScoreRefresh">Refresh</span>
+                </button>
+              </div>
+            </div>
+            <p id="dashBohSignupsSeason" class="dash-card-subtitle"></p>
+            <!-- Competition #12 schedule (superadmin). Seven instants entered in game
+                 time (UTC+2) and written to boh_allstar_competition/current, which
+                 validAllStarBohCompetitionSchedule() pins. The syncCompetitionPhase
+                 Function opens and closes registration from it. -->
+            <form id="dashCompScheduleForm" class="dash-comp-schedule" data-requires-superadmin hidden novalidate>
+              <h3 class="dash-comp-schedule-title" data-i18n="adminCompScheduleTitle">Competition #12 schedule</h3>
+              <p class="dash-card-subtitle" data-i18n="adminCompScheduleHelp">
+                Enter every time in game time (UTC+2). Your own local time is shown next to each one.
+              </p>
+              <p class="dash-comp-schedule-note" data-i18n="adminCompScheduleAutoNote">
+                The site opens and closes registration automatically from this schedule within ~10
+                minutes; the Open switch below is overridden while a schedule exists.
+              </p>
+              <div id="dashCompScheduleLegacy" class="dash-comp-schedule-legacy" role="alert" hidden>
+                <p data-i18n="adminCompScheduleLegacyWarning">
+                  The active season is still season-2026, which holds last season's signups.
+                  Competition #12 needs its own season before the schedule can be saved.
+                </p>
+                <button id="dashCompScheduleStartSeason" class="dash-btn dash-btn-primary" type="button">
+                  <span data-i18n="adminCompScheduleStartSeason">Start Competition #12 season</span>
+                </button>
+              </div>
+              <div class="dash-comp-schedule-meta">
+                <label class="dash-boh-signups-field">
+                  <span data-i18n="adminCompScheduleTitleLabel">Title</span>
+                  <input id="dashCompScheduleTitle" class="dash-input" type="text" maxlength="80" autocomplete="off" value="Competition #12" />
+                </label>
+                <div class="dash-boh-signups-field">
+                  <span id="dashCompScheduleSeasonLabel" data-i18n="adminCompScheduleSeasonLabel">Season</span>
+                  <output id="dashCompScheduleSeason" class="dash-comp-schedule-season" aria-labelledby="dashCompScheduleSeasonLabel" dir="ltr">—</output>
+                </div>
+              </div>
+              <div class="dash-comp-schedule-rows">
+                <div class="dash-comp-schedule-row dash-comp-schedule-head">
+                  <span></span>
+                  <span id="dashCompScheduleDateHint" data-i18n="adminCompScheduleDateLabel">Game date</span>
+                  <span id="dashCompScheduleTimeHint" data-i18n="adminCompScheduleTimeLabel">Game time</span>
+                  <span data-i18n="adminCompScheduleLocalLabel">Your local time</span>
+                </div>
+                <div class="dash-comp-schedule-row">
+                  <span id="dashCompLabel-opensAt" class="dash-comp-schedule-label" data-i18n="adminCompScheduleOpensAt">Registration opens</span>
+                  <input class="dash-input" type="date" data-comp-schedule-date="opensAt" aria-labelledby="dashCompLabel-opensAt dashCompScheduleDateHint" required />
+                  <input class="dash-input" type="time" step="60" data-comp-schedule-time="opensAt" aria-labelledby="dashCompLabel-opensAt dashCompScheduleTimeHint" required />
+                  <span class="dash-comp-schedule-local" data-comp-schedule-local="opensAt"></span>
+                </div>
+                <div class="dash-comp-schedule-row">
+                  <span id="dashCompLabel-phase1ClosesAt" class="dash-comp-schedule-label" data-i18n="adminCompSchedulePhase1ClosesAt">Phase 1 closes (no new sign-ups)</span>
+                  <input class="dash-input" type="date" data-comp-schedule-date="phase1ClosesAt" aria-labelledby="dashCompLabel-phase1ClosesAt dashCompScheduleDateHint" required />
+                  <input class="dash-input" type="time" step="60" data-comp-schedule-time="phase1ClosesAt" aria-labelledby="dashCompLabel-phase1ClosesAt dashCompScheduleTimeHint" required />
+                  <span class="dash-comp-schedule-local" data-comp-schedule-local="phase1ClosesAt"></span>
+                </div>
+                <div class="dash-comp-schedule-row">
+                  <span id="dashCompLabel-deadlineAt" class="dash-comp-schedule-label" data-i18n="adminCompScheduleDeadlineAt">Deadline (last edits)</span>
+                  <input class="dash-input" type="date" data-comp-schedule-date="deadlineAt" aria-labelledby="dashCompLabel-deadlineAt dashCompScheduleDateHint" required />
+                  <input class="dash-input" type="time" step="60" data-comp-schedule-time="deadlineAt" aria-labelledby="dashCompLabel-deadlineAt dashCompScheduleTimeHint" required />
+                  <span class="dash-comp-schedule-local" data-comp-schedule-local="deadlineAt"></span>
+                </div>
+                <div class="dash-comp-schedule-row">
+                  <span id="dashCompLabel-reuploadOpensAt" class="dash-comp-schedule-label" data-i18n="adminCompScheduleReuploadOpensAt">Growth re-upload opens</span>
+                  <input class="dash-input" type="date" data-comp-schedule-date="reuploadOpensAt" aria-labelledby="dashCompLabel-reuploadOpensAt dashCompScheduleDateHint" required />
+                  <input class="dash-input" type="time" step="60" data-comp-schedule-time="reuploadOpensAt" aria-labelledby="dashCompLabel-reuploadOpensAt dashCompScheduleTimeHint" required />
+                  <span class="dash-comp-schedule-local" data-comp-schedule-local="reuploadOpensAt"></span>
+                </div>
+                <div class="dash-comp-schedule-row">
+                  <span id="dashCompLabel-reuploadClosesAt" class="dash-comp-schedule-label" data-i18n="adminCompScheduleReuploadClosesAt">Growth re-upload closes</span>
+                  <input class="dash-input" type="date" data-comp-schedule-date="reuploadClosesAt" aria-labelledby="dashCompLabel-reuploadClosesAt dashCompScheduleDateHint" required />
+                  <input class="dash-input" type="time" step="60" data-comp-schedule-time="reuploadClosesAt" aria-labelledby="dashCompLabel-reuploadClosesAt dashCompScheduleTimeHint" required />
+                  <span class="dash-comp-schedule-local" data-comp-schedule-local="reuploadClosesAt"></span>
+                </div>
+                <div class="dash-comp-schedule-row">
+                  <span id="dashCompLabel-winnersStartAt" class="dash-comp-schedule-label" data-i18n="adminCompScheduleWinnersStartAt">Winners shown from</span>
+                  <input class="dash-input" type="date" data-comp-schedule-date="winnersStartAt" aria-labelledby="dashCompLabel-winnersStartAt dashCompScheduleDateHint" required />
+                  <input class="dash-input" type="time" step="60" data-comp-schedule-time="winnersStartAt" aria-labelledby="dashCompLabel-winnersStartAt dashCompScheduleTimeHint" required />
+                  <span class="dash-comp-schedule-local" data-comp-schedule-local="winnersStartAt"></span>
+                </div>
+                <div class="dash-comp-schedule-row">
+                  <span id="dashCompLabel-winnersEndAt" class="dash-comp-schedule-label" data-i18n="adminCompScheduleWinnersEndAt">Winners shown until</span>
+                  <input class="dash-input" type="date" data-comp-schedule-date="winnersEndAt" aria-labelledby="dashCompLabel-winnersEndAt dashCompScheduleDateHint" required />
+                  <input class="dash-input" type="time" step="60" data-comp-schedule-time="winnersEndAt" aria-labelledby="dashCompLabel-winnersEndAt dashCompScheduleTimeHint" required />
+                  <span class="dash-comp-schedule-local" data-comp-schedule-local="winnersEndAt"></span>
+                </div>
+              </div>
+              <div class="dash-card-actions">
+                <button id="dashCompScheduleSave" class="dash-btn dash-btn-primary" type="submit">
+                  <span data-i18n="adminCompScheduleSave">Save schedule</span>
+                </button>
+              </div>
+              <h4 class="dash-comp-schedule-subtitle" data-i18n="adminCompScheduleTimelineTitle">Phases (game time)</h4>
+              <div id="dashCompScheduleTimeline" aria-live="polite"></div>
+            </form>
+            <form id="dashBohSignupsSeasonForm" class="dash-boh-signups-season" data-requires-superadmin hidden>
+              <label class="dash-boh-signups-field">
+                <span data-i18n="adminBohSignupSeasonLabel">Active season</span>
+                <input
+                  id="dashBohSignupSeasonInput"
+                  class="dash-input"
+                  type="text"
+                  maxlength="80"
+                  autocomplete="off"
+                  required
+                />
+              </label>
+              <label class="dash-boh-signups-field">
+                <span data-i18n="adminBohSignupProfileLabel">Scoring version</span>
+                <select id="dashBohSignupProfileSelect" class="dash-input"></select>
+              </label>
+              <label class="dash-boh-signups-field dash-boh-signups-check">
+                <input id="dashBohSignupOpenInput" type="checkbox" />
+                <span data-i18n="adminBohSignupOpenLabel">Registration open</span>
+              </label>
+              <label class="dash-boh-signups-field">
+                <span data-i18n="adminBohSignupGrantLabel">Member PIN session (minutes)</span>
+                <input
+                  id="dashBohSignupGrantInput"
+                  class="dash-input"
+                  type="number"
+                  min="5"
+                  max="10080"
+                  step="5"
+                  required
+                />
+              </label>
+              <div class="dash-card-actions">
+                <button id="dashBohSignupSeasonSave" class="dash-btn dash-btn-primary" type="submit">
+                  <span data-i18n="adminBohSignupSeasonSave">Save season settings</span>
+                </button>
+              </div>
+              <p class="dash-card-subtitle" data-i18n="adminBohSignupSeasonHelp">
+                Members unlock with the VTS member PIN and sign up into this season. The scoring
+                version labels the formula their numbers are compared with.
+              </p>
+            </form>
+            <div
+              id="dashBohSignupsStatus"
+              class="dash-upload-status hidden"
+              role="status"
+              aria-live="polite"
+            ></div>
+          </div>
 
-      <!-- Sub-tab: Eden X1 Votes -->
+          <div class="dash-card">
+            <div class="dash-card-hdr">
+              <div>
+                <h2 class="dash-card-title">
+                  <span data-i18n="adminBohSignupManualTitle">Add or edit a signup</span>
+                </h2>
+                <p class="dash-card-subtitle" data-i18n="adminBohSignupManualHelp">
+                  Saved through the bohSignupAdmin Cloud Function, so the owner-only signup rule
+                  stays in place. Pick a row below to edit an existing signup.
+                </p>
+              </div>
+            </div>
+            <form id="dashBohSignupForm" class="dash-boh-signup-form">
+              <input id="dashBohSignupTarget" type="hidden" value="" />
+              <label class="dash-boh-signup-wide">
+                <span data-i18n="adminBohSignupGameName">Game name</span>
+                <input
+                  id="dashBohSignupName"
+                  class="dash-input"
+                  type="text"
+                  maxlength="160"
+                  autocomplete="off"
+                  data-boh-field="gameName"
+                  required
+                />
+              </label>
+              <label>
+                <span data-i18n="adminBohStatTotalPower">Total power</span>
+                <input class="dash-input" type="number" min="0" step="1" data-boh-field="stats.totalCastlePower" required />
+              </label>
+              <label>
+                <span data-i18n="adminBohStatTroopPower">Troop power</span>
+                <input class="dash-input" type="number" min="0" step="1" data-boh-field="stats.troopPower" required />
+              </label>
+              <label>
+                <span data-i18n="adminBohStatBuildingPower">Building power</span>
+                <input class="dash-input" type="number" min="0" step="1" data-boh-field="stats.buildingPower" required />
+              </label>
+              <label>
+                <span data-i18n="adminBohStatTechnologyPower">Technology power</span>
+                <input class="dash-input" type="number" min="0" step="1" data-boh-field="stats.technologyPower" required />
+              </label>
+              <label>
+                <span data-i18n="adminBohStatHeroPower">Hero combat power</span>
+                <input class="dash-input" type="number" min="0" step="1" data-boh-field="stats.heroCombatPower" required />
+              </label>
+              <label>
+                <span data-i18n="adminBohStatDragonPower">Dragon power</span>
+                <input class="dash-input" type="number" min="0" step="1" data-boh-field="stats.dragonPower" required />
+              </label>
+              <label>
+                <span data-i18n="adminBohStatUnitSpecialtyPower">Unit specialty power</span>
+                <input class="dash-input" type="number" min="0" step="1" data-boh-field="stats.unitSpecialtyPower" required />
+              </label>
+              <label>
+                <span data-i18n="adminBohSignupT9TroopTypes">T9 troop types</span>
+                <input class="dash-input" type="text" maxlength="120" autocomplete="off" data-boh-field="stats.t9TroopTypes" />
+              </label>
+              <label>
+                <span data-i18n="adminBohSignupReadySpeedHeroes">Ready speed heroes</span>
+                <input class="dash-input" type="text" maxlength="240" autocomplete="off" data-boh-field="stats.readySpeedHeroes" />
+              </label>
+              <label>
+                <span data-i18n="adminBohSignupLevel50Heroes">Level 50 heroes</span>
+                <input class="dash-input" type="number" min="0" max="500" step="1" data-boh-field="stats.level50HeroCount" />
+              </label>
+              <label>
+                <span data-i18n="adminBohSignupRocLevel">ROC level</span>
+                <input class="dash-input" type="number" min="0" max="160" step="1" data-boh-field="stats.rocLevel" />
+              </label>
+              <!-- Competition #12: BoH and Epic Showdown slots in the member's order
+                   of preference. Each picker edits one hidden ordered list; a 2026
+                   record keeps its classic fighting times in the hidden list below. -->
+              <input type="hidden" data-boh-field="commitment.fightingTimeIds" data-boh-list="true" value="" />
+              <fieldset class="dash-boh-slot-picker dash-boh-signup-wide" data-boh-slot-picker="commitment.bohTimeSlots">
+                <legend data-i18n="adminBohSignupBohSlots">BoH times, in order of preference</legend>
+                <input type="hidden" data-boh-field="commitment.bohTimeSlots" data-boh-list="true" value="" />
+                <div class="dash-boh-slot-options">
+                  <button class="dash-boh-slot" type="button" data-boh-slot="+8" aria-pressed="false">
+                    <span class="dash-boh-slot-rank" data-boh-slot-rank aria-hidden="true"></span>
+                    <span dir="ltr">08:00</span>
+                  </button>
+                  <button class="dash-boh-slot" type="button" data-boh-slot="+12" aria-pressed="false">
+                    <span class="dash-boh-slot-rank" data-boh-slot-rank aria-hidden="true"></span>
+                    <span dir="ltr">12:00</span>
+                  </button>
+                  <button class="dash-boh-slot" type="button" data-boh-slot="+14" aria-pressed="false">
+                    <span class="dash-boh-slot-rank" data-boh-slot-rank aria-hidden="true"></span>
+                    <span dir="ltr">14:00</span>
+                  </button>
+                  <button class="dash-boh-slot" type="button" data-boh-slot="+20" aria-pressed="false">
+                    <span class="dash-boh-slot-rank" data-boh-slot-rank aria-hidden="true"></span>
+                    <span dir="ltr">20:00</span>
+                  </button>
+                </div>
+              </fieldset>
+              <fieldset class="dash-boh-slot-picker dash-boh-signup-wide" data-boh-slot-picker="commitment.epicTimeSlots">
+                <legend data-i18n="adminBohSignupEpicSlots">Epic Showdown times, in order of preference</legend>
+                <input type="hidden" data-boh-field="commitment.epicTimeSlots" data-boh-list="true" value="" />
+                <div class="dash-boh-slot-options">
+                  <button class="dash-boh-slot" type="button" data-boh-slot="+10" aria-pressed="false">
+                    <span class="dash-boh-slot-rank" data-boh-slot-rank aria-hidden="true"></span>
+                    <span dir="ltr">10:00</span>
+                  </button>
+                  <button class="dash-boh-slot" type="button" data-boh-slot="+13" aria-pressed="false">
+                    <span class="dash-boh-slot-rank" data-boh-slot-rank aria-hidden="true"></span>
+                    <span dir="ltr">13:00</span>
+                  </button>
+                  <button class="dash-boh-slot" type="button" data-boh-slot="+16" aria-pressed="false">
+                    <span class="dash-boh-slot-rank" data-boh-slot-rank aria-hidden="true"></span>
+                    <span dir="ltr">16:00</span>
+                  </button>
+                  <button class="dash-boh-slot" type="button" data-boh-slot="+19" aria-pressed="false">
+                    <span class="dash-boh-slot-rank" data-boh-slot-rank aria-hidden="true"></span>
+                    <span dir="ltr">19:00</span>
+                  </button>
+                </div>
+              </fieldset>
+              <p class="dash-card-subtitle dash-boh-signup-wide" data-i18n="adminBohSignupSlotsHelp">
+                Game time (UTC+2). Tap the times in the member's order; tap again to remove one.
+              </p>
+              <label class="dash-boh-signup-wide dash-boh-signups-check">
+                <input type="checkbox" data-boh-field="commitment.publicComparisonConsent" />
+                <span data-i18n="adminBohSignupConsent">The member agreed to show their values on the public growth board</span>
+              </label>
+              <label>
+                <span data-i18n="adminBohSignupPreferredRole">Preferred role</span>
+                <select class="dash-input" data-boh-field="commitment.preferredRole">
+                  <option value="" data-i18n="adminBohSignupRoleNone">No preference</option>
+                  <option value="offensive" data-i18n="adminBohSignupRoleOffensive">Offensive team</option>
+                  <option value="rune" data-i18n="adminBohSignupRoleRune">Rune team</option>
+                  <option value="top" data-i18n="adminBohSignupRoleTop">Top side</option>
+                  <option value="bottom" data-i18n="adminBohSignupRoleBottom">Bottom side</option>
+                  <option value="backup" data-i18n="adminBohSignupRoleBackup">Backup</option>
+                  <option value="flexible" data-i18n="adminBohSignupRoleFlexible">Flexible</option>
+                </select>
+              </label>
+              <label>
+                <span data-i18n="adminBohSignupMember">Signed up for VTS 1097</span>
+                <select class="dash-input" data-boh-boolean="true" data-boh-field="commitment.vts1097Member">
+                  <option value="true" data-i18n="adminBohSignupYes">Yes</option>
+                  <option value="false" data-i18n="adminBohSignupNo">No</option>
+                </select>
+              </label>
+              <label class="dash-boh-signup-wide">
+                <span data-i18n="adminBohSignupNotes">Notes for the plan</span>
+                <textarea class="dash-input" rows="2" maxlength="2000" data-boh-field="commitment.notes"></textarea>
+              </label>
+              <div class="dash-card-actions">
+                <button id="dashBohSignupSubmit" class="dash-btn dash-btn-primary" type="submit">
+                  <span id="dashBohSignupSubmitLabel" data-i18n="adminBohSignupSave">Save signup</span>
+                </button>
+                <button id="dashBohSignupCancelEdit" class="dash-btn" type="button" hidden>
+                  <span data-i18n="adminBohSignupCancel">Cancel edit</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="dash-card">
+            <div class="dash-card-hdr">
+              <div>
+                <h2 class="dash-card-title">
+                  <span data-i18n="adminBohSignupListTitle">Signups in this season</span>
+                </h2>
+              </div>
+            </div>
+            <div id="dashBohSignupsList">
+              <div class="dash-empty" data-i18n="adminBohSignupListEmpty">
+                No signups yet in this season.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dash-subtab-panel hidden" id="dashSubtabThroneBuffs"><section id="dashThroneRoot"></section></div>
+      <!-- Account links live on their own tab so linking is reachable from
+           everywhere, not only from inside the three duty tabs. -->
+      <div class="dash-subtab-panel hidden" id="dashSubtabAccounts">
+        <section id="dashAccountsRoot" data-account-links-host data-account-links-open></section>
+      </div>
+      <div class="dash-subtab-panel hidden" id="dashSubtabUserRoles"><section id="dashUserRolesRoot"></section></div>
+      <div class="dash-subtab-panel hidden" id="dashSubtabComplaints"><section id="dashComplaintsRoot"></section></div>
+      <!-- Superadmin season rollover: end the running season, start the next,
+           rename a label, browse an ended season, recall a snapshot. The panel
+           renders from the registry document; this section is only its host. -->
+      <div class="dash-subtab-panel hidden" id="dashSubtabSeasonLifecycle">
+        <section id="dashSeasonLifecycleRoot">
+          <div class="dash-empty" data-i18n="adminSeasonLifecycleLoading">
+            Loading the season timeline…
+          </div>
+        </section>
+      </div>
+
+      <!-- Sub-tab: Eden votes for the active workspace season -->
       <div class="dash-subtab-panel hidden" id="dashSubtabEdenVotes">
         <div class="dash-card dash-eden-votes-admin-card">
           <div class="dash-card-hdr">
@@ -1923,7 +2365,7 @@
                   <path d="M12 19V7" />
                   <path d="M16 15V11" />
                   <path d="M20 17V5" /></svg
-                ><span data-i18n="adminEdenVotesTitle">Eden X1 Team Players Vote</span>
+                ><span data-i18n="adminEdenVotesTitle" data-eden-season-copy>Eden X1 Team Players Vote</span>
               </h2>
               <p class="dash-card-subtitle" data-i18n="adminEdenVotesSubtitle">
                 Control the public voting window, review current ballots, and audit edits.
@@ -1998,9 +2440,18 @@
               <label class="dash-eden-vote-toggle">
                 <input id="dashEdenVotePublicResultsToggle" type="checkbox" />
                 <span>
-                  <strong data-i18n="adminEdenVotesPublicResults">Show results publicly</strong>
-                  <small data-i18n="adminEdenVotesPublicResultsHint"
-                    >Make vote standings visible on the public Eden X1 page when ready.</small
+                  <strong data-i18n="adminEdenVotesMemberResults">Show members' vote results</strong>
+                  <small data-i18n="adminEdenVotesMemberResultsHint" data-eden-season-copy
+                    >Make the members' Team Players standings visible on the public Eden page when ready.</small
+                  >
+                </span>
+              </label>
+              <label class="dash-eden-vote-toggle">
+                <input id="dashEdenVoteManagementResultsToggle" type="checkbox" />
+                <span>
+                  <strong data-i18n="adminEdenVotesManagementResults">Show R4/R5 vote results</strong>
+                  <small data-i18n="adminEdenVotesManagementResultsHint" data-eden-season-copy
+                    >Publish the management ballot's winners publicly. It has its own switch because the management sheet is not season-scoped: a season that has not run its own R4/R5 vote would otherwise show the previous season's winners.</small
                   >
                 </span>
               </label>
@@ -2101,6 +2552,7 @@
             <div id="dashEdenVoteResults">
               <div class="dash-empty" data-i18n="adminEdenVotesEmpty">No votes yet.</div>
             </div>
+            <p id="dashEdenVoteDeleteStatus" role="status" aria-live="polite"></p>
           </section>
           <section class="dash-contribution-compare-card dash-eden-votes-history-panel">
             <div class="dash-contribution-compare-head">
@@ -2297,48 +2749,154 @@
             </div>
           </details>
           <section class="dash-duty-weights" data-requires-superadmin hidden>
-            <h3 data-i18n="adminDutyWeightsTitle">Duty scoring weights</h3>
+            <h3 id="dashDutyWeightsTitle" data-i18n="adminDutyWeightsTitle">Duty scoring weights</h3>
             <p class="dash-duty-weights-note" data-i18n="adminDutyWeightsNote">
               Points one duty is worth, by activity and by whether a main or an alt did it.
               Saving recalculates this season immediately, including past entries.
             </p>
-            <div class="dash-duty-weight-row">
-              <span class="dash-duty-weight-name" data-i18n="adminDutyWeightsBanners">banners</span>
-              <label class="dash-duty-weight-field">
-                <span data-i18n="adminDutyWeightsMain">Main</span>
-                <input type="number" min="0" max="100" step="0.5" data-duty-weight="banners" data-duty-class="main" />
-              </label>
-              <label class="dash-duty-weight-field">
-                <span data-i18n="adminDutyWeightsAlt">Alt / secondary</span>
-                <input type="number" min="0" max="100" step="0.5" data-duty-weight="banners" data-duty-class="alt" />
-              </label>
+            <div class="dash-duty-weight-table" role="table" aria-labelledby="dashDutyWeightsTitle">
+              <div class="dash-duty-weight-row dash-duty-weight-head" role="row">
+                <span role="columnheader" data-i18n="adminDutyWeightsActivity">Duty</span>
+                <span role="columnheader" data-i18n="adminDutyWeightsMain">Main</span>
+                <span role="columnheader" data-i18n="adminDutyWeightsAlt">Alt / banner</span>
+                <span role="columnheader" data-i18n="adminDutyWeightsSecondary">Secondary</span>
+              </div>
+              <div class="dash-duty-weight-row" role="row">
+                <span class="dash-duty-weight-name" role="rowheader" data-i18n="adminDutyWeightsBanners">Banners</span>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="adminDutyWeightsMain">Main</span>
+                  <input class="dash-input" type="number" inputmode="decimal" min="0" max="100" step="0.5" data-duty-weight="banners" data-duty-class="main" />
+                </label>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="adminDutyWeightsAlt">Alt / banner</span>
+                  <input class="dash-input" type="number" inputmode="decimal" min="0" max="100" step="0.5" data-duty-weight="banners" data-duty-class="alt" />
+                </label>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="adminDutyWeightsSecondary">Secondary</span>
+                  <input class="dash-input" type="number" inputmode="decimal" min="0" max="100" step="0.5" data-duty-weight="banners" data-duty-class="secondary" />
+                </label>
+              </div>
+              <div class="dash-duty-weight-row" role="row">
+                <span class="dash-duty-weight-name" role="rowheader" data-i18n="adminDutyWeightsPathers">Pathing</span>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="adminDutyWeightsMain">Main</span>
+                  <input class="dash-input" type="number" inputmode="decimal" min="0" max="100" step="0.5" data-duty-weight="pathers" data-duty-class="main" />
+                </label>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="adminDutyWeightsAlt">Alt / banner</span>
+                  <input class="dash-input" type="number" inputmode="decimal" min="0" max="100" step="0.5" data-duty-weight="pathers" data-duty-class="alt" />
+                </label>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="adminDutyWeightsSecondary">Secondary</span>
+                  <input class="dash-input" type="number" inputmode="decimal" min="0" max="100" step="0.5" data-duty-weight="pathers" data-duty-class="secondary" />
+                </label>
+              </div>
+              <div class="dash-duty-weight-row" role="row">
+                <span class="dash-duty-weight-name" role="rowheader" data-i18n="adminDutyWeightsShieldWalls">Shield walls</span>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="adminDutyWeightsMain">Main</span>
+                  <input class="dash-input" type="number" inputmode="decimal" min="0" max="100" step="0.5" data-duty-weight="shieldWalls" data-duty-class="main" />
+                </label>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="adminDutyWeightsAlt">Alt / banner</span>
+                  <input class="dash-input" type="number" inputmode="decimal" min="0" max="100" step="0.5" data-duty-weight="shieldWalls" data-duty-class="alt" />
+                </label>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="adminDutyWeightsSecondary">Secondary</span>
+                  <input class="dash-input" type="number" inputmode="decimal" min="0" max="100" step="0.5" data-duty-weight="shieldWalls" data-duty-class="secondary" />
+                </label>
+              </div>
             </div>
-            <div class="dash-duty-weight-row">
-              <span class="dash-duty-weight-name" data-i18n="adminDutyWeightsPathers">pathers</span>
-              <label class="dash-duty-weight-field">
-                <span data-i18n="adminDutyWeightsMain">Main</span>
-                <input type="number" min="0" max="100" step="0.5" data-duty-weight="pathers" data-duty-class="main" />
-              </label>
-              <label class="dash-duty-weight-field">
-                <span data-i18n="adminDutyWeightsAlt">Alt / secondary</span>
-                <input type="number" min="0" max="100" step="0.5" data-duty-weight="pathers" data-duty-class="alt" />
-              </label>
+            <p class="dash-duty-weights-unit" data-i18n="adminDutyWeightsUnit">1 point = 10,000 score. Example: pathing on a main at 3 adds 30,000.</p>
+            <h4 id="dashScoringMultipliersTitle" class="dash-duty-weights-subtitle" data-i18n="adminScoringMultipliersTitle">Score multipliers</h4>
+            <div class="dash-duty-weight-table" role="table" aria-labelledby="dashScoringMultipliersTitle">
+              <div class="dash-duty-weight-row" role="row">
+                <span class="dash-duty-weight-name" role="rowheader" data-i18n="adminScoringContributionLabel">In-game contribution weight</span>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="adminScoringContributionLabel">In-game contribution weight</span>
+                  <input id="dashContributionWeightInput" class="dash-input" type="number" inputmode="decimal" min="0" max="10" step="0.1" />
+                </label>
+              </div>
+              <div class="dash-duty-weight-row" role="row">
+                <span class="dash-duty-weight-name" role="rowheader" data-i18n="adminScoringFormPointsLabel">Support work weight</span>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="adminScoringFormPointsLabel">Support work weight</span>
+                  <input id="dashFormPointWeightInput" class="dash-input" type="number" inputmode="decimal" min="0" max="10" step="0.1" />
+                </label>
+              </div>
             </div>
-            <div class="dash-duty-weight-row">
-              <span class="dash-duty-weight-name" data-i18n="adminDutyWeightsShieldWalls">shieldWalls</span>
-              <label class="dash-duty-weight-field">
-                <span data-i18n="adminDutyWeightsMain">Main</span>
-                <input type="number" min="0" max="100" step="0.5" data-duty-weight="shieldWalls" data-duty-class="main" />
-              </label>
-              <label class="dash-duty-weight-field">
-                <span data-i18n="adminDutyWeightsAlt">Alt / secondary</span>
-                <input type="number" min="0" max="100" step="0.5" data-duty-weight="shieldWalls" data-duty-class="alt" />
-              </label>
-            </div>
+            <p class="dash-duty-weights-unit" data-i18n="adminScoringMultipliersHint">In-game contribution is the leaderboard contribution plus ex-guild points. The support weight scales all support work — shield walls, pathing, banners and the form’s bonus points — so 2 doubles it. 0.5 on contribution halves it. 1 leaves both terms exactly as they are today.</p>
+            <label class="dash-duty-demolition-toggle" for="dashIncludeDemolitionPointsToggle">
+              <input id="dashIncludeDemolitionPointsToggle" class="dash-switch-input" type="checkbox" role="switch" checked />
+              <span class="dash-switch-track" aria-hidden="true"><span class="dash-switch-thumb"></span></span>
+              <span class="dash-duty-demolition-copy">
+                <strong data-i18n="adminDutyWeightsIncludeDemolition">Add demolition points to total contribution</strong>
+                <small data-i18n="adminDutyWeightsIncludeDemolitionHint">Turn off to keep demolition visible without adding it to the dashboard total.</small>
+              </span>
+            </label>
             <div class="dash-duty-weights-actions">
               <button id="dashDutyWeightsSaveBtn" class="dash-btn dash-btn-primary" type="button" data-i18n="adminDutyWeightsSave">Save weights</button>
               <button id="dashDutyWeightsResetBtn" class="dash-btn" type="button" data-i18n="adminDutyWeightsReset">Reset to defaults</button>
               <span id="dashDutyWeightsStatus" class="dash-duty-weights-status" aria-live="polite"></span>
+            </div>
+          </section>
+          <section class="dash-duty-weights" data-requires-superadmin hidden>
+            <h3 id="dashRewardSettingsTitle" data-i18n="adminRewardSettingsTitle">Reward distribution</h3>
+            <p class="dash-duty-weights-note" data-i18n="adminRewardSettingsNote">
+              How many players each category rewards this season. Changing it renumbers the reward slots; the published page shows the new distribution after the next publish.
+            </p>
+            <div class="dash-duty-weight-table" role="table" aria-labelledby="dashRewardSettingsTitle">
+              <div class="dash-duty-weight-row dash-duty-weight-head" role="row">
+                <span role="columnheader" data-i18n="adminRewardSettingsCategory">Category</span>
+                <span role="columnheader" data-i18n="adminRewardSettingsSlots">Slots</span>
+              </div>
+              <div class="dash-duty-weight-row" role="row">
+                <span class="dash-duty-weight-name" role="rowheader" data-i18n="edenX1RewardSupportTitle">Support Work</span>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="edenX1RewardSupportTitle">Support Work</span>
+                  <input class="dash-input" type="number" inputmode="numeric" min="0" max="50" step="1" data-reward-quota="support" />
+                </label>
+              </div>
+              <div class="dash-duty-weight-row" role="row">
+                <span class="dash-duty-weight-name" role="rowheader" data-i18n="edenX1RewardLeaderboardTitle">Contribution</span>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="edenX1RewardLeaderboardTitle">Contribution</span>
+                  <input class="dash-input" type="number" inputmode="numeric" min="0" max="50" step="1" data-reward-quota="contribution" />
+                </label>
+              </div>
+              <div class="dash-duty-weight-row" role="row">
+                <span class="dash-duty-weight-name" role="rowheader" data-i18n="edenX1RewardManagementTitle">Management</span>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="edenX1RewardManagementTitle">Management</span>
+                  <input class="dash-input" type="number" inputmode="numeric" min="0" max="50" step="1" data-reward-quota="management" />
+                </label>
+              </div>
+              <div class="dash-duty-weight-row" role="row">
+                <span class="dash-duty-weight-name" role="rowheader" data-i18n="edenX1RewardTeamTitle">Team Players</span>
+                <label class="dash-duty-weight-field" role="cell">
+                  <span class="sr-only" data-i18n="edenX1RewardTeamTitle">Team Players</span>
+                  <input class="dash-input" type="number" inputmode="numeric" min="0" max="50" step="1" data-reward-quota="team" />
+                </label>
+              </div>
+            </div>
+            <label class="dash-reward-guildmaster-field" for="dashRewardGuildMasterSource">
+              <span data-i18n="adminRewardSettingsGuildMaster">Guild-master reward goes to</span>
+              <select id="dashRewardGuildMasterSource" class="dash-input" name="rewardGuildMasterSource">
+                <option value="r5" data-i18n="adminRewardSettingsGuildMasterR5">The R5</option>
+                <option value="support_top1" data-i18n="adminRewardSettingsGuildMasterTop1">The top support scorer</option>
+              </select>
+            </label>
+            <label class="dash-reward-r5-field" for="dashRewardR5Player">
+              <span data-i18n="adminRewardSettingsR5Label">R5 player</span>
+              <input id="dashRewardR5Player" name="rewardR5Player" class="dash-input" type="text" maxlength="80" placeholder="e.g. MalakAbo" autocomplete="off" spellcheck="false" />
+            </label>
+            <p class="dash-duty-weights-unit" data-i18n="adminRewardSettingsHint">
+              When the named R5 is not in the support list, the guild-master reward stays on the top support scorer rather than going unheld.
+            </p>
+            <div class="dash-duty-weights-actions">
+              <button id="dashRewardSettingsSaveBtn" class="dash-btn dash-btn-primary" type="button" data-i18n="adminRewardSettingsSave">Save distribution</button>
+              <button id="dashRewardSettingsResetBtn" class="dash-btn" type="button" data-i18n="adminDutyWeightsReset">Reset to defaults</button>
+              <span id="dashRewardSettingsStatus" class="dash-duty-weights-status" aria-live="polite"></span>
             </div>
           </section>
           <div id="dashConductSummary"></div>
@@ -2558,6 +3116,9 @@
               ><span data-i18n="adminBannerListTitle">Banners List</span>
             </h2>
             <div class="dash-card-actions">
+              <button class="dash-btn" type="button" data-duty-export-png="banner">
+                <span data-i18n="adminDutyShareListPng">Share PNG</span>
+              </button>
               <button id="dashBannerListPasteBtn" class="dash-btn">
                 <span data-i18n="adminBannerPasteNames">Paste Names</span>
               </button>
@@ -2597,6 +3158,7 @@
               >Scanning banner list...</span
             >
           </div>
+          <div class="dash-account-links-host" data-account-links-host></div>
           <div id="dashBannerListSummary"></div>
           <div id="dashBannerListBody">
             <div class="dash-empty" data-i18n="adminBannerEmpty">No banner list records yet.</div>
@@ -2623,6 +3185,9 @@
               ><span data-i18n="adminPatherListTitle">Pathers / Speed Tile Plans</span>
             </h2>
             <div class="dash-card-actions">
+              <button class="dash-btn" type="button" data-duty-export-png="pather">
+                <span data-i18n="adminDutyShareListPng">Share PNG</span>
+              </button>
               <button id="dashPatherListPasteBtn" class="dash-btn">
                 <span data-i18n="adminPatherPastePlan">Paste Plan</span>
               </button>
@@ -2662,6 +3227,7 @@
               >Scanning plan...</span
             >
           </div>
+          <div class="dash-account-links-host" data-account-links-host></div>
           <div id="dashPatherListSummary"></div>
           <div id="dashPatherListBody">
             <div class="dash-empty" data-i18n="adminPatherEmpty">
@@ -2688,6 +3254,9 @@
               ><span data-i18n="adminShieldWallTitle">Shield Wall</span>
             </h2>
             <div class="dash-card-actions">
+              <button class="dash-btn" type="button" data-duty-export-png="shield_wall">
+                <span data-i18n="adminDutyShareListPng">Share PNG</span>
+              </button>
               <button id="dashShieldWallPasteBtn" class="dash-btn">
                 <span data-i18n="adminShieldWallAddNames">Add Names</span>
               </button>
@@ -2727,6 +3296,7 @@
               >Scanning shield wall list...</span
             >
           </div>
+          <div class="dash-account-links-host" data-account-links-host></div>
           <div id="dashShieldWallListSummary"></div>
           <div id="dashShieldWallBody">
             <div class="dash-empty" data-i18n="adminShieldWallEmpty">

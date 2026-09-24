@@ -1,4 +1,6 @@
 export const SPECIALIZATION_TOWERS_V2_ID = Object.freeze({
+  reportWrongCost: 'Laporkan biaya yang salah',
+  selectNodeBeforeMedals: 'Pilih setidaknya satu node sebelum menambahkan medali.',
   title: 'Menara Spesialisasi',
   subtitle: 'Susun kembali setiap jalur spesialisasi, lacak medali, dan tinjau bonus aktifnya.',
   betaBadge: 'Beta',

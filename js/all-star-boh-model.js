@@ -4,6 +4,12 @@
  * dependency so every persisted value can be normalized and tested first.
  */
 
+import {
+  COMPETITION_BOH_SLOTS,
+  COMPETITION_EPIC_SLOTS,
+  normalizeSlotSelection,
+} from './competition-schedule.js';
+
 export const BOH_SIGNUP_SCHEMA_VERSION = 1;
 export const BOH_PLAN_SCHEMA_VERSION = 1;
 export const BOH_EPIC_SHOWDOWN_SCHEMA_VERSION = 1;
@@ -108,6 +114,51 @@ export const BOH_2025_SCORING_PROFILE = deepFreeze({
     enhancedT10TroopMillion: 0,
   },
 });
+
+/**
+ * Eden 2027 registration. The weights are deliberately identical to the 2025
+ * baseline: the owner asked for a fresh form for the new season, not a new
+ * formula. A later season edits this entry (or adds a sibling) and every
+ * surface follows the version the superadmin selected for the season, so no
+ * scoring call site has to change when the formula does.
+ */
+export const BOH_2027_SCORING_PROFILE = deepFreeze({
+  ...BOH_2025_SCORING_PROFILE,
+  id: 'all-star-boh-2027-v1',
+  version: 1,
+  label: '2027 Eden registration formula',
+});
+
+/**
+ * The version hook the superadmin picks from: `boh_allstar_config/current`
+ * stores one `scoringProfileId`, and this registry is the only place an id is
+ * defined. Order is newest-first so the picker defaults to the current season.
+ */
+export const BOH_SCORING_PROFILES = deepFreeze([
+  BOH_2027_SCORING_PROFILE,
+  BOH_2025_SCORING_PROFILE,
+]);
+
+export const BOH_DEFAULT_SCORING_PROFILE_ID = BOH_2027_SCORING_PROFILE.id;
+
+/** True only for an id this registry defines; anything else is a typo or a stale build. */
+export function isBohScoringProfileId(value) {
+  const id = typeof value === 'string' ? value.trim() : '';
+  return Boolean(id) && BOH_SCORING_PROFILES.some((profile) => profile.id === id);
+}
+
+/**
+ * Resolves a stored or configured profile id to its formula. An unknown id
+ * falls back to the current-season profile rather than throwing: a season whose
+ * config predates a rename must still render, and the label it shows is what
+ * tells the reader which formula produced the numbers.
+ */
+export function getBohScoringProfile(value, fallbackId = BOH_DEFAULT_SCORING_PROFILE_ID) {
+  const id = typeof value === 'string' ? value.trim() : '';
+  const fallback =
+    BOH_SCORING_PROFILES.find((profile) => profile.id === fallbackId) || BOH_2027_SCORING_PROFILE;
+  return BOH_SCORING_PROFILES.find((profile) => profile.id === id) || fallback;
+}
 
 export const BOH_DEFAULT_ROLE_GROUPS = deepFreeze([
   { id: 'offensive', label: 'Offensive Team', capacity: 4, order: 1 },
@@ -613,10 +664,38 @@ export function normalizeBohSignup(input = {}, options = {}) {
   const eligibleRoleIds = normalizeStringList(
     firstDefined(input.eligibleRoleIds, input.eligibleRoles, rawStats.eligibleRoleIds)
   ).map((role) => normalizeBohId(role));
+  const requireCompetitionSlots = options.requireCompetitionSlots === true;
   const fightingTimeIds = normalizeFightingTimeIds(
     firstDefined(input.fightingTimeIds, rawCommitment.fightingTimeIds),
-    { allowLegacyEmpty: options.requireFightingTimeIds !== true }
+    { allowLegacyEmpty: requireCompetitionSlots || options.requireFightingTimeIds !== true }
   );
+  // Competition #12: BoH and Epic Showdown slots in the member's order of
+  // preference, plus the opt-in to show their values on the growth board.
+  // They are written only when the form asks for them, so a 2026 record keeps
+  // exactly the keys it was stored with.
+  const competitionCommitment = {};
+  const rawBohSlots = firstDefined(input.bohTimeSlots, rawCommitment.bohTimeSlots);
+  const rawEpicSlots = firstDefined(input.epicTimeSlots, rawCommitment.epicTimeSlots);
+  if (requireCompetitionSlots || rawBohSlots !== undefined || rawEpicSlots !== undefined) {
+    try {
+      competitionCommitment.bohTimeSlots = normalizeSlotSelection(
+        rawBohSlots,
+        COMPETITION_BOH_SLOTS
+      );
+      competitionCommitment.epicTimeSlots = normalizeSlotSelection(
+        rawEpicSlots,
+        COMPETITION_EPIC_SLOTS
+      );
+    } catch (error) {
+      throw modelError(
+        error.code === 'competition_slot_required'
+          ? 'boh_signup_time_slots_required'
+          : 'boh_signup_time_slot_invalid'
+      );
+    }
+    competitionCommitment.publicComparisonConsent =
+      firstDefined(input.publicComparisonConsent, rawCommitment.publicComparisonConsent) === true;
+  }
 
   return {
     schemaVersion: BOH_SIGNUP_SCHEMA_VERSION,
@@ -704,6 +783,7 @@ export function normalizeBohSignup(input = {}, options = {}) {
         { multiline: true }
       ),
       fightingTimeIds,
+      ...competitionCommitment,
       teamNamePreferences: normalizeCatalogSelection(
         firstDefined(input.teamNamePreferences, rawCommitment.teamNamePreferences),
         BOH_TEAM_NAME_PREFERENCES,

@@ -29,7 +29,11 @@ for (const width of [390, 1280]) {
       ['9c5d4006', 29],
       ['b57d6bf9', 30],
     ]) {
-      await page.locator(`.research-tech-card[data-tech-id="${id}"] .research-card-cta`).click();
+      const cta = page.locator(`.research-tech-card[data-tech-id="${id}"] .research-card-cta`);
+      // The floating Velo launcher is fixed to the bottom corner; a card button
+      // scrolled only to the viewport edge can sit under it while it settles.
+      await cta.evaluate((element) => element.scrollIntoView({ block: 'center' }));
+      await cta.click();
       const dialog = page.locator('#techCalculatorContainer');
       await expect(dialog.locator('.game-tech-node-wrap')).toHaveCount(count);
       if (id === 'b57d6bf9') {

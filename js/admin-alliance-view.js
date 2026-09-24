@@ -165,7 +165,12 @@ function fallbackRow(member, edenRow = null) {
   const shieldWalls = numberValue(edenRow?.shieldWalls);
   const bonusTeamEffort = numberValue(edenRow?.bonusTeamEffort ?? edenRow?.conductBonus);
   const duties = banners + pathers + shieldWalls;
-  const extended = contribution + exGuild + 10000 * (duties + bonusTeamEffort);
+  // A scored Eden row already carries the season's weights and multipliers;
+  // the flat estimate is only for rows that were never scored.
+  const scored = Number(edenRow?.weightedScore);
+  const extended = Number.isFinite(scored)
+    ? scored
+    : contribution + exGuild + 10000 * (duties + bonusTeamEffort);
   return {
     id: member.id,
     member,

@@ -33,7 +33,7 @@ const researchEntries = Object.entries(SPECIALIZATION_RESEARCH);
 const researchValues = Object.values(SPECIALIZATION_RESEARCH);
 
 test('specialization source provenance identifies the X28+ eight-column revision', () => {
-  assert.equal(SPECIALIZATION_DATA_REVISION, '2026-07-18-public-planner-assets');
+  assert.equal(SPECIALIZATION_DATA_REVISION, '2026-09-23-workbook-badge-costs');
   assert.deepEqual(SPECIALIZATION_SOURCE_METADATA, {
     title: 'Unit Specialization',
     publisher: 'ROCAcademy / Rise of Castles community guide',
@@ -51,7 +51,8 @@ test('specialization source provenance identifies the X28+ eight-column revision
     columnCount: 8,
     evidenceNotes: [
       'The May 20, 2026 current guide confirms 8 columns and Season X28+ coverage.',
-      'The interactive planner data supplies canonical research-level medal totals, bonuses, milestones, passive skills, and Legion Skills; per-node costs remain unknown unless directly evidenced.',
+      'The interactive planner data supplies node order, bonuses, milestones, passive skills, and Legion Skills.',
+      'Per-node Virtue Badge costs come from the community "Unit Specilization" workbook (Ivan & CrazyDD / ΜΟΛΩΝ ΛΑΒΕ, youtube.com/@TheRocNoobs), transcribed node by node and level by level in the medal-evidence module; its section totals are the shipped research and column badge costs.',
     ],
   });
   assert.deepEqual(SPECIALIZATION_TROOPS, ['footman', 'archer', 'cavalry']);
@@ -215,8 +216,8 @@ test('all 33 public planner emblems are local, hashed, and mapped to the canonic
   assert.equal(getSpecializationLegionSkillImage('missing', 'cavalry'), null);
 });
 
-test('each column has four researches and the canonical medal costs total 1,369,839', () => {
-  const expectedCosts = [15_647, 31_294, 62_588, 125_176, 250_352, 500_704, 160_696, 223_382];
+test('each column has four researches and the community workbook badge costs total 723,639', () => {
+  const expectedCosts = [15_647, 26_794, 52_191, 69_782, 71_854, 92_662, 164_461, 230_248];
   const assignedResearchIds = [];
 
   for (const [index, column] of Object.values(SPECIALIZATION_COLUMNS).entries()) {
@@ -236,7 +237,7 @@ test('each column has four researches and the canonical medal costs total 1,369,
   assert.deepEqual(new Set(assignedResearchIds), new Set(Object.keys(SPECIALIZATION_RESEARCH)));
   assert.equal(
     Object.values(SPECIALIZATION_COLUMNS).reduce((total, column) => total + column.totalCost, 0),
-    1_369_839
+    723_639
   );
 });
 
@@ -358,38 +359,92 @@ test('canonical records are immutable and lookup returns null for unknown IDs', 
   assert.equal(getSpecializationResearch(null), null);
 });
 
-test('Unit Specialisation VII–IX medal evidence preserves complete and partial sheet data', () => {
+test('the community workbook supplies every troop and tower with per-node medal evidence', () => {
+  const source = SPECIALIZATION_MEDAL_EVIDENCE_SOURCE;
   assert.equal(Object.isFrozen(SPECIALIZATION_TROOP_MEDAL_EVIDENCE), true);
-  assert.equal(SPECIALIZATION_MEDAL_EVIDENCE_SOURCE.sheets[7].gid, '1492876894');
-  assert.equal(SPECIALIZATION_MEDAL_EVIDENCE_SOURCE.sheets[8].gid, '542598214');
-  assert.equal(SPECIALIZATION_MEDAL_EVIDENCE_SOURCE.sheets[9].gid, '1153935173');
-
-  const tower7 = getSpecializationMedalEvidence({ tower: 7, troop: 'archer' });
-  assert.equal(tower7.length, 4);
+  assert.equal(Object.isFrozen(source.tabs), true);
+  assert.equal(source.spreadsheetId, '1ZR9d38cXAbEfbEnp1QqVZtlRFGbliDMVW76NBMGfXPg');
+  assert.equal(source.title, 'Unit Specilization');
+  assert.equal(source.maintainers, 'Ivan & CrazyDD / ΜΟΛΩΝ ΛΑΒΕ');
+  assert.equal(source.maintainersUrl, 'https://www.youtube.com/@TheRocNoobs');
+  assert.equal(source.observedAt, '2026-09-23');
   assert.equal(
-    tower7.every((section) => section.complete),
+    source.workbookSha256,
+    'd8fbd5499ad9bc3e513dbb7e14dc6eea865a711957387ff98ea344a5db45e332'
+  );
+  assert.equal(source.tabs.footman[7].tab, 'Footman Training VII');
+  assert.equal(source.tabs.archer[1].tab, 'Archer Training I');
+
+  // Three troops × ten towers × the four vertically stacked researches.
+  assert.equal(SPECIALIZATION_TROOP_MEDAL_EVIDENCE.length, 120);
+  for (const troop of SPECIALIZATION_TROOPS) {
+    for (let tower = 1; tower <= 10; tower += 1) {
+      const sections = getSpecializationMedalEvidence({ tower, troop });
+      assert.equal(sections.length, 4, `${troop}/${tower}`);
+      assert.deepEqual(
+        sections.map((section) => section.sourceSection),
+        [1, 2, 3, 4],
+        `${troop}/${tower}`
+      );
+      assert.equal(
+        sections.every((section) => section.complete),
+        true,
+        `${troop}/${tower} must be fully costed`
+      );
+    }
+  }
+
+  // Section totals are the shipped research badge costs, and node rows add up to them.
+  for (const research of Object.values(SPECIALIZATION_RESEARCH)) {
+    const totals = new Set(
+      SPECIALIZATION_TROOPS.flatMap((troop) =>
+        getSpecializationMedalEvidence({ troop, researchId: research.id }).map(
+          (section) => section.knownCostTotal
+        )
+      )
+    );
+    assert.equal(totals.size, 1, `${research.id} diverges across troops`);
+    assert.equal(
+      totals.has(research.cost),
+      true,
+      `${research.id} ${[...totals]} != ${research.cost}`
+    );
+  }
+
+  // Column I is the anchor that already matched the previous partial transcription.
+  assert.deepEqual(
+    getSpecializationMedalEvidence({ tower: 1, troop: 'archer' }).map(
+      (section) => section.knownCostTotal
+    ),
+    [1_674, 2_712, 4_472, 6_789]
+  );
+  assert.deepEqual(
+    getSpecializationMedalEvidence({ tower: 7, troop: 'archer' }).map(
+      (section) => section.knownCostTotal
+    ),
+    [16_446, 32_893, 49_337, 65_785]
+  );
+
+  // Towers IX–X have no column in the planner corpus yet; their rows stay evidence-only
+  // so the workbook data is recorded without inventing researches.
+  const orphanSections = SPECIALIZATION_TROOP_MEDAL_EVIDENCE.filter(
+    (section) => section.researchId === null
+  );
+  assert.equal(orphanSections.length, 24);
+  assert.deepEqual([...new Set(orphanSections.map((section) => section.tower))], [9, 10]);
+
+  // Rows the corpus can place carry the canonical node id; per-level costs are intact.
+  const rows = SPECIALIZATION_TROOP_MEDAL_EVIDENCE.flatMap((section) => section.rows);
+  assert.equal(rows.length, 2_745);
+  assert.equal(rows.filter((row) => row.nodeId !== null).length, 2_205);
+  assert.equal(
+    rows.every((row) => row.costs.length > 0),
     true
   );
-  assert.deepEqual(
-    tower7.map((section) => section.knownCostTotal),
-    [15_896, 32_100, 48_000, 64_700]
+  assert.equal(
+    rows.reduce((total, row) => total + row.costs.length, 0),
+    2_985
   );
-
-  const tower8 = getSpecializationMedalEvidence({ tower: 8, troop: 'archer' });
-  assert.equal(tower8.length, 4);
-  assert.deepEqual(
-    tower8.map((section) => section.complete),
-    [true, false, false, true]
-  );
-  assert.equal(tower8[0].knownCostTotal, 27_982);
-  assert.equal(tower8[3].knownCostTotal, 84_900);
-
-  const tower9 = getSpecializationMedalEvidence({ tower: 9, troop: 'footman' });
-  assert.equal(tower9.length, 4);
-  assert.deepEqual(
-    tower9.map((section) => section.complete),
-    [true, false, true, false]
-  );
-  assert.equal(tower9[0].knownCostTotal, 31_500);
-  assert.equal(tower9[2].knownCostTotal, 44_900);
+  const towerSevenTraining = getSpecializationMedalEvidence({ tower: 7, troop: 'archer' })[0];
+  assert.deepEqual(towerSevenTraining.rows.find((row) => row.nodeId === 5).costs, [1_686, 1_770]);
 });

@@ -72,6 +72,21 @@ function h(tag, className, text) {
   return element;
 }
 
+// Tables scroll inside their own frame so a wide table never widens the page.
+function wrapTables(root) {
+  root.querySelectorAll('.pln-table').forEach((table) => {
+    if (table.parentElement?.classList.contains('pln-table-wrap')) return;
+    const wrap = h('div', 'pln-table-wrap');
+    table.replaceWith(wrap);
+    wrap.appendChild(table);
+  });
+}
+
+function nodeProgress(name, current, target) {
+  const pct = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
+  return `<div class="pln-node"><span>${name}</span><span class="pln-node-meter" aria-hidden="true"><i style="width:${pct}%"></i></span><span class="pln-node-lvl">${current}/${target}</span></div>`;
+}
+
 function number(value) {
   return formatLocaleNumber(Number(value) || 0, currentLanguage);
 }
@@ -197,7 +212,11 @@ function renderResearchPanel(host) {
         : computeMinUnlockPath(family, targetSelect.value, targetLevel);
     if (!plan) return;
     const progress = readResearchProgress();
-    const current = currentLevelsFor(family.familyId, family.nodes.map((node) => node.id), progress);
+    const current = currentLevelsFor(
+      family.familyId,
+      family.nodes.map((node) => node.id),
+      progress
+    );
     const remaining = computeRemainingCosts(family, current, plan);
     const milestones = listMilestones(family, plan);
     const nextBest = suggestNextBest(family, current, 'cheapest-next').slice(0, 6);
@@ -209,9 +228,7 @@ function renderResearchPanel(host) {
       .filter((row) => row.node)
       .sort((a, b) => b.level - a.level || a.node.name.localeCompare(b.node.name));
 
-    const totalsRows = PLANNER_COST_RESOURCES.filter(
-      (resource) => remaining.totals[resource] > 0
-    )
+    const totalsRows = PLANNER_COST_RESOURCES.filter((resource) => remaining.totals[resource] > 0)
       .map(
         (resource) =>
           `<tr><td>${escapeHtml(t(COST_LABELS[resource]))}</td><td>${number(remaining.totals[resource])}</td></tr>`
@@ -227,20 +244,26 @@ function renderResearchPanel(host) {
       <tbody>${plannedRows
         .map(
           (row) =>
-            `<tr><td>${escapeHtml(row.node.name)}${row.node.verificationStatus !== 'current' ? ' *' : ''}</td><td>${row.level}</td></tr>`
+            `<tr><td>${nodeProgress(`${escapeHtml(row.node.name)}${row.node.verificationStatus !== 'current' ? ' *' : ''}`, Number(current[row.id]) || 0, row.level)}</td><td>${row.level}</td></tr>`
         )
         .join('')}</tbody></table>
       <div class="pln-subtitle">${escapeHtml(t('plannersTotalsTitle'))}</div>
-      <table class="pln-table"><tbody>${totalsRows || `<tr><td>0</td></tr>`}</tbody></table>
+      <table class="pln-table pln-stats"><tbody>${totalsRows || `<tr><td>0</td></tr>`}</tbody></table>
       <div class="pln-subtitle">${escapeHtml(t('plannersMilestones'))} (${milestones.length})</div>
-      <div>${milestones.slice(0, 12).map((milestone) => escapeHtml(milestone.name)).join(' · ')}</div>
+      <div class="pln-milestones">${milestones
+        .slice(0, 12)
+        .map((milestone) => escapeHtml(milestone.name))
+        .join(' · ')}</div>
       <div class="pln-subtitle">${escapeHtml(t('plannersNextBest'))}</div>
       <div class="pln-chips">${nextBest
         .map((id) => {
           const node = byId.get(id);
-          return node ? `<button type="button" class="pln-chip" data-pln-node="${escapeHtml(id)}">${escapeHtml(node.name)}</button>` : '';
+          return node
+            ? `<button type="button" class="pln-chip" data-pln-node="${escapeHtml(id)}">${escapeHtml(node.name)}</button>`
+            : '';
         })
         .join('')}</div>`;
+    wrapTables(results);
 
     results.querySelectorAll('[data-pln-node]').forEach((chip) => {
       chip.addEventListener('click', () => {
@@ -382,13 +405,15 @@ function renderPresetsPanel(host) {
         savePresetStore(removePreset(loadPresetStore(), preset.id));
         refreshList();
       });
-      for (const button of [applyBtn, exportBtn, shareBtn, deleteBtn]) actionCell.appendChild(button);
+      for (const button of [applyBtn, exportBtn, shareBtn, deleteBtn])
+        actionCell.appendChild(button);
       row.appendChild(nameCell);
       row.appendChild(actionCell);
       body.appendChild(row);
     }
     table.appendChild(body);
     listHost.appendChild(table);
+    wrapTables(listHost);
   };
 
   const applyPreset = (preset) => {
@@ -414,11 +439,7 @@ function renderPresetsPanel(host) {
 
   card.querySelector('[data-pln="save"]').addEventListener('click', () => {
     const researchId = treeSelect.value;
-    const captured = captureTowersPreset(
-      loadSpecializationState(),
-      troopSelect.value,
-      researchId
-    );
+    const captured = captureTowersPreset(loadSpecializationState(), troopSelect.value, researchId);
     if (!captured) return;
     savePresetStore(
       upsertPreset(loadPresetStore(), {
@@ -575,6 +596,7 @@ function renderCastlePanel(host) {
       <table class="pln-table"><tbody>${upgradeRows}</tbody></table>
       <div class="pln-subtitle">${escapeHtml(t('castlePlannerAssumptions'))}</div>
       <ul>${assumptionRows}</ul>`;
+    wrapTables(results);
   });
 
   jsonBtn.addEventListener('click', () => {
@@ -588,6 +610,20 @@ function renderCastlePanel(host) {
   });
 
   card.querySelector('[data-pln="print"]').addEventListener('click', () => window.print());
+
+  mountBuildingUpgrades(card);
+}
+
+// The Castle 26–30 / all-buildings upgrade planner used to be a top-level tab of its
+// own, which cost the shell a pill and a full-height panel for a tool that belongs
+// beside the Castle planner. It loads on demand so the tab's own bundle stays lean.
+function mountBuildingUpgrades(card) {
+  const host = document.createElement('div');
+  host.className = 'building-upgrades-host';
+  card.appendChild(host);
+  import('./building-upgrades.js')
+    .then((module) => module.initBuildingUpgrades(host))
+    .catch(() => {});
 }
 
 function parseOpsLines(text) {
@@ -598,7 +634,10 @@ function parseOpsLines(text) {
     const match = trimmed.match(/^(.+?)\s*=\s*(\d+(?:\.\d+)?)\s*(?:[x*]\s*(\d+))?$/);
     if (!match) continue;
     ops.push({
-      id: match[1].trim().toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      id: match[1]
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-'),
       name: match[1].trim().slice(0, 60),
       cost: Number(match[2]),
       desiredCount: match[3] ? Number(match[3]) : 1,
@@ -698,6 +737,7 @@ function renderStaminaPanel(host) {
       <table class="pln-table"><thead><tr><th>${escapeHtml(t('staminaHour'))}</th><th>${escapeHtml(t('staminaStamina'))}</th><th>${escapeHtml(t('staminaAffordable'))}</th></tr></thead><tbody>${timelineRows}</tbody></table>
       <div class="pln-subtitle">${escapeHtml(t('staminaPerOp'))}</div>
       <table class="pln-table"><tbody>${opRows}</tbody></table>`;
+    wrapTables(results);
   };
 
   card.querySelector('[data-pln="compute"]').addEventListener('click', () => compute());
@@ -749,8 +789,11 @@ export async function initLane5Planners(host) {
 
   const shell = h('div', 'pln-shell');
   shell.innerHTML = `
-    <h2>${escapeHtml(t('plannersHubTitle'))}</h2>
-    <p class="pln-lead">${escapeHtml(t('plannersHubDesc'))}</p>
+    <header class="pln-head">
+      <span class="pln-eyebrow">${escapeHtml(t('tabResearchTowers'))}</span>
+      <h2>${escapeHtml(t('plannersHubTitle'))}</h2>
+      <p class="pln-lead">${escapeHtml(t('plannersHubDesc'))}</p>
+    </header>
     <div class="pln-tabs pln-no-print" role="tablist">
       <button type="button" class="pln-tab active" data-pln-tab="research" role="tab">${escapeHtml(t('plannersTabResearch'))}</button>
       <button type="button" class="pln-tab" data-pln-tab="presets" role="tab">${escapeHtml(t('plannersTabPresets'))}</button>
@@ -782,4 +825,15 @@ export async function initLane5Planners(host) {
   renderPresetsPanel(panels.presets);
   renderCastlePanel(panels.castle);
   renderStaminaPanel(panels.stamina);
+
+  // Deep link: #researchTowers?subtab=research&planner=castle opens a planner
+  // tab directly (the More menu's Buildings entry uses it).
+  const openFromHash = () => {
+    const wanted = new URLSearchParams(location.hash.split('?')[1] || '').get('planner');
+    if (!wanted || !panels[wanted]) return;
+    shell.querySelector(`[data-pln-tab="${wanted}"]`)?.click();
+    requestAnimationFrame(() => shell.scrollIntoView({ block: 'start' }));
+  };
+  openFromHash();
+  window.addEventListener('hashchange', openFromHash);
 }

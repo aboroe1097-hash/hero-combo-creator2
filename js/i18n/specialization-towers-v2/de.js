@@ -1,4 +1,6 @@
 export const SPECIALIZATION_TOWERS_V2_DE = Object.freeze({
+  reportWrongCost: 'Falsche Kosten melden',
+  selectNodeBeforeMedals: 'Wähle mindestens einen Knoten, bevor du Medaillen hinzufügst.',
   title: 'Spezialisierungstürme',
   subtitle:
     'Stelle jeden Spezialisierungspfad nach, erfasse Medaillen und prüfe seine aktiven Boni.',

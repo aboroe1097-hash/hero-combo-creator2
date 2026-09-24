@@ -119,11 +119,25 @@ const DESTS = [
     kw: 'arcade games mini games play forge merge rumble',
   },
   {
+    key: 'tabEdenSiege',
+    href: 'eden-siege.html',
+    kind: 'link',
+    fallback: 'Eden Siege',
+    kw: 'eden siege game play arena ice fire tower defense velo daily siege endless boss warlord',
+  },
+  {
     key: 'tabBattleSimulator',
     href: 'battle-simulator.html',
     kind: 'link',
     fallback: 'Battle Simulator',
     kw: 'battle simulator beta troops combat formation rounds tactical might resistance speed',
+  },
+  {
+    key: 'tabDownloads',
+    href: 'downloads.html',
+    kind: 'link',
+    fallback: 'Community Downloads',
+    kw: 'downloads download pdf export print research costs specialisation medals eden tables dragon master roster',
   },
 ];
 

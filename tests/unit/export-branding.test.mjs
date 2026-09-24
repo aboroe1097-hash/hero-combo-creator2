@@ -32,8 +32,8 @@ function fakeCtx({ charWidth = 4 } = {}) {
 
 test('branding composes display name from seo.js constants', () => {
   const brand = getExportBranding({ revision: 'x12-2026-09-02', verificationStatus: 'current' });
-  assert.equal(brand.siteName, 'Hero Combo Creator');
-  assert.ok(brand.displayName.startsWith('Hero Combo Creator'));
+  assert.equal(brand.siteName, 'RoC VTS Toolkit');
+  assert.ok(brand.displayName.startsWith('RoC VTS Toolkit'));
   assert.ok(brand.displayName.includes('VTS 1097'));
   assert.equal(brand.datasetRevision, 'x12-2026-09-02');
   assert.equal(brand.verificationStatus, 'current');
@@ -88,10 +88,28 @@ test('canvas footer fits wide canvases and credits sources', () => {
 test('canvas footer truncates instead of overflowing narrow canvases', () => {
   const ctx = fakeCtx();
   const brand = getExportBranding();
-  const fits = drawCanvasFooter(ctx, brand, { x: 28, y: 100, width: 200 });
+  const fits = drawCanvasFooter(ctx, brand, { x: 28, y: 100, width: 100 });
   assert.equal(fits, false);
   const line2 = ctx.calls[1].text;
   assert.ok(line2.endsWith('…'));
+});
+
+test('canvas footer omits the Sources segment when an export passes no credits', () => {
+  const ctx = fakeCtx();
+  const brand = { ...getExportBranding(), sourceCredits: [] };
+  drawCanvasFooter(ctx, brand, { x: 28, y: 100, width: 1200 });
+  const text = ctx.calls.map((call) => call.text).join('\n');
+  assert.ok(!text.includes('Sources:'));
+  assert.ok(!text.includes('DonPablone'));
+  assert.ok(text.includes(brand.siteUrl));
+});
+
+test('a footer too narrow for every credit never singles out one name', () => {
+  const ctx = fakeCtx();
+  const brand = getExportBranding();
+  drawCanvasFooter(ctx, brand, { x: 28, y: 100, width: 520 });
+  const line2 = ctx.calls[1].text;
+  assert.ok(!line2.includes('DonPablone'), line2);
 });
 
 test('truncateCanvasText reports the fits contract', () => {

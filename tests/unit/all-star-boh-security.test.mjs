@@ -657,7 +657,14 @@ test('Firestore private and published paths enforce admin/member boundaries with
   );
   assert.match(config, /allow get: if isAdmin\(\)/);
   assert.match(config, /allow list: if false/);
-  assert.match(config, /allow create, update: if isAdmin\(\) && validAllStarBohConfig\(\)/);
+  assert.match(config, /allow create: if isSuperAdmin\(\) && validAllStarBohConfig\(\)/);
+  assert.match(config, /allow update: if isAdmin\(\) && validAllStarBohConfig\(\)/);
+  // An admin toggles registration; the season and scoring version are the
+  // superadmin's.
+  assert.match(
+    config,
+    /isSuperAdmin\(\)\s*\|\|\s*!request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\s*\.hasAny\(\['activeSeason', 'scoringProfileId'\]\)/
+  );
   assert.match(config, /allow delete: if false/);
   assert.doesNotMatch(config, /signedIn\(\)|hasActiveAllStarBohGrant/);
   const configValidator = rulesMatch(
@@ -670,6 +677,22 @@ test('Firestore private and published paths enforce admin/member boundaries with
   assert.match(configValidator, /activeSeason\.matches\('\^\[A-Za-z0-9_-\]\{1,80\}\$'\)/);
   assert.match(configValidator, /grantDurationMinutes >= 5/);
   assert.match(configValidator, /grantDurationMinutes <= 10080/);
+  // The 2027 signup revival adds the season's scoring version to this document.
+  // It is listed on both the hasOnly and the hasAll list, so an admin cannot
+  // drop it and a later writer cannot smuggle an extra key in beside it.
+  assert.match(
+    configValidator,
+    /keys\(\)\.hasOnly\(\[\s*'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId',\s*'acceptNewSignups'\s*\]\)/
+  );
+  // Competition #12: `acceptNewSignups` is optional (absent means yes), set by
+  // the syncCompetitionPhase Function, and must be a boolean when present.
+  assert.match(configValidator, /get\('acceptNewSignups', true\) is bool/);
+  assert.match(
+    configValidator,
+    /keys\(\)\.hasAll\(\[\s*'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId'\s*\]\)/
+  );
+  assert.match(configValidator, /scoringProfileId is string/);
+  assert.match(configValidator, /scoringProfileId\.matches\('\^\[A-Za-z0-9\._-\]\{1,80\}\$'\)/);
 
   const grants = rulesMatch(
     rules,
@@ -1392,4 +1415,41 @@ test('Firestore rules cover All-Star schedule, standby, and co-leader publicatio
   assert.match(teamValidator, /validAllStarBohShortIdentifierList\(data\.coLeaderIds\)/);
   assert.match(teamValidator, /validAllStarBohIdentifier\(data\.coLeaderIds\[0\], false\)/);
   assert.match(teamValidator, /validAllStarBohIdentifier\(data\.coLeaderIds\[1\], false\)/);
+});
+
+test('Competition #12 schedule is superadmin-written, public-readable, and new sign-ups follow the phase flag', () => {
+  const rules = readFileSync('firestore.rules', 'utf8');
+  const block = rulesMatch(
+    rules,
+    /match \/boh_allstar_competition\/current \{[\s\S]*?\n {4}\}/,
+    'competition schedule'
+  );
+  assert.match(block, /allow get: if signedIn\(\)/);
+  assert.match(block, /allow list: if false/);
+  assert.match(
+    block,
+    /allow create, update: if isSuperAdmin\(\) && validAllStarBohCompetitionSchedule\(\)/
+  );
+  assert.match(block, /allow delete: if false/);
+  const validator = rulesMatch(
+    rules,
+    /function validAllStarBohCompetitionSchedule\(\) \{[\s\S]*?\n {4}\}/,
+    'schedule validator'
+  );
+  assert.match(validator, /d\.opensAt < d\.phase1ClosesAt/);
+  assert.match(validator, /d\.winnersStartAt < d\.winnersEndAt/);
+  assert.match(validator, /d\.updatedAt == request\.time/);
+  assert.match(validator, /d\.updatedBy == request\.auth\.uid/);
+  // New member sign-ups read one flag from the config the rule already loads;
+  // the member write path has no expression budget for per-write time windows.
+  const submissions = rulesMatch(
+    rules,
+    /match \/submissions\/\{uid\} \{[\s\S]*?\n {6}\}/,
+    'submissions'
+  );
+  assert.match(
+    submissions,
+    /allow create: if isOwner\(uid\)[\s\S]*?allStarBohAcceptsNewSignups\(\)/
+  );
+  assert.doesNotMatch(submissions, /boh_allstar_competition/);
 });

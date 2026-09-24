@@ -37,3 +37,5 @@ jobs:
           # injection path as production without exposing or requiring secrets.
           VTS_EDEN_VOTES_PIN: ci-only-not-a-secret
           VTS_ADMIN_OVERRIDE_CODE: ci-only-not-a-secret
+      - name: Test Eden Siege
+        run: npm run siege:test

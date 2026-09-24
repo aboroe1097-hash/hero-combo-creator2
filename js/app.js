@@ -27,6 +27,9 @@ import { initKeyboardShortcuts } from './app-shortcuts.js';
 import { DEBOUNCE_MS, HERO_DRAG_MIME } from './constants.js';
 import { comboToolsText } from './i18n/combo-tools/index.js';
 import { formatLocaleNumber } from './locale-format.js';
+import { swapPanel } from './fx/view-swap.js';
+import { celebrate } from './fx/success-feedback.js';
+import { initHubMotion } from './fx/hub-motion.js';
 
 import {
   renderGeneratorHeroes,
@@ -180,7 +183,7 @@ function reportDynamicImportFailure(error) {
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260918_202304').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260924_155646').catch((err) => {
       researchModulePromise = null;
       reportDynamicImportFailure(err);
       throw err;
@@ -202,7 +205,7 @@ function loadMaterialModule() {
 
 function loadExportModule() {
   if (!exportModulePromise) {
-    exportModulePromise = import('./app-export.js?v=20260918_202304').catch((error) => {
+    exportModulePromise = import('./app-export.js?v=20260924_155646').catch((error) => {
       exportModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -213,7 +216,7 @@ function loadExportModule() {
 
 function loadArcadeModule() {
   if (!arcadeModulePromise) {
-    arcadeModulePromise = import('./arcade-spa.js?v=20260918_202304').catch((error) => {
+    arcadeModulePromise = import('./arcade-spa.js?v=20260924_155646').catch((error) => {
       arcadeModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -305,7 +308,7 @@ initTheme();
 
 document.getElementById('shareCurrentViewBtn')?.addEventListener('click', async () => {
   const url = window.location.href;
-  const copy = (translations[currentLanguage] || translations.en || {});
+  const copy = translations[currentLanguage] || translations.en || {};
   try {
     if (navigator.share) {
       await navigator.share({ title: document.title, url });
@@ -315,6 +318,7 @@ document.getElementById('shareCurrentViewBtn')?.addEventListener('click', async 
         window.showToast(copy.shareViewCopied || 'Link copied to clipboard');
       }
     }
+    celebrate(document.getElementById('shareCurrentViewBtn'));
   } catch (error) {
     if (error?.name !== 'AbortError') console.warn('[share-view] Unable to share link', error);
   }
@@ -530,7 +534,9 @@ function updateSeasonCatchupHint(container) {
 // The select-all control is a button, not a checkbox, so getCheckedValues and
 // the change-delegated filter wiring never see it as a season.
 function seasonPillInputs(container) {
-  return Array.from(container.querySelectorAll('label.filter-pill:not(.hidden) input[type="checkbox"]'));
+  return Array.from(
+    container.querySelectorAll('label.filter-pill:not(.hidden) input[type="checkbox"]')
+  );
 }
 
 function syncSeasonSelectAll(container) {
@@ -923,7 +929,16 @@ const CANONICAL_TAB_HASHES = Object.freeze({ edenMap: 'edenHub' });
 // Every hash the tab has ever answered to, kept permanently. #edenMap is
 // already live in toolkit-map.js, in Velo's knowledge base and in links members
 // have shared; a rename that drops it breaks those silently.
-const TAB_HASH_ALIASES = Object.freeze({ edenhub: 'edenMap', edenmap: 'edenMap' });
+// Short Eden links open the hub; shell-v14 hands the hub which sub-tab
+// (season, the ballot, or the previous season) the link asked for.
+const TAB_HASH_ALIASES = Object.freeze({
+  edenhub: 'edenMap',
+  edenmap: 'edenMap',
+  season: 'edenMap',
+  edenx2: 'edenMap',
+  vote: 'edenMap',
+  edenx1: 'edenMap',
+});
 
 function canonicalTabHash(tabName) {
   return CANONICAL_TAB_HASHES[tabName] || tabName;
@@ -1121,9 +1136,9 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
         // The Eden Hub owns the visible sub-tabs, so bind its controls as
         // soon as the template exists. Waiting for the map engine left a
         // short window where a real click on Map was silently dropped.
-        import('./eden-hub.js?v=20260918_202304')
+        import('./eden-hub.js?v=20260924_155646')
           .then((hub) => hub.bootEdenHub())
-          .then(() => import('./eden-map.js?v=20260918_202304'))
+          .then(() => import('./eden-map.js?v=20260924_155646'))
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => {
             _edenMapReady = true;
@@ -1153,7 +1168,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'heroes' && !_heroesTabReady) {
       if (_heroesTabBooting) return;
       _heroesTabBooting = true;
-      import('./app-hero-atlas.js?v=20260918_202304')
+      import('./app-hero-atlas.js?v=20260924_155646')
         .then((mod) => {
           mod.renderHeroesTab();
           _heroesTabReady = true;
@@ -1195,7 +1210,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'artifact' && !_artifactReady) {
       if (_artifactBooting) return;
       _artifactBooting = true;
-      import('./app-artifact.js?v=20260918_202304')
+      import('./app-artifact.js?v=20260924_155646')
         .then(async (mod) => {
           await mod.initArtifactCalculator();
           _artifactReady = true;
@@ -1270,7 +1285,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260918_202304')
+      import('./app-strife.js?v=20260924_155646')
         .then((mod) => mod.initStrifeTool())
         .then(() => {
           _strifeReady = true;
@@ -1323,7 +1338,7 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     }
     if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
       _youtubeBooting = true;
-      import('./youtube-v14.js?v=20260918_202304')
+      import('./youtube-v14.js?v=20260924_155646')
         .then((mod) => {
           mod.initYouTubeLibrary();
           _youtubeReady = true;
@@ -1392,6 +1407,8 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     document.body.classList.toggle('tab-specialization-active', subtab === 'towers');
     if (subtab === 'artifact') onTabActivated('artifact');
     else if (subtab === 'research') onTabActivated('research');
+    // Buildings and PDFs are mounted by the hub controller itself.
+    else if (subtab === 'buildings' || subtab === 'pdfs') return;
     else onTabActivated('specialization');
   }
 
@@ -1484,11 +1501,13 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     syncComboChrome(subtab);
     if (subtab === 'manual') onTabActivated('manual');
     else if (subtab === 'generator') onTabActivated('generator');
+    // The hub mounts its PDFs panel itself.
+    else if (subtab === 'pdfs') return;
     else {
       onTabActivated('heroes');
       // The Atlas may still be booting; setHeroAtlasMode is idempotent, so
       // applying the mode again after it renders is harmless.
-      import('./app-hero-atlas.js?v=20260918_202304')
+      import('./app-hero-atlas.js?v=20260924_155646')
         .then((mod) => mod.setHeroAtlasMode?.(atlasMode || 'heroes'))
         .catch(() => {
           /* the Atlas boot path reports its own failure */
@@ -1566,63 +1585,68 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
 
     const targetSection = document.getElementById(`${tabName}Section`);
 
-    tabPanels.forEach((sec) => {
-      if (sec) sec.classList.add('hidden');
-    });
-    if (comboFooterBar) comboFooterBar.classList.add('hidden');
+    const applySwap = () => {
+      tabPanels.forEach((sec) => {
+        if (sec) sec.classList.add('hidden');
+      });
+      if (comboFooterBar) comboFooterBar.classList.add('hidden');
 
-    document.querySelectorAll('.tab-pill').forEach((btn) => {
-      btn.classList.replace('tab-pill-active', 'tab-pill-inactive');
-    });
-    const activeBtn = document.getElementById(
-      TAB_BTN_IDS[tabName] || `tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`
-    );
-    if (activeBtn) {
-      activeBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
-      requestAnimationFrame(() => keepActiveTabInView(activeBtn));
-    }
-    syncTabA11yState(tabName);
-
-    if (targetSection) {
-      targetSection.classList.remove('hidden');
-      window.VTSLoaderV14?.enhance?.(targetSection);
-    }
-    document.documentElement.removeAttribute('data-initial-tab-pending');
-
-    // The combo chrome belongs to two sub-tabs of the Heroes & Combos Hub, so
-    // it is driven by the sub-tab rather than the tab. syncComboChrome() runs
-    // again whenever the hub switches sub-tab.
-    syncComboChrome(tabName === 'heroesCombos' ? heroesCombosSubtab() : '');
-
-    document.body.dataset.activeTab = tabName;
-    document.body.classList.toggle('tab-strife-active', tabName === 'strife');
-
-    onTabActivated(tabName);
-    _lastTab = tabName;
-    if (options.scrollToSection) {
-      requestAnimationFrame(() => scrollToTabStart(targetSection));
-    }
-    try {
-      // Keep the hash the caller asked for. Arriving on #specialization must
-      // stay shareable as #specialization even though the hub owns the tab.
-      const currentHash = window.location.hash.replace(/^#/, '');
-      const currentBase = currentHash.split('?')[0];
-      const canonical = canonicalTabHash(tabName);
-      const hash =
-        !hubSubtab &&
-        currentHash.includes('?') &&
-        currentBase.toLowerCase() === canonical.toLowerCase()
-          ? currentHash
-          : hubSubtab
-            ? requestedTab
-            : canonical;
-      if (!options.preserveHash && window.location.hash !== '#' + hash) {
-        // User-initiated tool changes must be Back/Forward navigable. Initial
-        // hash normalization and hashchange handling pass preserveHash instead.
-        const historyMethod = options.replaceHash ? 'replaceState' : 'pushState';
-        history[historyMethod]({ tab: hash }, '', '#' + hash);
+      document.querySelectorAll('.tab-pill').forEach((btn) => {
+        btn.classList.replace('tab-pill-active', 'tab-pill-inactive');
+      });
+      const activeBtn = document.getElementById(
+        TAB_BTN_IDS[tabName] || `tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`
+      );
+      if (activeBtn) {
+        activeBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
+        requestAnimationFrame(() => keepActiveTabInView(activeBtn));
       }
-    } catch {}
+      syncTabA11yState(tabName);
+
+      if (targetSection) {
+        targetSection.classList.remove('hidden');
+        window.VTSLoaderV14?.enhance?.(targetSection);
+      }
+      document.documentElement.removeAttribute('data-initial-tab-pending');
+
+      // The combo chrome belongs to two sub-tabs of the Heroes & Combos Hub, so
+      // it is driven by the sub-tab rather than the tab. syncComboChrome() runs
+      // again whenever the hub switches sub-tab.
+      syncComboChrome(tabName === 'heroesCombos' ? heroesCombosSubtab() : '');
+
+      document.body.dataset.activeTab = tabName;
+      document.body.classList.toggle('tab-strife-active', tabName === 'strife');
+
+      onTabActivated(tabName);
+      _lastTab = tabName;
+      if (options.scrollToSection) {
+        requestAnimationFrame(() => scrollToTabStart(targetSection));
+      }
+      try {
+        // Keep the hash the caller asked for. Arriving on #specialization must
+        // stay shareable as #specialization even though the hub owns the tab.
+        const currentHash = window.location.hash.replace(/^#/, '');
+        const currentBase = currentHash.split('?')[0];
+        const canonical = canonicalTabHash(tabName);
+        const hash =
+          !hubSubtab &&
+          currentHash.includes('?') &&
+          currentBase.toLowerCase() === canonical.toLowerCase()
+            ? currentHash
+            : hubSubtab
+              ? requestedTab
+              : canonical;
+        if (!options.preserveHash && window.location.hash !== '#' + hash) {
+          // User-initiated tool changes must be Back/Forward navigable. Initial
+          // hash normalization and hashchange handling pass preserveHash instead.
+          const historyMethod = options.replaceHash ? 'replaceState' : 'pushState';
+          history[historyMethod]({ tab: hash }, '', '#' + hash);
+        }
+      } catch {}
+    };
+    // SwapPanel only decorates this one state update; unsupported browsers, a
+    // transition already in flight, and reduced motion all update directly.
+    swapPanel(targetSection, applySwap, { transition: options.transition });
   }
   window.vtsSwitchTab = switchTab;
   window.vtsTabNames = validTabNames;
@@ -1763,6 +1787,9 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     scrollToSection: startTab !== 'generator',
     preserveHash: preserveInitialHash,
     replaceHash: !preserveInitialHash,
+    // The pre-paint shell already hid the default panel, so this swap is the
+    // first paint rather than a navigation. Animating it would flash.
+    transition: false,
   });
 }
 
@@ -2053,6 +2080,19 @@ async function startApp() {
       }
     });
     safeInit('keyboardAwareLayout', () => initKeyboardAwareLayout());
+    safeInit('siegeCallout', () => {
+      // The one-time Eden Siege callout loads after the hub is idle, as its
+      // own small chunk, so it never competes with the first paint.
+      const show = () =>
+        import('./siege-promo.js')
+          .then(({ mountSiegeCallout }) =>
+            mountSiegeCallout({ getCopy: () => translations[currentLanguage] || translations.en })
+          )
+          .catch(() => {});
+      const later = () => setTimeout(show, 2500);
+      if (typeof requestIdleCallback === 'function') requestIdleCallback(later, { timeout: 4000 });
+      else later();
+    });
     const restoreHashRoute = () => {
       const rawHash = window.location.hash?.replace('#', '').split('?')[0] || '';
       const tab = resolveTabName(rawHash, window.vtsTabNames);
@@ -2167,6 +2207,9 @@ if (window.VTS_MAINTENANCE_ACTIVE) {
   document.body?.classList.remove('app-booting');
 } else if (typeof startApp === 'function') {
   initAppLoading();
+  // The shell is a classic script and cannot import the motion modules itself,
+  // so the bundled entry owns the one-shot hub entry stagger and spotlight.
+  initHubMotion();
   setupInstallPrompt();
   window.showAboModal = showAboModal;
 

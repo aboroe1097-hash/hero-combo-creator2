@@ -152,6 +152,25 @@
     else focusOption(index + (event.key === 'ArrowUp' ? -1 : 1));
   });
   select.addEventListener('change', () => window.setTimeout(sync, 0));
+  // Pages apply a stored or URL language with `select.value = lang`, which
+  // fires no change event, so the label kept showing the old language. Wrap
+  // this one element's value/selectedIndex setters so every programmatic set
+  // re-syncs the button too.
+  ['value', 'selectedIndex'].forEach((property) => {
+    const native = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, property);
+    if (!native?.set || !native.get) return;
+    Object.defineProperty(select, property, {
+      configurable: true,
+      enumerable: native.enumerable,
+      get() {
+        return native.get.call(this);
+      },
+      set(next) {
+        native.set.call(this, next);
+        sync();
+      },
+    });
+  });
   window.addEventListener('edenLanguageUpdate', sync);
   document.addEventListener('pointerdown', (event) => {
     if (!menu.hidden && !shell.contains(event.target) && !menu.contains(event.target)) {

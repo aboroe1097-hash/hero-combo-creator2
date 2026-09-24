@@ -75,7 +75,12 @@ const LIMITS = {
   // retain roughly 1.5 KiB of headroom.
   // The 16.0.3 Specialization summary bands, season select-all control, and
   // X10/X12 bracket cards measure 429.5 KiB (was 428.5); retain roughly 0.5 KiB.
-  entryCssBytes: 430 * 1024,
+  // 16.5.0 Phase 0 reclaim (2026-09-23): removing the unconsumed .u-* utilities
+  // from css/atmosphere.css and four dead compatibility tokens from
+  // css/_tokens.css measured 431,155 -> 428,135 bytes on the locked toolchain.
+  // The ceiling drops by the verified reclaim (430 -> 427 KiB) so the reclaim
+  // cannot be silently re-spent; the absolute reserve stays roughly 9 KiB.
+  entryCssBytes: 427 * 1024,
   // Specialization Towers, Alliance View, Skin Atlas, and All-Star BoH stay
   // route-isolated behind dynamic imports. The combined graph now includes the
   // canonical tower research corpus, Skin Atlas data, secure BoH client,
@@ -149,7 +154,26 @@ const LIMITS = {
   // twelve lazy language chunks; the audited graph is now 9953.6 KiB.
   // Translating the Royal Bounty guide adds eleven lazy locale chunks
   // (~107 KiB total, none on the initial path); audited at 10076.5 KiB.
-  totalJsBytes: 10084 * 1024,
+  // 16.5.0 combined release: the Eden Siege arena brings its own lazy
+  // eden-siege-engine/eden-siege-three chunks (~676 KiB, loaded only on
+  // eden-siege.html and kept out of the service-worker precache), plus the
+  // Community Downloads route, the Buildings planner data, the Specialisation
+  // workbook costs, and the admin batch-edit and duty-PNG modules (the PNG
+  // renderer is a click-time dynamic import). Measured 11094.9 KiB locally;
+  // retain ~20 KiB for CI's admin-auth injection.
+  // Translating the last 30 English-fallback strings into nine lazy locale
+  // chunks (Dragon Master guide, vote delete/redirect) brought CI to
+  // 11116.6 KiB; retain ~25 KiB again rather than ship with none.
+  // 16.5.2: the Operations Lab task board, checklists and staffing counters
+  // (~10 KiB in its lazy chunk), the shared standalone tool shell with its
+  // 13-locale strings (~8 KiB, imported by the seven standalone entries), and
+  // the per-node Specialization workbook lookup. Measured 11154.9 KiB
+  // locally; retain ~20 KiB for CI's admin-auth injection.
+  // 16.5.4 combined release: Competition #12 (schedule, growth board and admin
+  // panel), Eden Pathing, the motion P2 modules, the per-hub PDF builders with
+  // their 12 lazy locale packs, and the Eden Siege fun pass. Measured
+  // 11590.8 KiB locally; retain ~20 KiB for CI's admin-auth injection.
+  totalJsBytes: 11611 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -274,7 +298,10 @@ const LIMITS = {
   // artifact audits to 31976.6 KiB. Retain roughly 7 KiB of headroom.
   // Translating the Royal Bounty guide adds eleven lazy locale chunks; the
   // artifact audits to 32093.1 KiB. Retain roughly 7 KiB of headroom.
-  totalDeployBytes: 32100 * 1024,
+  // Community Downloads adds the 14 PDFs (~1,259 KiB), the downloads.json
+  // manifest, and the hub page with its module and stylesheet, taking the
+  // artifact to roughly 33,377 KiB. Retain about 7 KiB.
+  totalDeployBytes: 33384 * 1024,
   // Raised from 16 MiB for the two mapper map plates, which keep their pixel
   // dimensions because stage1-labeled.png carries fine label text that
   // quantisation would smudge. Audited at 17,566.1 KiB.
@@ -294,7 +321,12 @@ const LIMITS = {
   // 18828.2 KiB. Their 1.3 MiB of PNG sources stay source-only, so only the
   // served format counts here. Raised rather than ship the newest roster on
   // placeholder art; retain roughly 22 KiB.
-  totalMediaBytes: 18850 * 1024,
+  // Community Downloads ships 14 generated PDFs. They count as deployed media
+  // because the media filter excludes only css/html/js/json/map/md/txt/xml.
+  // Measured at 1,258.7 KiB across the 14 documents (largest single file
+  // roc-research-costs.pdf at 357.0 KiB, well under the 4 MiB guard), taking
+  // audited media to ~20,087 KiB. Retain roughly 15 KiB.
+  totalMediaBytes: 20102 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Specialization, All-Star, and the Velo b0.2 changelog digest add route,
   // feature, locale, and reference-image assets. The audited artifact has 581
@@ -327,7 +359,27 @@ const LIMITS = {
   // load held: index FCP 3144 -> 2912 ms, load 4220 -> 4145 ms; admin FCP
   // 3016 -> 2920 ms, load 4864 -> 4820 ms; Eden X1 FCP 2984 -> 2540 ms, load
   // 5469 -> 5551 ms. Keep three of headroom.
-  deployFileCount: 729,
+  // 16.0.19 adds css/player-season.css as its own on-demand chunk (so the Eden
+  // pages' initial CSS stays within its budget); the build emits 730 files.
+  // 16.5.0 confirmed-success feedback adds one shared chunk
+  // (success-feedback-*.js, 5.2 KiB) used by the index, combo save, and Eden
+  // vote paths. The merged build emits 731 files; keep three of headroom.
+  // The 2027 signup revival shares js/all-star-boh-model.js between the member
+  // route (vtsscore), the admin dashboard and the AI public-data adapter, which
+  // emits two chunks no single route owned before: all-star-boh-model-*.js and
+  // boh-signup-document-*.js. Measured at 733 files, so the cap moves by two to
+  // keep the same three files of headroom.
+  // 16.5.0 combined release adds the Community Downloads PDFs under
+  // dist/downloads/, the Eden Siege route with its isolated chunks, and the
+  // lazy duty-export, bulk-select and title modules. Measured 769 files; keep
+  // three of headroom.
+  // 16.5.3 adds a shared locale-pack timeout helper used by Siege, Downloads,
+  // and Building Upgrades. The locked production build emits one 518-byte
+  // shared chunk for it (773 deployed files total); retain that measured file.
+  // 16.5.4 combined release: the lazy hub-PDF, Competition #12, Eden Pathing,
+  // motion and Siege daily/promo chunks. Measured 807 files; keep three of
+  // headroom.
+  deployFileCount: 810,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive
@@ -369,7 +421,19 @@ const LIMITS = {
     // from their own chunk, and every rule that keeps an @media wrapper needs
     // that wrapper repeated there. 682.8/779.5 KiB; lift desktop by 1 KiB so
     // Admin keeps some headroom, mobile ceiling untouched.
-    'admin.html': { desktop: 684 * 1024, mobile: 786 * 1024 },
+    // The 2027 Signups tab adds one compact grid for the season picker and the
+    // manual-entry form in css/ocr-dashboard-admin.css: 684.7/781.4 KiB. Lift
+    // desktop by 1 KiB (mobile keeps its existing ceiling); admin-only panel
+    // styles still belong in the admin file, not in shared ocr-dashboard.css.
+    // 16.5.0 batch edit (bulk bar, per-card checkboxes) and upload titles
+    // (rename form, group chips and filter) add admin-only rules to
+    // css/ocr-dashboard-admin.css: 687.0 KiB desktop. Lift desktop by 3 KiB;
+    // mobile keeps its existing ceiling.
+    // The 16.5.0 QA pass adds phone layouts for the scoring and reward tables,
+    // light-theme states and RTL-safe margins: 688.9 KiB. Lift desktop to 690.
+    // 16.5.4: the standalone footer's 44px touch targets add ~0.1 KiB to the
+    // admin mobile route (786.1 KiB measured); retain ~0.9 KiB.
+    'admin.html': { desktop: 690 * 1024, mobile: 787 * 1024 },
     // Eden used to carry every admin dashboard style, because it imports
     // ocr-dashboard.css for weighted-contribution detail; 16.0.14 had lifted the
     // ceiling to 806/909 KiB for admin-only rules alone. 16.0.15 moves the
@@ -377,21 +441,50 @@ const LIMITS = {
     // only Admin loads: 663.0/759.7 KiB (was 805.0/901.7). Ceilings keep
     // roughly 1 KiB of headroom. Admin-only dashboard rules belong in the admin
     // file; adding them to ocr-dashboard.css is what this budget now catches.
-    'eden-x1.html': { desktop: 664 * 1024, mobile: 761 * 1024 },
+    // 16.5.4: 44px footer and retry-button touch targets: 664.1 KiB desktop.
+    'eden-x1.html': { desktop: 665 * 1024, mobile: 761 * 1024 },
     // Eden X2 is the same page shell and the same module graph as Eden X1, so
     // it inherits the audited Eden budget rather than getting its own.
-    'eden-x2.html': { desktop: 664 * 1024, mobile: 761 * 1024 },
+    'eden-x2.html': { desktop: 665 * 1024, mobile: 761 * 1024 },
     // Arcade measures 437.3/530.0 KiB with the audited 14.2.8 shared graph;
     // retain less than 2 KiB of route-specific headroom.
     'arcade.html': { desktop: 463 * 1024, mobile: 585 * 1024 },
     // The Battle saved-profile checklist lifts the audited standalone route to
     // 54.9 KiB on desktop and mobile; retain roughly 1 KiB of headroom.
     // The account chip stylesheet lifts the standalone Battle route to 57.5 KiB.
-    'battle-simulator.html': { desktop: 59 * 1024, mobile: 59 * 1024 },
+    // 16.5.2: the shared standalone footer and tool-shell styles (~7.6 KiB)
+    // bring the route to 65.1 KiB; retain roughly 1.5 KiB.
+    'battle-simulator.html': { desktop: 67 * 1024, mobile: 67 * 1024 },
     // Specialization Towers is route-isolated and loads only shared tokens plus
     // its responsive progression workspace. Keep a focused per-route ceiling;
     // aggregate artifact budgets are recalibrated from the production build.
-    'specialization-towers.html': { desktop: 80 * 1024, mobile: 80 * 1024 },
+    // 16.5.2: the shared standalone footer and tool-shell styles plus the
+    // wrapping desktop header measure 87.8 KiB; retain roughly 1 KiB.
+    'specialization-towers.html': { desktop: 89 * 1024, mobile: 89 * 1024 },
+    // VtsScore now hosts the member season registration as well as the score
+    // upload, so it gets a budget line of its own: tokens, account chip and
+    // css/vts-score.css measure 21.5 KiB on both viewports. The registration
+    // form's rules live in that same stylesheet rather than a new one, which is
+    // what keeps this route from adding a deploy file. Retain about 1 KiB.
+    // 16.5.2: the shared standalone footer and the branded Back-to-tools bar
+    // replace the page's own one-line footer: 30.6 KiB. Retain about 1.4 KiB.
+    'vtsscore.html': { desktop: 32 * 1024, mobile: 32 * 1024 },
+    // Community Downloads is a static list page: shared tokens plus the download
+    // grid stylesheet, and no game data is loaded. Keep the same focused shape.
+    'downloads.html': { desktop: 40 * 1024, mobile: 40 * 1024 },
+    // Measured from the 16.5.0 production build: 26,810 bytes desktop and
+    // 125,788 bytes mobile, including the responsive mobile stylesheet.
+    // 16.5.4 fun pass (tower tiers, modes, results screen): 33.5 KiB desktop
+    // and 130.2 KiB mobile; retain under 1 KiB.
+    'eden-siege.html': { desktop: 34 * 1024, mobile: 131 * 1024 },
+  },
+  // Measured from the same build, including the route entry and both initial
+  // three.js / siege chunks and the two standalone scripts: 698,236 bytes.
+  routeJsBytes: {
+    // 16.5.2: the shared tool shell (footer link set, 13 locales) measures
+    // 691.0 KiB; retain about 1 KiB.
+    // 16.5.4 fun pass: 711.0 KiB; retain about 1 KiB.
+    'eden-siege.html': { desktop: 712 * 1024, mobile: 712 * 1024 },
   },
 };
 
@@ -513,6 +606,27 @@ function resolveBuiltRouteCssAssets(htmlFile, viewportWidth) {
   return [...assets];
 }
 
+function resolveBuiltRouteJsAssets(htmlFile) {
+  const htmlPath = path.join(deployDir, htmlFile);
+  if (!fs.existsSync(htmlPath)) return [];
+  const html = fs.readFileSync(htmlPath, 'utf8').replace(/<noscript\b[\s\S]*?<\/noscript>/giu, '');
+  const assets = new Set();
+  for (const match of html.matchAll(/<(?:script|link)\b[^>]*>/giu)) {
+    const tag = match[0];
+    const attributes = readTagAttributes(tag);
+    const isScript = /^<script\b/iu.test(tag);
+    const relValues = (attributes.get('rel') || '')
+      .split(/\s+/u)
+      .map((value) => value.toLowerCase());
+    if (!isScript && !relValues.includes('modulepreload')) continue;
+    const source = (attributes.get(isScript ? 'src' : 'href') || '').split(/[?#]/u, 1)[0];
+    if (!/\.js$/iu.test(source) || /^(?:https?:|data:|#)/iu.test(source)) continue;
+    const absolutePath = path.join(deployDir, source.replace(/^\/+/, ''));
+    if (fs.existsSync(absolutePath)) assets.add(absolutePath);
+  }
+  return [...assets];
+}
+
 const entryJs = resolveBuiltIndexAssets({
   tagName: 'script',
   attribute: 'src',
@@ -551,6 +665,19 @@ for (const htmlFile of Object.keys(LIMITS.routeCssBytes)) {
   });
 }
 
+const routeJsMetrics = new Map();
+for (const htmlFile of Object.keys(LIMITS.routeJsBytes || {})) {
+  const htmlPath = path.join(deployDir, htmlFile);
+  if (!fs.existsSync(htmlPath)) {
+    missingBuildOutputs.push(`dist/${htmlFile}`);
+    continue;
+  }
+  const files = resolveBuiltRouteJsAssets(htmlFile);
+  if (!files.length) missingBuildOutputs.push(`initial JavaScript linked by dist/${htmlFile}`);
+  const bytes = files.reduce((sum, file) => sum + fs.statSync(file).size, 0);
+  routeJsMetrics.set(htmlFile, { desktop: bytes, mobile: bytes });
+}
+
 const checks = [
   ['source index.html bytes', indexBytes, LIMITS.indexBytes],
   ['source index.html gzip bytes', indexGzipBytes, LIMITS.indexGzipBytes],
@@ -573,6 +700,13 @@ for (const [htmlFile, limits] of Object.entries(LIMITS.routeCssBytes)) {
   if (!metrics) continue;
   checks.push([`${htmlFile} desktop initial CSS`, metrics.desktop, limits.desktop]);
   checks.push([`${htmlFile} mobile initial CSS`, metrics.mobile, limits.mobile]);
+}
+
+for (const [htmlFile, limits] of Object.entries(LIMITS.routeJsBytes || {})) {
+  const metrics = routeJsMetrics.get(htmlFile);
+  if (!metrics) continue;
+  checks.push([`${htmlFile} desktop initial JS`, metrics.desktop, limits.desktop]);
+  checks.push([`${htmlFile} mobile initial JS`, metrics.mobile, limits.mobile]);
 }
 
 const failures = checks.filter(([, actual, limit]) => actual > limit);
@@ -606,6 +740,11 @@ console.log(
 for (const [htmlFile, metrics] of routeCssMetrics) {
   console.log(
     `- ${htmlFile} initial CSS: ${formatBytes(metrics.desktop)} desktop, ${formatBytes(metrics.mobile)} mobile`
+  );
+}
+for (const [htmlFile, metrics] of routeJsMetrics) {
+  console.log(
+    `- ${htmlFile} initial JS: ${formatBytes(metrics.desktop)} desktop, ${formatBytes(metrics.mobile)} mobile`
   );
 }
 

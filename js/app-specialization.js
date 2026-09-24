@@ -28,10 +28,13 @@ import {
   saveSpecializationState,
 } from './specialization-towers-v2-store.js';
 import { buildContributionTemplateRows } from './specialization-towers-v2-template.js';
+import { SPECIALIZATION_MEDAL_EVIDENCE_SOURCE } from './specialization-towers-medal-evidence.js';
 import {
-  SPECIALIZATION_MEDAL_EVIDENCE_SOURCE,
-  SPECIALIZATION_TROOP_MEDAL_EVIDENCE,
-} from './specialization-towers-medal-evidence.js';
+  buildWorkbookEvidenceIndex,
+  contributionNodeKey,
+  displayedContributionCount,
+  evidenceNodeKey,
+} from './specialization-towers-medal-index.js';
 import {
   HERO_PLAN_DEFAULT_MODE,
   HERO_PLAN_MODES,
@@ -289,10 +292,6 @@ function invalidatePlans() {
   render();
 }
 
-function contributionNodeKey(researchId, nodeId) {
-  return `${researchId}:${nodeId}`;
-}
-
 function contributionRecord(data, nodeKey) {
   if (data.nodes[nodeKey]) return data.nodes[nodeKey];
   const legacyNodeId = nodeKey.split(':').at(-1);
@@ -324,55 +323,6 @@ function saveContributions(data) {
   }
 }
 
-function normalizedEvidenceName(value) {
-  return String(value || '')
-    .toLocaleLowerCase('en')
-    .replace(/[^a-z0-9]+/gu, ' ')
-    .trim();
-}
-
-function buildWorkbookEvidenceIndex(rows) {
-  const byNodeKey = new Map();
-  const unmapped = [];
-  for (const section of SPECIALIZATION_TROOP_MEDAL_EVIDENCE) {
-    if (!section.researchId) {
-      section.rows.forEach((row) => unmapped.push({ section, row }));
-      continue;
-    }
-    const candidates = rows.filter((row) => row[3] === section.researchId);
-    const used = new Set();
-    for (const evidenceRow of section.rows) {
-      const wanted = normalizedEvidenceName(evidenceRow.name);
-      const match = candidates.find(
-        (row) => !used.has(row[6]) && normalizedEvidenceName(row[7]) === wanted
-      );
-      if (!match) {
-        unmapped.push({ section, row: evidenceRow });
-        continue;
-      }
-      used.add(match[6]);
-      byNodeKey.set(contributionNodeKey(section.researchId, match[6]), {
-        section,
-        row: evidenceRow,
-      });
-    }
-  }
-  return { byNodeKey, unmapped };
-}
-
-function displayedContributionCount(data, evidenceIndex) {
-  const evidenceCount = SPECIALIZATION_TROOP_MEDAL_EVIDENCE.reduce(
-    (total, section) => total + section.rows.length,
-    0
-  );
-  const localOnlyCount = Object.entries(data.nodes).filter(
-    ([key, node]) =>
-      !evidenceIndex.byNodeKey.has(key) &&
-      (node?.medalCost != null || node?.reviewedMedalCost != null)
-  ).length;
-  return evidenceCount + localOnlyCount;
-}
-
 function updateDisplayedContributionCount(data) {
   const countEl = root?.querySelector('.spec-contrib-count');
   if (!countEl) return;
@@ -386,16 +336,16 @@ function renderUnmappedWorkbookEvidence(entries) {
   if (!entries.length) return '';
   const grouped = new Map();
   for (const entry of entries) {
-    const key = `${entry.section.tower}:${entry.section.sourceSection}`;
+    const key = `${entry.section.troop}:${entry.section.tower}`;
     if (!grouped.has(key)) grouped.set(key, { section: entry.section, rows: [] });
     grouped.get(key).rows.push(entry.row);
   }
+  const source = SPECIALIZATION_MEDAL_EVIDENCE_SOURCE;
   return [...grouped.values()]
     .map(({ section, rows }) => {
-      const sheet = SPECIALIZATION_MEDAL_EVIDENCE_SOURCE.sheets[section.tower];
-      const sourceUrl = `${SPECIALIZATION_MEDAL_EVIDENCE_SOURCE.sourceUrl}?gid=${sheet.gid}#gid=${sheet.gid}`;
+      const tab = source.tabs?.[section.troop]?.[section.tower];
       return `<details class="spec-contrib-column spec-contrib-column--source">
-        <summary><strong>${escapeHtml(section.title)}</strong><span>${rows.length} · ${escapeHtml(section.complete ? sp('confidenceVerified') : sp('confidenceUnknown'))}</span></summary>
+        <summary><strong>${escapeHtml(tab?.tab || section.title)}</strong><span>${rows.length} · ${escapeHtml(section.complete ? sp('confidenceVerified') : sp('confidenceUnknown'))}</span></summary>
         <section class="spec-contrib-research">
           ${rows
             .map(
@@ -405,7 +355,7 @@ function renderUnmappedWorkbookEvidence(entries) {
               </div>`
             )
             .join('')}
-          <a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sheet.title)}</a>
+          <a href="${escapeHtml(source.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(`${source.title} · ${source.maintainers}`)}</a>
         </section>
       </details>`;
     })
@@ -921,7 +871,9 @@ function renderCommunity() {
                     const nodeEffect = row[8];
                     const nodeKey = contributionNodeKey(research.id, nodeId);
                     const saved = data.nodes[nodeKey] || data.nodes[nodeId] || {};
-                    const workbookEvidence = evidence.byNodeKey.get(nodeKey);
+                    const workbookEvidence = evidence.byNodeKey.get(
+                      evidenceNodeKey(activeTroop, research.id, nodeId)
+                    );
                     return `<div class="spec-contrib-node" data-node-id="${escapeHtml(nodeId)}" data-contribution-key="${escapeHtml(nodeKey)}">
                     <div class="spec-contrib-node-identity">
                       <span class="spec-contrib-node-icon" aria-hidden="true">${nodeIcon({ effect: nodeEffect })}</span>
@@ -933,6 +885,7 @@ function renderCommunity() {
                       <legend>${escapeHtml(sp('verificationVerified'))}</legend>
                       <div class="spec-contrib-source-cost"><span>${escapeHtml(sp('communityMedalCost'))}</span><strong>${workbookEvidence.row.costs.map(fmt).join(' + ')}</strong></div>
                       <small>${escapeHtml(workbookEvidence.section.title)} · #${escapeHtml(workbookEvidence.row.sourceRow)}</small>
+                      <a class="spec-contrib-report" href="${escapeHtml(SPECIALIZATION_MEDAL_EVIDENCE_SOURCE.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sp('reportWrongCost'))}</a>
                     </fieldset>`
                         : `<fieldset class="spec-contrib-stage">
                       <legend>${escapeHtml(sp('verificationSubmitted'))}</legend>
@@ -967,7 +920,13 @@ function renderCommunity() {
 }
 
 function renderAcknowledgments() {
-  const plates = ['VTS 1097 Community'];
+  const plates = [
+    { name: 'VTS 1097 Community' },
+    {
+      name: SPECIALIZATION_MEDAL_EVIDENCE_SOURCE.maintainers,
+      url: SPECIALIZATION_MEDAL_EVIDENCE_SOURCE.maintainersUrl,
+    },
+  ];
   return `
     <section class="spec-ack" aria-labelledby="spec-ack-title">
       <div class="spec-ack-rule" aria-hidden="true"><span class="spec-ack-seal">🏅</span></div>
@@ -979,11 +938,15 @@ function renderAcknowledgments() {
         ${plates
           .map(
             (
-              name,
+              plate,
               index
             ) => `<li class="spec-ack-plate${index === 0 ? ' spec-ack-plate--lead' : ''}" style="--i:${index}">
               <span class="spec-ack-plate-crest" aria-hidden="true">${index === 0 ? '🛡️' : '◆'}</span>
-              <span class="spec-ack-plate-name">${escapeHtml(name)}</span>
+              <span class="spec-ack-plate-name">${
+                plate.url
+                  ? `<a href="${escapeHtml(plate.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(plate.name)}</a>`
+                  : escapeHtml(plate.name)
+              }</span>
             </li>`
           )
           .join('')}
@@ -1426,7 +1389,9 @@ function renderSelectedNode(research, access) {
   const nodeKey = contributionNodeKey(research.id, entry.nodeId);
   const contributionData = loadContributions();
   const saved = contributionData.nodes[nodeKey] || contributionData.nodes[entry.nodeId] || {};
-  const workbookEvidence = buildWorkbookEvidenceIndex(buildContributionTemplateRows().rows).byNodeKey.get(nodeKey);
+  const workbookEvidence = buildWorkbookEvidenceIndex(
+    buildContributionTemplateRows().rows
+  ).byNodeKey.get(evidenceNodeKey(activeTroop, research.id, entry.nodeId));
   const workbookMedals = workbookEvidence
     ? workbookEvidence.row.costs.reduce((total, cost) => total + Number(cost || 0), 0)
     : null;

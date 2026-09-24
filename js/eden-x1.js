@@ -1,7 +1,9 @@
+import { mountToolShell } from './tool-shell.js';
 import {
   DEFAULT_WEIGHTED_CONTRIBUTION_PREMIUM_CUTOFF,
   EDEN_X1_CONTRIBUTION_RANKING_MODES,
   buildWeightedContributionRows,
+  collectFamilyDutyEntries,
   compareEdenX1ContributionRankingRows,
   dedupeWeightedRowsByFamily,
   getEdenX1ContributionRankingScore,
@@ -17,9 +19,18 @@ import {
 } from './translations.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { currentLanguage, setCurrentLanguage } from './state.js';
+import { celebrate } from './fx/success-feedback.js';
+import {
+  normalizeRewardSettings,
+  rewardQuota,
+  allocateSupportRewards,
+  announcementSlotCount,
+  supportSlotCount,
+} from './eden-reward-settings.js';
 import {
   formatDatasetStructureLabel,
   getDatasetStructureTarget,
+  markAttackPlayersStable,
   normalizeStructureTarget,
 } from './ocr-shared.js';
 import { parseGameTimeDateMs } from './ocr-time-filter.js';
@@ -31,6 +42,12 @@ import {
 } from './ocr-name-normalizer.js';
 import { renderSpecialPlayerTag } from './player-tags.js';
 import { localizeEdenX1Shell } from './i18n/eden-x1-shell.js';
+import { setActivePlayerRegistry } from './player-registry.js';
+import {
+  renderDutyCountCell,
+  renderPlayerSeasonSummary,
+  renderScoreBreakdown,
+} from './score-breakdown.js';
 import { runtimeMiscT } from './i18n/runtime-misc.js';
 import { getPublicVtsPlayerProfile } from './vts-public-players.js';
 import {
@@ -59,8 +76,16 @@ import {
   getEdenWorkspace,
   isPublishedEdenProjection,
 } from './eden-workspaces.js';
+import {
+  EDEN_ACCOUNT_LINK_STATUS,
+  EDEN_ACCOUNT_PROFILE_COLLECTION,
+  EDEN_SIGNUP_PATH,
+  isEdenAccountPlayerResolved,
+  readEdenAccountGameName,
+  resolveEdenAccountPlayer,
+} from './eden-account-link.js';
 
-export const APP_VERSION = '16.0.16';
+export const APP_VERSION = '16.5.4';
 // Season-configured viewer: eden-x1.html keeps its archive defaults, while
 // eden-x2.html marks the body with data-eden-workspace="x2" and this renderer
 // switches to the published-projection read path, X2 vote collections, and
@@ -161,6 +186,10 @@ let weightedTableProgressiveSerial = 0;
 let weightedPopoverScopeSerial = 0;
 const deferredWeightedPopoverFactories = new Map();
 let rewardFlowReady = false;
+// Reward distribution rules published with the season. Defaults until the
+// projection loads, so the page shows the shipped distribution rather than
+// nothing while it boots.
+let currentRewardSettings = normalizeRewardSettings(null);
 let weightedContributionCompactOverride = null;
 let weightedPopoverDismissalBound = false;
 let weightedPopoverOpenedAt = 0;
@@ -168,6 +197,8 @@ const WEIGHTED_POPOVER_SCROLL_GRACE_MS = 650;
 let publicDashboardData = null;
 let publicAttackRows = [];
 let publicPlayerRows = [];
+// Duty records behind the current season, for the player season view.
+let currentDutyRecords = [];
 let publicStructureRows = [];
 let publicDashboardRenderToken = 0;
 let deferredPublicDashboardRenderToken = 0;
@@ -176,6 +207,16 @@ let publicHeatmapResizeFrame = 0;
 let currentPublicTableSearch = '';
 let currentPublicTableSort = { col: 'finalRank', dir: 'asc' };
 let currentPublicStatsSearch = '';
+// Account link state. `edenAccountProfileRequest` is the one profile read the
+// page makes for a signed-in visitor; `edenAccountPlayer` is the roster row it
+// resolved to (or why it could not). Both stay null for guests, which is the
+// normal case on the public pages.
+let edenAccountProfileRequest = null;
+let edenAccountProfileUid = '';
+let edenAccountPlayer = null;
+// My Stats opens on the member's row once; after that their own search (or a
+// cleared search) is left alone across re-renders.
+let edenAccountMyStatsApplied = false;
 // The public weighted table can hold the whole roster (200+ rows). Cap the
 // initial view and debounce search; progressive rendering handles the rest.
 const publicWeightedTablePagination = { limit: EDEN_X1_TABLE_INITIAL_ROWS, showAll: false };
@@ -372,15 +413,31 @@ function esc(str) {
   return el.innerHTML;
 }
 
+// Copy that names the announcement size ("Final Top 20") has a {count} twin;
+// the size follows the season's reward settings, so it is read at call time.
+const REWARD_COUNT_COPY_KEYS = Object.freeze({
+  edenX1RewardFlowTitle: 'edenX1RewardFlowTitleCount',
+  edenX1RewardAnnouncementTitle: 'edenX1RewardAnnouncementTitleCount',
+  edenX1RewardAnnouncementCongrats: 'edenX1RewardAnnouncementCongratsCount',
+});
+
 function t(key, vars = {}) {
   const dict = translations[currentLang] || translations.en || {};
+  const countKey = REWARD_COUNT_COPY_KEYS[key];
+  if (countKey && (dict[countKey] || translations.en?.[countKey])) {
+    return t(countKey, { count: announcementSlotCount(currentRewardSettings), ...vars });
+  }
   let value = dict[key] || translations.en?.[key] || key;
   Object.entries({ version: APP_VERSION, ...vars }).forEach(([name, replacement]) => {
     value = value.replaceAll(`{${name}}`, String(replacement));
   });
   // The X2 page reuses the X1 catalogs; only the season label differs, so the
   // label is swapped at read time instead of duplicating every catalog key.
-  if (EDEN_IS_X2) value = value.replace(/Eden X1/g, EDEN_WORKSPACE.seasonLabel);
+  if (EDEN_IS_X2) {
+    // Localized catalogs spell "Eden" in their own script (Arabic "عدن X1"), so
+    // the bare season code is swapped too.
+    value = value.replace(/Eden X1/g, EDEN_WORKSPACE.seasonLabel).replace(/\bX1\b/g, 'X2');
+  }
   return value;
 }
 
@@ -546,7 +603,10 @@ function scoreEdenMemberOption(value, option) {
   if (playerName === raw) return 120;
   if (nameLower === rawLower) return 118;
   if (playerKey === compact) return 116;
-  if (nameLower.startsWith(rawLower)) return 104;
+  // Decorated names ("꧁༺ Kika ༻꧂", "(Vet)~Roha~") are matched on the name
+  // itself, so typing "Kik" finds Kika as readily as "Kika2.0".
+  const cleanLower = nameLower.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
+  if (nameLower.startsWith(rawLower) || cleanLower.startsWith(rawLower)) return 104;
   if (playerKey.startsWith(compact)) return 102;
   if (nameLower.includes(rawLower)) return 94;
   if (playerKey.includes(compact)) return 92;
@@ -568,6 +628,9 @@ function getEdenMemberMatches(value, limit = 5) {
     .sort(
       (a, b) =>
         b.score - a.score ||
+        // Equal matches: the name closest to what was typed first, so "lo"
+        // offers LOONY before Lonely-wolf.
+        String(a.playerKey || '').length - String(b.playerKey || '').length ||
         a.playerName.localeCompare(b.playerName, currentLang || 'en', { sensitivity: 'base' })
     );
   return scored.slice(0, limit);
@@ -698,14 +761,15 @@ function loadEdenManagementVoteResults(options = {}) {
   // showing the previous season's winners as though they were its own — Eden X2
   // displayed X1's R4 names while holding zero votes of its own.
   //
-  // showPublicResults is the switch that already governs the Firestore results
-  // path. Honouring it here too means one setting controls both, and a season
-  // stays blank until its vote is actually opened and published.
+  // The members' switch used to govern this too, which meant publishing the
+  // members' ballot also published the R4/R5 sheet — and because that sheet is
+  // not season-scoped, a season that had run no management vote of its own
+  // showed the previous season's winners. It has its own switch now.
   //
   // 'hidden' rather than 'error': every consumer treats a status other than
   // 'loaded' as no winners, and only 'error' renders a failure notice. Nothing
   // has failed here — the results simply are not this season's to show.
-  if (edenVoteSettings.showPublicResults !== true) {
+  if (edenVoteSettings.showManagementResults !== true) {
     // A load may already be in flight: the cached settings are read before the
     // authoritative ones, so a season whose results were switched off since the
     // cache was written starts the sheet fetch and only then learns it may not
@@ -734,7 +798,7 @@ function loadEdenManagementVoteResults(options = {}) {
       ? globalThis.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER
       : loadManagementVotesPayloadWithFallback;
   managementVoteLoadPromise = Promise.resolve()
-    .then(() => payloadLoader({ timeoutMs: 20_000 }))
+    .then(() => payloadLoader({ timeoutMs: 20_000, workspace: EDEN_WORKSPACE_ID }))
     .then((payload) => {
       if (token !== managementVoteLoadToken) return currentManagementVoteResults;
       pendingManagementVotePayload = payload;
@@ -812,13 +876,17 @@ function updateEdenVoteInputConfirmation(host, inputId, option = null) {
   const resolved = option || findEdenMemberOption(host?.querySelector(`#${inputId}`)?.value);
   if (!resolved) {
     chip.innerHTML = '';
+    host?.querySelector(`#${inputId}`)?.classList.remove('is-picked');
     if (inputId === 'edenX1VoterName') updateEdenVoteSelfPickButton(host, null);
     return;
   }
   const clearButton = EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.includes(inputId)
-    ? `<button class="eden-x1-vote-confirm-clear" type="button" data-eden-vote-clear="${esc(inputId)}" aria-label="${esc(t('edenX1VoteClearPicked', { player: resolved.playerName }))}">x</button>`
+    ? `<button class="eden-x1-vote-confirm-clear" type="button" data-eden-vote-clear="${esc(inputId)}" aria-label="${esc(t('edenX1VoteClearPicked', { player: resolved.playerName }))}">×</button>`
     : '';
-  chip.innerHTML = `<span class="eden-x1-vote-confirm-chip">${esc(t('edenX1VoteSelfConfirmed', { player: resolved.playerName }))}${clearButton}</span>`;
+  // The field itself shows the confirmed state (check mark, green edge); the
+  // wording stays for screen readers, and the clear button sits in the field.
+  chip.innerHTML = `<span class="eden-x1-vote-confirm-chip"><span class="eden-x1-vote-confirm-text">${esc(t('edenX1VoteSelfConfirmed', { player: resolved.playerName }))}</span>${clearButton}</span>`;
+  host?.querySelector(`#${inputId}`)?.classList.add('is-picked');
   if (inputId === 'edenX1VoterName') updateEdenVoteSelfPickButton(host, resolved);
 }
 
@@ -1029,11 +1097,18 @@ function applyEdenVotePickToForm(host, pick) {
 }
 
 function normalizeEdenVoteSettings(settings = {}) {
+  // One switch published both result sets until 16.5.1; it stays the fallback
+  // for the two that replaced it, so a season published before the split keeps
+  // showing what it used to show.
+  const legacyPublished = settings.showPublicResults === true;
+  const readToggle = (key) => (key in settings ? settings[key] === true : legacyPublished);
   return {
     season: String(settings.season || '').trim(),
     votingOpen: settings.votingOpen !== false,
     allowEditing: settings.allowEditing !== false,
-    showPublicResults: settings.showPublicResults === true,
+    showMemberResults: readToggle('showMemberResults'),
+    showManagementResults: readToggle('showManagementResults'),
+    showPublicResults: readToggle('showMemberResults') && readToggle('showManagementResults'),
     showVoterNames: settings.showVoterNames === true,
     contributionRankingMode: normalizeEdenX1ContributionRankingMode(
       settings.contributionRankingMode
@@ -1223,24 +1298,14 @@ function getEdenPublicPlayerForKey(playerKey, playerName = '') {
   return null;
 }
 
-function rankedEdenBannerPathRows(limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
+// One top list per duty, so a player who only lays paths is not buried under
+// banner placers (and the other way round).
+function rankedEdenDutyRows(field, limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
   return currentRows
-    .map((row) => {
-      const banners = valueOf(row.banners);
-      const pathers = valueOf(row.pathers);
-      return {
-        ...row,
-        banners,
-        pathers,
-        supportTotal: banners + pathers,
-      };
-    })
-    .filter((row) => row.supportTotal > 0)
+    .filter((row) => valueOf(row[field]) > 0)
     .sort(
       (a, b) =>
-        valueOf(b.supportTotal) - valueOf(a.supportTotal) ||
-        valueOf(b.banners) - valueOf(a.banners) ||
-        valueOf(b.pathers) - valueOf(a.pathers) ||
+        valueOf(b[field]) - valueOf(a[field]) ||
         valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
         String(a.playerName || '').localeCompare(String(b.playerName || ''))
     )
@@ -1248,10 +1313,7 @@ function rankedEdenBannerPathRows(limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
     .map((row) => ({
       key: row.playerKey || compactPlayerIdentity(row.playerName),
       name: row.playerName,
-      value: t('edenX1VoteBannerPathValue', {
-        banners: formatScore(row.banners),
-        pathers: formatScore(row.pathers),
-      }),
+      value: formatScore(valueOf(row[field])),
     }));
 }
 
@@ -1518,7 +1580,8 @@ function renderEdenVoteGuidance(options = {}) {
   const guidanceId = options.id || 'edenX1VoteGuidance';
   const extraClass = options.className ? ` ${options.className}` : '';
   const groups = [
-    [t('edenX1VoteTopBannerPath'), t('edenX1VoteTopBannerPathHint'), rankedEdenBannerPathRows()],
+    [t('edenX1VoteTopBanner'), t('edenX1VoteTopBannerHint'), rankedEdenDutyRows('banners')],
+    [t('edenX1VoteTopPath'), t('edenX1VoteTopPathHint'), rankedEdenDutyRows('pathers')],
     [t('edenX1VoteTopStructure'), t('edenX1VoteTopStructureHint'), rankedEdenStructureHelpRows()],
     [t('edenX1VoteTopBuildingMvp'), t('edenX1VoteTopBuildingMvpHint'), rankedEdenBuildingMvpRows()],
     [t('edenX1VoteTopR5Bonus'), t('edenX1VoteTopR5BonusHint'), rankedEdenR5BonusRows()],
@@ -1540,6 +1603,43 @@ function renderEdenTopNamesOverview(options = {}) {
     id: options.id || 'edenX1TopNamesOverview',
     className: ['eden-x1-vote-guidance--dashboard', options.className].filter(Boolean).join(' '),
   });
+}
+
+/**
+ * The season signup invitation, rendered above the voting guidance on the
+ * active-season page only: eden-x1.html is the archived season, and advertising
+ * a registration whose season has ended would be wrong. The form itself lives
+ * on the VtsScore route, where the member PIN, the member grant and the OCR
+ * worker already are — one surface instead of a second one to lock down.
+ */
+function renderEdenSignupPrompt() {
+  if (EDEN_X1_IS_ARCHIVE) return '';
+  const linked = isEdenAccountPlayerResolved(edenAccountPlayer) ? edenAccountPlayer.playerName : '';
+  return `<section id="edenX1SignupPrompt" class="dash-card eden-x1-signup-prompt">
+    <div class="eden-x1-signup-prompt__copy">
+      <span class="eden-x1-signup-prompt__kicker">${esc(t('edenX1SignupPromptKicker'))}</span>
+      <h2>${esc(t('edenX1SignupPromptTitle'))}</h2>
+      <p>${esc(t('edenX1SignupPromptCopy'))}</p>
+      ${
+        linked
+          ? `<p class="eden-x1-signup-prompt__linked">${esc(
+              t('edenX1SignupPromptLinked', { player: linked })
+            )}</p>`
+          : ''
+      }
+    </div>
+    <a class="eden-x1-signup-prompt__cta dash-btn dash-btn-primary" href="${EDEN_SIGNUP_PATH}">${esc(
+      t('edenX1SignupPromptCta')
+    )}</a>
+  </section>`;
+}
+
+/** Re-renders the prompt in place once the account link resolves. */
+function refreshEdenSignupPrompt() {
+  const host = $('edenX1PublicOverview');
+  const current = host?.querySelector('#edenX1SignupPrompt');
+  if (!host || !current || EDEN_X1_IS_ARCHIVE) return;
+  current.outerHTML = renderEdenSignupPrompt();
 }
 
 function renderEdenVoteMemberOptions() {
@@ -2484,6 +2584,7 @@ async function submitEdenTeamVoteForm(form) {
       edenVoteSavedStatusText(localVote) || `${t('edenX1VoteSaved')} ${t('edenX1VoteResultsNote')}`,
       'success'
     );
+    celebrate(submit);
   } catch (err) {
     console.error('Eden X1 vote save failed:', err);
     setEdenVoteStatus(
@@ -2726,7 +2827,6 @@ function renderEdenTeamVotePanel() {
       <div>
         <h2 class="dash-card-title"><span>${esc(t('edenX1VoteTitle'))}</span></h2>
         <p class="dash-card-subtitle">${esc(t('edenX1VoteSubtitle'))}</p>
-        <a class="eden-x1-vote-help-link" href="#edenX1TopNamesOverview" data-eden-vote-help-link>${esc(t('edenX1VoteHelpJump'))}</a>
       </div>
       <div class="eden-x1-vote-hdr-meta">
         <span id="edenX1VoteCount" class="eden-x1-vote-count" data-full="false" data-over="false" aria-live="polite">${esc(tf('edenX1VoteSelectionCount', { n: '0', count: '0' }))}</span>
@@ -2738,18 +2838,20 @@ function renderEdenTeamVotePanel() {
         <span>${esc(tf('edenX1VoteRule'))}</span>
         <span class="eden-x1-vote-eligibility-deadline" aria-hidden="true"></span>
         <span class="eden-x1-vote-friday" data-eden-vote-friday>${esc(t('edenX1VoteDeadlineFriday'))}</span>
-        <button class="eden-x1-vote-start" type="button" data-eden-vote-start>${esc(t('edenX1VoteCta'))}</button>
+        <button class="eden-x1-vote-start" type="button" data-eden-vote-start hidden>${esc(t('edenX1VoteCta'))}</button>
       </div>
       ${renderEdenVoteMemberOptions()}
+      <p class="eden-x1-vote-step"><span class="eden-x1-vote-step-num" aria-hidden="true">1</span>${esc(t('edenX1VoteStepYou'))}</p>
       <div class="eden-x1-vote-name-stack">
         <label class="eden-x1-vote-field" for="edenX1VoterName">
           <span>${esc(t('edenX1VoteYourName'))}</span>
-          <input id="edenX1VoterName" class="dash-input" type="text" value="${esc(savedSummary.voterName || '')}" placeholder="${esc(t('edenX1VotePhSelf'))}" autocomplete="off" aria-describedby="edenX1VoterNameConfirm" required />
+          <input id="edenX1VoterName" class="dash-input" type="text" value="${esc(savedSummary.voterName || edenAccountPlayerName())}" placeholder="${esc(t('edenX1VotePhSelf'))}" autocomplete="off" aria-describedby="edenX1VoterNameConfirm" required />
           <div class="eden-x1-vote-suggestions" data-eden-vote-suggestions-for="edenX1VoterName"></div>
           <div id="edenX1VoterNameConfirm" class="eden-x1-vote-confirm" data-eden-vote-confirm-for="edenX1VoterName" aria-live="polite"></div>
         </label>
         <button id="edenX1VoteSelfPickBtn" class="eden-x1-vote-self-pick" type="button" data-eden-vote-self-pick hidden disabled>${esc(t('edenX1VoteSelfPick'))}</button>
       </div>
+      <p class="eden-x1-vote-step"><span class="eden-x1-vote-step-num" aria-hidden="true">2</span>${esc(t('edenX1VoteStepPicks'))}<a class="eden-x1-vote-help-link" href="#edenX1TopNamesOverview" data-eden-vote-help-link>${esc(t('edenX1VoteHelpJump'))}</a></p>
       <label class="eden-x1-vote-field" for="edenX1CandidateName">
         <span>${esc(t('edenX1VoteYourVote'))}</span>
         <input id="edenX1CandidateName" class="dash-input" type="text" value="${esc(savedCandidateNames[0] || '')}" placeholder="${esc(t('edenX1VotePhTeammate'))}" autocomplete="off" aria-describedby="edenX1CandidateNameConfirm" />
@@ -2883,7 +2985,22 @@ function updateRewardFlowControls() {
     button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
     button.setAttribute('aria-pressed', active ? 'true' : 'false');
     button.setAttribute('aria-label', t('edenX1RewardViewAria', { title: t(titleKey) }));
+    // The slot count on the card is the season's configured quota, not the
+    // number that happened to be baked into the markup when it was written.
+    const count = rewardQuotaCountForView(view);
+    const countEl = button.querySelector('.eden-x1-flow-count');
+    if (countEl && count !== null) countEl.textContent = String(count);
   });
+}
+
+// Every card counts from the season's published reward settings, the
+// announcement included: it lists all categories, so its size is their sum.
+function rewardQuotaCountForView(view) {
+  if (view === 'support') return supportSlotCount(currentRewardSettings);
+  if (view === 'announcement') return announcementSlotCount(currentRewardSettings);
+  return ['contribution', 'management', 'team'].includes(view)
+    ? rewardQuota(currentRewardSettings, view)
+    : null;
 }
 
 function setRewardFlowReady(ready) {
@@ -2963,6 +3080,7 @@ function setEdenPanelLoading(loading) {
   if (!isLoading) {
     section?.classList.remove('eden-x1-panel--cache-preview');
     schedulePublicHeatmapOverflowSync();
+    openLinkedEdenVote();
   }
   document.body?.classList.toggle('eden-x1-loading', isLoading);
   const bootLoader = $('edenX1NavLoader');
@@ -3094,6 +3212,47 @@ function activateEdenRewardView(view) {
   return true;
 }
 
+// One path to the ballot for every entry point: the quick-nav chip, the
+// marquee "Vote now" button, and the short share link roc-vts.com/vote
+// (eden-x2.html#vote). A link opens the ballot without focusing the name
+// field, so a phone does not throw its keyboard over the form on arrival.
+function openEdenVoteSection(options = {}) {
+  if (EDEN_X1_IS_ARCHIVE) return false;
+  const reveal = () => {
+    queueEdenQuickNavScroll(
+      '#edenX1VoteRail, #edenX1TeamVotePanel, #dashWeightedContributionPanel',
+      options.focus === false ? {} : { focusSelector: '#edenX1VoterName' }
+    );
+  };
+  if (options.transition === false) reveal();
+  else runEdenNavigationTransition(reveal);
+  return true;
+}
+
+function edenVoteLinkRequested() {
+  try {
+    const hash = window.location.hash.replace(/^#/, '').toLowerCase();
+    return hash === 'vote' || new URLSearchParams(window.location.search).get('vote') === '1';
+  } catch {
+    return false;
+  }
+}
+
+let edenVoteLinkHandled = false;
+
+function openLinkedEdenVote() {
+  if (edenVoteLinkHandled || EDEN_X1_IS_ARCHIVE || !edenVoteLinkRequested()) return;
+  if (!$('edenX1TeamVotePanel')) return;
+  edenVoteLinkHandled = true;
+  openEdenVoteSection({ transition: false, focus: false });
+}
+
+window.addEventListener('hashchange', () => {
+  if (window.location.hash.replace(/^#/, '').toLowerCase() !== 'vote') return;
+  edenVoteLinkHandled = false;
+  openLinkedEdenVote();
+});
+
 function bindEdenQuickNav() {
   const nav = document.querySelector('.eden-x1-quicknav');
   if (!nav || nav.dataset.quickNavBound) return;
@@ -3115,13 +3274,7 @@ function bindEdenQuickNav() {
       return;
     }
     if (target === 'vote') {
-      runEdenNavigationTransition(() => {
-        activateEdenRewardView('team');
-        queueEdenQuickNavScroll(
-          '#edenX1VoteRail, #edenX1TeamVotePanel, #dashWeightedContributionPanel',
-          { focusSelector: '#edenX1VoterName' }
-        );
-      });
+      openEdenVoteSection();
       return;
     }
     if (target === 'my-stats') {
@@ -3255,10 +3408,11 @@ function getContributionRewardRows(mode = authoritativeContributionRankingMode()
   );
   const rows = [];
   let rewardSlot = 0;
+  const contributionQuota = rewardQuota(currentRewardSettings, 'contribution');
   for (const row of sorted) {
     const isForfeited = row.rewardReason === 'forfeit_premium';
     if (isForfeited) {
-      if (rewardSlot < 10) {
+      if (rewardSlot < contributionQuota) {
         rows.push({
           ...row,
           edenX1ContributionRankingMode: rankingMode,
@@ -3270,7 +3424,7 @@ function getContributionRewardRows(mode = authoritativeContributionRankingMode()
       }
       continue;
     }
-    if (rewardSlot >= 10) break;
+    if (rewardSlot >= contributionQuota) break;
     rewardSlot += 1;
     rows.push({
       ...row,
@@ -3285,7 +3439,7 @@ function getContributionRewardRows(mode = authoritativeContributionRankingMode()
 }
 
 function getSupportRewardRows() {
-  return dedupeWeightedRowsByFamily(
+  const candidates = dedupeWeightedRowsByFamily(
     currentRows
       .filter((row) => rowBonusTotal(row) > 0)
       .slice()
@@ -3296,13 +3450,37 @@ function getSupportRewardRows() {
           valueOf(a.finalRank || 999999) - valueOf(b.finalRank || 999999) ||
           String(a.playerName || '').localeCompare(String(b.playerName || ''))
       )
-  )
-    .slice(0, 4)
-    .map((row, index) => ({
-      ...row,
-      edenX1RewardSlot: index + 1,
-      edenX1SupportReward: index === 0 ? 'guild_master' : 'core',
-    }));
+  );
+  // The R5 holds the guild-master reward outside the support quota, found by
+  // family so an alias or banner account of theirs still counts as them.
+  const r5Name = String(currentRewardSettings.r5PlayerKey || '').trim();
+  const r5Key = compactPlayerIdentity(r5Name);
+  const r5FamilyKey = r5Key ? rewardPriorityFamilyKey(r5Key, r5Name) : '';
+  const familyKeyOf = (row) => rewardPriorityFamilyKey(row.playerKey, row.playerName);
+  const r5Row = r5FamilyKey
+    ? currentRows.find(
+        (row) => row.isPrimaryAccount !== false && familyKeyOf(row) === r5FamilyKey
+      ) || currentRows.find((row) => familyKeyOf(row) === r5FamilyKey)
+    : null;
+  return allocateSupportRewards(currentRewardSettings, candidates, {
+    familyKeyOf,
+    r5FamilyKey,
+    r5Row,
+  }).map(({ row, reward }, index) => ({
+    // An R5 with no scored row this season still holds the reward by name.
+    ...(row || {
+      playerName: r5Name,
+      playerKey: r5Key,
+      sourceName: r5Name,
+      weightedScore: 0,
+      contributionScore: 0,
+      banners: 0,
+      pathers: 0,
+      shieldWalls: 0,
+    }),
+    edenX1RewardSlot: index + 1,
+    edenX1SupportReward: reward,
+  }));
 }
 
 function contributionRewardContextForRow(row, numberValue) {
@@ -3685,6 +3863,107 @@ function rerenderPublicMyStatsCard(host, options = {}) {
   const cursor = options.selectionStart ?? nextInput.value.length;
   nextInput.focus();
   nextInput.setSelectionRange(cursor, cursor);
+}
+
+/* =============================================================
+   Account link — the signed-in visitor and their guild row.
+
+   Before this, My Stats and the ballot both asked the member to type - and
+   re-type - a name the site already knows: profile.html stores
+   `accountProfile.gameName`, and the page's own matcher (`findEdenMemberOption`
+   behind `resolvePublicStatsOption`) can turn that name into a roster row and
+   its weighted-score card.
+
+   Order of resolution, all of it off the render path:
+     1. one `users/{uid}.accountProfile` read, started with the live load;
+     2. that game name through `resolveEdenAccountPlayer`, the page's matcher
+        and nothing else, so a decorated or ambiguous name behaves exactly as
+        a typed search would;
+     3. `found` prefills, anything else leaves today's search-by-hand flow.
+   Guests, a denied read, and an unreadable profile all end at step 3, so the
+   page can never be blocked or broken by this.
+   ============================================================= */
+
+function requestEdenAccountGameName(db, firestore, user) {
+  // Keyed to the signed-in account: a sign-out or a switch to another account
+  // must not keep resolving to the previous member's row.
+  const uid = user && user.isAnonymous === false ? String(user.uid || '') : '';
+  if (edenAccountProfileRequest && uid === edenAccountProfileUid) return edenAccountProfileRequest;
+  if (uid !== edenAccountProfileUid) {
+    edenAccountPlayer = null;
+    edenAccountMyStatsApplied = false;
+  }
+  edenAccountProfileUid = uid;
+  edenAccountProfileRequest = (async () => {
+    // Strictly `isAnonymous === false`: the Firebase user object always carries
+    // the boolean, so an object without it (a test double, an odd restore path)
+    // is treated as a guest rather than as a linked account.
+    if (!user || user.isAnonymous !== false || !user.uid) return '';
+    try {
+      const snapshot = await firestore.getDoc(
+        firestore.doc(db, EDEN_ACCOUNT_PROFILE_COLLECTION, user.uid)
+      );
+      const profile = snapshot?.exists?.() ? snapshot.data()?.accountProfile : null;
+      return readEdenAccountGameName(profile);
+    } catch {
+      return '';
+    }
+  })();
+  return edenAccountProfileRequest;
+}
+
+async function applyEdenAccountLink() {
+  const gameName = await (edenAccountProfileRequest || Promise.resolve(''));
+  if (!gameName) return null;
+  const player = resolveEdenAccountPlayer({
+    gameName,
+    resolveOption: (value) => findEdenMemberOption(value),
+    resolveMatches: (value, limit) => getPublicStatsMatches(value, limit),
+  });
+  edenAccountPlayer = player;
+  if (!isEdenAccountPlayerResolved(player)) {
+    console.info(
+      `[eden] "${gameName}" did not resolve to one guild row (${player.status}); keeping search-by-hand.`
+    );
+    return player;
+  }
+  applyEdenAccountPlayerToMyStats(player);
+  prefillEdenVoterName(player);
+  refreshEdenSignupPrompt();
+  return player;
+}
+
+function edenAccountPlayerName() {
+  return isEdenAccountPlayerResolved(edenAccountPlayer) ? edenAccountPlayer.playerName : '';
+}
+
+/** Opens My Stats on the member's own row, unless they already searched. */
+function applyEdenAccountPlayerToMyStats(player) {
+  if (edenAccountMyStatsApplied) return false;
+  if (!player?.playerName || currentPublicStatsSearch.trim()) return false;
+  const host = $('edenX1PublicDashboard');
+  const card = host?.querySelector('#edenX1MyStatsCard');
+  // The profile read can land before the public dashboard has rendered My
+  // Stats; renderPublicDashboard applies it again once the card exists.
+  if (!card) return false;
+  edenAccountMyStatsApplied = true;
+  currentPublicStatsSearch = player.playerName;
+  rerenderPublicMyStatsCard(host);
+  return true;
+}
+
+/** Fills the ballot's "who are you" field, unless the visitor already typed. */
+function prefillEdenVoterName(player = edenAccountPlayer) {
+  const rail = $('edenX1VoteRail');
+  const input = rail?.querySelector('#edenX1VoterName');
+  if (!input || input.value.trim()) return false;
+  const option = isEdenAccountPlayerResolved(player)
+    ? findEdenMemberOption(player.playerName)
+    : null;
+  if (!option) return false;
+  input.value = option.playerName;
+  updateEdenVoteInputConfirmation(rail, 'edenX1VoterName', option);
+  return true;
 }
 
 function setPublicWeightedSort(col, host) {
@@ -4259,7 +4538,13 @@ function getEligibleManagementVoteWinners() {
 }
 
 function getEligibleTeamVoteWinners() {
-  if (currentManagementVoteResults.status !== 'loaded') return [];
+  // The members' and the R4/R5 switches are independent. With the R4/R5
+  // results switched off ('hidden') there are no management winners to reserve,
+  // so the members' winners stand on their own; only a load still in flight
+  // (or a failed one) holds them back, because a management winner may yet
+  // take one of their places.
+  const managementStatus = currentManagementVoteResults.status;
+  if (managementStatus !== 'loaded' && managementStatus !== 'hidden') return [];
   const results = normalizePublicEdenVoteResults(publicDashboardData?.publicEdenX1VoteResults);
   if (!results.published || results.season !== edenVoteSeason()) return [];
 
@@ -4276,7 +4561,7 @@ function rewardSlotRows(view) {
   if (view === 'management') {
     const winners = getEligibleManagementVoteWinners();
     const unavailable = currentManagementVoteResults.status === 'error';
-    return Array.from({ length: 3 }, (_, index) => ({
+    return Array.from({ length: rewardQuota(currentRewardSettings, 'management') }, (_, index) => ({
       slot: index + 1,
       ...(winners[index]
         ? {
@@ -4306,7 +4591,7 @@ function rewardSlotRows(view) {
   if (view === 'team') {
     const winners = getEligibleTeamVoteWinners();
     const managementUnavailable = currentManagementVoteResults.status === 'error';
-    return Array.from({ length: 3 }, (_, index) => ({
+    return Array.from({ length: rewardQuota(currentRewardSettings, 'team') }, (_, index) => ({
       slot: index + 1,
       ...(winners[index]
         ? {
@@ -4420,28 +4705,18 @@ function renderWeightedScorePopover(row, index, options = {}) {
   const popover = deferredWeightedPopoverParts(options.deferredScope, tooltipId, () => {
     const rankingMode = normalizeEdenX1ContributionRankingMode(row.edenX1ContributionRankingMode);
     const defaultMode = rankingMode === EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT;
-    const dutyCount = row.banners + row.pathers + row.shieldWalls;
-    const conductBonus = conductBonusValue(row);
-    const conductPoints = Number.isFinite(Number(row.conductPoints))
-      ? Number(row.conductPoints)
-      : conductBonus * 10000;
-    const dutyNote = t('edenX1DutyFormula', {
-      banners: row.banners,
-      pathers: row.pathers,
-      shieldWalls: row.shieldWalls,
-      count: dutyCount,
-    });
     const excludedNote = defaultMode ? ` ${t('edenX1ContributionModeExcluded')}` : '';
-    const conductNote = `${t('edenX1ConductPrivateNotice')}${excludedNote}`;
     return `<span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
         <strong>${esc(
           t(defaultMode ? 'edenX1ContributionModeDefaultScore' : 'edenX1WeightedBreakdownTitle')
         )}</strong>
-        <span><span>${esc(t('edenX1BreakdownContribution'))}</span><b>${formatScore(row.contributionScore)}</b></span>
-        <span><span>${esc(t('edenX1BreakdownExGuild'))}</span><b>${formatScore(row.contributionExGuild || 0)}</b></span>
-        <span><span>${esc(t('edenX1BreakdownDuty'))}<small>${esc(`${dutyNote}${excludedNote}`)}</small></span><b>${formatScore(row.dutyPoints || 0)}</b></span>
-        <span><span>${esc(t('edenX1BreakdownConductPoints'))}<small>${esc(conductNote)}</small></span><b>${formatSignedNumber(conductPoints)}</b></span>
-        <span class="dash-weighted-score-popover-total"><span>${esc(t('edenX1BreakdownTotal'))}</span><b>${formatWeightedScore(row.weightedScore)}</b></span>
+        ${renderScoreBreakdown(row, {
+          t,
+          number: formatScore,
+          signed: formatSignedNumber,
+          totalText: formatWeightedScore(row.weightedScore),
+          conductNote: `${t('edenX1ConductPrivateNotice')}${excludedNote}`,
+        })}
       </span>`;
   });
   return `<button class="dash-weighted-score-trigger eden-x1-popover-trigger" type="button" ${popover.attributes} aria-expanded="false" aria-label="${esc(t('edenX1WeightedBreakdownAria', { player: row.playerName }))}">
@@ -4628,8 +4903,10 @@ function rewardThemeClass(reward) {
   return `eden-x1-reward-theme-${themes[reward] || 'default'}`;
 }
 
+// Published attack data is read-only on this page, so name lookups can trust
+// each list without re-checking its contents on every call.
 function publicAttackPlayers(attack) {
-  return Array.isArray(attack?.players) ? attack.players : [];
+  return Array.isArray(attack?.players) ? markAttackPlayersStable(attack.players) : [];
 }
 
 function publicGameTimeLabel(value) {
@@ -4671,6 +4948,7 @@ function publicStructureKey(attack) {
 }
 
 function publicPlayerName(player, attackPlayers = []) {
+  markAttackPlayersStable(attackPlayers);
   try {
     return resolveCanonicalPlayerName(player, { attackPlayers }) || t('edenX1UnknownPlayer');
   } catch {
@@ -4919,7 +5197,8 @@ function publicWeightedRowSearchText(row, rewardContext = {}) {
 
 function renderPublicWeightedContributionRow(row, index, options = {}) {
   const playerKey = row.playerKey || publicPlayerKey(row.playerName);
-  const canOpenPlayer = options.clickablePlayerKeys?.has(playerKey);
+  // Every scored player opens their season view, not only the ones with hits.
+  const canOpenPlayer = Boolean(playerKey);
   const total = rowBonusTotal(row);
   const tooltipIndex = `public-${index}`;
   const rewardContext = options.rewardContextForRow(row);
@@ -4939,9 +5218,9 @@ function renderPublicWeightedContributionRow(row, index, options = {}) {
     <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(row.currentReward))}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThContribution'))}" style="text-align:right">${formatScore(row.contributionScore)}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThExGuild'))}" style="text-align:right">${formatScore(row.contributionExGuild || 0)}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${row.shieldWalls}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${renderDutyCountCell(row, 'shieldWalls', t, { number: formatScore })}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${renderDutyCountCell(row, 'pathers', t, { number: formatScore })}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${renderDutyCountCell(row, 'banners', t, { number: formatScore })}</td>
     <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, tooltipIndex, popoverOptions)}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${formatScore(total)}</td>
     <td class="dash-weighted-score-cell" data-label="${esc(t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, tooltipIndex, popoverOptions)}</td>
@@ -4968,11 +5247,9 @@ function renderPublicWeightedContributionTable() {
     : allRows;
   const page = resolveWeightedTablePage(filteredRows.length, publicWeightedTablePagination);
   const rows = filteredRows.slice(0, page.visible);
-  const clickablePlayerKeys = new Set(publicPlayerRows.map((player) => player.key));
   const progressivePlan = rows.length
     ? setProgressiveWeightedTablePlan('public', rows, (row, index, deferredScope) =>
         renderPublicWeightedContributionRow(row, index, {
-          clickablePlayerKeys,
           rewardContextForRow,
           deferredScope,
         })
@@ -4985,14 +5262,11 @@ function renderPublicWeightedContributionTable() {
     publicWeightedTablePagination,
     'edenX1PublicWeightedTable'
   );
-  const clickableCount = allRows.filter((row) =>
-    publicPlayerRows.some((player) => player.key === row.playerKey)
-  ).length;
   const metaParts = [
     t(EDEN_X1_IS_ARCHIVE ? 'edenX1WeightedPublicMeta' : 'edenX1PublicDemoMeta'),
     allRows.length ? t('edenX1PlayersCount', { count: allRows.length }) : '',
     t('edenX1WeightedIncludesMeta'),
-    clickableCount ? t('edenX1ClickMatchedRowsMeta') : '',
+    allRows.length ? t('edenX1ClickMatchedRowsMeta') : '',
   ].filter(Boolean);
   const searchControl = allRows.length
     ? `<div class="eden-x1-public-table-toolbar">
@@ -5499,8 +5773,40 @@ async function renderPublicAdvancedAnalyticsSections(host, token) {
     bindWeightedPopovers(host);
     await yieldToBrowser();
   }
-  syncPublicHeatmapOverflowState(host);
+  // Measured next frame, so the check does not force a layout mid-render.
+  schedulePublicHeatmapOverflowSync();
   return true;
+}
+
+// The weighted row for a player key, following account links so an alt or
+// banner account opens its owner's season.
+function findPublicWeightedRow(key) {
+  if (!key) return null;
+  const direct = currentRows.find((row) => row.playerKey === key);
+  if (direct) return direct;
+  const familyKey = getWeightedPlayerFamilyKey(key);
+  return (
+    currentRows.find((row) => row.familyKey === familyKey && row.isPrimaryAccount) ||
+    currentRows.find((row) => row.familyKey === familyKey) ||
+    null
+  );
+}
+
+function renderPublicPlayerSeason(row) {
+  const rewardContext = createPlannedRewardContextMap().get(plannedRewardContextKey(row)) || {};
+  const rewardLabel =
+    rewardContext.finalRewardLabel ||
+    contributionRewardLabel(rewardContext.finalReward || row.finalReward);
+  return renderPlayerSeasonSummary({
+    row,
+    duties: collectFamilyDutyEntries(currentDutyRecords, row.familyKey),
+    t,
+    number: formatScore,
+    signed: formatSignedNumber,
+    totalText: formatWeightedScore(row.weightedScore),
+    rewardLabel,
+    conductNote: t('edenX1ConductPrivateNotice'),
+  });
 }
 
 function renderPublicPlayerDetail(player) {
@@ -5635,11 +5941,17 @@ function showPublicDetail(type, key) {
   const normalizedKey = String(key || '');
   if (type === 'player') {
     const player = publicPlayerRows.find((row) => row.key === normalizedKey);
-    if (!player) return;
+    const weightedRow = findPublicWeightedRow(normalizedKey);
+    if (!player && !weightedRow) return;
+    const body = [
+      weightedRow ? renderPublicPlayerSeason(weightedRow) : '',
+      player?.attacks?.length ? renderPublicPlayerDetail(player) : '',
+    ].join('');
     openPublicModal(
-      t('edenX1PlayerDetailTitle', { player: player.name }),
-      t('edenX1PlayerDetailHint'),
-      renderPublicPlayerDetail(player)
+      t('edenX1PlayerDetailTitle', { player: weightedRow?.playerName || player.name }),
+      // The hint is about switching to a structure, so only when there are hits.
+      player?.attacks?.length ? t('edenX1PlayerDetailHint') : '',
+      body
     );
   } else if (type === 'structure') {
     const structure = publicStructureRows.find((row) => row.key === normalizedKey);
@@ -5823,7 +6135,7 @@ async function renderPublicDashboard(data = publicDashboardData) {
     overviewHost.innerHTML = '';
   } else {
     overviewHost.classList.remove('hidden');
-    overviewHost.innerHTML = renderEdenTopNamesOverview();
+    overviewHost.innerHTML = `${renderEdenSignupPrompt()}${renderEdenTopNamesOverview()}`;
   }
   host.classList.remove('hidden');
   host.innerHTML = `<div class="eden-x1-public-root">
@@ -5922,6 +6234,9 @@ async function renderPublicDashboard(data = publicDashboardData) {
       renderPublicStructures(publicStructureRows);
   }
   bindWeightedPopovers(host);
+  if (isEdenAccountPlayerResolved(edenAccountPlayer)) {
+    applyEdenAccountPlayerToMyStats(edenAccountPlayer);
+  }
 }
 
 function scheduleLocalizedRerender() {
@@ -5942,6 +6257,21 @@ function scheduleLocalizedRerender() {
       renderPublicDashboard(publicDashboardData);
     };
     scheduleIdle(renderPublic);
+  });
+}
+
+// Headings that carry the reward count ("Final Top 20") are translated before
+// the season's distribution is known; once it is, they are re-rendered so the
+// flow, the badge and the announcement agree.
+function refreshRewardCountCopy() {
+  if (typeof document === 'undefined') return;
+  Object.keys(REWARD_COUNT_COPY_KEYS).forEach((key) => {
+    document.querySelectorAll(`[data-i18n="${key}"]`).forEach((el) => {
+      el.textContent = t(key);
+    });
+    document.querySelectorAll(`[data-i18n-aria="${key}"]`).forEach((el) => {
+      el.setAttribute('aria-label', t(key));
+    });
   });
 }
 
@@ -5981,7 +6311,7 @@ function updateTextContent(lang) {
     if (dict[key]) el.setAttribute('aria-label', t(key));
   });
 
-  localizeEdenX1Shell(document, lang);
+  localizeEdenX1Shell(document, lang, { season: EDEN_IS_X2 ? 'X2' : 'X1' });
   syncGameClockTitles();
   scheduleLocalizedRerender();
   window.dispatchEvent(new CustomEvent('vts:language-change', { detail: { lang } }));
@@ -6027,9 +6357,9 @@ function renderWeightedContributionRow(row, index, options = {}) {
     <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(rowReward))}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThContribution'))}" style="text-align:right">${formatScore(row.contributionScore)}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThExGuild'))}" style="text-align:right">${formatScore(row.contributionExGuild || 0)}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${row.shieldWalls}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
-    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${renderDutyCountCell(row, 'shieldWalls', t, { number: formatScore })}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${renderDutyCountCell(row, 'pathers', t, { number: formatScore })}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${renderDutyCountCell(row, 'banners', t, { number: formatScore })}</td>
     <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, index, popoverOptions)}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${formatScore(total)}</td>
     <td class="dash-weighted-score-cell" data-label="${esc(options.weightedScoreLabel || t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, index, popoverOptions)}</td>
@@ -6236,20 +6566,28 @@ function getAnnouncementRows() {
       rows.push({
         rank: rows.length + 1,
         category,
+        // Support rows already know which of their slots holds the guild-master
+        // reward, so the announcement prints that instead of assuming it is the
+        // first row on the page.
+        categoryReward: category === 'support' ? entry?.edenX1SupportReward || '' : '',
         playerName: entry?.playerName || '',
         playerKey: entry?.playerKey || '',
         placeholder: !entry,
       });
     }
   };
-  push('support', 4, getSupportRewardRows());
+  push('support', supportSlotCount(currentRewardSettings), getSupportRewardRows());
   push(
     'contribution',
-    10,
+    rewardQuota(currentRewardSettings, 'contribution'),
     getContributionRewardRows().filter((row) => Number(row.edenX1RewardSlot) > 0)
   );
-  push('management', 3, getEligibleManagementVoteWinners());
-  push('team', 3, getEligibleTeamVoteWinners());
+  push(
+    'management',
+    rewardQuota(currentRewardSettings, 'management'),
+    getEligibleManagementVoteWinners()
+  );
+  push('team', rewardQuota(currentRewardSettings, 'team'), getEligibleTeamVoteWinners());
   return rows;
 }
 
@@ -6317,7 +6655,7 @@ function renderAnnouncementTable() {
                 <td data-label="${esc(t('edenX1ThNumber'))}">${row.rank}</td>
                  <td data-label="${esc(t('adminContributionMember'))}">${name}</td>
                  <td data-label="${esc(t('edenX1RewardSlotGroup'))}"><span class="eden-x1-announcement-chip eden-x1-announcement-chip--${row.category}">${esc(t(meta.labelKey))}</span></td>
-                 <td data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(row.rank === 1 ? 'guild_master' : 'core'))}</td>
+                 <td data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(row.categoryReward || 'core'))}</td>
                  <td data-label="${esc(t('edenX1RewardAnnouncementThWhy'))}">${esc(t(meta.whyKey))}</td>
               </tr>`;
             })
@@ -6502,6 +6840,9 @@ const EDEN_FROST_TEXT = {
   edenX1VoteRule: 'Pick 1 to 4 unique teammates',
   edenX1VoteDeadlineFriday: 'Only until Friday 23:59 game time.',
   edenX1VoteCta: 'Click here to vote',
+  edenX1VoteNow: 'Vote now',
+  edenX1VoteStepYou: 'Who are you?',
+  edenX1VoteStepPicks: 'Pick up to 4 teammates',
   edenX1VoteSelectionCount: '{count}/4 selected',
   edenX1MarqueeKicker: 'EDEN X1 SEASON',
   edenX1MarqueeMembers: 'Members',
@@ -6536,7 +6877,16 @@ function edenMarqueeStatusState() {
     return { state: 'closed', label: t('edenX1VoteClosedShort'), countdown: '', urgent: false };
   }
   const parts = getEdenVoteCountdownParts(closesAt, now);
-  const countdown = `${parts.days}d ${parts.hours}h ${pad2(parts.minutes)}m`;
+  const vars = {
+    days: parts.days,
+    hours: pad2(parts.hours),
+    minutes: pad2(parts.minutes),
+    seconds: pad2(parts.seconds),
+  };
+  const countdown = tf(
+    parts.days ? 'edenX1VoteCountdownDays' : 'edenX1VoteCountdownClock',
+    vars
+  );
   const urgent = parts.remainingSeconds <= 86_400;
   return {
     state: urgent ? 'urgent' : 'open',
@@ -6548,6 +6898,24 @@ function edenMarqueeStatusState() {
 
 function pad2(value) {
   return String(value).padStart(2, '0');
+}
+
+// While voting is open the ballot moves up to follow the season summary, so a
+// phone reaches it without scrolling past the reward tables. It moves in the
+// document rather than with CSS order, so keyboard and screen-reader order
+// match what is on screen. Desktop places sections by grid area, so this only
+// changes what a single-column layout shows first.
+function placeEdenVoteRail(votingOpen) {
+  const rail = $('edenX1VoteRail');
+  const rewardPanel = $('edenX1RewardFlowPanel');
+  const weightedPanel = $('dashWeightedContributionPanel');
+  if (!rail || !rewardPanel || !weightedPanel) return;
+  if (rail.contains(document.activeElement)) return;
+  if (votingOpen) {
+    if (rail.nextElementSibling !== rewardPanel) rewardPanel.before(rail);
+  } else if (weightedPanel.nextElementSibling !== rail) {
+    weightedPanel.after(rail);
+  }
 }
 
 function renderEdenMarquee(data = {}) {
@@ -6570,6 +6938,11 @@ function renderEdenMarquee(data = {}) {
     .slice()
     .sort((a, b) => valueOf(b.weightedScore) - valueOf(a.weightedScore))[0];
   const status = edenMarqueeStatusState();
+  // Lets the mobile layout lift the ballot above the reward tables only while
+  // it can actually be used.
+  if (document.body)
+    document.body.dataset.edenVoteState = EDEN_X1_IS_ARCHIVE ? 'archive' : status.state;
+  placeEdenVoteRail(!EDEN_X1_IS_ARCHIVE && status.state !== 'closed');
 
   const stats = [
     { label: tf('edenX1MarqueeMembers'), value: String(totalMembers), tone: 'cyan' },
@@ -6585,6 +6958,12 @@ function renderEdenMarquee(data = {}) {
   const statusHtml = EDEN_X1_IS_ARCHIVE
     ? ''
     : `<div class="eden-x1-marquee-status" data-state="${esc(status.state)}" aria-label="${esc(tf('edenX1VoteStatus'))}">${esc(status.label)}${countdownHtml}</div>`;
+  // While the ballot is open, the season summary carries the way in, so nobody
+  // has to hunt for the form below the reward tables.
+  const voteNowHtml =
+    !EDEN_X1_IS_ARCHIVE && status.state !== 'closed'
+      ? `<button type="button" class="eden-x1-marquee-vote" data-eden-vote-now>${esc(tf('edenX1VoteNow'))}</button>`
+      : '';
 
   const topPerformerHtml = topRow?.playerName
     ? `<div class="eden-x1-marquee-top">
@@ -6595,12 +6974,21 @@ function renderEdenMarquee(data = {}) {
     : '';
 
   host.hidden = false;
+  if (!host.dataset.voteNowBound) {
+    host.dataset.voteNowBound = '1';
+    host.addEventListener('click', (event) => {
+      if (event.target.closest('[data-eden-vote-now]')) openEdenVoteSection();
+    });
+  }
   host.innerHTML = `<div class="eden-x1-marquee-head">
       <div>
         <span class="eden-x1-marquee-kicker">${esc(tf('edenX1MarqueeKicker'))}</span>
         <h2 class="eden-x1-marquee-title">${esc(seasonLabel)}</h2>
       </div>
-      ${statusHtml}
+      <div class="eden-x1-marquee-actions">
+        ${statusHtml}
+        ${voteNowHtml}
+      </div>
     </div>
     <div class="eden-x1-marquee-stats">
       ${stats
@@ -7056,6 +7444,11 @@ async function loadEdenX1Dashboard() {
         setEdenLoadingProgress(generation, 58);
         const { getFirestore, doc, getDoc } = firestore;
         const db = getFirestore(app);
+        // Started here, applied once the roster is loaded (see
+        // applyEdenAccountLink): a guest resolves to '' without a read, and a
+        // signed-in member's profile read overlaps the dashboard load instead
+        // of adding a round trip after it.
+        requestEdenAccountGameName(db, firestore, voteUser);
 
         // The X2 season page never touches a working admin document: the whole
         // public view is one allowlisted projection, written by an explicit
@@ -7078,12 +7471,22 @@ async function loadEdenX1Dashboard() {
           const data = {
             ...(projection.dashboard || {}),
             edenX1VoteSettings: verifiedVoteSettings,
+            publishedScoring:
+              projection.scoring && typeof projection.scoring === 'object'
+                ? projection.scoring
+                : null,
+            // The season's reward distribution. The cached copy is written from
+            // this same object, so a cached load keeps the published quotas too.
+            rewardSettings:
+              projection.rewardSettings && typeof projection.rewardSettings === 'object'
+                ? projection.rewardSettings
+                : null,
           };
           if (Array.isArray(projection.rosterSnapshots)) {
             data.rosterSnapshots = projection.rosterSnapshots;
           }
           data.publicEdenX1VoteResults = normalizePublicEdenVoteResults(
-            verifiedVoteSettings.showPublicResults !== true
+            verifiedVoteSettings.showMemberResults !== true
               ? {}
               : projection.publicVoteResults || {}
           );
@@ -7130,7 +7533,7 @@ async function loadEdenX1Dashboard() {
           data.rosterSnapshots = cachedData.rosterSnapshots;
         }
         const publicVoteResults =
-          verifiedVoteSettings.showPublicResults !== true
+          verifiedVoteSettings.showMemberResults !== true
             ? {}
             : publicVoteResultsSnap === null
               ? cachedData?.publicEdenX1VoteResults || {}
@@ -7150,7 +7553,7 @@ async function loadEdenX1Dashboard() {
         }
         const sidecarReadIncomplete =
           rosterSnap === null ||
-          (verifiedVoteSettings.showPublicResults === true && publicVoteResultsSnap === null) ||
+          (verifiedVoteSettings.showMemberResults === true && publicVoteResultsSnap === null) ||
           liveConductAdjustments === null;
         return {
           kind: 'ok',
@@ -7166,7 +7569,7 @@ async function loadEdenX1Dashboard() {
 
     if (cachedData) {
       applyEdenVoteSettings(cachedData.edenX1VoteSettings);
-      // The sheet fetch is gated on showPublicResults, so it can only start
+      // The sheet fetch is gated on showManagementResults, so it can only start
       // once settings exist. Firing it here keeps the cache preview as fast as
       // the old unconditional kick-off was.
       void loadEdenManagementVoteResults();
@@ -7310,10 +7713,21 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
   setRewardFlowReady(false);
   resetWeightedTablePagination(weightedTablePagination);
   resetWeightedTablePagination(publicWeightedTablePagination);
+  // Score with the account links published alongside this data (banner or
+  // alt account -> the player who runs it), exactly as the admin does. Only
+  // the links are taken, so nothing else about public name handling changes.
+  // Taught aliases ("zubs" -> Lady Zubbs) travel with the links, so the
+  // public page resolves names exactly as the admin who published it does.
+  setActivePlayerRegistry({
+    players: [],
+    accountLinks: data.playerRegistry?.accountLinks || [],
+    playerAliases: data.playerRegistry?.playerAliases || [],
+  });
   const contributionRecords = Array.isArray(data.contributionRecords)
     ? data.contributionRecords
     : [];
   const dutyRecords = Array.isArray(data.dutyRecords) ? data.dutyRecords : [];
+  currentDutyRecords = dutyRecords;
   const exGuildContributions = Array.isArray(data.exGuildContributions)
     ? data.exGuildContributions
     : [];
@@ -7323,6 +7737,19 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
     : [];
   currentForfeitedRewardIdentities = getForfeitedRewardPriorityIdentities(r5Adjustments, season);
 
+  // Scoring rules published with the season. A season published before they
+  // were carried keeps the page's previous behaviour: default duty weights and
+  // no demolition points.
+  const publishedScoring = data.publishedScoring || null;
+  // Reward distribution published with the season: which categories reward how
+  // many players, and whether the guild-master reward follows the R5.
+  // A season published before the distribution was carried (the X1 archive)
+  // keeps the rule it ran under: the top support scorer holds the guild-master
+  // reward inside the support quota, for the original Final Top 20.
+  currentRewardSettings = normalizeRewardSettings(
+    data.rewardSettings || { guildMasterSource: 'support_top1' }
+  );
+  refreshRewardCountCopy();
   const model = buildWeightedContributionRows({
     contributionRecords,
     dutyRecords,
@@ -7330,6 +7757,14 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
     exGuildContributions,
     season,
     includeSupportOnly: true,
+    dutyPointWeights: publishedScoring?.dutyPointWeights,
+    contributionWeight: publishedScoring?.contributionWeight,
+    formPointWeight: publishedScoring?.formPointWeight,
+    demolitionRecords:
+      publishedScoring?.includeDemolitionPoints === true && Array.isArray(data.attacks)
+        ? data.attacks
+        : undefined,
+    includeDemolitionPoints: publishedScoring?.includeDemolitionPoints === true,
   });
   currentSeason = String(season || defaultEdenSeason()).trim();
   currentMemberOptions = collectEdenMemberOptions(data, model.rows || []);
@@ -7349,7 +7784,7 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
   const dateStr = data.date || data.updatedAt || '';
   currentRows = model.rows;
   currentRecordLabel = dateStr
-    ? `Eden X1 - ${String(dateStr).split('T')[0] || dateStr}`
+    ? `${EDEN_IS_X2 ? 'Eden X2' : 'Eden X1'} - ${String(dateStr).split('T')[0] || dateStr}`
     : t('edenX1PageTitle');
   setRewardFlowReady(true);
   applyPendingEdenManagementVotePayload();
@@ -7359,6 +7794,10 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
   renderEdenPodium();
   renderEdenProgression(data);
   renderEdenVoteRail();
+  // The roster the matcher needs exists from here on, so this is the first
+  // point where an account can resolve to a guild row. Deliberately not
+  // awaited: the prefills land when the profile read lands.
+  void applyEdenAccountLink();
   // Stage 1: the weighted table users came for. Reveal it, then yield so the
   // browser can paint before the heavy public dashboard renders.
   renderCurrentTable();
@@ -7403,3 +7842,7 @@ if (EDEN_X1_TEST_MODE && !Array.isArray(globalThis.VTS_EDEN_X1_FIREBASE_MODULES)
 } else {
   main();
 }
+
+// Shared site chrome: the same footer (and, where the page has no header of
+// its own, the branded bar with Back to tools) on every standalone tool page.
+mountToolShell();

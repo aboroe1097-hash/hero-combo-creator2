@@ -1,4 +1,6 @@
 export const SPECIALIZATION_TOWERS_V2_FR = Object.freeze({
+  reportWrongCost: 'Signaler un coût erroné',
+  selectNodeBeforeMedals: 'Sélectionnez au moins un nœud avant d’ajouter des médailles.',
   title: 'Tours de spécialisation',
   subtitle:
     'Recréez chaque parcours de spécialisation, suivez les médailles et consultez ses bonus actifs.',

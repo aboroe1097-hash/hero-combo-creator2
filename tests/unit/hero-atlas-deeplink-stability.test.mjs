@@ -34,7 +34,7 @@ test('share-intent hashes (#combo= / #roster=) still guard the sub-tab hash writ
 test('canonical sub-tab deep links include codex without breaking the existing four', () => {
   assert.match(
     hubSource,
-    /HEROES_COMBOS_SUBTABS = Object\.freeze\(\[\s*'manual',\s*'generator',\s*'codex',\s*'heroes',\s*'skins',\s*\]\)/
+    /HEROES_COMBOS_SUBTABS = Object\.freeze\(\[\s*'manual',\s*'generator',\s*'codex',\s*'heroes',\s*'skins',\s*'pdfs',\s*\]\)/
   );
   assert.match(
     appSource,

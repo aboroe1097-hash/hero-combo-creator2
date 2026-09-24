@@ -1,0 +1,52 @@
+rules_version = '2';
+
+// Cloud Storage rules for the complaint screenshots. This is the first
+// Storage usage in the project, so the file starts from the only safe
+// default: everything is denied unless a rule below says otherwise.
+//
+// The bucket holds member-filed images for the Issue/Complaint form on the
+// Eden page. Those images are evidence for a superadmin, not gallery content,
+// so nothing here is publicly readable. The uploader writes, a superadmin
+// reads, and no one may overwrite or delete: a filing that can be erased after
+// the fact is not a record.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Mirrored from firestore.rules: superadmin is a custom claim set by the
+    // setUserRole callable, and it always implies admin.
+    function isSuperAdmin() {
+      return signedIn() && request.auth.token.superadmin == true;
+    }
+
+    // Path contract, shared with the Firestore validator (validComplaintImage):
+    // complaints/{complaintId}/{bounded-file-name}.{jpg|jpeg|png|webp}
+    //
+    // The first segment is the filing's own random Firestore id, never the
+    // uploader's uid, so a screenshot cannot de-anonymise an anonymous filing.
+    // Objects are create-only (no overwrite), and the Firestore rule pins every
+    // stored path to its document's id.
+    match /complaints/{complaintId}/{fileName} {
+      allow read: if isSuperAdmin();
+      allow create: if signedIn()
+        && complaintId.matches('^[A-Za-z0-9]{20}$')
+        && resource == null
+        // 2 MiB is well above what the client sends (it re-encodes to at most
+        // 1280px JPEG) and far below anything that would make the inbox
+        // expensive to open.
+        && request.resource.size <= 2 * 1024 * 1024
+        && request.resource.contentType in ['image/jpeg', 'image/png', 'image/webp']
+        && fileName.size() <= 160
+        && fileName.matches('^[A-Za-z0-9_-]{1,150}\\.(jpg|jpeg|png|webp)$');
+      allow update: if false;
+      // Superadmin purge, mirroring the Firestore delete.
+      allow delete: if isSuperAdmin();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

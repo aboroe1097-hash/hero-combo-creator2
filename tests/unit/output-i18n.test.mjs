@@ -66,7 +66,7 @@ test('combo export copy uses the selected locale for labels and the calendar dat
 
   assert.match(german.teamStateLine, /^TEAM VTS — STAAT 1097/);
   assert.equal(german.scoreLabel, 'PUNKTZAHL');
-  assert.match(german.generatedByLine, /^Erstellt mit VTS 1097/);
+  assert.match(german.generatedByLine, /^Erstellt mit RoC VTS Toolkit {2}• {2}VTS 1097/u);
   assert.equal(
     german.dateLabel,
     new Intl.DateTimeFormat(resolveIntlLocale('de'), {

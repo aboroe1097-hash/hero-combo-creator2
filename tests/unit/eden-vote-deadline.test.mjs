@@ -58,13 +58,20 @@ test('admin, public UI, and Firestore rules share vote settings contracts', () =
   assert.match(template, /id="dashEdenVoteSaveDeadlineBtn"/);
   assert.match(template, /id="dashEdenVoteClearDeadlineBtn"/);
   assert.match(publicPage, /role="timer"/);
+  assert.match(
+    publicPage,
+    /const countdown = tf\([\s\S]*?edenX1VoteCountdownDays[\s\S]*?edenX1VoteCountdownClock/
+  );
+  assert.doesNotMatch(publicPage, /const countdown = .*parts\.days/);
   assert.match(publicPage, /window\.setInterval\([\s\S]*?1000\)/);
   assert.match(publicPage, /if \(isEdenVoteSubmissionClosed\(\)\)/);
   assert.match(
     rules,
-    /'showVoterNames', 'contributionRankingMode', 'closesAt', 'updatedAt', 'updatedBy'/
+    /'showVoterNames', 'contributionRankingMode', 'closesAt', 'candidateRedirects',\s*'updatedAt', 'updatedBy'/
   );
   assert.match(rules, /request\.resource\.data\.closesAt\.matches/);
+  assert.match(rules, /request\.resource\.data\.candidateRedirects\.size\(\) <= 60/);
+  assert.match(admin, /\.\.\.withEdenVoteRedirects\(settings\.candidateRedirects\)/);
   assert.match(admin, /contributionRankingMode: normalizeEdenX1ContributionRankingMode/);
   assert.match(admin, /input\[name="edenContributionRankingMode"\]/);
   assert.match(template, /id="dashEdenContributionModeExtended"/);

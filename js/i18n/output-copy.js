@@ -178,7 +178,7 @@ export function buildComboExportCopy(locale, date = new Date()) {
   return Object.freeze({
     teamStateLine: `${outputCopyText(locale, 'export.team')} VTS — ${outputCopyText(locale, 'export.state')} 1097  •  Rise of Castles: Ice & Fire`,
     scoreLabel: outputCopyText(locale, 'export.score'),
-    generatedByLine: `${outputCopyText(locale, 'export.generatedBy')} VTS 1097 Hero Combo Creator  •  Rise of Castles: Ice & Fire`,
+    generatedByLine: `${outputCopyText(locale, 'export.generatedBy')} RoC VTS Toolkit  •  VTS 1097  •  Rise of Castles: Ice & Fire`,
     dateLabel: formatLocaleDate(date, locale, {
       month: 'long',
       day: 'numeric',

@@ -1,6 +1,6 @@
 # Security Policy
 
-Hero Combo Creator includes public tools, account data, administrator workflows, and separately deployed Firebase/Cloudflare services. Report vulnerabilities privately to **aboroe1097@gmail.com**.
+RoC VTS Toolkit includes public tools, account data, administrator workflows, and separately deployed Firebase/Cloudflare services. Report vulnerabilities privately to **aboroe1097@gmail.com**.
 
 ## What to include
 

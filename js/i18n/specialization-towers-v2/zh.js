@@ -1,4 +1,6 @@
 export const SPECIALIZATION_TOWERS_V2_ZH = Object.freeze({
+  reportWrongCost: '报告错误的成本',
+  selectNodeBeforeMedals: '添加勋章前请至少选择一个节点。',
   title: '专精塔',
   subtitle: '还原每条专精路线，记录勋章并查看已生效的加成。',
   betaBadge: '测试版',

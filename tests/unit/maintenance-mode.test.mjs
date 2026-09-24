@@ -21,6 +21,7 @@ test('every deployed public HTML entry is covered by the maintenance gate', () =
     'arcade.html',
     'battle-simulator.html',
     'specialization-towers.html',
+    'eden-siege.html',
   ];
   const gameEntries = [
     'games/boot/b-merge-rush.html',

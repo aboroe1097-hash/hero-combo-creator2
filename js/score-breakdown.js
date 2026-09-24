@@ -1,0 +1,541 @@
+// One itemised view of a weighted score, shared by every place that shows it:
+// the admin dashboard and contribution tables, the public Eden page, and the
+// player detail views. Each line is the exact number the scorer added, with
+// the count and weight it came from, so a total can be checked by hand.
+//
+// Callers pass their own translator and number formatters, because the admin
+// and the public page localise through different catalogs.
+
+// The account classes a duty can score as, in the order they are shown.
+// contribution-weighting.js owns the list and its weights; this module is
+// deliberately dependency-free (the public page renders it too), so the order
+// is restated here and the two are kept in step by the score-breakdown tests.
+const DUTY_ACCOUNT_CLASSES = Object.freeze(['main', 'alt', 'secondary']);
+
+const DUTY_LABEL_KEYS = Object.freeze({
+  banners: 'adminDutyWeightsBanners',
+  pathers: 'adminDutyWeightsPathers',
+  shieldWalls: 'adminDutyWeightsShieldWalls',
+});
+
+// One label per account class, so a third class shows up everywhere a split is
+// displayed without another list to keep in step. The duty list's chip keeps the
+// short word it has always shown; the breakdown's tag spells the class out.
+const DUTY_CLASS_LABEL_KEYS = Object.freeze({
+  main: 'adminDutyAccountMain',
+  alt: 'scoreBreakdownSecondary',
+  secondary: 'adminDutyWeightsSecondary',
+});
+
+const DUTY_CHIP_LABEL_KEYS = Object.freeze({
+  main: 'adminDutyAccountMain',
+  alt: 'adminDutyAccountBanner',
+  secondary: 'adminDutyWeightsSecondary',
+});
+
+// The chip colour a class borrows; only main and the non-main classes exist.
+function dutyClassChip(cls) {
+  return cls === 'main' ? 'main' : 'banner';
+}
+
+const CONDUCT_CATEGORY_KEYS = Object.freeze({
+  banner_help: 'adminConductCategoryBannerHelp',
+  connected_road: 'adminConductCategoryConnectedRoad',
+  extra_effort: 'adminConductCategoryExtraEffort',
+  merit_other: 'adminConductCategoryMeritOther',
+  path_block: 'adminConductCategoryPathBlock',
+  toxicity: 'adminConductCategoryToxicity',
+  ignored_coordination: 'adminConductCategoryIgnoredCoordination',
+  penalty_other: 'adminConductCategoryPenaltyOther',
+  forfeit_premium: 'adminConductCategoryForfeitPremium',
+  grant_premium: 'adminConductCategoryGrantPremium',
+});
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// A duty upload without a title is named by its day ("Sep 23"). Restated from
+// duty-record-title.js because this module stays dependency-free.
+function dutyUploadDay(date, locale) {
+  const match = String(date || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return String(date || '');
+  try {
+    return new Intl.DateTimeFormat(locale || undefined, {
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'UTC',
+    }).format(new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]))));
+  } catch {
+    return String(date || '');
+  }
+}
+
+function weightText(value) {
+  const number = Number(value) || 0;
+  return Number.isInteger(number) ? String(number) : String(Number(number.toFixed(3)));
+}
+
+// "1,000,000 ÷ 20" reads better than "1,000,000 × 0.05" for the small
+// demolition weights admins use.
+function demolitionFormula(item, t, number) {
+  const weight = Number(item.weight) || 0;
+  const divisor = weight > 0 && weight < 1 ? 1 / weight : 0;
+  if (divisor && Math.abs(divisor - Math.round(divisor)) < 1e-9) {
+    return `${number(item.total)} ÷ ${number(Math.round(divisor))}`;
+  }
+  return t('scoreBreakdownTimesWeight', { count: number(item.total), weight: weightText(weight) });
+}
+
+export function conductCategoryKey(category) {
+  return CONDUCT_CATEGORY_KEYS[String(category || '')] || '';
+}
+
+// The value a line adds to the total: raw points times the season's multiplier,
+// so the lines of a breakdown always sum to the score beside them.
+export function weightedLinePoints(item = {}) {
+  const points = Number(item.points) || 0;
+  // Only the in-game lines carry raw points beside their multiplier; every
+  // other line's points are already what it adds.
+  if (item.kind !== 'contribution' && item.kind !== 'exGuild') return points;
+  const weight = Number(item.weight);
+  return Number.isFinite(weight) ? points * weight : points;
+}
+
+// Structured lines; renderers decide the markup.
+export function buildScoreBreakdownLines(row = {}) {
+  const lines = [];
+  // The in-game term carries the season's contribution multiplier, so the lines
+  // still add up to the displayed total when an operator has tuned it.
+  const contributionWeight = Number(row.contributionWeight);
+  const weight =
+    Number.isFinite(contributionWeight) && contributionWeight >= 0 ? contributionWeight : 1;
+  lines.push({ kind: 'contribution', points: Number(row.contributionScore) || 0, weight });
+  lines.push({ kind: 'exGuild', points: Number(row.contributionExGuild) || 0, weight });
+  if (row.demolitionCounted === false) {
+    // Nothing to explain when demolition is off and the player has none.
+    if (Number(row.totalDemolition) > 0)
+      lines.push({
+        kind: 'demolition',
+        off: true,
+        total: Number(row.totalDemolition) || 0,
+        points: 0,
+      });
+  } else if (Number(row.demolitionPoints) || Number(row.totalDemolition)) {
+    lines.push({
+      kind: 'demolition',
+      total: Number(row.totalDemolition) || 0,
+      weight: Number(row.demolitionWeight) || 0,
+      points: Number(row.demolitionPoints) || 0,
+    });
+  }
+  const duty = row.dutyBreakdown;
+  const dutyItems = [];
+  (duty?.activities || []).forEach((activity) => {
+    DUTY_ACCOUNT_CLASSES.forEach((cls) => {
+      const part = activity[cls];
+      if (!part?.count) return;
+      dutyItems.push({
+        activity: activity.activity,
+        cls,
+        count: part.count,
+        weight: part.weight,
+        points: part.points,
+      });
+    });
+  });
+  lines.push({
+    kind: 'duty',
+    points: Number(row.dutyPoints) || 0,
+    unit: duty?.unit || 10000,
+    items: dutyItems,
+  });
+  lines.push({
+    kind: 'conduct',
+    bonus: Number(row.conductBonus) || 0,
+    unit: Number(row.conductUnit) || 10000,
+    points: Number(row.conductPoints) || 0,
+    items: Array.isArray(row.conductItems) ? row.conductItems : [],
+  });
+  return lines;
+}
+
+// Summary figures for the "main vs secondary" question.
+export function dutyClassTotals(row = {}) {
+  const totals = { main: 0, alt: 0, secondary: 0, mainPoints: 0, altPoints: 0, secondaryPoints: 0 };
+  (row.dutyBreakdown?.activities || []).forEach((activity) => {
+    DUTY_ACCOUNT_CLASSES.forEach((cls) => {
+      totals[cls] += activity[cls]?.count || 0;
+      totals[`${cls}Points`] += activity[cls]?.points || 0;
+    });
+  });
+  return totals;
+}
+
+/**
+ * @param {object} row  A scored row from buildWeightedContributionRows.
+ * @param {object} options
+ * @param {(key: string, vars?: object) => string} options.t
+ * @param {(value: number) => string} options.number
+ * @param {(value: number) => string} options.signed
+ * @param {string} [options.totalText]  Pre-formatted total.
+ * @param {string} [options.conductNote]  Shown under the bonus line (privacy note).
+ * @param {boolean} [options.hideDemolition]  Public views that never count it.
+ */
+export function renderScoreBreakdown(row, options) {
+  const { t, number, signed } = options;
+  const line = (label, value, note = '', extraClass = '') =>
+    `<span class="score-breakdown-line${extraClass}"><span>${label}${note ? `<small>${note}</small>` : ''}</span><b>${value}</b></span>`;
+  const sub = (label, value) =>
+    `<span class="score-breakdown-sub"><span>${label}</span><b>${value}</b></span>`;
+  const parts = [];
+  buildScoreBreakdownLines(row).forEach((item) => {
+    if (item.kind === 'contribution') {
+      parts.push(
+        line(
+          escapeHtml(t('edenX1BreakdownContribution')),
+          number(weightedLinePoints(item)),
+          item.weight === 1
+            ? ''
+            : escapeHtml(
+                t('scoreBreakdownTimesWeight', {
+                  count: number(item.points),
+                  weight: weightText(item.weight),
+                })
+              )
+        )
+      );
+    } else if (item.kind === 'exGuild') {
+      if (item.points)
+        parts.push(
+          line(
+            escapeHtml(t('edenX1BreakdownExGuild')),
+            number(weightedLinePoints(item)),
+            item.weight === 1
+              ? ''
+              : escapeHtml(
+                  t('scoreBreakdownTimesWeight', {
+                    count: number(item.points),
+                    weight: weightText(item.weight),
+                  })
+                )
+          )
+        );
+    } else if (item.kind === 'demolition') {
+      if (options.hideDemolition) return;
+      parts.push(
+        item.off
+          ? line(
+              escapeHtml(t('adminThDemo')),
+              '—',
+              escapeHtml(t('scoreBreakdownDemolitionOff', { total: number(item.total) }))
+            )
+          : line(
+              escapeHtml(t('adminThDemo')),
+              number(item.points),
+              escapeHtml(demolitionFormula(item, t, number))
+            )
+      );
+    } else if (item.kind === 'duty') {
+      parts.push(
+        line(
+          escapeHtml(t('edenX1BreakdownDuty')),
+          number(item.points),
+          '',
+          ' score-breakdown-group'
+        )
+      );
+      if (!item.items.length) {
+        parts.push(sub(escapeHtml(t('scoreBreakdownNoDuty')), '0'));
+      }
+      item.items.forEach((duty) => {
+        const label = `${escapeHtml(t(DUTY_LABEL_KEYS[duty.activity] || duty.activity))} <i class="score-breakdown-tag" data-account="${dutyClassChip(duty.cls)}">${escapeHtml(
+          t(DUTY_CLASS_LABEL_KEYS[duty.cls] || DUTY_CLASS_LABEL_KEYS.main)
+        )}</i><small>${escapeHtml(
+          t('scoreBreakdownDutyFormula', {
+            count: duty.count,
+            weight: weightText(duty.weight),
+            unit: number(item.unit),
+          })
+        )}</small>`;
+        parts.push(sub(label, number(duty.points)));
+      });
+    } else if (item.kind === 'conduct') {
+      parts.push(
+        line(
+          escapeHtml(t('edenX1BreakdownConductPoints')),
+          signed(item.points),
+          // A zero bonus needs no formula.
+          item.bonus
+            ? escapeHtml(
+                t('scoreBreakdownConductFormula', {
+                  bonus: signed(item.bonus),
+                  unit: number(item.unit),
+                })
+              )
+            : '',
+          ' score-breakdown-group'
+        )
+      );
+      item.items
+        .slice()
+        .sort((a, b) => Math.abs(b.points) - Math.abs(a.points))
+        .forEach((entry) => {
+          const key = conductCategoryKey(entry.category);
+          const label = `${escapeHtml(key ? t(key) : entry.category)}${entry.count > 1 ? ` <em>×${entry.count}</em>` : ''}`;
+          parts.push(sub(label, signed(entry.points)));
+        });
+      if (options.conductNote) {
+        parts.push(
+          `<small class="score-breakdown-note">${escapeHtml(options.conductNote)}</small>`
+        );
+      }
+    }
+  });
+  const totals = dutyClassTotals(row);
+  if (totals.main || totals.alt) {
+    parts.push(
+      `<small class="score-breakdown-note">${escapeHtml(
+        t('scoreBreakdownClassSummary', {
+          main: totals.main,
+          alt: totals.alt,
+          mainPoints: number(totals.mainPoints),
+          altPoints: number(totals.altPoints),
+        })
+      )}</small>`
+    );
+  }
+  // A second line rather than a wider first one: the summary sentence and its
+  // placeholders stay as every locale already translates them, and a season
+  // with no secondary-linked account says nothing extra at all.
+  if (totals.secondary) {
+    parts.push(
+      `<small class="score-breakdown-note">${escapeHtml(
+        t('scoreBreakdownSecondarySummary', {
+          secondary: totals.secondary,
+          secondaryPoints: number(totals.secondaryPoints),
+        })
+      )}</small>`
+    );
+  }
+  parts.push(
+    `<span class="score-breakdown-line score-breakdown-total"><span>${escapeHtml(
+      t('edenX1BreakdownTotal')
+    )}</span><b>${options.totalText ?? number(row.weightedScore)}</b></span>`
+  );
+  return `<span class="score-breakdown">${parts.join('')}</span>`;
+}
+
+const DUTY_ACTIVITY_SHORT_KEYS = Object.freeze({
+  banners: 'adminDutyWeightsBanners',
+  pathers: 'adminDutyWeightsPathers',
+  shieldWalls: 'adminDutyWeightsShieldWalls',
+});
+const DUTY_ACTIVITY_ORDER = ['banners', 'pathers', 'shieldWalls'];
+
+// Where the score came from, as shares of the positive parts, for the bar.
+function scoreComposition(row) {
+  const contributionScore = Number(row.contributionScore) || 0;
+  const exGuild = Number(row.contributionExGuild) || 0;
+  const contributionWeight = Number(row.contributionWeight);
+  const weightedContribution =
+    Number.isFinite(contributionWeight) && contributionWeight >= 0
+      ? (contributionScore + exGuild) * contributionWeight
+      : contributionScore + exGuild;
+  const parts = [
+    {
+      key: 'contribution',
+      label: 'edenX1BreakdownContribution',
+      points: weightedContribution,
+    },
+    { key: 'duty', label: 'edenX1BreakdownDuty', points: Number(row.dutyPoints) || 0 },
+    { key: 'demolition', label: 'adminThDemo', points: Number(row.demolitionPoints) || 0 },
+    { key: 'bonus', label: 'edenX1BreakdownConductPoints', points: Number(row.conductPoints) || 0 },
+  ].filter((part) => part.points !== 0);
+  const positive = parts.reduce((sum, part) => sum + Math.max(0, part.points), 0) || 1;
+  return parts.map((part) => ({
+    ...part,
+    share: Math.max(0, part.points) / positive,
+  }));
+}
+
+let playerSeasonFilterBound = false;
+let playerSeasonStylesRequested = false;
+
+// The season view's stylesheet is not linked from any page: it is fetched the
+// first time a view renders, and ahead of that when the browser is idle.
+function loadPlayerSeasonStyles() {
+  if (playerSeasonStylesRequested || typeof document === 'undefined') return;
+  playerSeasonStylesRequested = true;
+  import('../css/player-season.css').catch(() => {
+    playerSeasonStylesRequested = false;
+  });
+}
+
+// Only in a real browser: tests stub `window` without timers or idle callbacks.
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(loadPlayerSeasonStyles, { timeout: 5000 });
+  } else if (typeof window.setTimeout === 'function') {
+    window.setTimeout(loadPlayerSeasonStyles, 2000);
+  }
+}
+
+// One delegated listener serves every player view (admin and public).
+function bindPlayerSeasonFilters() {
+  if (playerSeasonFilterBound || typeof document === 'undefined') return;
+  playerSeasonFilterBound = true;
+  document.addEventListener('click', (event) => {
+    const button = event.target?.closest?.('[data-ps-filter]');
+    if (!button) return;
+    const panel = button.closest('.player-season-duties-panel');
+    if (!panel) return;
+    event.stopPropagation();
+    panel.dataset.filter = button.dataset.psFilter;
+    panel.querySelectorAll('[data-ps-filter]').forEach((chip) => {
+      chip.setAttribute('aria-pressed', chip === button ? 'true' : 'false');
+    });
+  });
+}
+
+/**
+ * A player's season at a glance, used by the admin and public player views:
+ * rank, score and reward, what the score is made of, the itemised score, and
+ * every duty they were credited with (newest first, filterable by type) with
+ * the account type it counted as.
+ *
+ * @param {object} options
+ * @param {object} options.row  Scored row (primary account of the family).
+ * @param {Array} options.duties  collectFamilyDutyEntries output.
+ * @param {string} [options.rewardLabel]
+ */
+export function renderPlayerSeasonSummary(options) {
+  const { row, t, number, signed } = options;
+  if (!row) return '';
+  loadPlayerSeasonStyles();
+  bindPlayerSeasonFilters();
+  const duties = Array.isArray(options.duties) ? options.duties : [];
+  const composition = scoreComposition(row);
+  const countBy = (activity) => duties.filter((duty) => duty.activity === activity).length;
+  const activityLabel = (activity) => t(DUTY_ACTIVITY_SHORT_KEYS[activity] || activity);
+
+  const dutyLocale =
+    options.locale || (typeof document !== 'undefined' ? document.documentElement?.lang : '');
+  const dutyRow = (duty) => {
+    const when = [duty.date, duty.usageTime || duty.gameTime].filter(Boolean).join(' · ');
+    // The upload's title ("Raceday 1"), or the upload day when it has none.
+    const upload = String(duty.title || '').trim() || dutyUploadDay(duty.date, dutyLocale);
+    // The chip names the class the duty scored as. A linked secondary account
+    // used to print "Main", which is the one thing it is not.
+    const cls = DUTY_ACCOUNT_CLASSES.includes(duty.accountClass) ? duty.accountClass : 'alt';
+    const offMain = cls !== 'main';
+    return `<li class="player-season-duty" data-activity="${escapeHtml(duty.activity)}">
+        <span class="player-season-duty-what"><strong>${escapeHtml(activityLabel(duty.activity))}</strong>${upload ? `<span class="player-season-duty-upload">${escapeHtml(upload)}</span>` : ''}${duty.target ? `<span>${escapeHtml(duty.target)}</span>` : ''}</span>
+        <span class="player-season-duty-when">${escapeHtml(when || '—')}</span>
+        <span class="player-season-duty-chip" data-account="${dutyClassChip(cls)}">${escapeHtml(t(DUTY_CHIP_LABEL_KEYS[cls]))}${offMain && duty.accountName ? ` · ${escapeHtml(duty.accountName)}` : ''}</span>
+      </li>`;
+  };
+  const filters = [
+    `<button type="button" class="player-season-filter" data-ps-filter="all" aria-pressed="true">${escapeHtml(t('playerSeasonFilterAll'))} <b>${duties.length}</b></button>`,
+    ...DUTY_ACTIVITY_ORDER.filter((activity) => countBy(activity)).map(
+      (activity) =>
+        `<button type="button" class="player-season-filter" data-ps-filter="${activity}" data-activity="${activity}" aria-pressed="false">${escapeHtml(activityLabel(activity))} <b>${countBy(activity)}</b></button>`
+    ),
+  ].join('');
+
+  const bar = composition.length
+    ? `<div class="player-season-bar" role="img" aria-label="${escapeHtml(t('playerSeasonComposition'))}">${composition
+        .filter((part) => part.share > 0)
+        .map(
+          (part) =>
+            `<span data-part="${part.key}" style="flex-grow:${(part.share * 1000).toFixed(0)}"></span>`
+        )
+        .join('')}</div>
+      <ul class="player-season-legend">${composition
+        .map(
+          (part) =>
+            `<li data-part="${part.key}"><i aria-hidden="true"></i>${escapeHtml(t(part.label))} <b>${
+              part.key === 'bonus' ? signed(part.points) : number(part.points)
+            }</b>${part.share > 0 ? `<small>${Math.round(part.share * 100)}%</small>` : ''}</li>`
+        )
+        .join('')}</ul>`
+    : '';
+
+  return `<section class="player-season" aria-label="${escapeHtml(t('playerSeasonTitle'))}">
+    <div class="player-season-hero">
+      <div class="player-season-rank"><span>${escapeHtml(t('adminContributionFinalRank'))}</span><b>${row.finalRank ? `#${escapeHtml(row.finalRank)}` : '—'}</b></div>
+      <div class="player-season-score"><span>${escapeHtml(t('edenX1ThWeightedScore'))}</span><b>${options.totalText ?? number(row.weightedScore)}</b></div>
+      ${options.rewardLabel ? `<div class="player-season-reward"><span>${escapeHtml(t('playerSeasonReward'))}</span><b>${escapeHtml(options.rewardLabel)}</b></div>` : ''}
+    </div>
+    ${bar}
+    <div class="player-season-grid">
+      <div class="player-season-panel">
+        <div class="player-season-panel-title">${escapeHtml(t('edenX1WeightedBreakdownTitle'))}</div>
+        ${renderScoreBreakdown(row, options)}
+      </div>
+      <div class="player-season-panel player-season-duties-panel" data-filter="all">
+        <div class="player-season-panel-title">${escapeHtml(t('playerSeasonDutyList', { count: duties.length }))}</div>
+        ${
+          duties.length
+            ? `<div class="player-season-filters" role="group">${filters}</div>
+              <ul class="player-season-duties">${duties.map(dutyRow).join('')}</ul>`
+            : `<p class="player-season-empty">${escapeHtml(t('scoreBreakdownNoDuty'))}</p>`
+        }
+      </div>
+    </div>
+  </section>`;
+}
+
+/**
+ * A duty count for a table cell. The number is the disclosure control: opening
+ * it spells out how many duties each account class did and what that share was
+ * worth, instead of hiding the split in a tooltip a phone never shows.
+ */
+export function renderDutyCountCell(row, activity, t, options = {}) {
+  const count = Number(row?.[activity]) || 0;
+  const split = row?.dutiesByClass?.[activity] || { main: count, alt: 0, secondary: 0 };
+  const breakdown = row?.dutyBreakdown?.activities?.find((entry) => entry.activity === activity);
+  const format = typeof options.number === 'function' ? options.number : (value) => String(value);
+  const splitText = (parts) => parts.filter(Boolean).join(' · ');
+  const title = escapeHtml(
+    splitText([
+      t('scoreBreakdownCountSplit', { main: split.main, alt: split.alt }),
+      split.secondary
+        ? t('scoreBreakdownSecondaryCount', { count: split.secondary })
+        : '',
+    ])
+  );
+  const hint = (cls) =>
+    split[cls]
+      ? `<small class="duty-count-alt"> ${escapeHtml(
+          t(cls === 'secondary' ? 'scoreBreakdownSecondaryCount' : 'scoreBreakdownAltCount', {
+            count: split[cls],
+          })
+        )}</small>`
+      : '';
+  const summary = `${count}${hint('alt')}${hint('secondary')}`;
+  // Rows uploaded before the per-class breakdown carry a count without a split
+  // to explain; leave those numbers alone rather than inventing weights.
+  if (!breakdown) {
+    return split.alt || split.secondary
+      ? `<span class="duty-count" title="${title}">${summary}</span>`
+      : String(count);
+  }
+  const line = (cls) => {
+    const part = breakdown[cls];
+    const classCount = Number(part?.count) || 0;
+    if (!classCount) return '';
+    const weight = Number.isFinite(Number(part?.weight)) ? Number(part.weight) : 1;
+    const points = Number(part?.points) || 0;
+    return `<span class="duty-count-line" data-account="${dutyClassChip(cls)}"><span>${escapeHtml(
+      t(DUTY_CLASS_LABEL_KEYS[cls] || DUTY_CLASS_LABEL_KEYS.main)
+    )}</span><b>${classCount} × ${weightText(weight)} = ${escapeHtml(format(points))}</b></span>`;
+  };
+  return `<details class="duty-count-details"><summary class="duty-count" title="${title}" aria-label="${title}">${summary}</summary><span class="duty-count-panel">${DUTY_ACCOUNT_CLASSES.map(
+    line
+  ).join('')}</span></details>`;
+}

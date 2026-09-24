@@ -1,0 +1,135 @@
+/* Admin-only styles for the superadmin Complaints inbox (js/admin-complaints.js).
+   Loaded lazily with that module — never linked from admin.html — so it stays
+   out of the initial admin CSS budget, the way admin-roles.css and
+   admin-throne-buffs.css already do. */
+
+.dash-complaints-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.dash-complaint-row {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.dash-complaint-row[data-reviewed='true'] {
+  opacity: 0.62;
+}
+
+.dash-complaint-row-hdr {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  font-size: 0.76rem;
+}
+
+.dash-complaint-category {
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.16);
+  color: #7dd3fc;
+  font-weight: 600;
+}
+
+.dash-complaint-category[data-category='fair-play'] {
+  background: rgba(248, 113, 113, 0.16);
+  color: #fca5a5;
+}
+
+.dash-complaint-category[data-category='conduct'] {
+  background: rgba(251, 191, 36, 0.16);
+  color: #fcd34d;
+}
+
+.dash-complaint-category[data-category='alliance'] {
+  background: rgba(167, 139, 250, 0.18);
+  color: #c4b5fd;
+}
+
+.dash-complaint-time,
+.dash-complaint-anon,
+.dash-complaint-author {
+  color: var(--text-muted, #94a3b8);
+}
+
+.dash-complaint-anon {
+  font-style: italic;
+}
+
+.dash-complaint-body {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.dash-complaint-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dash-complaint-thumb {
+  width: 96px;
+  height: 96px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.dash-complaint-thumb-failed {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  padding: 0.4rem;
+  border: 1px dashed rgba(148, 163, 184, 0.4);
+  border-radius: 10px;
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.66rem;
+  text-align: center;
+}
+
+.dash-complaint-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+[data-theme='light'] .dash-complaint-row {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+[data-theme='light'] .dash-complaint-category {
+  background: rgba(2, 132, 199, 0.12);
+  color: #075985;
+}
+
+[data-theme='light'] .dash-complaint-category[data-category='fair-play'] {
+  background: rgba(185, 28, 28, 0.12);
+  color: #b91c1c;
+}
+
+[data-theme='light'] .dash-complaint-category[data-category='conduct'] {
+  background: rgba(180, 83, 9, 0.12);
+  color: #92400e;
+}
+
+[data-theme='light'] .dash-complaint-category[data-category='alliance'] {
+  background: rgba(109, 40, 217, 0.12);
+  color: #5b21b6;
+}
+
+/* .dash-btn-active is not part of the shared design system; the toggled state
+   is carried by aria-pressed and this one rule. */
+.dash-complaints-card .dash-btn-active {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(56, 189, 248, 0.16);
+}

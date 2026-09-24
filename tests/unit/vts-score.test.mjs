@@ -2,7 +2,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { auditVtsScoreI18n, VTS_SCORE_LANGUAGES } from '../../js/vts-score-i18n.js';
+import {
+  auditVtsScoreI18n,
+  VTS_SCORE_COPY_KEYS,
+  VTS_SCORE_LANGUAGES,
+} from '../../js/vts-score-i18n.js';
 import {
   buildVtsScoreSubmission,
   rankVtsScorePlayers,
@@ -32,7 +36,7 @@ test('VtsScore page is one focused, searchable, single-image OCR flow', () => {
   assert.match(page, /id="vtsScoreLanguage"/);
   assert.match(page, /id="vtsScoreThemeToggle"/);
   assert.match(page, /Submit full power breakdown/);
-  assert.match(page, /Wednesday, 29 July[\s\S]*20:00 Game Time/);
+  assert.match(page, /Competition #12 · Pre-season prep/);
   assert.doesNotMatch(page, /\bmultiple\b/);
 });
 
@@ -43,23 +47,37 @@ test('VtsScore light/dark and every offered language have complete UI copy', () 
   assert.deepEqual(auditVtsScoreI18n(), { ok: true, missing: [] });
 });
 
-test('VtsScore deadline day matches the page in every language', () => {
+test('VtsScore shows the live Competition #12 schedule instead of a fixed deadline', () => {
   const page = readFileSync('vtsscore.html', 'utf8');
-  const pageDeadline = page.match(/data-vts-i18n="deadline">([^<]+)</u)?.[1] ?? '';
-  const expectedDay = pageDeadline.match(/\d{1,2}/u)?.[0] ?? '';
-  assert.ok(expectedDay, 'the page must state a deadline day');
+  // The date comes from boh_allstar_competition/current, never from the markup.
+  assert.doesNotMatch(page, /29 July|Game Time<|data-vts-i18n="deadline"/);
+  for (const id of [
+    'vtsScoreSchedule',
+    'vtsScorePhaseName',
+    'vtsScorePhaseNow',
+    'vtsScoreCountdown',
+    'vtsScorePhaseEnds',
+    'vtsScorePhaseNotice',
+    'vtsScoreUploadTitle',
+  ]) {
+    assert.ok(page.includes(`id="${id}"`), `vtsscore.html must contain #${id}`);
+  }
+  // The growth board mount point stays hidden until its phases.
+  assert.match(page, /<section id="vtsScoreGrowthBoard"[^>]*\bhidden\b/);
+  // The upload consent and the growth-board consent are separate checkboxes.
+  assert.match(page, /id="vtsScoreConsent"/);
+  assert.match(page, /data-boh-field="commitment\.publicComparisonConsent"/);
+  assert.match(page, /<input\s+id="vtsScoreSignupPublicConsent"\s+type="checkbox"\s+data-boh/);
+  assert.doesNotMatch(page, /id="vtsScoreSignupPublicConsent"[^>]*\bchecked\b/);
 
-  const translations = readFileSync('js/vts-score-i18n.js', 'utf8');
-  const deadlines = [...translations.matchAll(/^\s*deadline: '([^']+)',$/gmu)].map(
-    (match) => match[1]
-  );
-  assert.equal(deadlines.length, VTS_SCORE_LANGUAGES.length);
-  for (const deadline of deadlines) {
-    assert.equal(
-      deadline.match(/\d{1,2}/u)?.[0],
-      expectedDay,
-      `translated deadline "${deadline}" must use day ${expectedDay}`
-    );
+  const controller = readFileSync('js/vts-score.js', 'utf8');
+  assert.doesNotMatch(controller, /readSignupFightingTimes|fightingTimeIds/);
+  assert.match(controller, /COMPETITION_SCHEDULE_DOC_PATH/);
+  // Every i18n key the controller asks for exists in the catalogue.
+  const keys = [...controller.matchAll(/i18n\.text\('([A-Za-z0-9]+)'/g)].map((m) => m[1]);
+  assert.ok(keys.length > 15);
+  for (const key of new Set(keys)) {
+    assert.ok(VTS_SCORE_COPY_KEYS.includes(key), `${key} must be in the VtsScore catalogue`);
   }
 });
 

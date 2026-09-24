@@ -1,5 +1,5 @@
 /* =============================================================
-   app.css â€” VTS Hero Combo Tool  10.0.0
+   app.css â€” RoC VTS Toolkit  10.0.0
    Desktop-first. Mobile overrides in mobile.css.
    ============================================================= */
 
@@ -2240,11 +2240,14 @@ html[data-initial-tab-pending] #generatorSection {
   padding: 10px 22px;
   border-radius: var(--radius-pill);
   font-size: 0.82rem;
+  max-width: calc(100vw - 32px);
+  text-align: center;
   font-weight: 600;
   backdrop-filter: blur(10px);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
   animation: toast-in 0.28s ease both;
-  white-space: nowrap;
+  /* Long messages wrap inside the viewport instead of running off a phone. */
+  overflow-wrap: anywhere;
   pointer-events: auto;
   will-change: transform, opacity;
 }
@@ -5711,6 +5714,112 @@ body.admin-standalone-page .admin-footer .footer-divider {
   text-transform: uppercase;
 }
 
+/* 16.5.0 season timeline (plan §4.6). Canonical hero-release seasons as a
+   semantic list with count text; the ribbon only scales against the largest
+   season, so small or zero counts stay readable. Horizontal on desktop,
+   vertical on phones, native keyboard and touch behavior throughout. */
+.heroes-season-timeline {
+  margin: 0 0 14px;
+}
+
+.heroes-season-timeline-list {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 2px 2px 6px;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.season-timeline-item {
+  flex: 0 0 auto;
+}
+
+.season-timeline-link {
+  display: grid;
+  gap: 4px;
+  min-width: 76px;
+  padding: 8px 10px;
+  border: 1px solid rgba(51, 65, 85, 0.7);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.6);
+  color: #94a3b8;
+  text-decoration: none;
+  transition:
+    border-color var(--t-fast),
+    background-color var(--t-fast),
+    color var(--t-fast);
+}
+
+.season-timeline-link:hover {
+  color: #e2e8f0;
+  border-color: rgba(148, 163, 184, 0.5);
+}
+
+.season-timeline-link.is-active {
+  color: #fff;
+  border-color: var(--season-color, rgba(255, 255, 255, 0.25));
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.season-timeline-ribbon {
+  display: block;
+  height: 8px;
+}
+
+.season-timeline-ribbon svg {
+  display: block;
+  width: max(12px, calc(var(--ribbon-scale, 0.1) * 100%));
+  height: 8px;
+}
+
+.season-timeline-ribbon rect {
+  fill: var(--season-color, #f97316);
+  opacity: 0.85;
+}
+
+.season-timeline-code {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.season-timeline-count {
+  font-size: 0.68rem;
+  opacity: 0.75;
+}
+
+[data-theme='light'] .season-timeline-link {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(148, 163, 184, 0.45);
+  color: #52657b;
+}
+
+[data-theme='light'] .season-timeline-link.is-active {
+  color: #0f172a;
+  background: rgba(59, 130, 246, 0.08);
+}
+
+@media (max-width: 768px) {
+  .heroes-season-timeline-list {
+    flex-direction: column;
+    overflow-x: visible;
+    gap: 6px;
+  }
+
+  .season-timeline-link {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 8px 10px;
+    min-width: 0;
+  }
+
+  .season-timeline-ribbon svg {
+    width: max(12px, calc(var(--ribbon-scale, 0.1) * 140px));
+  }
+}
+
 /* â”€â”€ 3b. Heroes layout â€” list + detail side by side â”€â”€â”€â”€â”€â”€â”€ */
 .heroes-layout {
   display: flex;
@@ -7199,7 +7308,9 @@ body.admin-standalone-page .admin-footer .footer-divider {
     transparent 70%
   );
   transform: translateX(-100%);
-  animation: generated-top-shimmer 2.8s ease-in-out 0.5s infinite;
+  /* Bounded to two passes: the top card keeps its reveal moment without an
+     infinite moving gradient on a settled result list (16.5.0 plan §4.2). */
+  animation: generated-top-shimmer 2.8s ease-in-out 0.5s 2;
 }
 @keyframes generated-combo-in {
   to {
@@ -20606,6 +20717,14 @@ html[dir='rtl'] .gen-buttons-row {
 .spec-contrib-source-cost strong {
   color: var(--spec-gold-ink);
   font-size: 0.82rem;
+}
+.spec-contrib-report {
+  width: fit-content;
+  margin-top: 0.2rem;
+  color: var(--spec-text-dim);
+  font-size: 0.68rem;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 .spec-contrib-column--source summary span {
   color: var(--spec-text-dim);

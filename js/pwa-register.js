@@ -3,7 +3,7 @@ const SW_PATH = '/sw.js';
 const ENGLISH_PWA_FALLBACK = Object.freeze({
   updateAvailable: 'New version available — refresh to update.',
   dismiss: 'Dismiss',
-  installTitle: 'Install VTS Combos',
+  installTitle: 'Install RoC VTS',
   installSubtitle: 'One-tap access · Works offline',
   installAction: 'Install',
   installing: 'Installing…',

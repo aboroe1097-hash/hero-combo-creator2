@@ -95,6 +95,19 @@
   box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2);
 }
 
+/* Inactive pills were dark-first too: a slate fill with muted text read as grey
+   blocks on the light surface. Follow the light tokens instead. */
+[data-theme='light'] .vts-eden-subtab-btn {
+  background: var(--ff-surface-soft);
+  border-color: var(--ff-border);
+  color: var(--ff-text-dim);
+}
+
+[data-theme='light'] .vts-eden-subtab-btn:hover {
+  background: var(--ff-surface-selected);
+  color: var(--ff-text-primary, var(--ff-text));
+}
+
 /* The active pill was styled dark-first with a fixed near-white label. On the light
    surface the 20% violet tint composites to roughly #e1e0fc, leaving #f8fafc at about
    1.2:1 - the active Eden sub-tab was effectively invisible. */
@@ -185,6 +198,63 @@
   color: var(--ff-text);
 }
 
+/* 16.5.0 hub entry + spotlight (plan §4.1). js/fx/hub-motion.js runs the entry
+   once per page load on at most 12 visible cards and removes the class, so
+   later hub refreshes never replay it. The spotlight follows the single
+   delegated pointer owner and only a background gradient changes, never
+   layout. */
+@keyframes fx-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.fx-card-enter {
+  animation: fx-card-enter 240ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1))
+    var(--fx-delay, 0ms) both;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .vts-hub-subtab {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .vts-hub-subtab::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(
+      140px circle at calc(var(--mx, 50) * 1%) calc(var(--my, 50) * 1%),
+      color-mix(in srgb, var(--brand, #7dd3fc) 20%, transparent),
+      transparent 68%
+    );
+    transition: opacity 160ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+  }
+
+  .vts-hub-subtab:hover::before,
+  .vts-hub-subtab:focus-visible::before {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-card-enter {
+    animation: none;
+  }
+
+  .vts-hub-subtab::before {
+    transition: none;
+  }
+}
+
 .vts-hub-subtabs--4 {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -222,10 +292,24 @@
 .vts-eden-hub-frame {
   display: block;
   width: 100%;
-  min-height: 78vh;
+  /* A season is a full page in its own right: give it the whole screen below
+     the hub bar instead of a short box, so it reads and scrolls like the
+     standalone page. The hub scrolls the frame to the top when it opens. */
+  height: calc(100vh - 6.5rem);
+  height: calc(100dvh - 6.5rem);
+  min-height: 420px;
   border: 0;
   border-radius: var(--radius-lg);
   background: rgba(15, 23, 42, 0.5);
+}
+
+@media (max-width: 768px) {
+  .vts-eden-hub-frame {
+    /* Leave room for the site's bottom dock on phones. */
+    height: calc(100vh - 5.75rem - env(safe-area-inset-bottom, 0px));
+    height: calc(100dvh - 5.75rem - env(safe-area-inset-bottom, 0px));
+    border-radius: var(--radius-md);
+  }
 }
 
 /* Footer utility migration: migrated 1:1 from Tailwind utilities, scoped to

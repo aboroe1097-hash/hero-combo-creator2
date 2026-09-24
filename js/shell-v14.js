@@ -38,12 +38,7 @@
   // primary and the order they sit in — layoutNavigation() appends in this
   // sequence. The four hubs lead because each one stands for a group of related
   // decisions; standalone tools follow.
-  const hubIds = [
-    'tabHeroesCombos',
-    'tabResearchTowers',
-    'tabClassDevelopment',
-    'tabEdenMap',
-  ];
+  const hubIds = ['tabHeroesCombos', 'tabResearchTowers', 'tabClassDevelopment', 'tabEdenMap'];
   // VTS Admin sits sixth, straight after the hubs and Materials: it is opened
   // far more often than the standalone tools yet was reachable only through
   // More. All-Star BoH moves the other way, into More, because it runs for a
@@ -73,6 +68,11 @@
     ['bounty', 'bounty'],
     ['royalbounty', 'bounty'],
     ['edenx1', 'previous'],
+    // Short links into the season: roc-vts.com/#season and roc-vts.com/#vote
+    // (the ballot itself).
+    ['season', 'season'],
+    ['edenx2', 'season'],
+    ['vote', 'vote'],
   ]);
   // The same arrangement for the Research & Towers Hub: #research and
   // #specialization were top-level tabs and stay valid deep links.
@@ -114,6 +114,8 @@
   const fallbackShellCopy = Object.freeze({
     more: 'More',
     moreTools: 'More tools',
+    downloadsLink: 'PDF downloads',
+    buildingsLink: 'Buildings',
     close: 'Close',
     deckLabel: 'S1097 Deck',
     toolkitLabel: 'VTS 1097 toolkit',
@@ -190,8 +192,7 @@
     }
     if (legacyResearchTowersHashes.has(normalizedHash)) {
       try {
-        document.body.dataset.researchTowersSubtab =
-          legacyResearchTowersHashes.get(normalizedHash);
+        document.body.dataset.researchTowersSubtab = legacyResearchTowersHashes.get(normalizedHash);
       } catch {
         /* dataset unavailable */
       }
@@ -475,6 +476,10 @@
 
     if (moreLabel) moreLabel.textContent = copy.more;
     if (moreTitle) moreTitle.textContent = copy.moreTools;
+    moreLinks.querySelectorAll('[data-shell-more-link]').forEach((link) => {
+      const key = link.dataset.shellMoreLink;
+      link.textContent = copy[key] || fallbackShellCopy[key];
+    });
     moreButton.setAttribute('aria-label', copy.moreTools);
     morePanel.setAttribute('aria-label', copy.moreTools);
     moreClose.setAttribute('aria-label', copy.close);
@@ -490,7 +495,7 @@
     if (teamLine) teamLine.textContent = copy.teamLine;
     const mainLogo = commandHeader?.querySelector('.main-logo');
     const appTitle = document.getElementById('appTitle')?.textContent?.trim();
-    if (mainLogo) mainLogo.alt = `${appTitle || 'Hero Combo Creator'} - VTS 1097`;
+    if (mainLogo) mainLogo.alt = `${appTitle || 'RoC VTS Toolkit'} - VTS 1097`;
     if (appTitle) document.title = `${appTitle} - VTS 1097`;
 
     document.querySelectorAll('.tab-badge-new:not([data-i18n])').forEach((badge) => {
@@ -701,6 +706,28 @@
     });
   }
 
+  // Two destinations that are not top-level tabs: the PDF downloads page, and
+  // the Buildings planner, which is the Research & Towers ▸ Buildings sub-tab.
+  // Built here rather than in index.html, which has no byte headroom.
+  const moreLinks = document.createElement('div');
+  moreLinks.className = 'shell-more-links';
+  [
+    ['downloadsLink', 'downloads.html'],
+    ['buildingsLink', '#researchTowers?subtab=buildings'],
+  ].forEach(([key, href]) => {
+    const link = document.createElement('a');
+    link.className = 'shell-more-link';
+    link.href = href;
+    link.dataset.shellMoreLink = key;
+    link.textContent = fallbackShellCopy[key];
+    link.addEventListener('click', () => {
+      // Close without history.back(): going back would undo the navigation.
+      if (!morePanel.hidden) dismissMore({ restoreFocus: false, consumeHistory: false });
+    });
+    moreLinks.append(link);
+  });
+  moreTools.after(moreLinks);
+
   buildLanguageMenu();
 
   sourceIds.forEach((id) => {
@@ -811,6 +838,26 @@
   });
 
   languageSelect?.addEventListener('change', () => window.setTimeout(applyLocale, 0));
+  // The app applies a stored or URL language with `languageSelect.value = x`,
+  // which fires no change event, so the button kept the old label. Re-sync on
+  // every programmatic set of this element as well.
+  if (languageSelect) {
+    ['value', 'selectedIndex'].forEach((property) => {
+      const native = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, property);
+      if (!native?.set || !native.get) return;
+      Object.defineProperty(languageSelect, property, {
+        configurable: true,
+        enumerable: native.enumerable,
+        get() {
+          return native.get.call(this);
+        },
+        set(next) {
+          native.set.call(this, next);
+          window.setTimeout(applyLocale, 0);
+        },
+      });
+    });
+  }
   window.addEventListener('edenLanguageUpdate', applyLocale);
   window.addEventListener('hashchange', syncActiveState);
   window.addEventListener('popstate', () => {

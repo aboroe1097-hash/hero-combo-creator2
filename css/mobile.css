@@ -1,5 +1,5 @@
 /* =============================================================
-   mobile.css — VTS Hero Combo Tool
+   mobile.css — RoC VTS Toolkit
    Applied on screens ≤768px via <link media="(max-width: 768px)">
 
    UPGRADE PHILOSOPHY:
@@ -93,7 +93,10 @@ html.admin-standalone-root {
 html.admin-standalone-root body.admin-standalone-page {
   height: auto;
   min-height: 100%;
-  overflow-y: auto;
+  /* The root element scrolls; a body that is itself a scroll container (auto)
+     never scrolls but still traps position: sticky, so the admin's sticky bars
+     scrolled away on phones. */
+  overflow-y: visible;
   overscroll-behavior-y: auto;
   touch-action: pan-y pinch-zoom;
 }
@@ -5248,7 +5251,7 @@ body.keyboard-open .a2hs-banner {
   display: block;
   width: calc(100% - 0.5rem);
   margin: 0.45rem auto 0;
-  min-height: 36px;
+  min-height: 44px;
   padding: 0.35rem 0.5rem;
   border: none;
   border-radius: 9px;
@@ -5270,10 +5273,10 @@ body.keyboard-open .a2hs-banner {
 }
 .a2hs-banner-close {
   position: absolute;
-  top: 0.4rem;
-  right: 0.4rem;
-  width: 30px;
-  height: 30px;
+  top: 0.2rem;
+  right: 0.2rem;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5298,7 +5301,7 @@ body.keyboard-open .a2hs-banner {
   .a2hs-banner {
     width: calc(100vw - 1rem);
     bottom: calc(104px + var(--safe-bottom, 0px));
-    padding: 0.65rem 2.25rem 0.65rem 0.65rem;
+    padding: 0.65rem 3rem 0.65rem 0.65rem;
   }
 }
 

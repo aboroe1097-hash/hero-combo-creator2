@@ -1,4 +1,4 @@
-export const DEFAULT_APP_VERSION = '16.0.16';
+export const DEFAULT_APP_VERSION = '16.5.4';
 
 function cleanWarnings(value) {
   if (!Array.isArray(value)) return [];

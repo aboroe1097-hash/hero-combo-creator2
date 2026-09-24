@@ -43,7 +43,7 @@ test('Codex mode renders one Atlas mode with three filter presets', () => {
 test('Hub sub-tab registry is flagship-first and keeps legacy subtabs intact', () => {
   assert.match(
     hubSource,
-    /HEROES_COMBOS_SUBTABS = Object\.freeze\(\[[\s\S]*?'manual',\s*'generator',\s*'codex',\s*'heroes',\s*'skins',\s*\]\)/
+    /HEROES_COMBOS_SUBTABS = Object\.freeze\(\[[\s\S]*?'manual',\s*'generator',\s*'codex',\s*'heroes',\s*'skins',\s*'pdfs',\s*\]\)/
   );
   assert.match(hubSource, /PANEL_FOR_SUBTAB = Object\.freeze\(\{[\s\S]*?codex: 'heroes',/);
   assert.match(hubSource, /ATLAS_MODE_FOR_SUBTAB = Object\.freeze\(\{[\s\S]*?codex: 'codex',/);

@@ -96,6 +96,8 @@ test('public entry pages follow the release maintenance flag', async ({ browser 
     '/arcade.html',
     '/battle-simulator.html',
     '/specialization-towers.html',
+    '/eden-siege.html',
+    '/downloads.html',
     '/games/boot/b-merge-rush.html',
   ]) {
     await page.goto(entryPath, { waitUntil: 'domcontentloaded' });
@@ -108,6 +110,33 @@ test('public entry pages follow the release maintenance flag', async ({ browser 
     }
   }
 
+  await context.close();
+});
+
+test('home, admin and Eden X2 do not request Eden Siege or three.js chunks', async ({
+  browser,
+}) => {
+  test.skip(maintenanceEnabled, 'maintenance mode is enabled in this build');
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const siegeRequests = [];
+  page.on('request', (request) => {
+    try {
+      const pathname = new URL(request.url()).pathname;
+      if (/\/assets\/(?:eden-siege|three)(?:-[^/]+)?\.js$/iu.test(pathname)) {
+        siegeRequests.push(request.url());
+      }
+    } catch {
+      /* ignore unparseable URLs */
+    }
+  });
+
+  for (const route of ['/', '/admin.html', '/eden-x2.html']) {
+    await page.goto(route, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(250);
+  }
+
+  expect(siegeRequests).toEqual([]);
   await context.close();
 });
 
@@ -228,6 +257,37 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
     await expect(page.locator(marker).first()).toBeVisible({ timeout: 30000 });
   }
 
+  // Each surface's own chunk loads after its marker appears (the Eden Hub
+  // boots first and only then imports the map engine), so wait for the
+  // requests rather than sampling them once.
+  const lazyChunks = [
+    'app-hero-atlas',
+    'app-research',
+    'material-calculator',
+    'app-strife',
+    'eden-map',
+  ];
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          (names) =>
+            names.filter(
+              (name) =>
+                !performance
+                  .getEntriesByType('resource')
+                  .some((entry) =>
+                    new RegExp(`/assets/${name}-[^/]+\\.js$`, 'u').test(
+                      new URL(entry.name, window.location.href).pathname
+                    )
+                  )
+            ),
+          lazyChunks
+        ),
+      { timeout: 15000, message: 'lazy production chunks were requested' }
+    )
+    .toEqual([]);
+
   const productionState = await page.evaluate(async () => {
     const registration = await navigator.serviceWorker.ready;
     const resourcePaths = performance
@@ -242,13 +302,7 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
   expect(productionState.activeServiceWorker).toMatch(/\/sw\.js$/u);
   expect(productionState.cacheNames.some((name) => name.startsWith('vts-'))).toBe(true);
   // Rolldown names a dynamic import's chunk after its file.
-  for (const chunkName of [
-    'app-hero-atlas',
-    'app-research',
-    'material-calculator',
-    'app-strife',
-    'eden-map',
-  ]) {
+  for (const chunkName of lazyChunks) {
     expect(
       productionState.resourcePaths.some((resourcePath) =>
         new RegExp(`/assets/${chunkName}-[^/]+\\.js$`, 'u').test(resourcePath)

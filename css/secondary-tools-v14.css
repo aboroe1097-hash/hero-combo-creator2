@@ -1198,6 +1198,78 @@
 #edenMapCanvas {
   min-height: clamp(31rem, 66vh, 47rem);
 }
+/* Route playback (§4.4): shown only while a saved path is selected. */
+.eden-route-playback {
+  position: absolute;
+  z-index: 5;
+  top: 10px;
+  left: 50%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: max-content;
+  max-width: calc(100% - 20px);
+  padding: 6px 8px;
+  border: 1px solid var(--ff-border-strong);
+  border-radius: 10px;
+  color: var(--ff-text);
+  background: color-mix(in srgb, var(--ff-surface) 92%, transparent);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+  font-size: 0.72rem;
+  font-weight: 700;
+  translate: -50% 0;
+}
+.eden-route-playback.hidden {
+  display: none;
+}
+@media (max-width: 640px) {
+  /* Clear the coordinate HUD that spans the top edge on phones. */
+  .eden-route-playback {
+    top: 48px;
+  }
+}
+.eden-route-playback__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--ff-border);
+  border-radius: 8px;
+  color: inherit;
+  background: var(--ff-surface-soft);
+  font: inherit;
+  cursor: pointer;
+}
+.eden-route-playback__btn[hidden] {
+  display: none;
+}
+.eden-route-playback__btn[aria-pressed='true'] {
+  border-color: var(--ff-action);
+  background: var(--ff-surface-selected);
+}
+.eden-route-playback__btn:focus-visible,
+.eden-route-playback__scrub:focus-visible {
+  outline: 2px solid var(--ff-action);
+  outline-offset: 2px;
+}
+.eden-route-playback__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.eden-route-playback__scrub {
+  width: clamp(7rem, 22vw, 14rem);
+  min-height: 32px;
+  accent-color: var(--ff-action);
+}
+.eden-route-playback__status {
+  min-width: 8ch;
+  color: var(--ff-text-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 .eden-sidebar {
   display: flex;
   flex-direction: column;

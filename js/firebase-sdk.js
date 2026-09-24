@@ -31,3 +31,9 @@ export function importFirebaseAppCheck() {
 export function importFirebaseFunctions() {
   return import('firebase/functions');
 }
+
+// Only the Eden complaint form uses Storage, and only after a member has
+// attached an image, so it stays behind this helper and off every other route.
+export function importFirebaseStorage() {
+  return import('firebase/storage');
+}

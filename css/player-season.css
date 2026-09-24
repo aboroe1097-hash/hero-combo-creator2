@@ -1,0 +1,336 @@
+/* Player season view (js/score-breakdown.js renderPlayerSeasonSummary).
+   Loaded on demand by that module rather than linked from the pages, so the
+   Eden pages' initial CSS stays within budget. */
+#ocrDashboardRoot .player-season {
+  --ps-contribution: #38bdf8;
+  --ps-duty: #a78bfa;
+  --ps-demolition: #f472b6;
+  --ps-bonus: #34d399;
+  --ps-banners: #fbbf24;
+  --ps-pathers: #2dd4bf;
+  --ps-shieldWalls: #818cf8;
+  display: grid;
+  gap: 0.85rem;
+  margin-bottom: 1.1rem;
+}
+#ocrDashboardRoot .player-season-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.9rem 1.05rem;
+  border: 1px solid rgba(103, 232, 249, 0.22);
+  border-radius: 14px;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(56, 189, 248, 0.16), transparent 60%),
+    rgba(15, 23, 42, 0.55);
+}
+#ocrDashboardRoot .player-season-hero > div {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+#ocrDashboardRoot .player-season-hero span {
+  color: var(--text-dim);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+#ocrDashboardRoot .player-season-hero b {
+  color: var(--text-primary);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+#ocrDashboardRoot .player-season-rank b {
+  font-size: 1.9rem;
+  color: #5eead4;
+}
+#ocrDashboardRoot .player-season-score b {
+  font-size: 1.55rem;
+  color: #7dd3fc;
+}
+#ocrDashboardRoot .player-season-reward {
+  justify-items: end;
+  text-align: right;
+}
+#ocrDashboardRoot .player-season-reward b {
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(251, 191, 36, 0.14);
+  color: #fbbf24;
+  font-size: 0.86rem;
+  white-space: nowrap;
+}
+#ocrDashboardRoot .player-season-bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.14);
+}
+#ocrDashboardRoot .player-season-bar > span {
+  flex-basis: 0;
+  min-width: 4px;
+}
+#ocrDashboardRoot .player-season [data-part='contribution'] {
+  --ps-color: var(--ps-contribution);
+}
+#ocrDashboardRoot .player-season [data-part='duty'] {
+  --ps-color: var(--ps-duty);
+}
+#ocrDashboardRoot .player-season [data-part='demolition'] {
+  --ps-color: var(--ps-demolition);
+}
+#ocrDashboardRoot .player-season [data-part='bonus'] {
+  --ps-color: var(--ps-bonus);
+}
+#ocrDashboardRoot .player-season-bar > span {
+  background: var(--ps-color);
+}
+#ocrDashboardRoot .player-season-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  margin: -0.3rem 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+#ocrDashboardRoot .player-season-legend li {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+#ocrDashboardRoot .player-season-legend i {
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 3px;
+  background: var(--ps-color);
+}
+#ocrDashboardRoot .player-season-legend b {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+#ocrDashboardRoot .player-season-legend small {
+  color: var(--text-dim);
+  font-weight: 700;
+}
+#ocrDashboardRoot .player-season-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: start;
+}
+#ocrDashboardRoot .player-season-panel {
+  min-width: 0;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.4);
+}
+#ocrDashboardRoot .player-season-panel-title {
+  margin-bottom: 0.5rem;
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+#ocrDashboardRoot .player-season .score-breakdown-sub small {
+  display: block;
+  margin-top: 0.05rem;
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+#ocrDashboardRoot .score-breakdown-tag {
+  display: inline-block;
+  margin-left: 0.3rem;
+  padding: 0.02rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(103, 232, 249, 0.12);
+  color: #67e8f9;
+  font-size: 0.66rem;
+  font-style: normal;
+  font-weight: 800;
+  vertical-align: 0.08em;
+}
+#ocrDashboardRoot .score-breakdown-tag[data-account='banner'] {
+  background: rgba(251, 191, 36, 0.14);
+  color: #fbbf24;
+}
+#ocrDashboardRoot .score-breakdown-sub > span > small {
+  display: block;
+}
+#ocrDashboardRoot .player-season-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.6rem;
+}
+#ocrDashboardRoot .player-season-filter {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  min-height: 34px;
+  padding: 0.2rem 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+#ocrDashboardRoot .player-season-filter b {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+#ocrDashboardRoot .player-season-filter[aria-pressed='true'] {
+  border-color: rgba(103, 232, 249, 0.55);
+  background: rgba(103, 232, 249, 0.14);
+  color: var(--text-primary);
+}
+#ocrDashboardRoot .player-season-filter[aria-pressed='true'] b {
+  color: #67e8f9;
+}
+#ocrDashboardRoot .player-season-duties {
+  display: grid;
+  gap: 0.3rem;
+  max-height: 22rem;
+  margin: 0;
+  padding: 0 0.15rem 0 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+}
+#ocrDashboardRoot .player-season-duties-panel:not([data-filter='all'])
+  .player-season-duty:not([data-activity]) {
+  display: none;
+}
+#ocrDashboardRoot .player-season-duties-panel[data-filter='banners']
+  .player-season-duty:not([data-activity='banners']),
+#ocrDashboardRoot .player-season-duties-panel[data-filter='pathers']
+  .player-season-duty:not([data-activity='pathers']),
+#ocrDashboardRoot .player-season-duties-panel[data-filter='shieldWalls']
+  .player-season-duty:not([data-activity='shieldWalls']) {
+  display: none;
+}
+#ocrDashboardRoot .player-season-duty {
+  --ps-activity: var(--ps-contribution);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'what chip' 'when chip';
+  gap: 0.05rem 0.6rem;
+  align-items: center;
+  padding: 0.42rem 0.6rem 0.42rem 0.7rem;
+  border-left: 3px solid var(--ps-activity);
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.07);
+}
+#ocrDashboardRoot .player-season-duty[data-activity='banners'] {
+  --ps-activity: var(--ps-banners);
+}
+#ocrDashboardRoot .player-season-duty[data-activity='pathers'] {
+  --ps-activity: var(--ps-pathers);
+}
+#ocrDashboardRoot .player-season-duty[data-activity='shieldWalls'] {
+  --ps-activity: var(--ps-shieldWalls);
+}
+#ocrDashboardRoot .player-season-duty-what {
+  grid-area: what;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.45rem;
+  align-items: baseline;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+#ocrDashboardRoot .player-season-duty-what strong {
+  font-size: 0.9rem;
+}
+#ocrDashboardRoot .player-season-duty-what > span,
+#ocrDashboardRoot .player-season-duty-when {
+  color: var(--text-dim);
+  font-size: 0.76rem;
+}
+#ocrDashboardRoot .player-season-duty-when {
+  grid-area: when;
+  font-variant-numeric: tabular-nums;
+}
+#ocrDashboardRoot .player-season-duty-chip {
+  grid-area: chip;
+  max-width: 10rem;
+  overflow: hidden;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  color: var(--text-dim);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: rgba(148, 163, 184, 0.1);
+}
+#ocrDashboardRoot .player-season-duty-chip[data-account='banner'] {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.14);
+}
+#ocrDashboardRoot .player-season-empty {
+  margin: 0;
+  color: var(--text-dim);
+}
+[data-theme='light'] #ocrDashboardRoot .player-season-hero,
+[data-theme='light'] #ocrDashboardRoot .player-season-panel {
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+[data-theme='light'] #ocrDashboardRoot .player-season-rank b {
+  color: #0f766e;
+}
+[data-theme='light'] #ocrDashboardRoot .player-season-score b {
+  color: #0369a1;
+}
+[data-theme='light'] #ocrDashboardRoot .player-season-reward b,
+[data-theme='light'] #ocrDashboardRoot .player-season-duty-chip[data-account='banner'],
+[data-theme='light'] #ocrDashboardRoot .score-breakdown-tag[data-account='banner'] {
+  color: #b45309;
+}
+[data-theme='light'] #ocrDashboardRoot .score-breakdown-tag {
+  color: #0e7490;
+}
+@media (max-width: 720px) {
+  #ocrDashboardRoot .player-season-hero {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 0.8rem 0.9rem;
+  }
+  #ocrDashboardRoot .player-season-reward {
+    grid-column: 1 / -1;
+    grid-template-columns: auto auto;
+    justify-content: space-between;
+    align-items: center;
+    justify-items: start;
+    padding-top: 0.55rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.16);
+  }
+  #ocrDashboardRoot .player-season-rank b {
+    font-size: 1.6rem;
+  }
+  #ocrDashboardRoot .player-season-score b {
+    font-size: 1.35rem;
+  }
+  #ocrDashboardRoot .player-season-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #ocrDashboardRoot .player-season-panel {
+    padding: 0.7rem;
+  }
+  #ocrDashboardRoot .player-season-duties {
+    max-height: 18rem;
+  }
+}

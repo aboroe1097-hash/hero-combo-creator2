@@ -9,6 +9,7 @@
 //   - season:   the current Eden season (eden-x2.html), revealed only after an
 //               admin publishes that workspace's projection
 //   - previous: previous-season rankings (eden-x1.html) in a lazy iframe
+//   - pdfs:     the PDF document builder for the Eden tables (loaded on open)
 //
 // Legacy deep links (#loyalty, #edenX1) are routed here by shell-v14.js,
 // which stashes the intended sub-tab in document.body.dataset.edenHubSubtab.
@@ -16,24 +17,30 @@
 import { translations } from './translations.js';
 import { currentLanguage } from './state.js';
 import { edenWorkspaceFirestorePath, isPublishedEdenProjection } from './eden-workspaces.js';
+import { mountHubPdfPanel } from './hub-pdf-tab.js';
 
-const LOYALTY_SRC = 'tabs/loyalty.html?v=20260918_202304';
-const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260918_202304';
-const PLAYBOOK_SRC = 'tabs/eden-playbook.html?v=20260918_202304';
+const LOYALTY_SRC = 'tabs/loyalty.html?v=20260924_155646';
+const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260924_155646';
+const PLAYBOOK_SRC = 'tabs/eden-playbook.html?v=20260924_155646';
 const PREVIOUS_SRC = 'eden-x1.html?embed=1';
 const SEASON_SRC = 'eden-x2.html?embed=1';
 // How long the hub waits for the season publication check before landing on
 // Royal Bounty instead. Long enough for a normal round trip, short enough that
 // a dead backend is not a blank hub.
 const SEASON_LANDING_TIMEOUT_MS = 2500;
+// A shared season or vote link is an explicit request, so it may wait longer
+// for the same check before giving up.
+const SEASON_LINK_TIMEOUT_MS = 8000;
 const EDEN_HUB_SUBTABS = [
   'map',
+  'pathing',
   'loyalty',
   'operations',
   'bounty',
   'playbook',
   'season',
   'previous',
+  'pdfs',
 ];
 
 let booted = false;
@@ -100,11 +107,30 @@ function refreshMapViewport() {
   requestAnimationFrame(() => {
     // Use the same module identity as the planner boot. A different query
     // string creates a second module instance with no canvas state to refresh.
-    import('./eden-map.js?v=20260918_202304')
+    import('./eden-map.js?v=20260924_155646')
       .then((module) => module.refreshEdenMapViewport?.())
       .catch(() => {
         /* Eden map boot reports its own load errors. */
       });
+  });
+}
+
+function revealSubtabButton(button) {
+  const bar = button.closest('.vts-eden-subtab-bar');
+  if (!bar || bar.scrollWidth <= bar.clientWidth) return;
+  const left = button.offsetLeft - (bar.clientWidth - button.offsetWidth) / 2;
+  bar.scrollTo({ left: Math.max(0, left), behavior: 'auto' });
+}
+
+// A season opens as a full-screen pane. When someone asks for it (a click or
+// a shared link), bring the pane to the top of the screen so the season fills
+// it instead of starting below the hub header.
+function bringPanelIntoView(panel) {
+  if (!panel?.scrollIntoView) return;
+  requestAnimationFrame(() => {
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+    const top = panel.getBoundingClientRect().top + window.scrollY - 8;
+    window.scrollTo({ top: Math.max(0, top), behavior: reduced ? 'auto' : 'smooth' });
   });
 }
 
@@ -113,6 +139,9 @@ function activateSubTab(root, name) {
     const active = button.dataset.edenSubtab === name;
     button.classList.toggle('active', active);
     button.setAttribute('aria-selected', String(active));
+    // On a phone the bar scrolls sideways; keep the open tab in view instead
+    // of leaving it off-screen to the right.
+    if (active) revealSubtabButton(button);
   });
   root.querySelectorAll('[data-eden-subtab-panel]').forEach((panel) => {
     const active = panel.dataset.edenSubtabPanel === name;
@@ -130,7 +159,7 @@ async function loadLoyalty(root, panel) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
     localizeFragment(panel);
-    const module = await import('./loyalty-spa.js?v=20260918_202304');
+    const module = await import('./loyalty-spa.js?v=20260924_155646');
     module.initLoyaltyCalculator?.();
     loyaltyLoaded = true;
   } catch (error) {
@@ -141,8 +170,32 @@ async function loadLoyalty(root, panel) {
   }
 }
 
+// Eden Pathing loads its module (and stylesheet) only when opened. Re-running
+// init on every open lets a freshly followed share link import its plan.
+async function loadPathing(panel) {
+  try {
+    const module = await import('./eden-pathing.js');
+    await module.initEdenPathing?.(panel.querySelector('#edenPathingRoot'));
+  } catch (error) {
+    console.warn('[eden-hub] Eden Pathing failed to load', error);
+    panel.innerHTML = loadFailedMarkup('Eden Pathing');
+  }
+}
+
 function loadFramedSeason(panel, src, title) {
-  if (panel.dataset.edenHubLoaded === '1') return;
+  if (panel.dataset.edenHubLoaded === '1') {
+    // Already open: a later "vote" request just moves the loaded page to its
+    // ballot rather than reloading the whole season.
+    if (src.endsWith('#vote')) {
+      const frame = panel.querySelector('iframe');
+      try {
+        if (frame?.contentWindow) frame.contentWindow.location.hash = 'vote';
+      } catch {
+        /* cross-origin frames are never used here */
+      }
+    }
+    return;
+  }
   const frame = document.createElement('iframe');
   frame.className = 'vts-eden-hub-frame';
   frame.title = title;
@@ -156,9 +209,13 @@ function loadPrevious(panel) {
   loadFramedSeason(panel, PREVIOUS_SRC, 'Previous Seasons');
 }
 
-function loadSeason(panel) {
+function loadSeason(panel, options = {}) {
   const t = catalogFor(currentLanguage);
-  loadFramedSeason(panel, SEASON_SRC, t.subTabSeason || 'Current Season');
+  loadFramedSeason(
+    panel,
+    options.vote ? `${SEASON_SRC}#vote` : SEASON_SRC,
+    t.subTabSeason || 'Current Season'
+  );
 }
 
 // The current season is hidden until an admin publishes it. This reads the one
@@ -197,13 +254,15 @@ async function loadBounty(panel) {
     const response = await fetch(BOUNTY_SRC);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
-    const module = await import('./bounty-guide.js?v=20260918_202304');
+    const module = await import('./bounty-guide.js?v=20260924_155646');
     const mount = panel.querySelector('#bountyGuideRoot');
     if (mount) module.renderBountyGuide(mount);
     bountyLoaded = true;
   } catch (error) {
     console.warn('[eden-hub] Royal Bounty Eden X2 guide failed to load', error);
-    panel.innerHTML = loadFailedMarkup(catalogFor(currentLanguage).tabEdenBounty || 'Royal Bounty Eden X2');
+    panel.innerHTML = loadFailedMarkup(
+      catalogFor(currentLanguage).tabEdenBounty || 'Royal Bounty Eden X2'
+    );
   } finally {
     bountyLoading = false;
   }
@@ -221,7 +280,9 @@ async function loadPlaybook(panel) {
     playbookLoaded = true;
   } catch (error) {
     console.warn('[eden-hub] Eden playbook failed to load', error);
-    panel.innerHTML = loadFailedMarkup(catalogFor(currentLanguage).tabEdenPlaybook || 'Eden Playbook');
+    panel.innerHTML = loadFailedMarkup(
+      catalogFor(currentLanguage).tabEdenPlaybook || 'Eden Playbook'
+    );
   }
 }
 
@@ -256,6 +317,10 @@ function readSubtabIntent() {
     // explicit subtab in the hash and clear the stale stash when we win.
     const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
     const linked = params.get('subtab');
+    if (linked === 'season' && params.get('vote') === '1') {
+      if (document.body) delete document.body.dataset.edenHubSubtab;
+      return 'vote';
+    }
     if (EDEN_HUB_SUBTABS.includes(linked)) {
       if (document.body) delete document.body.dataset.edenHubSubtab;
       return linked;
@@ -263,7 +328,7 @@ function readSubtabIntent() {
     const intent = document.body?.dataset?.edenHubSubtab;
     if (intent) {
       delete document.body.dataset.edenHubSubtab;
-      return EDEN_HUB_SUBTABS.includes(intent) ? intent : null;
+      return EDEN_HUB_SUBTABS.includes(intent) || intent === 'vote' ? intent : null;
     }
   } catch {
     /* dataset unavailable */
@@ -281,23 +346,48 @@ export function bootEdenHub() {
   // a stale intent after the hub has already consumed the boot intent.
   root.dataset.edenHubBooted = '1';
 
-  function loadPanelFor(name, panel) {
+  function loadPanelFor(name, panel, options = {}) {
     if (name === 'loyalty') loadLoyalty(root, panel);
+    if (name === 'pathing') loadPathing(panel);
     if (name === 'operations') loadOperations(panel);
     if (name === 'bounty') loadBounty(panel);
     if (name === 'playbook') loadPlaybook(panel);
     if (name === 'previous') loadPrevious(panel);
-    if (name === 'season') loadSeason(panel);
+    if (name === 'season') loadSeason(panel, options);
+    if (name === 'pdfs') mountHubPdfPanel('eden', panel);
   }
 
-  function openIntent(name) {
-    if (!EDEN_HUB_SUBTABS.includes(name)) return;
+  function openIntent(requested, options = {}) {
+    // "vote" is the season opened straight at its ballot.
+    const vote = requested === 'vote';
+    const name = vote ? 'season' : requested;
+    if (!EDEN_HUB_SUBTABS.includes(name)) return false;
     // A season nobody has published has no sub-tab to open: treat the intent as
     // stale rather than revealing the hidden panel.
-    if (name === 'season' && root.querySelector('[data-eden-subtab="season"]')?.hidden) return;
+    if (name === 'season' && root.querySelector('[data-eden-subtab="season"]')?.hidden)
+      return false;
     activateSubTab(root, name);
     const panel = root.querySelector(`[data-eden-subtab-panel="${name}"]`);
-    if (panel) loadPanelFor(name, panel);
+    if (panel) loadPanelFor(name, panel, { vote });
+    if (panel && options.scroll && (name === 'season' || name === 'previous')) {
+      bringPanelIntoView(panel);
+    }
+    return true;
+  }
+
+  // A shared season link arrives before the publication check has answered,
+  // when the season sub-tab is still hidden. Show Royal Bounty meanwhile and
+  // open the season once it is confirmed — unless the visitor has already
+  // picked something else.
+  function openSeasonIntentWhenPublished(intent) {
+    openIntent('bounty');
+    void Promise.race([
+      revealPublishedSeason(root),
+      new Promise((resolve) => setTimeout(() => resolve(false), SEASON_LINK_TIMEOUT_MS)),
+    ]).then((available) => {
+      if (!available || userPickedSubtab) return;
+      openIntent(intent, { scroll: true });
+    });
   }
 
   // The season being played is the Eden Hub landing page, with Royal Bounty as
@@ -312,19 +402,22 @@ export function bootEdenHub() {
   // from someone who had already clicked, which is a worse bug than a brief
   // flash of the wrong tab.
   const intent = readSubtabIntent();
-  if (intent) {
+  if (intent === 'season' || intent === 'vote') {
+    if (!openIntent(intent, { scroll: true })) openSeasonIntentWhenPublished(intent);
+  } else if (intent) {
     openIntent(intent);
     void revealPublishedSeason(root);
-    return;
   }
-  openIntent('bounty');
-  void Promise.race([
-    revealPublishedSeason(root),
-    new Promise((resolve) => setTimeout(() => resolve(false), SEASON_LANDING_TIMEOUT_MS)),
-  ]).then((available) => {
-    if (!available || userPickedSubtab) return;
-    openIntent('season');
-  });
+  if (!intent) {
+    openIntent('bounty');
+    void Promise.race([
+      revealPublishedSeason(root),
+      new Promise((resolve) => setTimeout(() => resolve(false), SEASON_LANDING_TIMEOUT_MS)),
+    ]).then((available) => {
+      if (!available || userPickedSubtab) return;
+      openIntent('season');
+    });
+  }
 
   root.addEventListener('click', (event) => {
     const button = event.target.closest('[data-eden-subtab]');
@@ -332,9 +425,7 @@ export function bootEdenHub() {
     userPickedSubtab = true;
     const name = button.dataset.edenSubtab;
     window.history.replaceState(window.history.state, '', `#edenHub?subtab=${name}`);
-    activateSubTab(root, name);
-    const panel = root.querySelector(`[data-eden-subtab-panel="${name}"]`);
-    if (panel) loadPanelFor(name, panel);
+    openIntent(name, { scroll: true });
   });
 
   // Deep links (#loyalty / #edenX1) reach the hub through the shell, which
@@ -344,7 +435,11 @@ export function bootEdenHub() {
     setTimeout(() => {
       const intent = readSubtabIntent();
       if (intent) {
-        openIntent(intent);
+        userPickedSubtab = true;
+        if (!openIntent(intent, { scroll: true }) && (intent === 'season' || intent === 'vote')) {
+          userPickedSubtab = false;
+          openSeasonIntentWhenPublished(intent);
+        }
         return;
       }
       const hash = window.location.hash.replace(/^#/, '').split('?')[0].toLowerCase();

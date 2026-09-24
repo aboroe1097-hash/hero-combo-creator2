@@ -42,7 +42,9 @@ export function csvFooterLines(branding) {
     `Generated at ${brand.generatedAt}`,
   ];
   if (brand.datasetRevision) {
-    lines.push(`Data revision ${brand.datasetRevision}${brand.verificationStatus ? ` (${brand.verificationStatus})` : ''}`);
+    lines.push(
+      `Data revision ${brand.datasetRevision}${brand.verificationStatus ? ` (${brand.verificationStatus})` : ''}`
+    );
   }
   lines.push(`Sources: ${brand.sourceCredits.join(', ')}`);
   return Object.freeze(lines);
@@ -112,14 +114,20 @@ export function drawCanvasFooter(ctx, branding, options = {}) {
   const baseLine2 = brand.datasetRevision
     ? `Data ${brand.datasetRevision}${brand.verificationStatus ? ` · ${brand.verificationStatus}` : ''} · ${brand.generatedAt.slice(0, 10)}`
     : `${brand.generatedAt.slice(0, 10)}`;
-  const sources = `Sources: ${brand.sourceCredits.join(', ')} · ${brand.siteUrl}`;
-  let composed = `${baseLine2} · ${sources}`;
+  // An export of the alliance's own records passes no credits and gets no
+  // Sources segment. When the full list does not fit, the line points to the
+  // site instead of crediting whichever name happens to come first.
+  const credits = Array.isArray(brand.sourceCredits) ? brand.sourceCredits : [];
+  let composed = credits.length
+    ? `${baseLine2} · Sources: ${credits.join(', ')} · ${brand.siteUrl}`
+    : `${baseLine2} · ${brand.siteUrl}`;
   let line2 = truncateCanvasText(ctx, composed, maxWidth);
-  if (!line2.fits && brand.sourceCredits.length) {
-    composed = `${baseLine2} · Sources: ${brand.sourceCredits[0]} · ${brand.siteUrl}`;
+  if (!line2.fits && credits.length) {
+    composed = `${baseLine2} · Sources: see ${brand.siteUrl}`;
     line2 = truncateCanvasText(ctx, composed, maxWidth);
   }
-  ctx.fillText(line2.text, textX, y + 14);
+  // Larger footer fonts pass their own gap so the two lines never overlap.
+  ctx.fillText(line2.text, textX, y + (options.lineGap || 14));
   ctx.restore();
   return line1.fits && line2.fits;
 }

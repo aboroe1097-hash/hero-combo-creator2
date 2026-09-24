@@ -5,6 +5,10 @@
   inset-inline-end: calc(1rem + env(safe-area-inset-right));
   bottom: calc(1rem + env(safe-area-inset-bottom));
   z-index: 170;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    visibility 0s linear 180ms;
 }
 
 .ai-drawer-launcher {
@@ -664,17 +668,27 @@
     pointer-events: none !important;
   }
 
-  body:has(#shellMoreTools) .ai-drawer-launcher-shell {
+  body.shell-more-open .ai-drawer-launcher-shell {
+    display: none !important;
+  }
+
+  .ai-drawer-launcher-shell.is-scroll-hidden:not(:focus-within) {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(0.75rem);
+  }
+
+  body:not(.shell-more-open) .ai-drawer-launcher-shell {
     inset-inline-end: max(12px, env(safe-area-inset-right));
     bottom: calc(96px + env(safe-area-inset-bottom));
-    z-index: 1070;
   }
 
   body:has(#shellMoreTools) .ai-drawer-launcher .velo-mascot__stage {
     animation: none;
   }
 
-  body:has(#generatorSection:not(.hidden)):has(#shellMoreTools) .ai-drawer-launcher-shell {
+  body:has(#generatorSection:not([hidden]):not(.hidden)):has(#shellMoreTools) .ai-drawer-launcher-shell {
     position: relative;
     inset: auto;
     display: flex;
@@ -701,7 +715,7 @@
 }
 
 @media (min-width: 641px) and (max-width: 768px) {
-  body:has(#generatorSection:not(.hidden)):has(#shellMoreTools) .ai-drawer-launcher-shell {
+  body:has(#generatorSection:not([hidden]):not(.hidden)):has(#shellMoreTools) .ai-drawer-launcher-shell {
     position: relative;
     inset: auto;
     display: flex;

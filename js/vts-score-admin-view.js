@@ -22,6 +22,11 @@ import {
   vtsScoreExemptKey,
   writeVtsScoreExemptions,
 } from './vts-score-admin.js';
+import {
+  buildCompetitionGrowthRows,
+  buildGrowthBoardProjection,
+  rankCompetitionGrowth,
+} from './competition-growth.js';
 
 function esc(value) {
   return String(value ?? '')
@@ -48,10 +53,211 @@ function growthTone(value) {
   return value === null ? 'missing' : value >= 0 ? 'positive' : 'negative';
 }
 
+// Competition #12 copy reuses existing admin keys wherever one fits, and its
+// own keys use the short `c12` prefix, because every key ships in twelve
+// language packs against the total JS size budget.
+const NOT_RANKED_KEYS = Object.freeze({
+  'no-reupload': 'c12NoUpload',
+  'invalid-reupload': 'adminVtsScoreLegacy',
+  'outside-window': 'c12OutsideWindow',
+  'no-baseline': 'c12NotRanked',
+});
+
+/**
+ * Competition #12 growth: the ranked table with each player's baseline source,
+ * the superadmin's review of proposed 2026 VtsScore name matches (a match is
+ * used only once confirmed and saved), and "Publish growth board". The model is
+ * js/competition-growth.js; reads and writes arrive as options.
+ */
+export function createCompetitionGrowthSection(options = {}) {
+  const t = options.t || ((key) => key);
+  const { num, signed } = options;
+  const setStatus = options.setStatus || (() => {});
+  const canEdit = () => options.canPublish?.() === true;
+  const state = { snapshot: null, loading: false, failed: false, draft: {}, dirty: false };
+  let host = null;
+
+  const rowsFor = (decisions) =>
+    buildCompetitionGrowthRows({
+      ...state.snapshot,
+      confirmations: decisions,
+      window: state.snapshot?.schedule,
+    });
+  const button = (attrs, label, pressed = false) =>
+    `<button type="button" class="dash-btn dash-btn-xs" ${attrs} aria-pressed="${pressed}">${esc(label)}</button>`;
+
+  function matchCell(row) {
+    const match = row.match;
+    const decision = state.draft[row.submissionUid]?.decision;
+    const name = match.candidate?.gameName;
+    const label = match.confirmed
+      ? t('c12Confirmed', { name })
+      : decision === 'signup'
+        ? t('adminVtsScoreBaselineShort')
+        : match.status === 'ambiguous'
+          ? t('c12Ambiguous')
+          : '—';
+    if (!canEdit() || !match.candidates.length) return esc(label);
+    const uid = esc(row.submissionUid);
+    const choices = match.candidates.map((candidate) =>
+      button(
+        `data-comp12-uid="${uid}" data-comp12-candidate="${esc(candidate.submissionUid)}" data-comp12-name="${esc(candidate.gameName)}"`,
+        t('c12Use', {
+          name: candidate.gameName,
+          total: num(candidate.values.totalCastlePower),
+        }),
+        match.confirmed && match.candidate.submissionUid === candidate.submissionUid
+      )
+    );
+    choices.push(
+      button(`data-comp12-uid="${uid}"`, t('adminVtsScoreBaselineShort'), decision === 'signup')
+    );
+    return `${esc(label)}<div class="vts-admin-chip-row">${choices.join('')}</div>`;
+  }
+
+  function tableRow(row) {
+    const total = row.fields.totalCastlePower;
+    const reason = NOT_RANKED_KEYS[row.notRankedReason];
+    const pct = row.growthPct === null ? '—' : `${signed(row.growthPct, 2)}%`;
+    return `<tr><td>${row.rank ? `${row.rank}${row.tied ? '=' : ''}` : '—'}</td><th scope="row"><strong>${esc(row.gameName)}</strong>${reason ? `<br><span class="vts-admin-muted">${esc(t(reason))}</span>` : ''}</th><td><span class="vts-admin-chip">${esc(
+      row.baselineSource === 'vtsscore-2026'
+        ? t('c12SourceVtsScore')
+        : row.baselineSource
+          ? t('adminVtsScoreBaselineShort')
+          : '—'
+    )}</span></td><td>${matchCell(row)}</td><td>${esc(total.baseline === null ? '—' : num(total.baseline))}</td><td>${esc(total.final === null ? '—' : num(total.final))}</td><td data-growth="${growthTone(row.growthAbs)}">${esc(signed(row.growthAbs))}</td><td data-growth="${growthTone(row.growthPct)}">${esc(pct)}</td><td>${esc(t(row.consent ? 'adminYes' : 'adminNo'))}</td></tr>`;
+  }
+
+  function paint() {
+    if (!host) return;
+    let body;
+    let actions = '';
+    if (!state.snapshot) {
+      body = `<div class="dash-empty"${state.failed ? ' role="alert"' : ''}>${esc(
+        t(state.failed ? 'adminVtsScoreUnavailable' : 'adminLoading')
+      )}</div>`;
+    } else {
+      const { ranked, notRanked } = rankCompetitionGrowth(rowsFor(state.draft));
+      const all = [...ranked, ...notRanked];
+      const pending = all.filter(
+        (row) =>
+          row.match.candidates.length && !row.match.confirmed && !state.draft[row.submissionUid]
+      ).length;
+      if (canEdit()) {
+        actions = `<button type="button" class="dash-btn" data-comp12-save ${state.dirty ? '' : 'disabled'}>${esc(t('c12Save'))}</button><button type="button" class="dash-btn dash-btn-primary" data-comp12-publish ${ranked.length && !state.dirty ? '' : 'disabled'}>${esc(t('c12Publish'))}</button>`;
+      }
+      const heads = [
+        'adminThRank',
+        'adminVtsScorePlayer',
+        'adminContributionBaseline',
+        'c12Match',
+        'c12BaselineTotal',
+        'adminVtsScoreFinal',
+        'adminVtsScoreGrowth',
+        'adminVtsScoreGrowthPercent',
+        'c12Public',
+      ]
+        .map((key) => `<th scope="col">${esc(t(key))}</th>`)
+        .join('');
+      body = `<div class="vts-admin-summary-grid">${summaryCard(notRanked.length, t('c12NotRanked'), notRanked.length ? 'warning' : 'positive')}
+          ${summaryCard(pending, t('c12ToReview'), pending ? 'warning' : 'positive')}</div><div class="vts-admin-table-wrap"><table class="vts-admin-table"><thead><tr>${heads}</tr></thead><tbody>${all.map(tableRow).join('') || `<tr><td colspan="9">${esc(t('adminVtsScoreEmpty'))}</td></tr>`}</tbody></table></div>`;
+    }
+    host.innerHTML = `<div class="vts-admin-card-heading"><div><h3>${esc(t('c12Title'))}</h3><p>${esc(t('c12Hint'))}</p></div><div class="vts-admin-chip-row"><button type="button" class="dash-btn" data-comp12-reload>${esc(t('adminVtsScoreRefresh'))}</button>${actions}</div></div>${body}`;
+    bind();
+  }
+
+  async function run(action) {
+    try {
+      await action();
+      setStatus(t('c12Done'), 'success');
+    } catch {
+      setStatus(t('c12Failed'), 'error');
+    }
+    paint();
+  }
+
+  const saveDecisions = () =>
+    run(async () => {
+      await options.saveDecisions(state.snapshot.season, state.draft);
+      state.snapshot = { ...state.snapshot, confirmations: { ...state.draft } };
+      state.dirty = false;
+    });
+
+  function publish() {
+    if (state.dirty) return;
+    // Only saved decisions reach the public board.
+    const projection = buildGrowthBoardProjection(rowsFor(state.snapshot.confirmations), {
+      seasonId: state.snapshot.season,
+    });
+    if (!window.confirm(t('c12PublishAsk', { count: projection.rows.length }))) return;
+    void run(() => options.publish(projection));
+  }
+
+  function decide(uid, decision) {
+    state.draft = { ...state.draft, [uid]: decision };
+    state.dirty = true;
+    paint();
+  }
+
+  function bind() {
+    const on = (selector, handler) =>
+      host.querySelectorAll(selector).forEach((element) => {
+        element.addEventListener('click', () => handler(element.dataset));
+      });
+    on('[data-comp12-reload]', () => void load());
+    if (!canEdit()) return;
+    on('[data-comp12-save]', () => void saveDecisions());
+    on('[data-comp12-publish]', publish);
+    on('[data-comp12-uid]', (data) =>
+      decide(data.comp12Uid, {
+        decision: data.comp12Candidate ? 'vtsscore' : 'signup',
+        matchedSubmissionUid: data.comp12Candidate || '',
+        matchedGameName: data.comp12Name || '',
+      })
+    );
+  }
+
+  async function load() {
+    if (state.loading) return;
+    state.loading = true;
+    state.failed = false;
+    state.snapshot = null;
+    paint();
+    try {
+      state.snapshot = await options.load();
+      state.draft = { ...state.snapshot.confirmations };
+      state.dirty = false;
+    } catch {
+      state.failed = true;
+    }
+    state.loading = false;
+    paint();
+  }
+
+  function mount(element, { reload = false } = {}) {
+    host = element;
+    if (!host) return;
+    if (reload || (!state.snapshot && !state.loading && !state.failed)) void load();
+    else paint();
+  }
+
+  return { mount };
+}
+
 export function createVtsScoreAdminView(options = {}) {
   const t = typeof options.t === 'function' ? options.t : (key, vars, fallback) => fallback || key;
   const locale = () => (typeof options.locale === 'function' ? options.locale() : 'en');
   const setStatus = typeof options.setStatus === 'function' ? options.setStatus : () => {};
+  const growthSection = options.growth
+    ? createCompetitionGrowthSection({
+        ...options.growth,
+        t,
+        setStatus,
+        num: (value, decimals) => num(value, decimals),
+        signed: (value, decimals) => signed(value, decimals),
+      })
+    : null;
+  let lastSnapshot = null;
 
   function num(value, decimals = 0) {
     if (!Number.isFinite(Number(value))) return '—';
@@ -283,9 +489,17 @@ export function createVtsScoreAdminView(options = {}) {
             ${renderExemptions(exemptions)}
             ${tierSections}`
           : ''
-      }`;
+      }
+      ${growthSection ? '<section class="vts-admin-card" data-comp12-growth></section>' : ''}`;
 
     bind(root, rows, snapshot);
+    if (growthSection) {
+      // A new snapshot (the tab's Refresh) reloads the growth data too.
+      growthSection.mount(root.querySelector('[data-comp12-growth]'), {
+        reload: Boolean(lastSnapshot) && lastSnapshot !== snapshot,
+      });
+    }
+    lastSnapshot = snapshot;
   }
 
   function exportLeaderPng(rows) {

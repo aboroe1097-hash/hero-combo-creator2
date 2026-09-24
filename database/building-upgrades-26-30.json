@@ -1,0 +1,1564 @@
+{
+  "sourceUrl": "https://docs.google.com/spreadsheets/d/1aKQOKMQVMyVAdTnrZO9OpMTr3Mj3x0gHvfRbtS4FMmA/edit?gid=0#gid=0",
+  "observedAt": "2026-09-23",
+  "currency": "Orichalcum",
+  "totalOrichalcum": 281102,
+  "sourceRowCount": 43,
+  "sourceColumns": [
+    "",
+    "No",
+    "Skill",
+    "26",
+    "Dependency 26",
+    "27",
+    "Dependency 27",
+    "",
+    "28",
+    "Dependency 28",
+    "29",
+    "Dependency 29",
+    "30",
+    "Dependency 30",
+    "Total",
+    "Bonus Last Level"
+  ],
+  "sourceCaveat": "Community-maintained sheet credited to Raven G. Prerequisite wording and bonuses preserve the source text. Blank level-cost cells remain unknown (null); when every level cell of a row is blank its total is null too, because the sheet's TOTAL formula reports 0 for an empty row (Royal Charcoal Factory). Market level 26 is a listed 0 rather than a blank, so it stays 0. Seven source spellings are corrected for display while sourceName keeps the sheet's own text: Cavalry War Room and Cavalry Enhancement Camp ('Cavalery'), Sentry Tower ('Centry Tower'), Raiders Hall ('Raiders hall'), Alliance Hall ('Aliance Hall'), Distillery ('Distilery') and Workers Guild ('Workers uild'). The sheet's explicit overall TOTAL formula sums O5:O45 and omits the final Market and Institute row totals (1,400 + 14,930); its displayed total 281,102 is therefore 16,330 below the 297,432 sum of listed building totals. Per-level TOTAL formulas are retained as published, including their level-26 extra-count formula. Do not treat the source aggregate as a recomputed sum.",
+  "buildings": [
+    {
+      "id": "castle",
+      "name": "Castle",
+      "sourceNo": 1,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 950,
+          "prerequisite": "No"
+        },
+        {
+          "level": 27,
+          "cost": 2800,
+          "prerequisite": "Trading House, Stable, Tavern Level 26"
+        },
+        {
+          "level": 28,
+          "cost": 4480,
+          "prerequisite": "Food Storage 4, Level 2; C27, training grounds I, 27"
+        },
+        {
+          "level": 29,
+          "cost": 5600,
+          "prerequisite": "Barraks 28, Tavern 28, Population 600000"
+        },
+        {
+          "level": 30,
+          "cost": 8960,
+          "prerequisite": "mint 29,tavern 29,Arena 29, food storage 4 l8, population 680k"
+        }
+      ],
+      "totalOrichalcum": 22790,
+      "bonus": "N/A"
+    },
+    {
+      "id": "house",
+      "name": "House",
+      "sourceNo": 2,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 210,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 350,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 560,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 29,
+          "cost": 700,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 30,
+          "cost": 770,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 2590,
+      "bonus": "N/A"
+    },
+    {
+      "id": "tavern",
+      "name": "Tavern",
+      "sourceNo": 3,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 1680,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 2520,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 4900,
+          "prerequisite": "Food storage 2,. c27"
+        },
+        {
+          "level": 29,
+          "cost": 5600,
+          "prerequisite": "C29 and food storage 4,level 8"
+        },
+        {
+          "level": 30,
+          "cost": 7000,
+          "prerequisite": null
+        }
+      ],
+      "totalOrichalcum": 21700,
+      "bonus": "Capacity ALe and Food + 100k"
+    },
+    {
+      "id": "stable",
+      "name": "Stable",
+      "sourceNo": 4,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 2800,
+          "prerequisite": "Iron Storage 4 l2"
+        },
+        {
+          "level": 27,
+          "cost": 4480,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 5040,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": 5600,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": 6440,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 24360,
+      "bonus": "+250 trained troops, +50 on each level"
+    },
+    {
+      "id": "archery",
+      "name": "Archery",
+      "sourceNo": 5,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 2800,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 4480,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 5040,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": 5600,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": 6440,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 24360,
+      "bonus": "+250 trained troops, +50 on each level"
+    },
+    {
+      "id": "barracks",
+      "name": "Barracks",
+      "sourceNo": 6,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 2800,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 4480,
+          "prerequisite": "C27, Marble Storage IV l4"
+        },
+        {
+          "level": 28,
+          "cost": 5040,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": 5600,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": 6440,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 24360,
+      "bonus": "+250 trained troops, +50 on each level"
+    },
+    {
+      "id": "garrison-hall",
+      "name": "Garrison Hall",
+      "sourceNo": 7,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 144,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 240,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 840,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": 1260,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": 1680,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 4164,
+      "bonus": "5% Tactical Might and Resistance"
+    },
+    {
+      "id": "class-training-ground",
+      "name": "Class Training Ground",
+      "sourceNo": 8,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 1260,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 2100,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 2520,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": 3150,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": 5250,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 14280,
+      "bonus": "3000-26,2400-27, 2100-28, 1950-29,1950 -30; 11400 Each Line Extra"
+    },
+    {
+      "id": "training-ground-1",
+      "name": "Training Ground 1",
+      "sourceNo": 9,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 1400,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 2240,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 2800,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": null,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": 4200,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 10640,
+      "bonus": "3000-26,2400-27, 2100-28, 1950-29,1950 -30; 11400 Each Line Extra"
+    },
+    {
+      "id": "training-ground-2",
+      "name": "Training Ground 2",
+      "sourceNo": 10,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 1050,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 1750,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 2100,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": null,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": 4375,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 9275,
+      "bonus": "3000-26,2400-27, 2100-28, 1950-29,1950 -30; 11400 Each Line Extra"
+    },
+    {
+      "id": "training-ground-3",
+      "name": "Training Ground 3",
+      "sourceNo": 11,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 1260,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 2100,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 2520,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": 3150,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": 5250,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 14280,
+      "bonus": "3000-26,2400-27, 2100-28, 1950-29,1950 -30; 11400 Each Line Extra"
+    },
+    {
+      "id": "spy-agency",
+      "name": "Spy Agency",
+      "sourceNo": 12,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 288,
+          "prerequisite": "Supply Station 26"
+        },
+        {
+          "level": 27,
+          "cost": 480,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 768,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": 960,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 2496,
+      "bonus": "5% Decrease Enemy Marching Speed Siege 1% Each level"
+    },
+    {
+      "id": "supply-station",
+      "name": "Supply Station",
+      "sourceNo": 13,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 288,
+          "prerequisite": "Footmen War Room  26"
+        },
+        {
+          "level": 27,
+          "cost": 480,
+          "prerequisite": "Footmen War Room  27"
+        },
+        {
+          "level": 28,
+          "cost": 768,
+          "prerequisite": "Footmen War Room  28"
+        },
+        {
+          "level": 29,
+          "cost": 960,
+          "prerequisite": "Footmen War Room  29"
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": "Footmen War Room  30"
+        }
+      ],
+      "totalOrichalcum": 2496,
+      "bonus": "5% Marching Speed Siege, 1% Each level"
+    },
+    {
+      "id": "footmen-war-room",
+      "name": "Footmen War Room",
+      "sourceNo": 14,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 240,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 400,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 640,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": 800,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": 1279,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 3359,
+      "bonus": "4% Resistance, +2% - 28 and +2% - 30"
+    },
+    {
+      "id": "footmen-enhancement-camp",
+      "name": "Footmen Enhancement Camp",
+      "sourceNo": 15,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 480,
+          "prerequisite": "Spy Agency 26"
+        },
+        {
+          "level": 27,
+          "cost": 800,
+          "prerequisite": "Spy Agency 27"
+        },
+        {
+          "level": 28,
+          "cost": 960,
+          "prerequisite": "Spy Agency 28"
+        },
+        {
+          "level": 29,
+          "cost": 1199,
+          "prerequisite": "Spy Agency 29"
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": "Spy Agency 30"
+        }
+      ],
+      "totalOrichalcum": 3439,
+      "bonus": "10 Combat Speed 2 Each Level to 260"
+    },
+    {
+      "id": "archer-war-room",
+      "name": "Archer War Room",
+      "sourceNo": 16,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 240,
+          "prerequisite": null
+        },
+        {
+          "level": 27,
+          "cost": 400,
+          "prerequisite": null
+        },
+        {
+          "level": 28,
+          "cost": 640,
+          "prerequisite": null
+        },
+        {
+          "level": 29,
+          "cost": 800,
+          "prerequisite": null
+        },
+        {
+          "level": 30,
+          "cost": 1279,
+          "prerequisite": null
+        }
+      ],
+      "totalOrichalcum": 3359,
+      "bonus": "4% Resistance, +2% - 28 and +2% - 30"
+    },
+    {
+      "id": "archer-enhancement-camp",
+      "name": "Archer Enhancement Camp",
+      "sourceNo": 17,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 480,
+          "prerequisite": "Spy Agency 26"
+        },
+        {
+          "level": 27,
+          "cost": 800,
+          "prerequisite": "Spy Agency 27"
+        },
+        {
+          "level": 28,
+          "cost": 960,
+          "prerequisite": "Spy Agency 28"
+        },
+        {
+          "level": 29,
+          "cost": 1199,
+          "prerequisite": "Spy Agency 29"
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": "Spy Agency 30"
+        }
+      ],
+      "totalOrichalcum": 3439,
+      "bonus": "10 Combat Speed 2 Each Level to 260"
+    },
+    {
+      "id": "cavalery-war-room",
+      "name": "Cavalry War Room",
+      "sourceName": "Cavalery War Room",
+      "sourceNo": 18,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 240,
+          "prerequisite": "No"
+        },
+        {
+          "level": 27,
+          "cost": 400,
+          "prerequisite": null
+        },
+        {
+          "level": 28,
+          "cost": 640,
+          "prerequisite": null
+        },
+        {
+          "level": 29,
+          "cost": 800,
+          "prerequisite": null
+        },
+        {
+          "level": 30,
+          "cost": 1279,
+          "prerequisite": null
+        }
+      ],
+      "totalOrichalcum": 3359,
+      "bonus": "4% Might, +2% - 28 and +2% - 30"
+    },
+    {
+      "id": "cavalery-enhancement-camp",
+      "name": "Cavalry Enhancement Camp",
+      "sourceName": "Cavalery Enhancement Camp",
+      "sourceNo": 19,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 480,
+          "prerequisite": "Spy Agency 26"
+        },
+        {
+          "level": 27,
+          "cost": 800,
+          "prerequisite": "Spy Agency 26"
+        },
+        {
+          "level": 28,
+          "cost": 960,
+          "prerequisite": "Spy Agency 28"
+        },
+        {
+          "level": 29,
+          "cost": 1199,
+          "prerequisite": "Spy Agency 29"
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": "Spy Agency 30"
+        }
+      ],
+      "totalOrichalcum": 3439,
+      "bonus": "10 Combat Speed 2 Each Level to 260"
+    },
+    {
+      "id": "centry-tower",
+      "name": "Sentry Tower",
+      "sourceName": "Centry Tower",
+      "sourceNo": 20,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 1680,
+          "prerequisite": "Quarry 26"
+        },
+        {
+          "level": 27,
+          "cost": null,
+          "prerequisite": null
+        },
+        {
+          "level": 28,
+          "cost": 2940,
+          "prerequisite": null
+        },
+        {
+          "level": 29,
+          "cost": null,
+          "prerequisite": null
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": null
+        }
+      ],
+      "totalOrichalcum": 4620,
+      "bonus": "Scouting Speed +2% -26,+4% - 27, +6% - 28, +10% -29, +15% - 30"
+    },
+    {
+      "id": "watch-tower",
+      "name": "Watch Tower",
+      "sourceNo": 21,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 630,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 1050,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 1103,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": null,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": 1208,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 3991,
+      "bonus": "Extra troops 272, 43 - l26,57 -27, 58 -28,57 - 29, 57 - 30"
+    },
+    {
+      "id": "fortress",
+      "name": "Fortress",
+      "sourceNo": 23,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 1470,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 2450,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": null,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": 2940,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 6860,
+      "bonus": "+5% Siege Defence Might and Resistance 1% each level"
+    },
+    {
+      "id": "raiders-hall",
+      "name": "Raiders Hall",
+      "sourceName": "Raiders hall",
+      "sourceNo": 24,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 1050,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": null,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 2100,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": null,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 3150,
+      "bonus": "+5% Enhance Class Legion, 1% each level"
+    },
+    {
+      "id": "war-academy",
+      "name": "War Academy",
+      "sourceNo": 25,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 1050,
+          "prerequisite": "Aliance Hall 26"
+        },
+        {
+          "level": 27,
+          "cost": null,
+          "prerequisite": "Aliance Hall 27"
+        },
+        {
+          "level": 28,
+          "cost": null,
+          "prerequisite": "Aliance Hall 28"
+        },
+        {
+          "level": 29,
+          "cost": null,
+          "prerequisite": "Aliance Hall 29"
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": "Aliance Hall 30"
+        }
+      ],
+      "totalOrichalcum": 1050,
+      "bonus": null
+    },
+    {
+      "id": "aliance-hall",
+      "name": "Alliance Hall",
+      "sourceName": "Aliance Hall",
+      "sourceNo": 26,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 840,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": null,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": null,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": null,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": 2520,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 3360,
+      "bonus": "Help time reduction +50s  total, 10 Each Round to 170s; Reinforcement % +5%, 1 Each Round to 30%"
+    },
+    {
+      "id": "medical-tent",
+      "name": "Medical Tent",
+      "sourceNo": 34,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 547,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 911,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 1002,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": 1093,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": 1366,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 4919,
+      "bonus": "+5k Tent Capacity per level, 1k Each level, 10 tents, 50k total"
+    },
+    {
+      "id": "encampment",
+      "name": "Encampment",
+      "sourceNo": 35,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 505,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 841,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 925,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": 1009,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": 1261,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 4541,
+      "bonus": "+3% Training Speed, 1% -26, 1% -28, 1% - 30, to +16% ; +25 total, \n, 5 Each Level to 245 \n9 Encampments x 25 =  225 count"
+    },
+    {
+      "id": "arena",
+      "name": "Arena",
+      "sourceNo": 39,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 1638,
+          "prerequisite": "Bar Level 26"
+        },
+        {
+          "level": 27,
+          "cost": 2730,
+          "prerequisite": "Bar Level 27"
+        },
+        {
+          "level": 28,
+          "cost": 3260,
+          "prerequisite": "Bar Level 28"
+        },
+        {
+          "level": 29,
+          "cost": 4074,
+          "prerequisite": "Bar Level 29"
+        },
+        {
+          "level": 30,
+          "cost": 4618,
+          "prerequisite": "Bar Level 30"
+        }
+      ],
+      "totalOrichalcum": 16320,
+      "bonus": "+38 Medals to exchange, 6-26,6-27,6-28,10-29,10-30, to 80 Daily, -5% cost, 1% decrease each level to - 55%"
+    },
+    {
+      "id": "bar",
+      "name": "Bar",
+      "sourceNo": 40,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 1638,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 2730,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 3276,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": 4095,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": 5460,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 17199,
+      "bonus": "+5% Exp Bonus, 1% Each Level, to 45%"
+    },
+    {
+      "id": "town-hall",
+      "name": "Town Hall",
+      "sourceNo": 41,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 1470,
+          "prerequisite": "Bar Level 26"
+        },
+        {
+          "level": 27,
+          "cost": null,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": null,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": null,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 1470,
+      "bonus": "+5 Positions for Heroes"
+    },
+    {
+      "id": "workers-guild",
+      "name": "Workers Guild",
+      "sourceName": "Workers uild",
+      "sourceNo": 42,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 1680,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": null,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": null,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": 3360,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 5040,
+      "bonus": "+3% Speed, 0.5% Each Level"
+    },
+    {
+      "id": "gatherers-guild",
+      "name": "Gatherers Guild",
+      "sourceNo": 43,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 576,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 960,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 3080,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": null,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 4616,
+      "bonus": "+250k LLoad, 50k each level"
+    },
+    {
+      "id": "farm",
+      "name": "Farm",
+      "sourceNo": 44,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 210,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 350,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 385,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": 420,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 1365,
+      "bonus": "+900 Income in total, to 10450, 200 each level"
+    },
+    {
+      "id": "distilery",
+      "name": "Distillery",
+      "sourceName": "Distilery",
+      "sourceNo": 45,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 210,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": null,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": null,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": null,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 210,
+      "bonus": "+900 Income in total, to 26000, 900 each level"
+    },
+    {
+      "id": "lumber-yard",
+      "name": "Lumber Yard",
+      "sourceNo": 46,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 210,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": null,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": null,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": null,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 210,
+      "bonus": "+4000 Income in total to 22800"
+    },
+    {
+      "id": "quarry",
+      "name": "Quarry",
+      "sourceNo": 47,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 210,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": null,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": null,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": null,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 210,
+      "bonus": "+4000 Income in total to 19200"
+    },
+    {
+      "id": "iron-mill",
+      "name": "Iron Mill",
+      "sourceNo": 48,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 210,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 350,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": null,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": null,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 560,
+      "bonus": "+2500 Income in total to 12900"
+    },
+    {
+      "id": "mint",
+      "name": "Mint",
+      "sourceNo": 49,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 337,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": null,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 617,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": 673,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": 841,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 2468,
+      "bonus": null
+    },
+    {
+      "id": "royal-charcoal-factory",
+      "name": "Royal Charcoal Factory",
+      "sourceNo": 50,
+      "levels": [
+        {
+          "level": 26,
+          "cost": null,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": null,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": null,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": null,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": null,
+      "bonus": "+45300 income pe hours in total to 194400"
+    },
+    {
+      "id": "dragonite-workshop",
+      "name": "Dragonite Workshop",
+      "sourceNo": 51,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 86,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": null,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": null,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": null,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 86,
+      "bonus": "-65% Prod consumption, +2000 Cap, Single production cost 22"
+    },
+    {
+      "id": "crystal-workshop",
+      "name": "Crystal Workshop",
+      "sourceNo": 52,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 48,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 80,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 128,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": 160,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": 256,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 672,
+      "bonus": "Max Production 1254, single production time 50"
+    },
+    {
+      "id": "market",
+      "name": "Market",
+      "sourceNo": 53,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 0,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 1400,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": null,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": null,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": null,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 1400,
+      "bonus": null
+    },
+    {
+      "id": "institute",
+      "name": "Institute",
+      "sourceNo": 54,
+      "levels": [
+        {
+          "level": 26,
+          "cost": 1260,
+          "prerequisite": "C26"
+        },
+        {
+          "level": 27,
+          "cost": 2100,
+          "prerequisite": "C27"
+        },
+        {
+          "level": 28,
+          "cost": 3360,
+          "prerequisite": "C28"
+        },
+        {
+          "level": 29,
+          "cost": 3650,
+          "prerequisite": "C29"
+        },
+        {
+          "level": 30,
+          "cost": 4560,
+          "prerequisite": "C30"
+        }
+      ],
+      "totalOrichalcum": 14930,
+      "bonus": null
+    }
+  ],
+  "castleUpgradeCostSource": {
+    "sourceUrl": "https://tools.riseofcastles.net/castle-upgrade-costs/",
+    "observedAt": "2026-09-23",
+    "caveat": "Resources are copied from the page's per-level TOTAL COST CT 26–30 sections as direct Castle costs; the separate prerequisite-building resource costs are excluded. ROCAcademy notes its accumulated total figures may vary with current building levels."
+  },
+  "castleUpgradeCosts": [
+    {
+      "toLevel": 26,
+      "resources": {
+        "orichalcum": 950,
+        "gold": 40000000,
+        "food": 80000000,
+        "lumber": 80000000,
+        "charcoal": 5000000,
+        "marble": 150000000,
+        "iron": 110000000
+      }
+    },
+    {
+      "toLevel": 27,
+      "resources": {
+        "orichalcum": 2800,
+        "gold": 52800000,
+        "food": 84870000,
+        "lumber": 84870000,
+        "charcoal": 5375100,
+        "marble": 188600000,
+        "iron": 124476000
+      }
+    },
+    {
+      "toLevel": 28,
+      "resources": {
+        "orichalcum": 4480,
+        "gold": 72300000,
+        "food": 109512000,
+        "lumber": 164268000,
+        "charcoal": 6832800,
+        "marble": 216216000,
+        "iron": 162302400
+      }
+    },
+    {
+      "toLevel": 29,
+      "resources": {
+        "orichalcum": 5600,
+        "gold": 99700000,
+        "food": 144126000,
+        "lumber": 216188992,
+        "charcoal": 8760600,
+        "marble": 284954976,
+        "iron": 217884592
+      }
+    },
+    {
+      "toLevel": 30,
+      "resources": {
+        "orichalcum": 8960,
+        "gold": 135600000,
+        "food": 186861008,
+        "lumber": 280936768,
+        "charcoal": 11174100,
+        "marble": 369684320,
+        "iron": 266820240
+      }
+    }
+  ]
+}

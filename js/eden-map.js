@@ -88,6 +88,8 @@ import {
 } from './eden-map-teams.js';
 import { initEdenControlTips } from './eden-tooltips.js?v=20260708_101500';
 import { EDEN_MAP_CONFIG } from './eden-map-config.js';
+import { createEdenRoutePlayback } from './eden-route-playback.js';
+import { sliceRoute } from './fx/route-playback.js';
 import { renderSidebar as renderSidebarModule } from './eden-map-sidebar.js?v=20260708_101500';
 import { bindToolbar as bindToolbarModule } from './eden-map-toolbar.js';
 import {
@@ -105,6 +107,7 @@ import {
 
 let _edenLiveMapApi = null;
 let refreshEdenMapPlannerViewport = () => false;
+let relabelEdenRoutePlayback = () => {};
 
 /** Re-measure the canvas after the Eden Hub reveals the Map sub-tab. */
 export function refreshEdenMapViewport() {
@@ -116,6 +119,7 @@ let refreshEdenMapLanguage = async () => {
   await loadEdenMapLocale();
   if (requestId !== edenMapLanguageGeneration) return false;
   applyEdenMapDomTranslations(document.getElementById('edenMapRoot'));
+  relabelEdenRoutePlayback();
   return true;
 };
 
@@ -180,6 +184,13 @@ export function initEdenMapPlanner() {
   applyEdenMapDomTranslations(root);
 
   const ctx = canvas.getContext('2d');
+  const routePlayback = createEdenRoutePlayback({
+    host: canvas.parentElement,
+    text: (key) => edenMapText(key),
+    invalidate: () => scheduleDraw({ sidebar: false }),
+    formatNumber: (value) => Number(value).toLocaleString(),
+  });
+  relabelEdenRoutePlayback = () => routePlayback?.relabel();
   let sectorKey = 'FULL';
   let sectorIsolate = false;
   let fitAnimGen = 0;
@@ -1312,7 +1323,61 @@ export function initEdenMapPlanner() {
     }, 320);
   }
 
+  function playbackKey(pathIdx) {
+    return `${activePlanId}:${pathIdx}`;
+  }
+
+  /** Route playback (§4.4): ghost of the whole route, then the revealed prefix and its head. */
+  function drawPlaybackPath(routed, frame, color, label, distance) {
+    ctx.save();
+    ctx.globalAlpha = 0.28;
+    drawRoutedPath(routed, color, null, null, { arrows: false, lineWidth: 3 });
+    ctx.restore();
+    const shown = sliceRoute(frame.measured, frame.progress);
+    drawRoutedPath(shown, color, label, distance, { arrows: false, lineWidth: 5 });
+    const tip = shown[shown.length - 1];
+    if (!tip) return;
+    const p = iso(tip.x, tip.y);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+
+  /** Numbered stops for the selected route; readable without any playback. */
+  function drawRouteStops(points, color) {
+    if (!points?.length) return;
+    ctx.save();
+    ctx.font = 'bold 10px Inter';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    points.forEach((pt, i) => {
+      const p = iso(pt.x, pt.y);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y - 14, 8, 0, Math.PI * 2);
+      ctx.fillStyle = '#0f172a';
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.fillText(String(i + 1), p.x, p.y - 14);
+    });
+    ctx.restore();
+  }
+
   function drawPaths() {
+    const selectedPath =
+      layers.paths && selectedPathIdx != null ? plan.paths?.[selectedPathIdx] : null;
+    routePlayback?.select(
+      selectedPath ? playbackKey(selectedPathIdx) : null,
+      selectedPath?.routedPath || selectedPath?.points,
+      selectedPath?.distance,
+      selectedPath?.points
+    );
     if (!layers.paths) return;
     const isolated = isSectorIsolated();
     const planPaths = (plan.paths || []).filter(
@@ -1325,7 +1390,14 @@ export function initEdenMapPlanner() {
       const color = path.color || '#ef4444';
       const selected = selectedPathIdx === realIdx;
       const showSeg = selected || hoverPathHit?.pathIdx === realIdx;
-      drawRoutedPath(routed, color, getEdenStoredRouteDisplayLabel(path.label), path.distance, {
+      const label = getEdenStoredRouteDisplayLabel(path.label);
+      const frame = selected ? routePlayback?.frameFor(playbackKey(realIdx)) : null;
+      if (frame) {
+        drawPlaybackPath(routed, frame, color, label, path.distance);
+        drawRouteStops(path.points, color);
+        return;
+      }
+      drawRoutedPath(routed, color, label, path.distance, {
         lineWidth: selected ? 5 : 3.5,
       });
       if (showSeg) drawSegmentLabels(ctx, iso, path, color, layers.labels || selected);
@@ -1340,6 +1412,7 @@ export function initEdenMapPlanner() {
           ctx.lineWidth = 1.5;
           ctx.stroke();
         });
+        drawRouteStops(path.points, color);
       }
     });
 

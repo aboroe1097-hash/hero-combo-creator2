@@ -32,6 +32,8 @@ const shell = document.getElementById('aiDrawerLauncherShell');
 const launcher = document.getElementById('aiDrawerLauncher');
 const compactButton = document.getElementById('aiDrawerLauncherCompact');
 let drawerModulePromise = null;
+let launcherScrollFrame = 0;
+let previousScrollY = Math.max(0, window.scrollY);
 
 function languageKey() {
   try {
@@ -100,6 +102,7 @@ localizeLauncher();
 });
 
 launcher?.addEventListener('click', async () => {
+  shell?.classList.remove('is-scroll-hidden');
   try {
     const module = await loadDrawer();
     await module.openAiDrawer();
@@ -111,4 +114,32 @@ launcher?.addEventListener('click', async () => {
 compactButton?.addEventListener('click', () => {
   setCompact(!shell?.classList.contains('is-compact'), true);
 });
+
+window.addEventListener(
+  'scroll',
+  () => {
+    if (!window.matchMedia?.('(max-width: 640px)').matches || launcherScrollFrame) return;
+    launcherScrollFrame = window.requestAnimationFrame(() => {
+      launcherScrollFrame = 0;
+      const currentScrollY = Math.max(0, window.scrollY);
+      const delta = currentScrollY - previousScrollY;
+      previousScrollY = currentScrollY;
+
+      if (
+        currentScrollY < 96 ||
+        launcher?.getAttribute('aria-expanded') === 'true' ||
+        shell?.contains(document.activeElement)
+      ) {
+        shell?.classList.remove('is-scroll-hidden');
+      } else if (delta > 8) {
+        shell?.classList.add('is-scroll-hidden');
+      } else if (delta < -8) {
+        shell?.classList.remove('is-scroll-hidden');
+      }
+    });
+  },
+  { passive: true }
+);
+
+shell?.addEventListener('focusin', () => shell.classList.remove('is-scroll-hidden'));
 window.addEventListener('vts:language-change', localizeLauncher);

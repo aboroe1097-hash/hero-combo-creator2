@@ -10,6 +10,8 @@
 // live in dedicated eden_x2_* paths and reach the public site only through the
 // allowlisted published projection.
 
+import { normalizeRewardSettings } from './eden-reward-settings.js';
+
 export const EDEN_WORKSPACE_IDS = Object.freeze(['eden-x1', 'eden-x2']);
 export const EDEN_WORKSPACE_COLLECTION_PATH = 'vts_admin/eden_workspaces/records';
 export const EDEN_ADMIN_WORKSPACE_STORAGE_KEY = 'vts_admin_eden_workspace';
@@ -61,6 +63,8 @@ const EDEN_WORKSPACE_FIRESTORE_PATHS = Object.freeze({
     // Per workspace so a weight change in the season being played never
     // restates a finished season's scores.
     dutyPointWeights: 'vts_admin/eden_x1_duty_point_weights',
+    // Reward distribution rules, per workspace for the same reason.
+    rewardSettings: 'vts_admin/eden_x1_reward_settings',
     publicVoteResults: 'vts_admin/eden_x1_public_vote_results',
     publicProjection: null,
   }),
@@ -75,6 +79,8 @@ const EDEN_WORKSPACE_FIRESTORE_PATHS = Object.freeze({
     // Per workspace so a weight change in the season being played never
     // restates a finished season's scores.
     dutyPointWeights: 'vts_admin/eden_x2_duty_point_weights',
+    // Reward distribution rules, per workspace for the same reason.
+    rewardSettings: 'vts_admin/eden_x2_reward_settings',
     publicVoteResults: 'vts_admin/eden_x2_public_vote_results',
     publicProjection: 'vts_admin/eden_x2_public_projection',
   }),
@@ -131,17 +137,26 @@ export function isEdenWorkspaceArchived(workspace) {
   return workspace?.lifecycle === 'archived';
 }
 
+// The workspace a write guard should judge: the caller's resolved view when it
+// read one, otherwise the shipped default. Archiving only exists in the stored
+// record, so passing the view is what makes an ended season actually read-only.
+function resolveEdenWorkspaceView(workspaceId, resolved) {
+  const id = normalizeEdenWorkspaceId(workspaceId);
+  if (resolved && normalizeEdenWorkspaceId(resolved.id) === id) return resolved;
+  return getEdenWorkspace(workspaceId);
+}
+
 // Returns an Error when the given workspace refuses mutations (any season an
 // admin has archived), or null when writes are allowed. Callers log/announce
 // the error and abort the save; the archived records stay untouched.
-export function edenWorkspaceMutationError(workspaceId) {
-  const ws = getEdenWorkspace(workspaceId);
+export function edenWorkspaceMutationError(workspaceId, resolved = null) {
+  const ws = resolveEdenWorkspaceView(workspaceId, resolved);
   if (!isEdenWorkspaceArchived(ws)) return null;
   return new Error(`${ws.label} is an archived season: its records are read-only.`);
 }
 
-export function isEdenWorkspaceMutable(workspaceId) {
-  return !isEdenWorkspaceArchived(getEdenWorkspace(workspaceId));
+export function isEdenWorkspaceMutable(workspaceId, resolved = null) {
+  return !isEdenWorkspaceArchived(resolveEdenWorkspaceView(workspaceId, resolved));
 }
 
 export function normalizeEdenWorkspacePublication(value) {
@@ -258,6 +273,11 @@ export const EDEN_PROJECTION_VOTE_SETTINGS_FIELDS = Object.freeze([
   'votingOpen',
   'allowEditing',
   'showPublicResults',
+  // The members' ballot and the R4/R5 sheet publish on their own switches. The
+  // aggregate above is still carried so a reader that only knows the old field
+  // keeps working.
+  'showMemberResults',
+  'showManagementResults',
   'showVoterNames',
   'contributionRankingMode',
   'closesAt',
@@ -297,6 +317,8 @@ export function buildEdenPublicProjection(options = {}) {
     publicVoteResults = null,
     rosterSnapshots = null,
     publishedAtMs = Date.now(),
+    scoring = null,
+    rewardSettings = null,
   } = options;
   const ws = getEdenWorkspace(workspace);
   if (ws.legacy) {
@@ -317,7 +339,37 @@ export function buildEdenPublicProjection(options = {}) {
     voteSettings: pickAllowlisted(voteSettings || {}, EDEN_PROJECTION_VOTE_SETTINGS_FIELDS),
     publicVoteResults:
       publicVoteResults && typeof publicVoteResults === 'object' ? publicVoteResults : {},
+    // The admin's scoring rules travel with the season so the public page ranks
+    // players the same way. Absent on older publishes; readers then keep their
+    // previous behaviour.
+    scoring: normalizeEdenProjectionScoring(scoring),
+    // The reward distribution travels too: the public page has to show the same
+    // slot counts and the same guild-master holder the publishing admin chose.
+    rewardSettings: normalizeEdenProjectionRewardSettings(rewardSettings),
   });
+}
+
+export function normalizeEdenProjectionRewardSettings(settings) {
+  if (!settings || typeof settings !== 'object') return undefined;
+  return normalizeRewardSettings(settings);
+}
+
+export function normalizeEdenProjectionScoring(scoring) {
+  if (!scoring || typeof scoring !== 'object') return undefined;
+  const out = {};
+  if (scoring.dutyPointWeights && typeof scoring.dutyPointWeights === 'object') {
+    out.dutyPointWeights = scoring.dutyPointWeights;
+  }
+  if (typeof scoring.includeDemolitionPoints === 'boolean') {
+    out.includeDemolitionPoints = scoring.includeDemolitionPoints;
+  }
+  // Whole-score multipliers travel with the season like the duty grid does, so
+  // the public page ranks players the way the admin that published it did.
+  for (const key of ['contributionWeight', 'formPointWeight']) {
+    const value = Number(scoring[key]);
+    if (Number.isFinite(value) && value >= 0 && value <= 10) out[key] = value;
+  }
+  return Object.keys(out).length ? out : undefined;
 }
 
 export function isPublishedEdenProjection(value) {

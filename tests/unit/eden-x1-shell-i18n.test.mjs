@@ -101,7 +101,7 @@ test('Eden X1 document and live language flow use the isolated shell localizatio
   assert.match(source, /import \{ localizeEdenX1Shell \} from '.\/i18n\/eden-x1-shell\.js';/);
   assert.match(
     source,
-    /function updateTextContent\(lang\)[\s\S]*?localizeEdenX1Shell\(document, lang\)/
+    /function updateTextContent\(lang\)[\s\S]*?localizeEdenX1Shell\(document, lang(?:, \{[^}]*\})?\)/
   );
   assert.match(
     source,

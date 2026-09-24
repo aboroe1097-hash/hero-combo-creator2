@@ -226,13 +226,12 @@
     linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 9rem),
     var(--surface-glass);
 
-  /* Compatibility atmosphere tokens stay on the canonical palette. */
+  /* Compatibility atmosphere tokens stay on the canonical palette. The
+     2026-09-23 16.5.0 byte audit removed --glow-accent, --glow-danger,
+     --surface-deep, and --noise-texture because their only consumers were
+     the unused .u-* utilities in css/atmosphere.css. */
   --glow-brand: 0 0 24px rgba(125, 211, 252, 0.35);
-  --glow-accent: 0 0 20px rgba(251, 146, 60, 0.3);
-  --glow-danger: 0 0 16px rgba(251, 113, 133, 0.3);
-  --surface-deep: var(--ff-bg-deep);
   --text-on-deep: var(--ff-text);
-  --noise-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
 
   --z-base: 0;
   --z-raised: 10;

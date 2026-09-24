@@ -229,13 +229,22 @@ export const CONFIRMED_GROUPS = [
 // contribution-weighting.js rather than here.
 export const PENDING_GROUPS = Object.freeze([]);
 
+// Pure and hot (every name lookup), so memoised; capped against free-text input.
+const aliasKeyCache = new Map();
+
 function aliasKey(name) {
-  return String(name || '')
+  const input = String(name || '');
+  const cached = aliasKeyCache.get(input);
+  if (cached !== undefined) return cached;
+  const result = input
     .normalize('NFC')
     .replace(/^(?:\s*(?:\((?:vts|vet|s)\)|(?:vts|vet|s)\)))+\s*/i, '')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
+  if (aliasKeyCache.size >= 5000) aliasKeyCache.clear();
+  aliasKeyCache.set(input, result);
+  return result;
 }
 
 const confirmedAliases = new Map(
@@ -244,8 +253,80 @@ const confirmedAliases = new Map(
   )
 );
 
+// Aliases the admin teaches from the Accounts tab. They are stored in the player
+// registry (`registry.playerAliases`) rather than in this file, so the alliance
+// owner can say "we call Lady Zubbs just zubs" without a code change or a rules
+// change, and so all names still resolve through this one authority.
+//
+// They are consulted BEFORE CONFIRMED_GROUPS, because that is the whole point of
+// teaching one: a taught entry is a deliberate correction, and an entry that
+// loses to a list compiled months earlier could not correct anything.
+//
+// The seeds are the abbreviations the owner gave in words, as a habit rather
+// than a code change. Both also already hold in the shipped lists (MalakaKiji
+// is a confirmed group), so they document the feature and give the admin list a
+// starting point instead of an empty state.
+export const SEEDED_PLAYER_ALIASES = Object.freeze([
+  // The abbreviation the owner uses out loud, and the spelling the lists and the
+  // OCR actually carry ("(Zubbs)" operates the Zubbs family account, whose X2
+  // name is Lady Zubbs). Teaching one without the other would leave the
+  // abbreviation resolving and the roster spelling not.
+  Object.freeze({ alias: 'zubs', canonical: 'Lady Zubbs' }),
+  Object.freeze({ alias: 'Zubbs', canonical: 'Lady Zubbs' }),
+  Object.freeze({ alias: 'kiji', canonical: 'MalakaKiji' }),
+]);
+export const MAX_PLAYER_ALIASES = 200;
+
+// Taught spellings arrive from an admin-edited document, so they get the same
+// treatment as every other stored list: trimmed, length-capped, deduped by
+// alias, and self-aliases dropped (teaching "kiji → kiji" would be a no-op that
+// only makes the list longer).
+export function normalizeTaughtPlayerAliases(values) {
+  const seen = new Set();
+  const out = [];
+  (Array.isArray(values) ? values : []).forEach((entry) => {
+    if (out.length >= MAX_PLAYER_ALIASES) return;
+    const alias = String(entry?.alias ?? entry?.name ?? '')
+      .normalize('NFC')
+      .trim()
+      .slice(0, 80);
+    const canonical = String(entry?.canonical ?? entry?.canonicalName ?? '')
+      .normalize('NFC')
+      .trim()
+      .slice(0, 80);
+    const key = aliasKey(alias);
+    if (!key || !canonical || key === aliasKey(canonical)) return;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({ alias, canonical, createdAt: String(entry?.createdAt || '') });
+  });
+  return out;
+}
+
+const taughtAliases = new Map();
+
+// Replaces the taught list with the seeded defaults plus whatever the current
+// registry carries. Called by player-registry.js whenever a registry becomes
+// current, so the taught entries always describe the registry in force and
+// every caller resolves through this one map.
+export function setTaughtPlayerAliases(values) {
+  taughtAliases.clear();
+  [...SEEDED_PLAYER_ALIASES, ...normalizeTaughtPlayerAliases(values)].forEach((entry) => {
+    taughtAliases.set(aliasKey(entry.alias), entry.canonical);
+  });
+  return taughtAliases.size;
+}
+
+setTaughtPlayerAliases([]);
+
+// Resolution order: a taught alias, then the confirmed groups. A taught entry
+// wins over the confirmed list on purpose — see the note above.
 export function resolveConfirmedPlayerAlias(name) {
-  return confirmedAliases.get(aliasKey(name)) || '';
+  const key = aliasKey(name);
+  if (!key) return '';
+  const taught = taughtAliases.get(key);
+  if (taught) return taught;
+  return confirmedAliases.get(key) || '';
 }
 
 // Most account keys ignore decorations, but these two accounts differ only by them.

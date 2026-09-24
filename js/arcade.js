@@ -1,3 +1,4 @@
+import { mountToolShell } from './tool-shell.js';
 import {
   translations,
   applyLanguageDirection,
@@ -7,9 +8,10 @@ import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { resolveIntlLocale } from './locale-format.js';
 import { initArcadeHub } from './arcade-hub.js';
 import { initArcadeLobbyUI } from './arcade-lobby-ui.js';
-import { setCurrentLanguage } from './state.js';
+import { currentLanguage, setCurrentLanguage } from './state.js';
+import { mountSiegeFeature } from './siege-promo.js';
 
-export const APP_VERSION = '16.0.16';
+export const APP_VERSION = '16.5.4';
 const THEME_STORAGE_KEY = 'vts_theme';
 const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#070b16' };
 const THEME_MANIFESTS = { light: 'site-light.webmanifest', dark: 'site.webmanifest' };
@@ -160,6 +162,11 @@ async function initArcade() {
   document
     .getElementById('arcadeFooterYear')
     ?.replaceChildren(document.createTextNode(String(new Date().getFullYear())));
+  // The featured Eden Siege banner is mounted before the language pass so its
+  // data-i18n nodes are translated with the rest of the lobby.
+  mountSiegeFeature(document.getElementById('arcadeLobby'), {
+    getCopy: () => translations[currentLanguage] || translations.en,
+  });
   await setLanguage(savedLanguage);
   initArcadeHub();
   initArcadeLobbyUI();
@@ -189,3 +196,7 @@ async function initArcade() {
 }
 
 initArcade();
+
+// Shared site chrome: the same footer (and, where the page has no header of
+// its own, the branded bar with Back to tools) on every standalone tool page.
+mountToolShell();

@@ -32,14 +32,21 @@ test('command palette exposes deterministic tool destinations', () => {
     'tabYouTube',
     'tabOcrDashboard',
     'tabArcade',
+    'tabEdenSiege',
     'tabBattleSimulator',
+    'tabDownloads',
   ]);
   assert.match(destinations, /name:\s*'manual'[\s\S]*?kind:\s*'tab'/);
+  assert.match(destinations, /key:\s*'tabDownloads'[\s\S]*?href:\s*'downloads\.html'/);
   assert.match(
     destinations,
     /key:\s*'tabSpecialization'[\s\S]*?aliasesKey:\s*'tabSpecializationTowersAliases'[\s\S]*?name:\s*'specialization'[\s\S]*?kind:\s*'tab'/
   );
   assert.match(destinations, /key:\s*'tabOcrDashboard'[\s\S]*?href:\s*'admin\.html'/);
+  assert.match(
+    destinations,
+    /key:\s*'tabEdenSiege'[\s\S]*?href:\s*'eden-siege\.html'[\s\S]*?kind:\s*'link'/
+  );
   assert.match(destinations, /key:\s*'tabArcade'[\s\S]*?name:\s*'arcade'[\s\S]*?kind:\s*'tab'/);
   assert.match(
     destinations,

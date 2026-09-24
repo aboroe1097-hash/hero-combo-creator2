@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('node data contributions require a signed-in account', async ({ page }) => {
+test('workbook costs stay public without exposing community contribution controls', async ({ page }) => {
   test.setTimeout(120000);
   await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
   await page.addInitScript(() => {
@@ -16,7 +16,23 @@ test('node data contributions require a signed-in account', async ({ page }) => 
   await expect(community).toHaveAttribute('data-contrib-signed-in', 'false');
   await expect(page.locator('.spec-contrib-signin')).toBeVisible();
 
-  const medal = page.locator('[data-spec-node-medal]').first();
-  await expect(medal).toBeDisabled();
+  await page.locator('.spec-contrib-column').first().locator('summary').click();
+
+  // A node the workbook has already placed states its verified cost and offers no
+  // submission field at all.
+  const verified = page.locator('[data-contribution-key="training1:2"]');
+  await expect(verified.locator('.spec-contrib-stage--source')).toHaveCount(1);
+  await expect(verified.locator('[data-spec-node-medal]')).toHaveCount(0);
+
+  // This release workbook covers all 735 canonical nodes for the active troop.
+  // Keep the sign-in message visible, show the source evidence, and expose no
+  // submission or review fields while there is no outstanding unknown cost.
+  const contributionNodes = page.locator('.spec-contrib-node');
+  const contributionNodeCount = await contributionNodes.count();
+  expect(contributionNodeCount).toBe(735);
+  await expect(page.locator('.spec-contrib-stage--source')).toHaveCount(735);
+  await expect(page.locator('[data-spec-node-medal]')).toHaveCount(0);
+  await expect(page.locator('[data-spec-node-reviewer]')).toHaveCount(0);
+  await expect(page.locator('[data-spec-node-reviewed-medal]')).toHaveCount(0);
   await expect(page.locator('[data-spec-node-contributor]')).toHaveCount(0);
 });
