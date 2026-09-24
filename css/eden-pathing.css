@@ -537,6 +537,11 @@
   font-weight: 800;
 }
 
+.eden-path-pathers {
+  margin: 0;
+  font-weight: 700;
+}
+
 .eden-path-toast {
   position: fixed;
   inset-inline: 1rem;

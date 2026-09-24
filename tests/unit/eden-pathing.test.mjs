@@ -12,10 +12,12 @@ import {
   createTerrainRouter,
   decodePlanShare,
   encodePlanShare,
+  estimatePathers,
   formatSteps,
   moveStop,
   nextRouteColor,
   normalizeLibrary,
+  rasterizeStep,
   removeStop,
   setEnd,
   setStart,
@@ -100,11 +102,15 @@ test('route legs are built from each consecutive pair of stops', () => {
   const stops = [createStop(0, 0), createStop(30, 40), createStop(30, 100)];
   const built = buildRouteLegs(stops, straight);
   assert.equal(built.legs.length, 2);
+  // max(dx, dy) + 1 tiles per leg: 30x40 takes 41 steps, 0x60 takes 61.
   assert.deepEqual(
     built.legs.map((leg) => leg.tiles),
-    [50, 60]
+    [41, 61]
   );
-  assert.equal(built.tiles, 110);
+  // The second leg starts on the first leg's last tile, which is counted once.
+  assert.equal(built.walkedTiles, 102);
+  assert.equal(built.tiles, 101);
+  assert.equal(built.overlapTiles, 1);
   assert.equal(built.blocked, false);
   assert.equal(built.pending, false);
 
@@ -169,6 +175,35 @@ test('the gate suggestion picks the smallest detour and skips gates already used
   assert.equal(suggestGate(stops, []), null);
 });
 
+test('tiles are counted once and pathers are estimated from the occupied count', () => {
+  // Doubling back over the same ground occupies it once, even though every tile
+  // on the way back is walked a second time.
+  const doubled = buildRouteLegs([createStop(0, 0), createStop(10, 0), createStop(0, 0)], straight);
+  assert.equal(doubled.walkedTiles, 22);
+  assert.equal(doubled.tiles, 11);
+  assert.equal(doubled.overlapTiles, 11);
+  assert.equal(doubled.pathers, 1);
+
+  // The estimate is a ceiling on blocks of PATHING tiles per pather.
+  const atCapacity = buildRouteLegs([createStop(0, 0), createStop(39, 0)], straight);
+  assert.equal(atCapacity.tiles, 40);
+  assert.equal(atCapacity.pathers, 1);
+  const overCapacity = buildRouteLegs([createStop(0, 0), createStop(40, 0)], straight);
+  assert.equal(overCapacity.tiles, 41);
+  assert.equal(overCapacity.pathers, 2);
+  assert.equal(overCapacity.tilesPerPather, 40);
+
+  // A diagonal step and a side-by-side step both cost one tile.
+  const diagonal = rasterizeStep({ x: 752, y: 817 }, { x: 758, y: 823 });
+  assert.equal(diagonal.length, 7);
+  assert.deepEqual(diagonal[1], { x: 753, y: 818 });
+  assert.deepEqual(diagonal.at(-1), { x: 758, y: 823 });
+
+  assert.equal(estimatePathers(0), 0);
+  assert.equal(estimatePathers(81), 3);
+  assert.equal(estimatePathers(100, 50), 2);
+});
+
 test('the step list reads A → gate → mountain pass → B with per-leg tiles', () => {
   const stops = [
     createStop(100, 100),
@@ -177,7 +212,8 @@ test('the step list reads A → gate → mountain pass → B with per-leg tiles'
     createStop(305, 905, 'pass'),
     createStop(800, 800, 'structure', 'WC8'),
   ];
-  const { legs } = buildRouteLegs(stops, straight);
+  const built = buildRouteLegs(stops, straight);
+  const { legs } = built;
   const steps = formatSteps(stops, legs, {
     structureLabel: (type) => ({ CP3: 'Gate Lv3', WC8: 'Wonder Capital Lv8' })[type],
     text: EN_T,
@@ -193,10 +229,51 @@ test('the step list reads A → gate → mountain pass → B with per-leg tiles'
   assert.equal(steps.items[1].label, 'Gate Lv3 (787:716)');
   assert.equal(steps.items[0].legTiles, null);
   assert.equal(steps.items[1].legTiles, legs[0].tiles);
+  assert.equal(steps.tiles, built.tiles);
   assert.equal(
     steps.tiles,
-    legs.reduce((sum, leg) => sum + leg.tiles, 0)
+    legs.reduce((sum, leg) => sum + leg.newTiles, 0)
   );
+  // Each row shows the tiles its leg adds, so the rows add up to the total.
+  assert.equal(
+    steps.items.reduce((sum, item) => sum + (item.legTiles ?? 0), 0),
+    built.tiles
+  );
+  assert.equal(steps.items[1].legWalked, legs[0].tiles);
+});
+
+test('a leg that walks back over counted ground shows 0 new tiles and its walked length', () => {
+  const stops = [createStop(0, 0), createStop(10, 0), createStop(0, 0)];
+  const built = buildRouteLegs(stops, straight);
+  const steps = formatSteps(stops, built.legs, { text: EN_T });
+  assert.deepEqual(
+    steps.items.map((item) => [item.legTiles, item.legWalked]),
+    [
+      [null, null],
+      [11, 11],
+      [0, 11],
+    ]
+  );
+  assert.equal(
+    steps.items.reduce((sum, item) => sum + (item.legTiles ?? 0), 0),
+    built.tiles
+  );
+  assert.equal(EN_T('pathingLegTilesWalked', { tiles: 0, walked: 11 }), '≈ 0 tiles (11 walked)');
+});
+
+test('a router that returns no path falls back to the straight line', () => {
+  const from = createStop(0, 0);
+  const to = createStop(5, 0);
+  for (const router of [() => ({ path: [] }), () => ({}), () => undefined]) {
+    let built;
+    assert.doesNotThrow(() => {
+      built = buildRouteLegs([from, to], router);
+    });
+    assert.deepEqual(built.legs[0].path, [from, to]);
+    assert.equal(built.legs[0].tiles, 6);
+    assert.equal(built.tiles, 6);
+    assert.equal(built.legs[0].blocked, false);
+  }
 });
 
 test('share codes round-trip and resolve structures against the dataset', () => {
