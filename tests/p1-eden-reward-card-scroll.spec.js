@@ -108,8 +108,13 @@ test('a category click on a desktop scrolls the table on screen when it is below
   await expect.poll(() => rewardTableTop(page)).toBeLessThan(120);
 
   // The category that is already showing still takes you to its table.
-  await page.evaluate(() => window.scrollTo(0, 0));
-  expect(await rewardTableTop(page)).toBeGreaterThan(viewport.height);
+  // The first click's scroll can still be settling; retry the reset until the
+  // page really rests at the top with the table below the fold.
+  await expect(async () => {
+    await page.evaluate(() => window.scrollTo(0, 0));
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    expect(await rewardTableTop(page)).toBeGreaterThan(viewport.height);
+  }).toPass({ timeout: 5000 });
   await page.locator('[data-reward-view="contribution"]').click();
   await expect.poll(() => rewardTableTop(page)).toBeLessThan(120);
   await expect.poll(() => rewardTableTop(page)).toBeGreaterThanOrEqual(0);
