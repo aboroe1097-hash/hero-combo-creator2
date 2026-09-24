@@ -2308,6 +2308,8 @@ const zh = {
   adminBohMatchSummary: '{matches} 场比赛，{teams} 支队伍',
   adminBohMatchDeleteConfirm: '删除此比赛结果？',
   adminBohMatchDeleted: '比赛结果已删除。',
+  adminRulesOutdated:
+    '此账号是超级管理员，因此被拒绝说明线上的安全规则比本站旧。所有者需要重新部署：npx firebase deploy --only firestore:rules --project abocombo，然后用 node scripts/firestore-rules-status.mjs 检查。',
   adminCloudPermissionDenied:
     '服务器拒绝了这次写入。可能是此账户不是管理员，或已部署的安全规则比此应用旧——R5 可能需要重新部署 firestore.rules。',
   // Eden 2027 signups: the active-season invitation and the admin tab that

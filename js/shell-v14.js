@@ -838,6 +838,26 @@
   });
 
   languageSelect?.addEventListener('change', () => window.setTimeout(applyLocale, 0));
+  // The app applies a stored or URL language with `languageSelect.value = x`,
+  // which fires no change event, so the button kept the old label. Re-sync on
+  // every programmatic set of this element as well.
+  if (languageSelect) {
+    ['value', 'selectedIndex'].forEach((property) => {
+      const native = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, property);
+      if (!native?.set || !native.get) return;
+      Object.defineProperty(languageSelect, property, {
+        configurable: true,
+        enumerable: native.enumerable,
+        get() {
+          return native.get.call(this);
+        },
+        set(next) {
+          native.set.call(this, next);
+          window.setTimeout(applyLocale, 0);
+        },
+      });
+    });
+  }
   window.addEventListener('edenLanguageUpdate', applyLocale);
   window.addEventListener('hashchange', syncActiveState);
   window.addEventListener('popstate', () => {

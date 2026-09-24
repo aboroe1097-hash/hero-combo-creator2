@@ -3432,6 +3432,8 @@ Object.assign(ru, {
   adminBohMatchSummaryTotalScore: 'Итоговый счёт',
   adminBohMatchSummaryAverage: 'Средний',
   adminBohMatchSummaryBest: 'Лучший',
+  adminRulesOutdated:
+    'Это аккаунт суперадмина, поэтому отказ означает, что действующие правила безопасности старше этого сайта. Владелец должен развернуть их заново: npx firebase deploy --only firestore:rules --project abocombo, затем проверить командой node scripts/firestore-rules-status.mjs.',
   adminCloudPermissionDenied:
     'Сервер отклонил эту запись. Либо этот аккаунт не является администратором, либо развёрнутые правила безопасности старше этого приложения — возможно, R5 нужно заново развернуть firestore.rules.',
   adminBohMatchRatingRequired:

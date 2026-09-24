@@ -25,6 +25,8 @@ const en = {
   adminSignOutBtn: 'Sign Out',
   adminCloudSyncError: 'Cloud sync problem - click Refresh',
   adminCloudAdminRequired: 'Not signed in as admin; this upload was not synced.',
+  adminRulesOutdated:
+    'This account is a superadmin, so the refusal means the live security rules are older than this site. An owner must redeploy them: npx firebase deploy --only firestore:rules --project abocombo, then check with node scripts/firestore-rules-status.mjs.',
   adminCloudPermissionDenied:
     'The server refused this write. Either this account is not an admin, or the deployed security rules are older than this app - an R5 may need to redeploy firestore.rules.',
   adminCloudRetryPending: 'Local changes waiting - click Refresh after signing in',

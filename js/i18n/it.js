@@ -2713,6 +2713,8 @@ const it = {
   adminBohMatchSummaryTotalScore: 'Punteggio totale',
   adminBohMatchSummaryAverage: 'Media',
   adminBohMatchSummaryBest: 'Migliore',
+  adminRulesOutdated:
+    'Questo account è superadmin, quindi il rifiuto significa che le regole di sicurezza attive sono più vecchie di questo sito. Un proprietario deve ridistribuirle: npx firebase deploy --only firestore:rules --project abocombo, poi verificare con node scripts/firestore-rules-status.mjs.',
   adminCloudPermissionDenied:
     'Il server ha rifiutato questa scrittura. O questo account non è un amministratore, oppure le regole di sicurezza distribuite sono più vecchie di questa app - un R5 potrebbe dover ridistribuire firestore.rules.',
   adminBohMatchRatingRequired:

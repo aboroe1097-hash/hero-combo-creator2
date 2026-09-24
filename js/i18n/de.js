@@ -3617,6 +3617,8 @@ const de = {
   adminBohMatchSummaryTotalScore: 'Gesamtpunkte',
   adminBohMatchSummaryAverage: 'Durchschnitt',
   adminBohMatchSummaryBest: 'Bester',
+  adminRulesOutdated:
+    'Dieses Konto ist Superadmin – die Ablehnung bedeutet also, dass die aktiven Sicherheitsregeln älter als diese Seite sind. Ein Owner muss sie neu bereitstellen: npx firebase deploy --only firestore:rules --project abocombo, danach mit node scripts/firestore-rules-status.mjs prüfen.',
   adminCloudPermissionDenied:
     'Der Server hat diesen Schreibvorgang verweigert. Entweder ist dieses Konto kein Admin oder die bereitgestellten security rules sind älter als diese App - ein R5 muss möglicherweise firestore.rules erneut bereitstellen.',
   adminBohMatchRatingRequired:

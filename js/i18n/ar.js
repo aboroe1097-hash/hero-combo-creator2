@@ -3512,6 +3512,8 @@ Object.assign(ar, {
   adminBohMatchSummaryTotalScore: 'إجمالي النتيجة',
   adminBohMatchSummaryAverage: 'المتوسط',
   adminBohMatchSummaryBest: 'الأفضل',
+  adminRulesOutdated:
+    'هذا الحساب مشرف أعلى، لذا فإن الرفض يعني أن قواعد الأمان المنشورة أقدم من هذا الموقع. يجب على المالك إعادة نشرها: npx firebase deploy --only firestore:rules --project abocombo ثم التحقق عبر node scripts/firestore-rules-status.mjs.',
   adminCloudPermissionDenied:
     'رفض الخادم هذه الكتابة. إما أن هذا الحساب ليس مسؤولاً، أو أن قواعد الأمان المنشورة أقدم من هذا التطبيق - قد يحتاج R5 إلى إعادة نشر firestore.rules.',
   adminBohMatchRatingRequired:

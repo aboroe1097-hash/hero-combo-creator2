@@ -3681,6 +3681,8 @@ Object.assign(tr, {
   adminBohMatchSummaryTotalScore: 'Toplam skor',
   adminBohMatchSummaryAverage: 'Ortalama',
   adminBohMatchSummaryBest: 'En iyi',
+  adminRulesOutdated:
+    'Bu hesap süper yönetici; bu yüzden ret, yayındaki güvenlik kurallarının bu siteden eski olduğu anlamına gelir. Bir sahip bunları yeniden dağıtmalı: npx firebase deploy --only firestore:rules --project abocombo, ardından node scripts/firestore-rules-status.mjs ile kontrol edin.',
   adminCloudPermissionDenied:
     "Sunucu bu kaydı reddetti. Ya bu hesap yönetici değil ya da dağıtılan güvenlik kuralları bu uygulamadan daha eski - bir R5'in firestore.rules dosyasını yeniden dağıtması gerekebilir.",
   adminBohMatchRatingRequired:

@@ -424,7 +424,9 @@ const LIMITS = {
     // mobile keeps its existing ceiling.
     // The 16.5.0 QA pass adds phone layouts for the scoring and reward tables,
     // light-theme states and RTL-safe margins: 688.9 KiB. Lift desktop to 690.
-    'admin.html': { desktop: 690 * 1024, mobile: 786 * 1024 },
+    // 16.5.4: the standalone footer's 44px touch targets add ~0.1 KiB to the
+    // admin mobile route (786.1 KiB measured); retain ~0.9 KiB.
+    'admin.html': { desktop: 690 * 1024, mobile: 787 * 1024 },
     // Eden used to carry every admin dashboard style, because it imports
     // ocr-dashboard.css for weighted-contribution detail; 16.0.14 had lifted the
     // ceiling to 806/909 KiB for admin-only rules alone. 16.0.15 moves the
@@ -432,10 +434,11 @@ const LIMITS = {
     // only Admin loads: 663.0/759.7 KiB (was 805.0/901.7). Ceilings keep
     // roughly 1 KiB of headroom. Admin-only dashboard rules belong in the admin
     // file; adding them to ocr-dashboard.css is what this budget now catches.
-    'eden-x1.html': { desktop: 664 * 1024, mobile: 761 * 1024 },
+    // 16.5.4: 44px footer and retry-button touch targets: 664.1 KiB desktop.
+    'eden-x1.html': { desktop: 665 * 1024, mobile: 761 * 1024 },
     // Eden X2 is the same page shell and the same module graph as Eden X1, so
     // it inherits the audited Eden budget rather than getting its own.
-    'eden-x2.html': { desktop: 664 * 1024, mobile: 761 * 1024 },
+    'eden-x2.html': { desktop: 665 * 1024, mobile: 761 * 1024 },
     // Arcade measures 437.3/530.0 KiB with the audited 14.2.8 shared graph;
     // retain less than 2 KiB of route-specific headroom.
     'arcade.html': { desktop: 463 * 1024, mobile: 585 * 1024 },

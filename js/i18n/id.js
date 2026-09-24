@@ -3622,6 +3622,8 @@ Object.assign(id, {
   adminBohMatchSummaryTotalScore: 'Total skor',
   adminBohMatchSummaryAverage: 'Rata-rata',
   adminBohMatchSummaryBest: 'Terbaik',
+  adminRulesOutdated:
+    'Akun ini superadmin, jadi penolakan ini berarti aturan keamanan yang aktif lebih lama dari situs ini. Pemilik harus menerapkannya ulang: npx firebase deploy --only firestore:rules --project abocombo, lalu periksa dengan node scripts/firestore-rules-status.mjs.',
   adminCloudPermissionDenied:
     'Server menolak penulisan ini. Entah akun ini bukan admin, atau aturan keamanan yang diterapkan lebih lama dari aplikasi ini - seorang R5 mungkin perlu menerapkan ulang firestore.rules.',
   adminBohMatchRatingRequired:

@@ -1067,7 +1067,9 @@ async function ensureComplaintsMounted() {
     const mount = $id('dashComplaintsRoot');
     if (mount) {
       mount.innerHTML = `<div class="dash-empty" role="alert">${esc(
-        dashT('adminComplaintsLoadFailed')
+        isFirestorePermissionDenied(error)
+          ? describeCloudSyncError(error)
+          : dashT('adminComplaintsLoadFailed')
       )}</div>`;
     }
   }
@@ -2311,7 +2313,7 @@ async function saveEdenX1VoteSettings(nextSettings) {
       console.error('EDEN X1 VOTE SETTINGS SAVE ERROR:', err);
       const status = $id('dashEdenVoteSettingsStatus');
       if (status)
-        status.textContent = `${dashT('adminEdenVotesSettingsSaveFailed')}: ${err?.message || err}`;
+        status.textContent = `${dashT('adminEdenVotesSettingsSaveFailed')}: ${describeCloudSyncError(err)}`;
       showCloudSyncFailure(err, 'Eden X1 vote settings save failed');
       return false;
     }
@@ -5261,10 +5263,12 @@ async function refreshEdenSeasonLifecyclePanel() {
     edenSeasonRegistryView = await loadEdenSeasonRegistry();
     edenSeasonRegistryError = '';
   } catch (err) {
-    edenSeasonRegistryError = String(err?.message || err || 'unknown');
+    edenSeasonRegistryError = isFirestorePermissionDenied(err)
+      ? describeCloudSyncError(err)
+      : String(err?.message || err || 'unknown');
     console.warn('Season registry unavailable:', err?.message || err);
     window.showToast?.(
-      dashT('adminSeasonRegistryFailed', { error: err?.message || err }),
+      dashT('adminSeasonRegistryFailed', { error: edenSeasonRegistryError }),
       'warn',
       9000
     );
@@ -5940,7 +5944,10 @@ function describeCloudSyncError(err) {
   // are now distinct. The local "no admin session" path below keeps the old
   // wording because there it is literally true.
   if (/permission-denied|insufficient permissions/i.test(authText)) {
-    return dashT('adminCloudPermissionDenied');
+    // The superadmin surfaces are only shown once the claim is confirmed, so a
+    // refusal there can only mean the live firestore.rules release lags the
+    // site: say that plainly instead of suggesting the account is wrong.
+    return dashT(dashSuperAdmin === true ? 'adminRulesOutdated' : 'adminCloudPermissionDenied');
   }
   if (/(?:^|[^\w])admin(?:[^\w]|$)/i.test(authText) || /permission/i.test(authText)) {
     return dashT('adminCloudAdminRequired');

@@ -2,6 +2,13 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.4 - 2026-09-24
+
+- The language button now shows the right language when a page applies a saved or linked language on load, on the main site and on the standalone pages.
+- Specialization Towers: the step and milestone controls sit on two rows, so the inspector no longer clips its close button and the 100% preset on wide screens (1440px and up).
+- Larger touch targets on phones: the standalone footer links, the tool bar's logo link, Arcade's name and refresh buttons, Eden's retry button, and the Battle Simulator's tower tabs, research nodes, setup toggle and checkboxes all reach 44px.
+- VTS Admin: when a superadmin's save or load is refused, the message now says the live security rules are older than the site and names the redeploy and status commands, instead of suggesting the account is wrong. It covers vote settings, reward settings, complaints and the season registry.
+
 ## 16.5.3 - 2026-09-24
 
 - Downloads and the Buildings planner now follow the selected site language across all supported locales, and Eden Siege has complete localized game copy for all 13 locales.

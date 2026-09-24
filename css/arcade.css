@@ -400,7 +400,7 @@ body.arcade-page {
 
 /* ── Buttons (shared by profile + leaderboard) ── */
 .arcade-btn {
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 0.9rem;
   border: 1px solid var(--arcade-hairline);
   border-radius: 10px;

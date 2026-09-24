@@ -3373,6 +3373,8 @@ Object.assign(kr, {
   adminBohMatchSummaryTotalScore: '총 점수',
   adminBohMatchSummaryAverage: '평균',
   adminBohMatchSummaryBest: '최고',
+  adminRulesOutdated:
+    '이 계정은 슈퍼관리자이므로 거부는 배포된 보안 규칙이 이 사이트보다 오래되었다는 뜻입니다. 소유자가 다시 배포해야 합니다: npx firebase deploy --only firestore:rules --project abocombo 후 node scripts/firestore-rules-status.mjs 로 확인하세요.',
   adminCloudPermissionDenied:
     '서버가 이 저장을 거부했습니다. 이 계정이 관리자가 아니거나, 배포된 보안 규칙이 이 앱보다 오래되었기 때문입니다 - R5가 firestore.rules를 다시 배포해야 할 수 있습니다.',
   adminBohMatchRatingRequired:

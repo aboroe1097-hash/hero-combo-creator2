@@ -3280,6 +3280,8 @@ const pt = {
   adminBohMatchSummaryTotalScore: 'Pontuação total',
   adminBohMatchSummaryAverage: 'Média',
   adminBohMatchSummaryBest: 'Melhor',
+  adminRulesOutdated:
+    'Esta conta é superadmin, então a recusa significa que as regras de segurança publicadas são mais antigas que este site. Um proprietário deve publicá-las novamente: npx firebase deploy --only firestore:rules --project abocombo e depois verificar com node scripts/firestore-rules-status.mjs.',
   adminCloudPermissionDenied:
     'O servidor recusou esta gravação. Ou esta conta não é um administrador, ou as regras de segurança implantadas são mais antigas que este app - um R5 pode precisar reimplantar o firestore.rules.',
   adminBohMatchRatingRequired:

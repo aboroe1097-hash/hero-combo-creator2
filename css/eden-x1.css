@@ -626,7 +626,7 @@ body.eden-x1-page {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
+  min-height: 44px;
   padding: 8px 22px;
   border-radius: 10px;
   border: 1px solid rgba(103, 232, 249, 0.42);

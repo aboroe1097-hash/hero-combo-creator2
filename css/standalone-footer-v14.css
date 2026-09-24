@@ -102,7 +102,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0.55rem 0.78rem;
   border: 1px solid color-mix(in srgb, var(--border-strong, #334155) 72%, transparent);
   border-radius: 999px;
@@ -302,4 +302,12 @@ html[dir='rtl'] .standalone-footer-actions {
   .standalone-footer-actions a {
     transition: none;
   }
+}
+
+/* Touch targets: every footer control is at least 44px tall on phones, also
+   where a page's own footer rules (Arcade, Eden) would shrink the pills. */
+.standalone-footer-v14 .standalone-footer-links a,
+.standalone-footer-v14 .standalone-footer-actions a,
+.standalone-footer-v14 .standalone-footer-brand {
+  min-height: 44px;
 }
