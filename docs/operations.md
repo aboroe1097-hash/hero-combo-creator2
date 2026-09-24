@@ -23,7 +23,8 @@ The frontend baseline is Node 20; Functions run on Node 22. Use the appropriate 
 | Cloud tools unavailable locally | Check valid .env.local values and restart Vite |
 | Protected OCR rejected | Separate ID-token, App Check, origin, membership, and provider failures; inspect sanitized status |
 | Signed in but admin denied | Confirm the account's server claims and refresh its token; signing in is not admin approval |
-| Firestore write rejected | Check the current deployed rules and the exact path/schema; do not relabel every refusal as signed out |
+| Firestore write rejected | Check the current deployed rules (`npm run rules:status`) and the exact path/schema; do not relabel every refusal as signed out |
+| Rules deploy fails with 503 or 409 | Transient Rules API failure, not the rules file: retry per the [deploy runbook](firebase-deploy-runbook.md) until rules:status matches |
 | Many size budgets unexpectedly fail | Run npm ci, rebuild, and compare toolchain versions before changing limits |
 | Old chunks fail after a release | Inspect service-worker/current-version cache recovery and deployed references |
 | Screenshot mismatch on CI | Check OS-specific baselines; do not accept a new image without visual review |
@@ -33,7 +34,7 @@ For cloud testing, use the documented http://127.0.0.1:5174 local origin. Auth d
 
 ## Deployment boundaries
 
-Pages deploys only dist/. Functions, Firestore rules/indexes, and Workers require their own reviewed deployment when changed. The [Functions guide](../functions/README.md) maps current exports; [Firebase preview](firebase-preview-workflow.md) explains temporary Hosting verification. Consult wrangler.jsonc for current Worker bindings and migrations before a Worker deployment; preserve deployed migration history.
+Pages deploys only dist/. Functions, Firestore rules/indexes, and Workers require their own reviewed deployment when changed. Follow the [Firebase deploy runbook](firebase-deploy-runbook.md) for rules and Functions deploys, including the 503 retry procedure and its incident log. The [Functions guide](../functions/README.md) maps current exports; [Firebase preview](firebase-preview-workflow.md) explains temporary Hosting verification. Consult wrangler.jsonc for current Worker bindings and migrations before a Worker deployment; preserve deployed migration history.
 
 Do not run write-producing verification helpers as if they were read-only smoke tests. The Arcade verification commands intentionally create disposable records and need a working cleanup path. Explicitly scope such operations to a known project and record the outcome.
 

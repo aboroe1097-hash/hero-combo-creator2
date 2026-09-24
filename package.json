@@ -24,6 +24,8 @@
     "i18n:check": "node scripts/check-i18n.mjs && node scripts/check-research-i18n.mjs",
     "rules:check": "node scripts/check-firestore-rules-live.mjs",
     "rules:verify": "node scripts/check-firestore-rules-live.mjs --strict",
+    "rules:status": "node scripts/firestore-rules-status.mjs",
+    "rules:release": "node scripts/firestore-rules-release.mjs release",
     "size:check": "node scripts/check-size.mjs",
     "towers:dev": "vite --open /specialization-towers.html",
     "towers:test:unit": "node --test tests/unit/specialization-towers-v2-store.test.mjs tests/unit/specialization-towers-v2-page.test.mjs tests/unit/specialization-towers-v2-model.test.mjs tests/unit/specialization-towers-v2-i18n.test.mjs tests/unit/specialization-towers-v2-data.test.mjs tests/unit/specialization-towers-v2-contributions.test.mjs tests/unit/specialization-towers-v2-archer-data.test.mjs tests/unit/specialization-towers-v2-accessibility.test.mjs tests/unit/specialization-towers-cavalry-data.test.mjs tests/unit/specialization-topologies.test.mjs tests/unit/specialization-footman-evidence.test.mjs tests/unit/app-specialization-ui.test.mjs tests/unit/specialization-hero-plans.test.mjs",

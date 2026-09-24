@@ -82,6 +82,8 @@ GitHub Pages deploys the static app only. Deploy Cloudflare Workers or Firebase 
 - Cloudflare Worker: `workers/qwen-cors-proxy.js` or `wrangler.jsonc`.
 - Firebase rules/config: `firestore.rules`, Firebase indexes, Firebase Functions, or Firebase/App Check configuration.
 
+Firebase deploys follow [docs/firebase-deploy-runbook.md](docs/firebase-deploy-runbook.md). A rules deploy counts as done only when `node scripts/firestore-rules-status.mjs` reports `LIVE MATCHES THIS CHECKOUT`. The Rules API has returned transient 503/409 errors that did not reflect the rules file (incident 2026-09-23/24), so retry per the runbook rather than editing the rules.
+
 ## Documentation and cleanup context
 
 Use [docs/README.md](docs/README.md) to distinguish current guides from historical plans. Dated work orders do not override this policy or authorize replaying old data edits. Preserve source provenance, approval ledgers, and unresolved evidence.
