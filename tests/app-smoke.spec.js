@@ -1597,18 +1597,16 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('.spec-contrib-signin')).toBeVisible();
     await expect(page.locator('[data-spec-node-contributor]')).toHaveCount(0);
 
-    // The archer workbook has not placed this node yet, so it keeps the submitted
-    // and reviewed stages travelling together as one inert row.
-    const unverified = page.locator('[data-contribution-key="enhanced3:33"]');
-    await expect(unverified.locator('.spec-contrib-stage')).toHaveCount(2);
-    await expect(unverified.locator('.spec-contrib-stage--review')).toHaveCount(1);
-    for (const selector of [
-      '[data-spec-node-medal]',
-      '[data-spec-node-reviewer]',
-      '[data-spec-node-reviewed-medal]',
-    ]) {
-      await expect(unverified.locator(selector)).toBeDisabled();
-    }
+    // The current workbook covers the canonical node set for every troop.
+    // Unverified submissions therefore stay absent until a later data revision
+    // adds nodes outside this source revision.
+    const contributionNodes = page.locator('.spec-contrib-node');
+    const contributionNodeCount = await contributionNodes.count();
+    expect(contributionNodeCount).toBe(735);
+    await expect(page.locator('.spec-contrib-stage--source')).toHaveCount(735);
+    await expect(page.locator('[data-spec-node-medal]')).toHaveCount(0);
+    await expect(page.locator('[data-spec-node-reviewer]')).toHaveCount(0);
+    await expect(page.locator('[data-spec-node-reviewed-medal]')).toHaveCount(0);
 
     // Two credits: the community and the workbook the verified costs come from.
     const acknowledgments = page.locator('.spec-ack');

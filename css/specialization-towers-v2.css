@@ -43,6 +43,12 @@ html[data-theme='light'] {
   -webkit-font-smoothing: antialiased;
 }
 
+.tool-shell-footer {
+  width: min(100% - 2rem, 1180px);
+  margin-inline: auto;
+  margin-block-end: max(1rem, env(safe-area-inset-bottom));
+}
+
 .specialization-towers-page *,
 .specialization-towers-page *::before,
 .specialization-towers-page *::after {
