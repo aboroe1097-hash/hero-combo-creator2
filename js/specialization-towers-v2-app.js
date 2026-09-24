@@ -12,6 +12,7 @@ import {
 import {
   createEmptySpecializationState,
   getColumnProgress,
+  getNodeUpgradeCount,
   getResearchNodeAccess,
   getResearchProgress,
   getResearchSelection,
@@ -175,8 +176,12 @@ function researchDisplayName(research, troopId) {
   return research.name;
 }
 
+// One entry per upgrade: base-attribute nodes appear twice, so filling a research
+// to 100% buys both of their upgrades instead of stopping at 11/12.
 function selectableNodeIds(research) {
-  const ids = research.nodes.map((node) => node.id);
+  const ids = research.nodes.flatMap((node) =>
+    Array.from({ length: getNodeUpgradeCount(node) }, () => node.id)
+  );
   if (research.passiveSkillNodeId !== null && research.passiveSkillNodeId !== undefined) {
     ids.push(research.passiveSkillNodeId);
   }

@@ -50,7 +50,7 @@ async function renderCombosToCanvas(combosData, title) {
   const HDR_H    = 72;
   const CARD_H   = 160;
   const CARD_GAP = 12;
-  const FOOT_H   = 62;
+  const FOOT_H   = 76;
   const n        = combosData.length;
   const H        = HDR_H + PAD + n * (CARD_H + CARD_GAP) - CARD_GAP + PAD + FOOT_H;
 
@@ -215,14 +215,16 @@ async function renderCombosToCanvas(combosData, title) {
     ctx.textAlign = 'left';
   }
 
+  // The branding footer takes two lines (y+4, y+18); the centered credit lines
+  // sit below it so the two blocks never overlap.
   const footY = H - FOOT_H + 10;
+  drawCanvasFooter(ctx, getExportBranding(), { x: PAD, y: footY + 4, width: W - PAD * 2 });
   ctx.font = '500 11px Inter, system-ui, sans-serif';
   ctx.fillStyle = 'rgba(100,116,139,0.7)';
   ctx.textAlign = 'center';
-  ctx.fillText(exportCopy.generatedByLine, W / 2, footY + 24);
-  ctx.fillText(exportCopy.dateLabel, W / 2, footY + 42);
+  ctx.fillText(exportCopy.generatedByLine, W / 2, footY + 38);
+  ctx.fillText(exportCopy.dateLabel, W / 2, footY + 54);
   ctx.textAlign = 'left';
-  drawCanvasFooter(ctx, getExportBranding(), { x: PAD, y: footY + 4, width: W - PAD * 2 });
 
   return canvas;
 }
