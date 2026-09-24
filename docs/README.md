@@ -9,6 +9,7 @@ Start with the [project README](../README.md) for features and setup. [AGENTS.md
 | Run the app and tests | [README](../README.md#local-setup) |
 | Understand module/data ownership | [Architecture](architecture.md) |
 | Diagnose auth, builds, or deployment | [Operations](operations.md) |
+| Deploy Firestore rules or Functions | [Firebase deploy runbook](firebase-deploy-runbook.md) |
 | Prepare a PR | [Contributing](../CONTRIBUTING.md) and [release workflow](version-control-workflow.md) |
 | Remove clutter safely | [Repository maintenance](repository-maintenance.md) |
 | Correct game facts | [Data/evidence guidance](../CONTRIBUTING.md#data-and-evidence) |
@@ -35,6 +36,7 @@ Current guides describe the repository baseline reviewed on 2026-09-05. Historic
 | DM Planner & Enhancement — i18n Key Spec | [docs/dm-i18n-key-spec.md](dm-i18n-key-spec.md) |
 | Motion & visual-craft integration plan (16.5.0) | [docs/plans/gallery-motion-integration-plan.md](plans/gallery-motion-integration-plan.md) |
 | 16.5.0 Phase 0 baseline report | [docs/plans/16.5.0-phase0-baseline.md](plans/16.5.0-phase0-baseline.md) |
+| Firebase deploy runbook (rules and Functions) | [docs/firebase-deploy-runbook.md](firebase-deploy-runbook.md) |
 | Firebase Preview Workflow | [docs/firebase-preview-workflow.md](firebase-preview-workflow.md) |
 | Player Name Grouping & Dedup Workflow | [docs/name-grouping-workflow.md](name-grouping-workflow.md) |
 | Operations and troubleshooting | [docs/operations.md](operations.md) |

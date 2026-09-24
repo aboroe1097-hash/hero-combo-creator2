@@ -17,6 +17,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+// Shared with the release script so both agree on what "matches" means. Its
+// main() only runs when it is the entry point, so importing it is safe.
+import { rulesetSourceMatches } from './firestore-rules-release.mjs';
+
 const PROJECT = process.env.FIREBASE_PROJECT || 'abocombo';
 const RELEASE = 'cloud.firestore';
 
@@ -82,19 +86,22 @@ console.log(`points at    : ${release.rulesetName}`);
 console.log(`updated      : ${release.updateTime}`);
 
 const ruleset = await api(`https://firebaserules.googleapis.com/v1/${release.rulesetName}`, token);
-const liveSource = ruleset.source?.files?.[0]?.content ?? '';
+const liveFiles = ruleset.source?.files ?? [];
 const repoSource = fs.readFileSync('firestore.rules', 'utf8');
 
 // Compare on normalized line endings: a CRLF checkout would otherwise report a
-// difference on every line while the deployed content is identical.
+// difference on every line while the deployed content is identical. The match
+// is on the full source, so a multi-file ruleset never counts as a match.
+const matches = rulesetSourceMatches(ruleset, [{ name: 'firestore.rules', content: repoSource }]);
 const normalize = (text) => text.replace(/\r\n?/g, '\n');
-const live = normalize(liveSource);
+const live = normalize(liveFiles.map((file) => file?.content ?? '').join('\n'));
 const repo = normalize(repoSource);
 
+if (liveFiles.length !== 1) console.log(`live files   : ${liveFiles.length}`);
 console.log(`live bytes   : ${live.length}`);
 console.log(`repo bytes   : ${repo.length}`);
 
-if (live === repo) {
+if (matches) {
   console.log('\nRESULT: LIVE MATCHES THIS CHECKOUT — the deploy is done.');
   process.exit(0);
 }
