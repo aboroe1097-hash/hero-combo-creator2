@@ -16,6 +16,11 @@
 
 import { BOH_SCORING_PROFILES, getBohScoringProfile } from './all-star-boh-model.js';
 import { readBohSignupFormValues, writeBohSignupFormValues } from './boh-signup-document.js';
+import {
+  COMPETITION_BOH_SLOTS,
+  COMPETITION_EPIC_SLOTS,
+  slotToGameClock,
+} from './competition-schedule.js';
 
 export const BOH_SIGNUP_ADMIN_ENDPOINT =
   'https://us-central1-abocombo.cloudfunctions.net/bohSignupAdmin';
@@ -147,6 +152,81 @@ export function readBohSignupAdminError(error, options = {}) {
 }
 
 /* ------------------------------------------------------------------ *
+ * Competition #12 slot pickers
+ *
+ * The manual form keeps each ordered choice in one hidden input
+ * (`data-boh-list="true"`, e.g. "+20,+8") that readBohSignupFormValues()
+ * already splits into an array. The toggle buttons only edit that list.
+ * ------------------------------------------------------------------ */
+
+export const BOH_SIGNUP_SLOT_CATALOGS = Object.freeze({
+  'commitment.bohTimeSlots': COMPETITION_BOH_SLOTS,
+  'commitment.epicTimeSlots': COMPETITION_EPIC_SLOTS,
+});
+
+/** Adds `slot` at the end of the ordered list, or removes it if present. */
+export function toggleOrderedSlot(list, slot, catalog = null) {
+  const current = stringList(list);
+  const value = String(slot || '').trim();
+  if (!value || (catalog && !catalog.includes(value))) return current;
+  return current.includes(value) ? current.filter((entry) => entry !== value) : [...current, value];
+}
+
+/** Reflects a picker's hidden list on its buttons (pressed state and rank). */
+export function syncBohSlotPicker(picker) {
+  const input = picker?.querySelector?.('input[data-boh-list="true"]');
+  if (!input) return [];
+  const order = stringList(input.value);
+  picker.querySelectorAll('[data-boh-slot]').forEach((button) => {
+    const rank = order.indexOf(button.dataset.bohSlot) + 1;
+    button.setAttribute('aria-pressed', rank ? 'true' : 'false');
+    const badge = button.querySelector('[data-boh-slot-rank]');
+    if (badge) badge.textContent = rank ? String(rank) : '';
+  });
+  return order;
+}
+
+/**
+ * Why a request cannot be sent yet, as a catalogue key, or '' when it can.
+ * Competition #12 entries need at least one BoH and one Epic Showdown slot; a
+ * 2026 record edited here keeps its two classic fighting times instead.
+ */
+export function bohSignupAdminSlotProblem(request) {
+  const commitment = request?.commitment || {};
+  if (commitment.bohTimeSlots === undefined && commitment.epicTimeSlots === undefined) {
+    return stringList(commitment.fightingTimeIds).length === 2 ? '' : 'adminBohSignupErrorSlots';
+  }
+  return stringList(commitment.bohTimeSlots).length && stringList(commitment.epicTimeSlots).length
+    ? ''
+    : 'adminBohSignupErrorSlots';
+}
+
+function slotSummary(signup, t) {
+  const commitment = signup?.commitment || {};
+  const clocks = (slots) => stringList(slots).map(slotToGameClock).join(' › ');
+  const boh = clocks(commitment.bohTimeSlots);
+  const epic = clocks(commitment.epicTimeSlots);
+  const parts = [];
+  if (boh) parts.push(t('adminBohSignupSlotsBoh', { slots: boh }, `BoH ${boh}`));
+  if (epic) parts.push(t('adminBohSignupSlotsEpic', { slots: epic }, `Epic ${epic}`));
+  if (!parts.length) {
+    const legacy = stringList(commitment.fightingTimeIds).join(' › ');
+    if (legacy) parts.push(t('adminBohSignupSlotsLegacy', { slots: legacy }, `Classic ${legacy}`));
+  }
+  return parts.join(' · ');
+}
+
+function consentBadge(signup, t) {
+  const consent = signup?.commitment?.publicComparisonConsent;
+  if (typeof consent !== 'boolean') return '—';
+  return consent
+    ? `<span class="dash-boh-consent is-public">${esc(
+        t('adminBohSignupConsentYes', {}, 'Public board')
+      )}</span>`
+    : `<span class="dash-boh-consent">${esc(t('adminBohSignupConsentNo', {}, 'Private'))}</span>`;
+}
+
+/* ------------------------------------------------------------------ *
  * Pure renderers
  * ------------------------------------------------------------------ */
 
@@ -170,9 +250,12 @@ export function renderBohSignupRows(signups, t) {
     .map((signup) => {
       const name = esc(signup.gameName || signup.submissionUid);
       const manual = signup.entryMethod === 'manual';
+      const slots = slotSummary(signup, t);
       return `<tr>
         <th scope="row">${name}</th>
         <td>${esc(String(signup.revision ?? ''))}</td>
+        <td class="dash-boh-slots-cell"><bdi>${slots ? esc(slots) : '—'}</bdi></td>
+        <td>${consentBadge(signup, t)}</td>
         <td>${
           manual
             ? esc(t('adminBohSignupManualChip', {}, 'Added by leadership'))
@@ -194,6 +277,8 @@ export function renderBohSignupRows(signups, t) {
     <thead><tr>
       <th scope="col">${esc(t('adminBohSignupGameName', {}, 'Game name'))}</th>
       <th scope="col">${esc(t('adminBohSignupRevision', {}, 'Revision'))}</th>
+      <th scope="col">${esc(t('adminBohSignupSlotsColumn', {}, 'Times (game time)'))}</th>
+      <th scope="col">${esc(t('adminBohSignupConsentColumn', {}, 'Growth board'))}</th>
       <th scope="col">${esc(t('adminBohSignupManualChip', {}, 'Added by leadership'))}</th>
       <th scope="col">${esc(t('adminBohSignupActions', {}, 'Actions'))}</th>
     </tr></thead>
@@ -212,7 +297,14 @@ export function createBohSignupAdminView(options = {}) {
   function fillForm(root, signup) {
     const form = root.querySelector('#dashBohSignupForm');
     if (!form) return;
+    // Start from a clean form so an edit never inherits the previous row's
+    // choices: writeBohSignupFormValues() only touches fields the signup has.
+    form.reset?.();
+    form.querySelectorAll('input[data-boh-list="true"]').forEach((input) => {
+      input.value = '';
+    });
     writeBohSignupFormValues(form, signup || {});
+    form.querySelectorAll('[data-boh-slot-picker]').forEach((picker) => syncBohSlotPicker(picker));
     const target = root.querySelector('#dashBohSignupTarget');
     if (target) target.value = signup?.submissionUid || '';
     const cancel = root.querySelector('#dashBohSignupCancelEdit');
@@ -272,6 +364,18 @@ export function createBohSignupAdminView(options = {}) {
   function collectRequest(root) {
     const form = root.querySelector('#dashBohSignupForm');
     const values = readBohSignupFormValues(form || root);
+    const commitment = values.commitment || {};
+    // A 2026 record edited here has no slots: send its classic fighting times
+    // alone so the Function keeps the stored shape.
+    if (
+      !stringList(commitment.bohTimeSlots).length &&
+      !stringList(commitment.epicTimeSlots).length &&
+      stringList(commitment.fightingTimeIds).length === 2
+    ) {
+      delete commitment.bohTimeSlots;
+      delete commitment.epicTimeSlots;
+      delete commitment.publicComparisonConsent;
+    }
     const target = root.querySelector('#dashBohSignupTarget')?.value || '';
     const profileSelect = root.querySelector('#dashBohSignupProfileSelect');
     const profileId = profileSelect?.value || state.config?.scoringProfileId || '';
@@ -307,9 +411,13 @@ export class BohSignupSeasonError extends Error {
 }
 
 /**
- * Client write of the season document. `validAllStarBohConfig()` pins exactly
- * four keys, so this writes exactly four keys — and validates them here first,
- * because a rules denial only tells the operator "permission denied".
+ * Client write of the season document. `validAllStarBohConfig()` pins four
+ * keys plus the optional `acceptNewSignups` flag, so this writes exactly those
+ * four keys — and validates them here first, because a rules denial only tells
+ * the operator "permission denied". `acceptNewSignups` is set by the
+ * syncCompetitionPhase Function from the Competition #12 schedule; this write
+ * carries the stored value forward (read fresh when the context can read) so
+ * saving the season form never reopens sign-ups the schedule has closed.
  */
 export async function saveBohSignupSeasonConfig(config, context) {
   const season = String(config.activeSeason || '').trim();
@@ -327,13 +435,20 @@ export async function saveBohSignupSeasonConfig(config, context) {
     throw new BohSignupSeasonError('grantDurationMinutes');
   }
   const { firestore, db } = context;
-  const { doc, setDoc } = firestore;
+  const { doc, getDoc, setDoc } = firestore;
   const payload = {
     activeSeason: season,
     scoringProfileId,
     open: config.open === true,
     grantDurationMinutes,
   };
+  let acceptNewSignups = config.acceptNewSignups;
+  if (typeof getDoc === 'function') {
+    const stored = await getDoc(doc(db, BOH_SIGNUP_CONFIG_PATH));
+    const data = stored?.exists?.() ? stored.data() : null;
+    acceptNewSignups = data?.acceptNewSignups;
+  }
+  if (typeof acceptNewSignups === 'boolean') payload.acceptNewSignups = acceptNewSignups;
   await setDoc(doc(db, BOH_SIGNUP_CONFIG_PATH), payload);
   return payload;
 }

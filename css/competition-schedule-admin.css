@@ -1,0 +1,209 @@
+/* Competition #12 schedule (superadmin) and the 2027 Signups manual form's
+   slot pickers. Loaded lazily when the 2027 Signups tab opens, so the Admin
+   route's initial CSS stays within its budget. */
+#ocrDashboardRoot .dash-comp-schedule {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+#ocrDashboardRoot .dash-comp-schedule-title,
+#ocrDashboardRoot .dash-comp-schedule-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+#ocrDashboardRoot .dash-comp-schedule-subtitle {
+  font-size: 0.9rem;
+}
+#ocrDashboardRoot .dash-comp-schedule .dash-card-subtitle {
+  margin: 0;
+}
+#ocrDashboardRoot .dash-comp-schedule-note,
+#ocrDashboardRoot .dash-comp-schedule-legacy {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border-inline-start: 3px solid var(--ff-cyan, var(--brand));
+  background: var(--surface-2);
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+#ocrDashboardRoot .dash-comp-schedule-legacy {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  border-inline-start-color: var(--ff-gold, #d97706);
+}
+#ocrDashboardRoot .dash-comp-schedule-legacy[hidden] {
+  display: none;
+}
+#ocrDashboardRoot .dash-comp-schedule-legacy p {
+  margin: 0;
+  font-weight: 600;
+}
+#ocrDashboardRoot .dash-comp-schedule-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+#ocrDashboardRoot .dash-comp-schedule-season {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap-min, 44px);
+  font-family: var(--ff-font-mono, monospace);
+  font-weight: 700;
+}
+#ocrDashboardRoot .dash-comp-schedule-rows {
+  display: grid;
+  gap: 8px;
+}
+#ocrDashboardRoot .dash-comp-schedule-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 10px;
+  align-items: center;
+}
+#ocrDashboardRoot .dash-comp-schedule-head {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+#ocrDashboardRoot .dash-comp-schedule-label {
+  font-weight: 700;
+}
+/* Dates and clocks read left to right in every locale. */
+#ocrDashboardRoot .dash-comp-schedule-row .dash-input {
+  direction: ltr;
+  min-width: 0;
+}
+#ocrDashboardRoot .dash-comp-schedule-local {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+#ocrDashboardRoot .dash-comp-timeline-current,
+#ocrDashboardRoot .dash-comp-timeline-empty {
+  margin: 0 0 8px;
+  color: var(--text-muted);
+}
+#ocrDashboardRoot .dash-comp-timeline {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+#ocrDashboardRoot .dash-comp-timeline-step {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+#ocrDashboardRoot .dash-comp-timeline-step.is-current {
+  border-color: var(--ff-cyan, var(--brand));
+  box-shadow: inset 0 0 0 1px var(--ff-cyan, var(--brand));
+  background: var(--surface-2);
+}
+#ocrDashboardRoot .dash-comp-timeline-name {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+#ocrDashboardRoot .dash-comp-timeline-when {
+  color: var(--text-muted);
+  font-family: var(--ff-font-mono, monospace);
+  font-size: 0.75rem;
+  text-align: start;
+}
+#ocrDashboardRoot .dash-boh-slot-picker {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+#ocrDashboardRoot .dash-boh-slot-picker legend {
+  padding: 0;
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+#ocrDashboardRoot .dash-boh-slot-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#ocrDashboardRoot .dash-boh-slot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--tap-min, 44px);
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+#ocrDashboardRoot .dash-boh-slot[aria-pressed='true'] {
+  border-color: var(--ff-cyan, var(--brand));
+  box-shadow: inset 0 0 0 1px var(--ff-cyan, var(--brand));
+}
+#ocrDashboardRoot .dash-boh-slot-rank:empty {
+  display: none;
+}
+#ocrDashboardRoot .dash-boh-slot-rank {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ff-cyan, var(--brand));
+  color: #04121a;
+  font-size: 0.72rem;
+}
+#ocrDashboardRoot .dash-boh-slots-cell {
+  white-space: nowrap;
+}
+#ocrDashboardRoot .dash-boh-consent {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill, 999px);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+#ocrDashboardRoot .dash-boh-consent.is-public {
+  border-color: var(--ff-success, #16a34a);
+  color: var(--ff-success, #16a34a);
+}
+@media (max-width: 768px) {
+  #ocrDashboardRoot .dash-comp-schedule-meta {
+    grid-template-columns: 1fr;
+  }
+  #ocrDashboardRoot .dash-comp-schedule-head {
+    display: none;
+  }
+  #ocrDashboardRoot .dash-comp-schedule-row {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 6px 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  #ocrDashboardRoot .dash-comp-schedule-row .dash-input {
+    padding-inline: 8px;
+  }
+  #ocrDashboardRoot .dash-comp-schedule-label,
+  #ocrDashboardRoot .dash-comp-schedule-local {
+    grid-column: 1 / -1;
+  }
+}

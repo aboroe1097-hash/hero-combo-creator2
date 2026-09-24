@@ -163,10 +163,21 @@ import {
   BOH_SIGNUP_ADMIN_ENDPOINT,
   BOH_SIGNUP_CONFIG_PATH,
   BOH_SIGNUP_SEASON_PATTERN,
+  BOH_SIGNUP_SLOT_CATALOGS,
+  bohSignupAdminSlotProblem,
   createBohSignupAdminView,
   readBohSignupAdminError,
   saveBohSignupSeasonConfig,
+  syncBohSlotPicker,
+  toggleOrderedSlot,
 } from './boh-signup-admin.js';
+import { COMPETITION_SCHEDULE_DOC_PATH } from './competition-schedule.js';
+import {
+  buildCompetitionSeasonStart,
+  createCompetitionScheduleAdminView,
+  describeCompetitionScheduleError,
+  saveCompetitionSchedule,
+} from './competition-schedule-admin.js';
 import {
   BOH_MATCH_FIXTURES,
   BOH_MATCH_TEAMS,
@@ -3999,6 +4010,11 @@ function getLocalAllianceViewFirestoreContext() {
     collection: (_db, path) => ({ kind: 'collection', path: String(path) }),
     getDoc: async (reference) => snapshotFor(reference),
     getDocs: async (reference) => snapshotFor(reference),
+    setDoc: async (reference, value) => {
+      documents.set(reference.path, cloneAllianceViewTestValue(value));
+      notifyPath(reference.path);
+    },
+    Timestamp: { fromMillis: (ms) => new Date(ms) },
     onSnapshot: (reference, onNext) => {
       const key = `${reference.kind || 'doc'}:${reference.path}`;
       const pathListeners = listeners.get(key) || new Set();
@@ -8296,6 +8312,7 @@ function bindVtsScoreControls() {
 
 let bohSignupsView = null;
 let bohSignupsLoading = false;
+let competitionScheduleView = null;
 
 function setBohSignupsStatus(message = '', type = 'info') {
   const el = $id('dashBohSignupsStatus');
@@ -8315,6 +8332,23 @@ function ensureBohSignupsView() {
   return bohSignupsView;
 }
 
+function ensureCompetitionScheduleView() {
+  if (competitionScheduleView) return competitionScheduleView;
+  competitionScheduleView = createCompetitionScheduleAdminView({
+    t: (key, vars, fallback) => {
+      const translated = dashT(key, vars || {});
+      return translated === key ? fallback || key : translated;
+    },
+    locale: () => getDashboardLang(),
+  });
+  return competitionScheduleView;
+}
+
+function renderBohSignupsSnapshot(root, snapshot) {
+  ensureBohSignupsView().render(root, snapshot);
+  ensureCompetitionScheduleView().render(root, snapshot);
+}
+
 function bohSignupsSeason(value) {
   const season = String(value || '').trim();
   return BOH_SIGNUP_SEASON_PATTERN.test(season) ? season : '';
@@ -8325,6 +8359,15 @@ async function loadBohSignupsSnapshot() {
   const configSnap = await firestore.getDoc(firestore.doc(db, BOH_SIGNUP_CONFIG_PATH));
   const config = configSnap?.exists?.() ? configSnap.data() : {};
   const season = bohSignupsSeason(config.activeSeason);
+  // The Competition #12 schedule is signed-in readable; a failed read leaves
+  // the panel empty instead of hiding the signups.
+  let schedule = null;
+  try {
+    const scheduleSnap = await firestore.getDoc(firestore.doc(db, COMPETITION_SCHEDULE_DOC_PATH));
+    schedule = scheduleSnap?.exists?.() ? scheduleSnap.data() : null;
+  } catch {
+    schedule = null;
+  }
   let signups = [];
   if (season) {
     const docs = await firestore.getDocs(
@@ -8342,14 +8385,14 @@ async function loadBohSignupsSnapshot() {
         )
       );
   }
-  return { season, config, signups };
+  return { season, config, signups, schedule };
 }
 
 async function loadBohSignupsAdmin(options = {}) {
   const root = $id('dashBohSignupsRoot');
   if (!root || bohSignupsLoading) return;
   if (state.bohSignupsSnapshot && !options.force) {
-    ensureBohSignupsView().render(root, state.bohSignupsSnapshot);
+    renderBohSignupsSnapshot(root, state.bohSignupsSnapshot);
     return;
   }
   bohSignupsLoading = true;
@@ -8357,7 +8400,7 @@ async function loadBohSignupsAdmin(options = {}) {
   try {
     const snapshot = await loadBohSignupsSnapshot();
     state.bohSignupsSnapshot = snapshot;
-    ensureBohSignupsView().render(root, snapshot);
+    renderBohSignupsSnapshot(root, snapshot);
     setBohSignupsStatus('');
   } catch (err) {
     root.innerHTML = `<div class="dash-empty" role="alert">${esc(
@@ -8369,7 +8412,18 @@ async function loadBohSignupsAdmin(options = {}) {
   }
 }
 
+// The schedule panel and slot pickers style themselves from a lazy chunk, so
+// the Admin route's initial CSS does not carry them.
+let competitionScheduleStylesPromise = null;
+
 function renderBohSignupsPanel() {
+  competitionScheduleStylesPromise ??= import('../css/competition-schedule-admin.css').catch(() => {
+    competitionScheduleStylesPromise = null;
+  });
+  // The season form and the Competition #12 schedule are superadmin-only
+  // surfaces inside an any-admin tab, so resolve the claim here too: nothing
+  // else reveals them when this is the first tab a superadmin opens.
+  if (dashSuperAdmin === null) void refreshSuperAdminSurfaces();
   bindBohSignupsControls();
   void loadBohSignupsAdmin();
 }
@@ -8440,15 +8494,37 @@ function bindBohSignupsControls() {
     });
   }
 
+  bindCompetitionScheduleControls(root);
+
   const signupForm = $id('dashBohSignupForm');
   if (signupForm && !signupForm.dataset.bound) {
     signupForm.dataset.bound = '1';
+    // Slot pickers: each tap appends the time to (or removes it from) the
+    // hidden ordered list the form reader splits.
+    signupForm.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-boh-slot]');
+      const picker = button?.closest('[data-boh-slot-picker]');
+      const input = picker?.querySelector('input[data-boh-list="true"]');
+      if (!input) return;
+      const catalog = BOH_SIGNUP_SLOT_CATALOGS[picker.dataset.bohSlotPicker] || null;
+      input.value = toggleOrderedSlot(input.value, button.dataset.bohSlot, catalog).join(',');
+      syncBohSlotPicker(picker);
+    });
+    signupForm.addEventListener('change', (event) => {
+      const picker = event.target.closest?.('[data-boh-slot-picker]');
+      if (picker) syncBohSlotPicker(picker);
+    });
     signupForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       const view = ensureBohSignupsView();
       const payload = view.collectRequest(root);
       if (!payload.seasonId) {
         setBohSignupsStatus(dashT('adminBohSignupErrorSeason'), 'error');
+        return;
+      }
+      const slotProblem = bohSignupAdminSlotProblem(payload);
+      if (slotProblem) {
+        setBohSignupsStatus(dashT(slotProblem), 'error');
         return;
       }
       setBohSignupsStatus(dashT('adminBohSignupSaving'), 'info');
@@ -8486,6 +8562,69 @@ function bindBohSignupsControls() {
       $id('dashBohSignupName')?.focus();
     });
   }
+}
+
+// --- Competition #12 schedule (superadmin) ---------------------------------------
+// Seven instants in game time, written to boh_allstar_competition/current. The
+// schedule always belongs to the config's activeSeason; while that is still
+// season-2026 the panel offers "Start Competition #12 season" first, which goes
+// through the same season save as the form below.
+
+function bindCompetitionScheduleControls(root) {
+  const form = $id('dashCompScheduleForm');
+  if (!form || form.dataset.bound) return;
+  form.dataset.bound = '1';
+  form.addEventListener('input', () => ensureCompetitionScheduleView().onInput(root));
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const view = ensureCompetitionScheduleView();
+    setBohSignupsStatus(dashT('adminCompScheduleSaving'), 'info');
+    try {
+      await saveCompetitionSchedule(
+        view.readValues(root),
+        await window.getVtsAdminFirestoreContext()
+      );
+      view.markSaved();
+      // The reload clears the status line, so confirm after it.
+      await loadBohSignupsAdmin({ force: true });
+      setBohSignupsStatus(dashT('adminCompScheduleSaved'), 'success');
+    } catch (err) {
+      setBohSignupsStatus(
+        err?.name === 'CompetitionScheduleError'
+          ? describeCompetitionScheduleError(err, (key, vars, fallback) => {
+              const translated = dashT(key, vars || {});
+              return translated === key ? fallback || key : translated;
+            })
+          : showCloudSyncFailure(err, 'Competition schedule save failed'),
+        'error'
+      );
+    }
+  });
+
+  const start = $id('dashCompScheduleStartSeason');
+  start?.addEventListener('click', async () => {
+    start.disabled = true;
+    setBohSignupsStatus(dashT('adminCompScheduleStartingSeason'), 'info');
+    try {
+      const next = buildCompetitionSeasonStart(
+        state.bohSignupsSnapshot?.config || {},
+        ensureBohSignupsView().readSeasonConfig(root)
+      );
+      await saveBohSignupSeasonConfig(next, await window.getVtsAdminFirestoreContext());
+      // The reload clears the status line, so confirm after it.
+      await loadBohSignupsAdmin({ force: true });
+      setBohSignupsStatus(dashT('adminCompScheduleSeasonStarted'), 'success');
+    } catch (err) {
+      setBohSignupsStatus(
+        err?.code === 'invalid_season_setting'
+          ? dashT('adminBohSignupErrorInvalid')
+          : showCloudSyncFailure(err, 'Season settings save failed'),
+        'error'
+      );
+    } finally {
+      start.disabled = false;
+    }
+  });
 }
 
 function renderBohMatchPanel() {

@@ -2012,6 +2012,96 @@
               </div>
             </div>
             <p id="dashBohSignupsSeason" class="dash-card-subtitle"></p>
+            <!-- Competition #12 schedule (superadmin). Seven instants entered in game
+                 time (UTC+2) and written to boh_allstar_competition/current, which
+                 validAllStarBohCompetitionSchedule() pins. The syncCompetitionPhase
+                 Function opens and closes registration from it. -->
+            <form id="dashCompScheduleForm" class="dash-comp-schedule" data-requires-superadmin hidden novalidate>
+              <h3 class="dash-comp-schedule-title" data-i18n="adminCompScheduleTitle">Competition #12 schedule</h3>
+              <p class="dash-card-subtitle" data-i18n="adminCompScheduleHelp">
+                Enter every time in game time (UTC+2). Your own local time is shown next to each one.
+              </p>
+              <p class="dash-comp-schedule-note" data-i18n="adminCompScheduleAutoNote">
+                The site opens and closes registration automatically from this schedule within ~10
+                minutes; the Open switch below is overridden while a schedule exists.
+              </p>
+              <div id="dashCompScheduleLegacy" class="dash-comp-schedule-legacy" role="alert" hidden>
+                <p data-i18n="adminCompScheduleLegacyWarning">
+                  The active season is still season-2026, which holds last season's signups.
+                  Competition #12 needs its own season before the schedule can be saved.
+                </p>
+                <button id="dashCompScheduleStartSeason" class="dash-btn dash-btn-primary" type="button">
+                  <span data-i18n="adminCompScheduleStartSeason">Start Competition #12 season</span>
+                </button>
+              </div>
+              <div class="dash-comp-schedule-meta">
+                <label class="dash-boh-signups-field">
+                  <span data-i18n="adminCompScheduleTitleLabel">Title</span>
+                  <input id="dashCompScheduleTitle" class="dash-input" type="text" maxlength="80" autocomplete="off" value="Competition #12" />
+                </label>
+                <div class="dash-boh-signups-field">
+                  <span id="dashCompScheduleSeasonLabel" data-i18n="adminCompScheduleSeasonLabel">Season</span>
+                  <output id="dashCompScheduleSeason" class="dash-comp-schedule-season" aria-labelledby="dashCompScheduleSeasonLabel" dir="ltr">—</output>
+                </div>
+              </div>
+              <div class="dash-comp-schedule-rows">
+                <div class="dash-comp-schedule-row dash-comp-schedule-head">
+                  <span></span>
+                  <span id="dashCompScheduleDateHint" data-i18n="adminCompScheduleDateLabel">Game date</span>
+                  <span id="dashCompScheduleTimeHint" data-i18n="adminCompScheduleTimeLabel">Game time</span>
+                  <span data-i18n="adminCompScheduleLocalLabel">Your local time</span>
+                </div>
+                <div class="dash-comp-schedule-row">
+                  <span id="dashCompLabel-opensAt" class="dash-comp-schedule-label" data-i18n="adminCompScheduleOpensAt">Registration opens</span>
+                  <input class="dash-input" type="date" data-comp-schedule-date="opensAt" aria-labelledby="dashCompLabel-opensAt dashCompScheduleDateHint" required />
+                  <input class="dash-input" type="time" step="60" data-comp-schedule-time="opensAt" aria-labelledby="dashCompLabel-opensAt dashCompScheduleTimeHint" required />
+                  <span class="dash-comp-schedule-local" data-comp-schedule-local="opensAt"></span>
+                </div>
+                <div class="dash-comp-schedule-row">
+                  <span id="dashCompLabel-phase1ClosesAt" class="dash-comp-schedule-label" data-i18n="adminCompSchedulePhase1ClosesAt">Phase 1 closes (no new sign-ups)</span>
+                  <input class="dash-input" type="date" data-comp-schedule-date="phase1ClosesAt" aria-labelledby="dashCompLabel-phase1ClosesAt dashCompScheduleDateHint" required />
+                  <input class="dash-input" type="time" step="60" data-comp-schedule-time="phase1ClosesAt" aria-labelledby="dashCompLabel-phase1ClosesAt dashCompScheduleTimeHint" required />
+                  <span class="dash-comp-schedule-local" data-comp-schedule-local="phase1ClosesAt"></span>
+                </div>
+                <div class="dash-comp-schedule-row">
+                  <span id="dashCompLabel-deadlineAt" class="dash-comp-schedule-label" data-i18n="adminCompScheduleDeadlineAt">Deadline (last edits)</span>
+                  <input class="dash-input" type="date" data-comp-schedule-date="deadlineAt" aria-labelledby="dashCompLabel-deadlineAt dashCompScheduleDateHint" required />
+                  <input class="dash-input" type="time" step="60" data-comp-schedule-time="deadlineAt" aria-labelledby="dashCompLabel-deadlineAt dashCompScheduleTimeHint" required />
+                  <span class="dash-comp-schedule-local" data-comp-schedule-local="deadlineAt"></span>
+                </div>
+                <div class="dash-comp-schedule-row">
+                  <span id="dashCompLabel-reuploadOpensAt" class="dash-comp-schedule-label" data-i18n="adminCompScheduleReuploadOpensAt">Growth re-upload opens</span>
+                  <input class="dash-input" type="date" data-comp-schedule-date="reuploadOpensAt" aria-labelledby="dashCompLabel-reuploadOpensAt dashCompScheduleDateHint" required />
+                  <input class="dash-input" type="time" step="60" data-comp-schedule-time="reuploadOpensAt" aria-labelledby="dashCompLabel-reuploadOpensAt dashCompScheduleTimeHint" required />
+                  <span class="dash-comp-schedule-local" data-comp-schedule-local="reuploadOpensAt"></span>
+                </div>
+                <div class="dash-comp-schedule-row">
+                  <span id="dashCompLabel-reuploadClosesAt" class="dash-comp-schedule-label" data-i18n="adminCompScheduleReuploadClosesAt">Growth re-upload closes</span>
+                  <input class="dash-input" type="date" data-comp-schedule-date="reuploadClosesAt" aria-labelledby="dashCompLabel-reuploadClosesAt dashCompScheduleDateHint" required />
+                  <input class="dash-input" type="time" step="60" data-comp-schedule-time="reuploadClosesAt" aria-labelledby="dashCompLabel-reuploadClosesAt dashCompScheduleTimeHint" required />
+                  <span class="dash-comp-schedule-local" data-comp-schedule-local="reuploadClosesAt"></span>
+                </div>
+                <div class="dash-comp-schedule-row">
+                  <span id="dashCompLabel-winnersStartAt" class="dash-comp-schedule-label" data-i18n="adminCompScheduleWinnersStartAt">Winners shown from</span>
+                  <input class="dash-input" type="date" data-comp-schedule-date="winnersStartAt" aria-labelledby="dashCompLabel-winnersStartAt dashCompScheduleDateHint" required />
+                  <input class="dash-input" type="time" step="60" data-comp-schedule-time="winnersStartAt" aria-labelledby="dashCompLabel-winnersStartAt dashCompScheduleTimeHint" required />
+                  <span class="dash-comp-schedule-local" data-comp-schedule-local="winnersStartAt"></span>
+                </div>
+                <div class="dash-comp-schedule-row">
+                  <span id="dashCompLabel-winnersEndAt" class="dash-comp-schedule-label" data-i18n="adminCompScheduleWinnersEndAt">Winners shown until</span>
+                  <input class="dash-input" type="date" data-comp-schedule-date="winnersEndAt" aria-labelledby="dashCompLabel-winnersEndAt dashCompScheduleDateHint" required />
+                  <input class="dash-input" type="time" step="60" data-comp-schedule-time="winnersEndAt" aria-labelledby="dashCompLabel-winnersEndAt dashCompScheduleTimeHint" required />
+                  <span class="dash-comp-schedule-local" data-comp-schedule-local="winnersEndAt"></span>
+                </div>
+              </div>
+              <div class="dash-card-actions">
+                <button id="dashCompScheduleSave" class="dash-btn dash-btn-primary" type="submit">
+                  <span data-i18n="adminCompScheduleSave">Save schedule</span>
+                </button>
+              </div>
+              <h4 class="dash-comp-schedule-subtitle" data-i18n="adminCompScheduleTimelineTitle">Phases (game time)</h4>
+              <div id="dashCompScheduleTimeline" aria-live="polite"></div>
+            </form>
             <form id="dashBohSignupsSeasonForm" class="dash-boh-signups-season" data-requires-superadmin hidden>
               <label class="dash-boh-signups-field">
                 <span data-i18n="adminBohSignupSeasonLabel">Active season</span>
@@ -2132,21 +2222,60 @@
                 <span data-i18n="adminBohSignupRocLevel">ROC level</span>
                 <input class="dash-input" type="number" min="0" max="160" step="1" data-boh-field="stats.rocLevel" />
               </label>
-              <label>
-                <span data-i18n="adminBohSignupFightingFirst">First fighting time</span>
-                <select class="dash-input" data-boh-field="commitment.fightingTimeIds">
-                  <option value="+12">+12</option>
-                  <option value="+14" selected>+14</option>
-                  <option value="+16">+16</option>
-                </select>
-              </label>
-              <label>
-                <span data-i18n="adminBohSignupFightingSecond">Second fighting time</span>
-                <select class="dash-input" data-boh-field="commitment.fightingTimeIds">
-                  <option value="+12" selected>+12</option>
-                  <option value="+14">+14</option>
-                  <option value="+16">+16</option>
-                </select>
+              <!-- Competition #12: BoH and Epic Showdown slots in the member's order
+                   of preference. Each picker edits one hidden ordered list; a 2026
+                   record keeps its classic fighting times in the hidden list below. -->
+              <input type="hidden" data-boh-field="commitment.fightingTimeIds" data-boh-list="true" value="" />
+              <fieldset class="dash-boh-slot-picker dash-boh-signup-wide" data-boh-slot-picker="commitment.bohTimeSlots">
+                <legend data-i18n="adminBohSignupBohSlots">BoH times, in order of preference</legend>
+                <input type="hidden" data-boh-field="commitment.bohTimeSlots" data-boh-list="true" value="" />
+                <div class="dash-boh-slot-options">
+                  <button class="dash-boh-slot" type="button" data-boh-slot="+8" aria-pressed="false">
+                    <span class="dash-boh-slot-rank" data-boh-slot-rank aria-hidden="true"></span>
+                    <span dir="ltr">08:00</span>
+                  </button>
+                  <button class="dash-boh-slot" type="button" data-boh-slot="+12" aria-pressed="false">
+                    <span class="dash-boh-slot-rank" data-boh-slot-rank aria-hidden="true"></span>
+                    <span dir="ltr">12:00</span>
+                  </button>
+                  <button class="dash-boh-slot" type="button" data-boh-slot="+14" aria-pressed="false">
+                    <span class="dash-boh-slot-rank" data-boh-slot-rank aria-hidden="true"></span>
+                    <span dir="ltr">14:00</span>
+                  </button>
+                  <button class="dash-boh-slot" type="button" data-boh-slot="+20" aria-pressed="false">
+                    <span class="dash-boh-slot-rank" data-boh-slot-rank aria-hidden="true"></span>
+                    <span dir="ltr">20:00</span>
+                  </button>
+                </div>
+              </fieldset>
+              <fieldset class="dash-boh-slot-picker dash-boh-signup-wide" data-boh-slot-picker="commitment.epicTimeSlots">
+                <legend data-i18n="adminBohSignupEpicSlots">Epic Showdown times, in order of preference</legend>
+                <input type="hidden" data-boh-field="commitment.epicTimeSlots" data-boh-list="true" value="" />
+                <div class="dash-boh-slot-options">
+                  <button class="dash-boh-slot" type="button" data-boh-slot="+10" aria-pressed="false">
+                    <span class="dash-boh-slot-rank" data-boh-slot-rank aria-hidden="true"></span>
+                    <span dir="ltr">10:00</span>
+                  </button>
+                  <button class="dash-boh-slot" type="button" data-boh-slot="+13" aria-pressed="false">
+                    <span class="dash-boh-slot-rank" data-boh-slot-rank aria-hidden="true"></span>
+                    <span dir="ltr">13:00</span>
+                  </button>
+                  <button class="dash-boh-slot" type="button" data-boh-slot="+16" aria-pressed="false">
+                    <span class="dash-boh-slot-rank" data-boh-slot-rank aria-hidden="true"></span>
+                    <span dir="ltr">16:00</span>
+                  </button>
+                  <button class="dash-boh-slot" type="button" data-boh-slot="+19" aria-pressed="false">
+                    <span class="dash-boh-slot-rank" data-boh-slot-rank aria-hidden="true"></span>
+                    <span dir="ltr">19:00</span>
+                  </button>
+                </div>
+              </fieldset>
+              <p class="dash-card-subtitle dash-boh-signup-wide" data-i18n="adminBohSignupSlotsHelp">
+                Game time (UTC+2). Tap the times in the member's order; tap again to remove one.
+              </p>
+              <label class="dash-boh-signup-wide dash-boh-signups-check">
+                <input type="checkbox" data-boh-field="commitment.publicComparisonConsent" />
+                <span data-i18n="adminBohSignupConsent">The member agreed to show their values on the public growth board</span>
               </label>
               <label>
                 <span data-i18n="adminBohSignupPreferredRole">Preferred role</span>
