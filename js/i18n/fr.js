@@ -205,6 +205,7 @@ const fr = {
   adminConductPlayer: 'Joueur',
   adminConductCategory: 'Catégorie',
   adminConductFilterCategory: 'Filtrer par catégorie',
+  adminConductNoMatch: 'Aucun ajustement de cette saison ne correspond à ces filtres.',
   adminConductPoints: 'Points',
   adminConductNote: 'Note',
   adminConductNotePh: 'Raison facultative',

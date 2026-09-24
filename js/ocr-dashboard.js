@@ -2872,14 +2872,19 @@ function renderConductAdjustments() {
   renderConductSuggestionReview();
   renderConductSummary(rows);
   if (!rows.length) {
-    list.innerHTML = `<div class="dash-empty">${esc(dashT('adminConductEmpty'))}</div>`;
+    // "Nothing this season yet" is only true with no filter narrowing the list;
+    // a category with no entries is the common case now that it can be picked.
+    const filtered = Boolean(categoryFilter || searchQuery.trim());
+    list.innerHTML = `<div class="dash-empty">${esc(
+      dashT(filtered ? 'adminConductNoMatch' : 'adminConductEmpty')
+    )}</div>`;
     return;
   }
   // A season accumulates hundreds of adjustments; the list pages like the
   // other long admin tables instead of pushing everything below it off-screen.
   const conductPage = resolveAdminTablePage(
     'conduct',
-    `${state.r5Season || ''}|${searchQuery}|${rows.length}`,
+    `${state.r5Season || ''}|${categoryFilter}|${searchQuery}|${rows.length}`,
     rows
   );
   list.innerHTML =

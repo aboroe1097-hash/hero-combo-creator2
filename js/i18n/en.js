@@ -212,6 +212,7 @@ const en = {
   adminConductPlayer: 'Player',
   adminConductCategory: 'Category',
   adminConductFilterCategory: 'Filter by category',
+  adminConductNoMatch: 'No adjustments this season match these filters.',
   adminConductPoints: 'Points',
   adminConductNote: 'Note',
   adminConductNotePh: 'Optional reason',

@@ -175,6 +175,7 @@ const es = {
   adminConductPlayer: 'Jugador',
   adminConductCategory: 'Categoría',
   adminConductFilterCategory: 'Filtrar por categoría',
+  adminConductNoMatch: 'Ningún ajuste de esta temporada coincide con estos filtros.',
   adminConductPoints: 'Puntos',
   adminConductNote: 'Nota',
   adminConductNotePh: 'Motivo opcional',

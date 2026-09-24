@@ -206,6 +206,7 @@ const de = {
   adminConductPlayer: 'Spieler',
   adminConductCategory: 'Kategorie',
   adminConductFilterCategory: 'Nach Kategorie filtern',
+  adminConductNoMatch: 'Keine Anpassungen dieser Saison passen zu diesen Filtern.',
   adminConductPoints: 'Punkte',
   adminConductNote: 'Notiz',
   adminConductNotePh: 'Optionaler Grund',

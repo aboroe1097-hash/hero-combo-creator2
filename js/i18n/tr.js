@@ -174,6 +174,7 @@ const tr = {
   adminConductPlayer: 'Oyuncu',
   adminConductCategory: 'Kategori',
   adminConductFilterCategory: 'Kategoriye göre filtrele',
+  adminConductNoMatch: 'Bu sezon bu filtrelerle eşleşen ayarlama yok.',
   adminConductPoints: 'Puan',
   adminConductNote: 'Not',
   adminConductNotePh: 'İsteğe bağlı neden',
