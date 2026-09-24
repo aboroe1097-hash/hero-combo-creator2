@@ -22,6 +22,7 @@ import {
   toggleResearchNode,
 } from './specialization-towers-v2-model.js';
 import { getWorkbookNodeMedalCosts } from './specialization-towers-medal-index.js';
+import { connectorReach, createTowerConnectors } from './specialization-tower-connectors.js';
 import {
   buildStatContributionSnapshot,
   summarizeStatContributions,
@@ -113,6 +114,7 @@ let activeRoute = '';
 // Easy medal fill lifts the "pick a node first" gate so medals can be typed straight in.
 let easyMedalMode = false;
 let unbindLanguageChange = () => {};
+let towerConnectors = null;
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -419,6 +421,11 @@ function renderColumn(columnId) {
   const skill = SPECIALIZATION_LEGION_SKILLS[columnId][activeTroop];
   const skillImage = getSpecializationLegionSkillImage(columnId, activeTroop);
   const selected = selectedItem.columnId === columnId;
+  const reach = connectorReach(
+    column.researches.map(
+      (researchId) => getResearchProgress(state, activeTroop, researchId).isComplete === true
+    )
+  );
   return `
     <section class="specialization-column ${selected ? 'is-selected' : ''}" data-specialization-column="${columnId}" data-selected="${selected}">
       <header class="specialization-column-header">
@@ -429,7 +436,7 @@ function renderColumn(columnId) {
           <progress class="specialization-column-progress-track" max="100" value="${percent}" aria-hidden="true">${percent}%</progress><span>${percent}%</span>
         </div>
       </header>
-      <div class="specialization-node-list">
+      <div class="specialization-node-list" data-connector-reach="${reach}">
         ${column.researches.map((researchId) => renderResearchButton(researchId, columnId)).join('')}
       </div>
       <div class="specialization-column-skill" data-specialization-column-skill="${columnId}">
@@ -711,6 +718,8 @@ function renderApp() {
       <div class="specialization-toast-region"><div class="specialization-toast" data-specialization-toast aria-live="polite"></div></div>
       ${renderDialogs()}
     </div>`;
+  towerConnectors ??= createTowerConnectors();
+  towerConnectors.sync(root, activeTroop);
 }
 
 function revealActiveTowerTab(tabList) {
@@ -1466,6 +1475,8 @@ export function mountSpecializationTowers(mount) {
   return () => {
     unbindLanguageChange();
     cancelGraphScrollUpdate();
+    towerConnectors?.dispose();
+    towerConnectors = null;
     root?.removeEventListener('cancel', handleDialogCancel, true);
     root?.replaceChildren();
     root = null;

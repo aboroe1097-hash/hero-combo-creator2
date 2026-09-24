@@ -103,5 +103,10 @@ export default {
     subTabPathing: 'Jalur Eden',
     subTabPathingDesc:
       'Rencanakan rute gerbang A→B dengan titik jalan di pegunungan dan ekspor PNG.',
+    routePlayback: 'Pemutaran rute',
+    routePlay: 'Putar',
+    routePause: 'Jeda',
+    routeReplay: 'Ulangi',
+    routeProgress: 'Kemajuan rute',
   },
 };

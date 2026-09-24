@@ -103,5 +103,10 @@ export default {
     subTabPathing: 'Rutas de Edén',
     subTabPathingDesc:
       'Planifica rutas de puertas de A a B con puntos de paso en montañas y exporta un PNG.',
+    routePlayback: 'Reproducción de ruta',
+    routePlay: 'Reproducir',
+    routePause: 'Pausa',
+    routeReplay: 'Repetir',
+    routeProgress: 'Progreso de la ruta',
   },
 };

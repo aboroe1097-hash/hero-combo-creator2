@@ -163,6 +163,11 @@ const EN = Object.freeze({
     subTabPrevious: 'Previous Seasons · {previousSeason}',
     subTabPathing: 'Eden Pathing',
     subTabPathingDesc: 'Plan A→B gate routes with mountain waypoints and export a PNG.',
+    routePlayback: 'Route playback',
+    routePlay: 'Play',
+    routePause: 'Pause',
+    routeReplay: 'Replay',
+    routeProgress: 'Route progress',
   },
 });
 

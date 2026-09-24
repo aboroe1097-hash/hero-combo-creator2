@@ -102,5 +102,10 @@ export default {
     subTabPrevious: 'Frühere Saisons · {previousSeason}',
     subTabPathing: 'Eden-Pfadplanung',
     subTabPathingDesc: 'Plane Tor-Routen von A nach B mit Berg-Wegpunkten und exportiere ein PNG.',
+    routePlayback: 'Routenwiedergabe',
+    routePlay: 'Abspielen',
+    routePause: 'Pause',
+    routeReplay: 'Wiederholen',
+    routeProgress: 'Routenfortschritt',
   },
 };

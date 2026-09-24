@@ -102,5 +102,10 @@ export default {
     subTabPrevious: 'Önceki sezonlar · {previousSeason}',
     subTabPathing: 'Eden Rota Planı',
     subTabPathingDesc: 'Dağ ara noktalarıyla A→B kapı rotaları planla ve PNG olarak dışa aktar.',
+    routePlayback: 'Rota oynatma',
+    routePlay: 'Oynat',
+    routePause: 'Duraklat',
+    routeReplay: 'Tekrar oynat',
+    routeProgress: 'Rota ilerlemesi',
   },
 };

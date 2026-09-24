@@ -102,5 +102,10 @@ export default {
     subTabPrevious: 'المواسم السابقة · {previousSeason}',
     subTabPathing: 'مسارات إيدن',
     subTabPathingDesc: 'خطّط مسارات البوابات من A إلى B مع نقاط عبور جبلية وصدّرها بصيغة PNG.',
+    routePlayback: 'تشغيل المسار',
+    routePlay: 'تشغيل',
+    routePause: 'إيقاف مؤقت',
+    routeReplay: 'إعادة',
+    routeProgress: 'تقدّم المسار',
   },
 };

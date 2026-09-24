@@ -101,5 +101,10 @@ export default {
     subTabPrevious: '往期赛季 · {previousSeason}',
     subTabPathing: '伊甸寻路',
     subTabPathingDesc: '规划带山地途经点的 A→B 关口路线，并导出 PNG。',
+    routePlayback: '路线回放',
+    routePlay: '播放',
+    routePause: '暂停',
+    routeReplay: '重播',
+    routeProgress: '路线进度',
   },
 };

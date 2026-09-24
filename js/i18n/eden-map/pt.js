@@ -103,5 +103,10 @@ export default {
     subTabPathing: 'Rotas do Eden',
     subTabPathingDesc:
       'Planeje rotas de portões de A a B com pontos de passagem nas montanhas e exporte um PNG.',
+    routePlayback: 'Reprodução da rota',
+    routePlay: 'Reproduzir',
+    routePause: 'Pausar',
+    routeReplay: 'Repetir',
+    routeProgress: 'Progresso da rota',
   },
 };

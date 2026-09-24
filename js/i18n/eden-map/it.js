@@ -103,5 +103,10 @@ export default {
     subTabPathing: 'Percorsi Eden',
     subTabPathingDesc:
       'Pianifica percorsi tra porte da A a B con tappe in montagna ed esporta un PNG.',
+    routePlayback: 'Riproduzione percorso',
+    routePlay: 'Riproduci',
+    routePause: 'Pausa',
+    routeReplay: 'Ripeti',
+    routeProgress: 'Avanzamento percorso',
   },
 };

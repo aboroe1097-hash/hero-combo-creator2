@@ -102,5 +102,10 @@ export default {
     subTabPrevious: '이전 시즌 · {previousSeason}',
     subTabPathing: '에덴 경로',
     subTabPathingDesc: '산악 경유지를 포함한 A→B 관문 경로를 계획하고 PNG로 내보냅니다.',
+    routePlayback: '경로 재생',
+    routePlay: '재생',
+    routePause: '일시정지',
+    routeReplay: '다시 재생',
+    routeProgress: '경로 진행률',
   },
 };

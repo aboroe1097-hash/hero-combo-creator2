@@ -76,6 +76,10 @@ export function collectStylesheetFiles(dir = rootDir) {
   }
   const launcher = path.join(dir, 'public', 'ai-launcher-critical.css');
   if (fs.existsSync(launcher)) files.push(launcher);
+  // The Arcade games ship their own stylesheet outside css/; the 16.5.x hit
+  // feedback lives there, so it gets the same infinite-paint gate.
+  const arcade = path.join(dir, 'games', 'boot', 'shared.css');
+  if (fs.existsSync(arcade)) files.push(arcade);
   return files;
 }
 

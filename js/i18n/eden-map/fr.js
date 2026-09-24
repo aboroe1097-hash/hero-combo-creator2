@@ -103,5 +103,10 @@ export default {
     subTabPathing: 'Itinéraires Eden',
     subTabPathingDesc:
       'Planifie des itinéraires de portes de A à B avec des points de passage en montagne et exporte un PNG.',
+    routePlayback: 'Lecture de l’itinéraire',
+    routePlay: 'Lire',
+    routePause: 'Pause',
+    routeReplay: 'Rejouer',
+    routeProgress: 'Progression de l’itinéraire',
   },
 };

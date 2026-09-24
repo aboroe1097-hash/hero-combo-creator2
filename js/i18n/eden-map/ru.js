@@ -103,5 +103,10 @@ export default {
     subTabPathing: 'Маршруты Эдема',
     subTabPathingDesc:
       'Планируйте маршруты между воротами из A в B с горными точками и экспортируйте PNG.',
+    routePlayback: 'Воспроизведение маршрута',
+    routePlay: 'Воспроизвести',
+    routePause: 'Пауза',
+    routeReplay: 'Повтор',
+    routeProgress: 'Прогресс маршрута',
   },
 };

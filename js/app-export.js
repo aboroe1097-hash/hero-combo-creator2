@@ -2,6 +2,7 @@ import { translations } from './translations.js';
 import { currentLanguage, getHeroImageUrl } from './state.js';
 import { buildComboExportCopy } from './i18n/output-copy.js';
 import { drawCanvasFooter, getExportBranding } from './export-branding.js';
+import { paintShareArt, planShareArt, shareArtSeed } from './fx/share-art.js';
 
 async function loadImageCrossOrigin(url) {
   return new Promise((resolve) => {
@@ -69,6 +70,15 @@ async function renderCombosToCanvas(combosData, title) {
   for (let gx = 0; gx < W; gx += 28)
     for (let gy = 0; gy < H; gy += 28)
       { ctx.beginPath(); ctx.arc(gx, gy, 1, 0, Math.PI*2); ctx.fill(); }
+
+  // Seeded decorative background (§4.9): same combos, same composition. Purely
+  // additive; any failure leaves the existing plain export untouched.
+  try {
+    const seed = shareArtSeed(combosData.map((c) => (c.heroes || []).join('+')));
+    paintShareArt(ctx, planShareArt(seed, W, H));
+  } catch {
+    /* decoration only */
+  }
 
   const logoImg = await loadImageCrossOrigin('images/logo.png');
   if (logoImg) {

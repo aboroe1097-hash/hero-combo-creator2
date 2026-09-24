@@ -2875,6 +2875,122 @@ body.research-calculator-open {
   width: 100%;
 }
 
+/* Per-level cost curve (§4.7): static inline SVG with a table twin. */
+:is(#researchSection, .research-v14-workspace) .research-cost-curves {
+  display: grid;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+:is(#researchSection, .research-v14-workspace) .research-cost-curve {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+:is(#researchSection, .research-v14-workspace) .research-cost-curve figcaption,
+:is(#researchSection, .research-v14-workspace) .research-cost-curve__details summary {
+  color: var(--text-muted);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+:is(#researchSection, .research-v14-workspace) .research-cost-curve svg {
+  display: block;
+  width: 100%;
+  height: 56px;
+  overflow: visible;
+}
+
+:is(#researchSection, .research-v14-workspace) .research-cost-curve__base {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+:is(#researchSection, .research-v14-workspace) .research-cost-curve__bar {
+  fill: color-mix(in srgb, var(--text-muted) 38%, transparent);
+}
+
+:is(#researchSection, .research-v14-workspace) .research-cost-curve__bar[data-state='done'] {
+  fill: var(--brand);
+}
+
+:is(#researchSection, .research-v14-workspace) .research-cost-curve__bar[data-state='next'] {
+  fill: var(--accent-gold);
+}
+
+:is(#researchSection, .research-v14-workspace) .research-cost-curve__legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.62rem;
+  font-variant-numeric: tabular-nums;
+}
+
+:is(#researchSection, .research-v14-workspace) .research-cost-curve__legend [data-state]::before {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-inline-end: 4px;
+  border-radius: 2px;
+  background: var(--brand);
+  content: '';
+}
+
+:is(#researchSection, .research-v14-workspace)
+  .research-cost-curve__legend
+  [data-state='remaining']::before {
+  background: color-mix(in srgb, var(--text-muted) 38%, transparent);
+}
+
+:is(#researchSection, .research-v14-workspace) .research-cost-curve__details summary {
+  min-height: 24px;
+  cursor: pointer;
+}
+
+:is(#researchSection, .research-v14-workspace) .research-cost-curve__details table {
+  width: 100%;
+  margin-top: 6px;
+  border-collapse: collapse;
+  font-size: 0.66rem;
+  font-variant-numeric: tabular-nums;
+}
+
+:is(#researchSection, .research-v14-workspace) .research-cost-curve__details :is(th, td) {
+  padding: 3px 6px;
+  border-bottom: 1px solid var(--border);
+  text-align: end;
+}
+
+:is(#researchSection, .research-v14-workspace) .research-cost-curve__details th:first-child {
+  text-align: start;
+}
+
+:is(#researchSection, .research-v14-workspace)
+  .research-cost-curve__details
+  tr[data-state='next']
+  th {
+  box-shadow: inset 3px 0 0 var(--accent-gold);
+  font-weight: 900;
+}
+
+@media (forced-colors: active) {
+  :is(#researchSection, .research-v14-workspace) .research-cost-curve__bar {
+    fill: GrayText;
+  }
+
+  :is(#researchSection, .research-v14-workspace) .research-cost-curve__bar[data-state='done'],
+  :is(#researchSection, .research-v14-workspace) .research-cost-curve__bar[data-state='next'] {
+    fill: Highlight;
+  }
+}
+
 :is(#researchSection, .research-v14-workspace) .research-node-art-note {
   margin: 0;
   color: var(--text-dim);
