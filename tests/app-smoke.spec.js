@@ -1132,7 +1132,7 @@ test.describe('admin dashboard visual regression', () => {
   }
 
   async function stabilizeAdminVisuals(page) {
-    // Snapshot determinism: the dashboard has run-to-run variable content â€”
+    // Snapshot determinism: the dashboard has run-to-run variable content —
     // restored log lines (#dashLogOutput), the cloud-sync status text (timing
     // of "Showing local cache"), and the live game clock. Hiding/clearing them
     // keeps the captured #ocrDashboardRoot height byte-stable across runs

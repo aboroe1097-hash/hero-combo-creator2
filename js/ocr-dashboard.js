@@ -4109,7 +4109,7 @@ window.getVtsAdminFirestoreContext = async function () {
 
 // --- Roster ---
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ Sub-tab Switching Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ── Sub-tab Switching ────────────────────────────────────
 // These two were behind a shared PIN, which protected nothing: firestore.rules
 // had no concept of it, so any admin could read and write eden vote settings
 // and conduct adjustments directly. They are now gated on the superadmin claim,
@@ -5461,7 +5461,7 @@ window.getAllianceViewStateForTest = function getAllianceViewStateForTest() {
   return isLocalAdminTestBypass() ? allianceViewController?.getState?.() || null : null;
 };
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ Roster Snapshots (local + Firestore) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ── Roster Snapshots (local + Firestore) ──────────────────
 const ROSTER_SNAPSHOTS_BACKUP_KEY = 'vts_roster_snapshots_backup_v1';
 
 function rosterCloudUpdated(data) {
@@ -5652,7 +5652,7 @@ async function loadRosterSnapshotsFromFirestore() {
   }
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ Roster Image OCR Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ── Roster Image OCR ─────────────────────────────────────
 async function processRosterImages(files) {
   if (state._rosterProcessing) {
     logDashboardEvent('adminLogRosterAlreadyRunning', 'warn', {}, { source: 'roster' });
@@ -5808,7 +5808,7 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
   }
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ Banner Records Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ── Banner Records ────────────────────────────────────────
 
 function isLocalAdminTestBypass() {
   if (typeof location === 'undefined') return false;
@@ -9743,7 +9743,7 @@ export async function bootOcrDashboard() {
     };
   }
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ API status watcher Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // ── API status watcher ──────────────────────────────────
   let ocrReady = false;
   let lastLoggedOcrStatusKey = '';
   function summarizeOcrStatusReason(reason) {
@@ -10432,7 +10432,7 @@ window.showPlayer = function (pNameEncoded) {
   if (p) {
     showModal('player', p);
   } else {
-    // Player exists in attack but not aggregated yet Ã¢â‚¬â€ build a minimal view
+    // Player exists in attack but not aggregated yet — build a minimal view
     const minimalPlayer = {
       name: pName,
       total_demolition: 0,
