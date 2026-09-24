@@ -9,6 +9,7 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "version": "16.5.6",
     "date": "2026-09-25",
     "highlights": [
+      "Heroes PDFs now offer three designs — Dark Dashboard, Midnight Briefing and Compact Reference — with landscape defaults, the VTS crest and wordmark in the header, real hero portraits in the top-combo lineups and beside every roster row, troop-coloured group headings, rank badges…",
       "The combo database carries the X8 catch-up bracket again: 82 formations that need at least one X8 hero, restored from the name-matched X8 availability set that was dropped when the database was limited to S0-X2. Every lane records the tier and source score it was ranked by, and …"
     ]
   },

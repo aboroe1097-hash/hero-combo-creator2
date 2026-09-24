@@ -4,6 +4,7 @@ This is the release history, newest first. Entries describe their release-time b
 
 ## 16.5.6 - 2026-09-25
 
+- Heroes PDFs now offer three designs — Dark Dashboard, Midnight Briefing and Compact Reference — with landscape defaults, the VTS crest and wordmark in the header, real hero portraits in the top-combo lineups and beside every roster row, troop-coloured group headings, rank badges and a tighter layout that keeps the document to fewer pages. Troop groups with no qualifying combos are left out instead of printing as empty tables, and every value stays in the document as selectable, searchable text.
 - The combo database carries the X8 catch-up bracket again: 82 formations that need at least one X8 hero, restored from the name-matched X8 availability set that was dropped when the database was limited to S0-X2. Every lane records the tier and source score it was ranked by, and the lanes sit after the S0-X2 list, so no existing rank or counter badge is renumbered and the Hero Atlas still caps a hero's combos at their own season. X8 stays off in the Combo Generator's season strip until it is ticked, because it is a catch-up bracket rather than a season everybody plays.
 
 ## 16.5.5 - 2026-09-24

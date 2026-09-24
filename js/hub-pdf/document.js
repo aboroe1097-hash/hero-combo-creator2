@@ -124,7 +124,8 @@ function renderTable(block, ctx) {
   // themed rendering carries the same cells, in the same order, as the plain one.
   const marker = ctx.heroDesign ? ' data-cell' : '';
   // The designed roster shows the hero portrait beside the data.
-  const thumbs = ctx.heroDesign && block.presentation === 'hero-list' ? block.portraits || [] : null;
+  const thumbs =
+    ctx.heroDesign && block.presentation === 'hero-list' ? block.portraits || [] : null;
   const cls = (column) => (column.align === 'num' ? ' class="num"' : '');
   const head = `<thead><tr>${thumbs ? '<th scope="col" class="thumb-head"></th>' : ''}${columns
     .map((column) => `<th scope="col"${cls(column)}>${escapeHtml(column.label)}</th>`)
@@ -297,7 +298,9 @@ export function renderDocumentHtml(
   const ctx = { copy, language, settings, unknown: copy.docUnknown, heroDesign, assetBase };
   // Put the visual lineups first in the designed Heroes sheets.
   const orderedSections = heroDesign
-    ? [...(doc.sections || [])].sort((a, b) => Number(b.role === 'combos') - Number(a.role === 'combos'))
+    ? [...(doc.sections || [])].sort(
+        (a, b) => Number(b.role === 'combos') - Number(a.role === 'combos')
+      )
     : doc.sections || [];
   // A designed sheet does not print "0 of 0" troop groups: an empty subsection is
   // dropped, and a section left with none says so once.

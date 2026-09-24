@@ -76,9 +76,7 @@ test('Heroes designs preserve every data cell and use readable print layouts', (
       ].map((match) => [match[1].replace(/^\d+\.\s*/, ''), extract(match[2])])
     );
   const plainCells = (html) =>
-    [...html.matchAll(/<td(?![^>]*class="empty")[^>]*>([\s\S]*?)<\/td>/g)].map(
-      (match) => match[1]
-    );
+    [...html.matchAll(/<td(?![^>]*class="empty")[^>]*>([\s\S]*?)<\/td>/g)].map((match) => match[1]);
   const designedCells = (html) =>
     [...html.matchAll(/<[^>]*\sdata-cell[^>]*>([\s\S]*?)</g)].map((match) => match[1]);
   const plainSections = sectionsOf(classic, plainCells);

@@ -215,7 +215,12 @@ function afterLayout(targetDocument, callback) {
     ...images.map((image) => image.decode()),
   ]);
   let timer;
-  Promise.race([ready, new Promise((resolve) => { timer = setTimeout(resolve, 8000); })]).then(() => {
+  Promise.race([
+    ready,
+    new Promise((resolve) => {
+      timer = setTimeout(resolve, 8000);
+    }),
+  ]).then(() => {
     clearTimeout(timer);
     images.forEach((image) => {
       if (!image.complete || !image.naturalWidth) image.style.visibility = 'hidden';
@@ -256,7 +261,9 @@ function openInWindow(html, { print = false } = {}) {
   if (!win) return false;
   writeInto(win.document, html);
   wirePrintButton(win);
-  afterLayout(win.document, () => { if (print) win.print(); });
+  afterLayout(win.document, () => {
+    if (print) win.print();
+  });
   return true;
 }
 

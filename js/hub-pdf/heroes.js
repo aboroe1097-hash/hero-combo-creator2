@@ -250,10 +250,14 @@ export function buildHeroesDocument(rawChoices, copy, settings = {}) {
     // Rows carry the portrait too, so the designed sheets can show the hero.
     const listRows = heroes.map((hero) => ({ row: rowFor(hero), portrait: hero.imageUrl }));
     const listTable = (entries) =>
-      table(columns, entries.map((entry) => entry.row), {
-        presentation: 'hero-list',
-        portraits: entries.map((entry) => entry.portrait),
-      });
+      table(
+        columns,
+        entries.map((entry) => entry.row),
+        {
+          presentation: 'hero-list',
+          portraits: entries.map((entry) => entry.portrait),
+        }
+      );
     const subsections =
       detail === 'full'
         ? seasons
@@ -341,7 +345,9 @@ export function buildHeroesDocument(rawChoices, copy, settings = {}) {
             {
               presentation: 'hero-combos',
               troop: group,
-              portraits: combos.map((combo) => combo.heroes.map((name) => portraitByName.get(name))),
+              portraits: combos.map((combo) =>
+                combo.heroes.map((name) => portraitByName.get(name))
+              ),
             }
           ),
         ],

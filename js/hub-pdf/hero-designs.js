@@ -2,8 +2,10 @@
 export const HERO_DESIGNS = Object.freeze(['dashboard', 'midnight', 'reference']);
 
 export function heroSectionClass(section) {
-  const tables = [...(section.blocks || []), ...(section.subsections || []).flatMap((sub) => sub.blocks || [])]
-    .filter((block) => block.type === 'table');
+  const tables = [
+    ...(section.blocks || []),
+    ...(section.subsections || []).flatMap((sub) => sub.blocks || []),
+  ].filter((block) => block.type === 'table');
   const rows = tables.reduce((count, table) => count + table.rows.length, 0);
   // Wide/long tables need the whole page. Small sections can share two columns.
   if (section.role === 'roster') return ' span-wide roster-summary';

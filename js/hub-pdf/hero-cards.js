@@ -11,7 +11,12 @@ export function assetUrl(value, base) {
 // A roster thumbnail: the hero portrait when the data has one, an initial when it does not.
 export function thumbnailCell(value, label, base, escape) {
   const src = assetUrl(value, base);
-  const initial = escape(String(label ?? '').trim().slice(0, 1).toUpperCase());
+  const initial = escape(
+    String(label ?? '')
+      .trim()
+      .slice(0, 1)
+      .toUpperCase()
+  );
   return `<td class="thumb" data-thumb><span class="thumb-frame">${
     src
       ? `<img src="${escape(src)}" alt="" loading="eager" referrerpolicy="no-referrer">`
