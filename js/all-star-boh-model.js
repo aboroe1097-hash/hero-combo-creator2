@@ -694,8 +694,7 @@ export function normalizeBohSignup(input = {}, options = {}) {
       );
     }
     competitionCommitment.publicComparisonConsent =
-      firstDefined(input.publicComparisonConsent, rawCommitment.publicComparisonConsent) ===
-      true;
+      firstDefined(input.publicComparisonConsent, rawCommitment.publicComparisonConsent) === true;
   }
 
   return {
