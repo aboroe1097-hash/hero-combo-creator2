@@ -246,10 +246,11 @@ test('a signed-in member finds their own name already in the identity field', ()
   // the same order, so the complaint matches what leadership knows the member as.
   assert.match(module, /import\('\.\/account-profile-service\.js'\)/);
   assert.match(module, /profile\?\.gameName \|\| profile\?\.displayName \|\| account\.displayName/);
+  assert.match(module, /const account = \(await peekAccountState\?\.\(\)\) \|\| null/);
   assert.match(module, /account\.isGuest/);
   // Prefilled, never forced: an empty field is filled and a typed one is left
   // alone, and the length matches what the rules accept.
-  assert.match(module, /text\(nameInput\.value\)\.trim\(\)\) return;/);
+  assert.match(module, /text\(nameInput\.value\)\.trim\(\)\) return false;/);
   assert.match(module, /name\.slice\(0, EDEN_COMPLAINT_MAX_NAME\)/);
   // Runs when the form is opened, and never blocks it.
   assert.match(module, /void prefillComplainantName\(nameInput\)/);
