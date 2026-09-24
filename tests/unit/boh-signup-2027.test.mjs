@@ -292,7 +292,10 @@ test('the VtsScore page carries the revived signup as its first member step', ()
   assert.match(page, /data-boh-field="gameName"/);
   assert.match(page, /data-boh-field="stats\.totalCastlePower"/);
   assert.match(page, /data-boh-field="stats\.unitSpecialtyPower"/);
-  assert.match(page, /data-boh-field="commitment\.fightingTimeIds"/);
+  assert.match(page, /data-boh-list="true"\s+data-boh-field="commitment\.bohTimeSlots"/);
+  assert.match(page, /data-boh-list="true"\s+data-boh-field="commitment\.epicTimeSlots"/);
+  assert.match(page, /type="checkbox"\s+data-boh-field="commitment\.publicComparisonConsent"/);
+  assert.doesNotMatch(page, /commitment\.fightingTimeIds/);
   assert.match(page, /data-boh-field="commitment\.vts1097Member"/);
   // The signup step precedes the score upload, and the workspace still needs
   // the member grant the PIN form issues.
@@ -325,7 +328,9 @@ test('every signup string on the page exists in all six VtsScore languages', () 
   for (const key of [
     'signupKicker',
     'signupSave',
-    'signupErrorFightingTimes',
+    'signupErrorBohSlots',
+    'signupErrorEpicSlots',
+    'publicConsent',
     'signupStateSaved',
   ]) {
     assert.ok(VTS_SCORE_COPY_KEYS.includes(key), `${key} must exist`);
