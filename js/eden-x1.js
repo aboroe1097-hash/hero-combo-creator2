@@ -3451,7 +3451,7 @@ function getSupportRewardRows() {
           String(a.playerName || '').localeCompare(String(b.playerName || ''))
       )
   );
-  // The R5 holds the guild-master reward outside the support quota, found by
+  // The R5 fills one support-quota slot for the guild-master reward, found by
   // family so an alias or banner account of theirs still counts as them.
   const r5Name = String(currentRewardSettings.r5PlayerKey || '').trim();
   const r5Key = compactPlayerIdentity(r5Name);

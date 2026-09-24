@@ -2578,7 +2578,7 @@ const it = {
     'Il contributo in gioco è quello della classifica più i punti fuori gilda. Il peso del supporto scala tutto il lavoro di supporto — muri di scudi, percorsi, stendardi e punti bonus del modulo —, quindi 2 lo raddoppia. 0,5 sul contributo lo dimezza. 1 lascia entrambi i termini come sono oggi.',
   adminRewardSettingsTitle: 'Distribuzione dei premi',
   adminRewardSettingsNote:
-    'Quanti giocatori premia ogni categoria questa stagione. Modificarlo rinumera gli slot dei premi; la pagina pubblicata mostrerà la nuova distribuzione dopo la prossima pubblicazione.',
+    'Definisce quanti giocatori premia ogni categoria. Il premio del capogilda assegnato all’R5 occupa uno slot del Lavoro di supporto; con quota 0, la riga R5 resta comunque. Le modifiche rinumerano gli slot; la pagina pubblica mostra la nuova distribuzione dopo la prossima pubblicazione.',
   adminRewardSettingsCategory: 'Categoria',
   adminRewardSettingsSlots: 'Slot',
   adminRewardSettingsGuildMaster: 'Il premio di guild master va a',
@@ -2586,7 +2586,7 @@ const it = {
   adminRewardSettingsGuildMasterTop1: 'Al miglior sostenitore',
   adminRewardSettingsR5Label: 'Giocatore R5',
   adminRewardSettingsHint:
-    'Se l’R5 indicato non è nell’elenco del supporto, il premio di guild master resta al miglior sostenitore invece di rimanere senza titolare.',
+    'Un R5 senza lavoro di supporto proprio mantiene comunque il premio del capogilda per nome; la riga compare con punteggi a zero. La quota del Lavoro di supporto include quell’R5 e, anche a 0, un giocatore riceve il premio.',
   adminRewardSettingsSave: 'Salva distribuzione',
   adminRewardSettingsSaved:
     'Distribuzione salvata. Pubblica la stagione per aggiornare la pagina pubblica.',

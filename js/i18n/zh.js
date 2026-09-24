@@ -2275,7 +2275,7 @@ const zh = {
     '游戏内贡献等于排行榜贡献加上公会外积分。支援权重调整全部支援工作——盾墙、开路、旗帜以及表单奖励积分——因此 2 表示翻倍。贡献设为 0.5 则减半。1 表示两项维持现状。',
   adminRewardSettingsTitle: '奖励分配',
   adminRewardSettingsNote:
-    '本赛季每个类别奖励多少人。修改后会重新编号奖励名额；已发布的页面将在下次发布后显示新分配。',
+    '设置每个类别的获奖人数。授予 R5 的公会长奖励计入支援工作名额；配额为 0 时仍保留 R5 行。修改后会重新编号名额；公开页面会在下次发布后显示新分配。',
   adminRewardSettingsCategory: '类别',
   adminRewardSettingsSlots: '名额',
   adminRewardSettingsGuildMaster: '公会会长奖励归',
@@ -2283,7 +2283,7 @@ const zh = {
   adminRewardSettingsGuildMasterTop1: '支援工作第一名',
   adminRewardSettingsR5Label: 'R5 玩家',
   adminRewardSettingsHint:
-    '如果指定的 R5 不在支援名单中，公会会长奖励仍归支援工作第一名，而不是无人持有。',
+    '没有自己支援工作的 R5 仍按名字获得公会长奖励；该行以零分显示。支援工作名额包含这位 R5，即使配额为 0，也有一名玩家获得奖励。',
   adminRewardSettingsSave: '保存分配',
   adminRewardSettingsSaved: '分配已保存。发布赛季以更新公开页面。',
   adminRewardSettingsResetConfirm: '将奖励分配重置为默认值？这会重新编号奖励名额。',
