@@ -5,6 +5,7 @@ This is the release history, newest first. Entries describe their release-time b
 ## 16.5.5 - 2026-09-24
 
 - Eden Pathing now counts the tiles a route actually occupies instead of adding up the length of every leg, so a route that crosses itself or doubles back no longer reports the same ground twice. The panel shows the occupied tiles, how many were walked twice, and an estimated pather count assuming 40 tiles per pather — the assumption is shown beside the figure because it is a planning estimate rather than a game constant. Each step shows the new tiles it adds, with the tiles it walks in parentheses when some of that ground was already counted, so the steps add up to the total. A leg into impassable terrain is filled in tile by tile, so a straight fallback line is counted as the tiles it crosses.
+- Filing a complaint no longer asks a signed-in member to retype their name: the in-game name from their account is already in the field, and stays editable because the complaint may be about someone else. Filing anonymously still hides the whole identity block, so nothing is attached to a complaint the member chose to send without a name.
 
 ## 16.5.4 - 2026-09-24
 

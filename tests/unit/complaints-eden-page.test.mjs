@@ -238,3 +238,26 @@ test('every complaint string ships in English, all eleven packs, and twelve shel
     assert.ok(!copy.complaintsLabel.includes('X1'));
   }
 });
+
+test('a signed-in member finds their own name already in the identity field', () => {
+  const module = readFileSync('js/eden-complaints.js', 'utf8');
+
+  // The name comes from the same profile the account chip shows, resolved in
+  // the same order, so the complaint matches what leadership knows the member as.
+  assert.match(module, /import\('\.\/account-profile-service\.js'\)/);
+  assert.match(module, /profile\?\.gameName \|\| profile\?\.displayName \|\| account\.displayName/);
+  assert.match(module, /const account = \(await peekAccountState\?\.\(\)\) \|\| null/);
+  assert.match(module, /account\.isGuest/);
+  // Prefilled, never forced: an empty field is filled and a typed one is left
+  // alone, and the length matches what the rules accept.
+  assert.match(module, /text\(nameInput\.value\)\.trim\(\)\) return false;/);
+  assert.match(module, /name\.slice\(0, EDEN_COMPLAINT_MAX_NAME\)/);
+  // Runs when the form is opened, and never blocks it.
+  assert.match(module, /void prefillComplainantName\(nameInput\)/);
+  // A failed lookup leaves the field to the member instead of breaking the form.
+  assert.match(module, /catch \{[\s\S]{0,220}the field stays theirs to fill/);
+
+  // An anonymous filing still hides the whole identity block, so nothing is
+  // attached to a complaint the member chose to send without a name.
+  assert.match(module, /identityBlock\.hidden = anonymousInput\?\.checked !== false/);
+});
