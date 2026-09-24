@@ -61,6 +61,77 @@ const sectionByTitle = (doc, title) => doc.sections.find((section) => section.ti
 const tableRows = (block) => block.rows.filter((row) => Array.isArray(row));
 const firstTable = (blocks) => blocks.find((block) => block.type === 'table');
 
+test('Heroes designs preserve every data cell and use readable print layouts', () => {
+  const doc = buildHeroesDocument(defaultHeroChoices(), en, { detail: 'full' });
+  const classic = renderDocumentHtml(doc, {}, { copy: en, branding });
+  // A designed sheet moves the lineups to the front, so the comparison is made per
+  // section: every section must carry the same values, in the same order, as the
+  // plain document prints them. The "no rows" placeholders are not values.
+  const sectionsOf = (html, extract) =>
+    Object.fromEntries(
+      [
+        ...html.matchAll(
+          /<section class="doc-section[^"]*"><h2 class="section-title">([\s\S]*?)<\/h2>([\s\S]*?)<\/section>/g
+        ),
+      ].map((match) => [match[1].replace(/^\d+\.\s*/, ''), extract(match[2])])
+    );
+  const plainCells = (html) =>
+    [...html.matchAll(/<td(?![^>]*class="empty")[^>]*>([\s\S]*?)<\/td>/g)].map(
+      (match) => match[1]
+    );
+  const designedCells = (html) =>
+    [...html.matchAll(/<[^>]*\sdata-cell[^>]*>([\s\S]*?)</g)].map((match) => match[1]);
+  const plainSections = sectionsOf(classic, plainCells);
+  const dataSections = Object.entries(plainSections).filter(([, cells]) => cells.length);
+  assert.ok(dataSections.length > 1, 'the plain document has data sections');
+  for (const design of ['dashboard', 'midnight', 'reference']) {
+    const html = renderDocumentHtml(
+      doc,
+      { design, orientation: 'landscape' },
+      { copy: en, branding }
+    );
+    const designedSections = sectionsOf(html, designedCells);
+    // The designed sheets keep every section; only the lineups move to the front.
+    assert.deepEqual(
+      Object.keys(designedSections).sort(),
+      Object.keys(plainSections).sort(),
+      `${design} keeps every section`
+    );
+    assert.equal(Object.keys(designedSections)[0], 'Top combos', `${design} leads with lineups`);
+    for (const [title, cells] of dataSections) {
+      assert.deepEqual(designedSections[title], cells, `${design} preserves ${title}`);
+    }
+    assert.match(html, new RegExp(`data-hero-design="${design}"`));
+    assert.doesNotMatch(html, /<nav class="toc"/);
+    assert.match(html, /column-span: all/);
+    assert.match(html, /font: 9pt\/1.3 var\(--sans\)/);
+    assert.match(html, /print-color-adjust: exact/);
+    assert.match(html, /Background graphics/);
+    assert.doesNotMatch(html, /<script/i);
+  }
+  assert.equal(normalizeSettings({ design: '<script>' }).design, 'classic');
+  const research = renderDocumentHtml(
+    { title: 'Research', sections: [] },
+    { design: 'dashboard' },
+    { copy: en, branding }
+  );
+  assert.doesNotMatch(research, /data-hero-design/);
+});
+
+test('Heroes dark designs retain RTL, paper choices and source toggles', () => {
+  const doc = buildHeroesDocument({ ...defaultHeroChoices(), seasons: [] }, en);
+  const html = renderDocumentHtml(
+    doc,
+    { design: 'midnight', paper: 'letter', orientation: 'portrait', sources: false },
+    { copy: en, branding, dir: 'rtl', language: 'ar' }
+  );
+  assert.match(html, /lang="ar" dir="rtl"/);
+  assert.match(html, /@page \{ size: letter portrait/);
+  assert.match(html, /column-count: 1/);
+  assert.doesNotMatch(html, /Sources and notes/);
+  assert.match(html, /class="empty"/);
+});
+
 // ---------------------------------------------------------------- document
 
 test('unknown cells print the unknown label and never 0', () => {

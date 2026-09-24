@@ -1,5 +1,11 @@
 // Arabic copy for the hub PDFs tabs. Keys and {tokens} mirror ./en.js.
 export default Object.freeze({
+  design: 'التصميم',
+  designDashboard: 'لوحة داكنة',
+  designMidnight: 'موجز منتصف الليل',
+  designReference: 'مرجع مدمج',
+  designPrintHint:
+    'لملفات PDF الداكنة، فعّل رسومات الخلفية في نافذة الطباعة. تمتد الاختيارات الكبيرة إلى صفحات إضافية.',
   panelTitle: 'إنشاء ملف PDF',
   panelIntro:
     'اختر محتوى المستند، ثم احفظه بصيغة PDF من نافذة الطباعة. يبقى النص قابلاً للتحديد والبحث.',

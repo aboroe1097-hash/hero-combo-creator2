@@ -83,7 +83,15 @@ function renderSettings(state) {
   const { hub, settings, copy } = state;
   const select = (name, label, options) =>
     `<label class="hub-pdf-field" for="${fieldId(hub, name)}"><span>${escapeHtml(label)}</span><select id="${fieldId(hub, name)}" name="${name}" data-setting="${name}">${optionsHtml(options, settings[name])}</select></label>`;
-  return `<div class="hub-pdf-grid">${select('paper', copy.paper, [
+  const design =
+    hub === 'heroes'
+      ? select('design', copy.design, [
+          { value: 'dashboard', label: copy.designDashboard },
+          { value: 'midnight', label: copy.designMidnight },
+          { value: 'reference', label: copy.designReference },
+        ])
+      : '';
+  return `<div class="hub-pdf-grid">${design}${select('paper', copy.paper, [
     { value: 'a4', label: copy.paperA4 },
     { value: 'letter', label: copy.paperLetter },
   ])}${select('orientation', copy.orientation, [
@@ -122,7 +130,7 @@ function renderPanel(panel, state) {
           <button type="submit" class="hub-pdf-btn hub-pdf-btn--primary" data-hub-pdf-print>${escapeHtml(copy.savePdf)}</button>
           <button type="button" class="hub-pdf-btn" data-hub-pdf-open>${escapeHtml(copy.openDoc)}</button>
         </div>
-        <p class="hub-pdf-hint">${escapeHtml(copy.saveHint)}</p>
+        <p class="hub-pdf-hint">${escapeHtml(copy.saveHint)}${state.hub === 'heroes' ? ` ${escapeHtml(copy.designPrintHint)}` : ''}</p>
         <p class="hub-pdf-status" role="status" aria-live="polite" data-hub-pdf-status></p>
       </form>
     </div>
@@ -159,6 +167,7 @@ function readSettings(form) {
     orientation: form.querySelector('[data-setting="orientation"]')?.value,
     detail: form.querySelector('[data-setting="detail"]')?.value,
     sources: Boolean(form.querySelector('[data-setting="sources"]')?.checked),
+    design: form.querySelector('[data-setting="design"]')?.value,
   });
 }
 
@@ -184,6 +193,7 @@ function buildHtml(state) {
     language: lang,
     dir: getLanguageDirection(currentLanguage),
     branding: { siteName: SITE_NAME, siteUrl: SITE_URL, appVersion: APP_VERSION, generatedAt },
+    assetBase: new URL('.', document.baseURI).href,
   });
 }
 
@@ -198,13 +208,23 @@ function wirePrintButton(win) {
 }
 
 function afterLayout(targetDocument, callback) {
-  const ready = targetDocument.fonts?.ready;
-  const run = () => setTimeout(callback, 60);
-  if (ready && typeof ready.then === 'function') ready.then(run, run);
-  else run();
+  // Portraits may be remote. Wait for them, but never hold the print dialog forever.
+  const images = [...targetDocument.images];
+  const ready = Promise.allSettled([
+    targetDocument.fonts?.ready,
+    ...images.map((image) => image.decode()),
+  ]);
+  let timer;
+  Promise.race([ready, new Promise((resolve) => { timer = setTimeout(resolve, 8000); })]).then(() => {
+    clearTimeout(timer);
+    images.forEach((image) => {
+      if (!image.complete || !image.naturalWidth) image.style.visibility = 'hidden';
+    });
+    setTimeout(callback, 60);
+  });
 }
 
-function printInFrame(html, hub) {
+function printInFrame(html, hub, settings) {
   document.getElementById(HUB_PDF_FRAME_ID)?.remove();
   const frame = document.createElement('iframe');
   frame.id = HUB_PDF_FRAME_ID;
@@ -214,6 +234,9 @@ function printInFrame(html, hub) {
   frame.setAttribute('aria-hidden', 'true');
   frame.style.cssText =
     'position:fixed;left:-10000px;top:0;width:794px;height:1123px;border:0;opacity:0;pointer-events:none;';
+  const [short, long] = settings.paper === 'letter' ? [816, 1056] : [794, 1123];
+  frame.style.width = `${settings.orientation === 'landscape' ? long : short}px`;
+  frame.style.height = `${settings.orientation === 'landscape' ? short : long}px`;
   document.body.appendChild(frame);
   const win = frame.contentWindow;
   writeInto(frame.contentDocument, html);
@@ -233,7 +256,7 @@ function openInWindow(html, { print = false } = {}) {
   if (!win) return false;
   writeInto(win.document, html);
   wirePrintButton(win);
-  if (print) afterLayout(win.document, () => win.print());
+  afterLayout(win.document, () => { if (print) win.print(); });
   return true;
 }
 
@@ -308,7 +331,7 @@ function bind(panel, state) {
       setStatus(panel, state.copy.printOpened);
       return;
     }
-    printInFrame(html, state.hub);
+    printInFrame(html, state.hub, state.settings);
     setStatus(panel, state.copy.printOpened);
   };
   form.addEventListener('submit', (event) => {
@@ -331,7 +354,10 @@ export async function renderHubPdfPanel(panel, hub) {
     copy,
     ctx,
     choices: def.defaults(),
-    settings: { ...DEFAULT_SETTINGS },
+    settings: {
+      ...DEFAULT_SETTINGS,
+      ...(hub === 'heroes' ? { design: 'dashboard', orientation: 'landscape' } : {}),
+    },
   };
   if (def.refresh) state.choices = def.refresh(state.choices, copy, ctx).choices;
   renderPanel(panel, state);

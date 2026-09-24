@@ -1,5 +1,10 @@
 // Simplified Chinese copy for the hub PDFs tabs. Keys and {tokens} mirror ./en.js.
 export default Object.freeze({
+  design: '设计',
+  designDashboard: '深色仪表板',
+  designMidnight: '午夜简报',
+  designReference: '紧凑参考',
+  designPrintHint: '导出深色 PDF 时，请在打印对话框中启用背景图形。较多内容会自动延续到后续页面。',
   panelTitle: '生成 PDF',
   panelIntro: '选择文档要包含的内容，然后在打印对话框中另存为 PDF。文字仍可选中和搜索。',
   contentLegend: '内容',

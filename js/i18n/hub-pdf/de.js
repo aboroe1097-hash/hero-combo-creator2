@@ -1,5 +1,11 @@
 // German copy for the hub PDFs tabs. Keys and {tokens} mirror ./en.js.
 export default Object.freeze({
+  design: 'Design',
+  designDashboard: 'Dunkles Dashboard',
+  designMidnight: 'Mitternachtsbriefing',
+  designReference: 'Kompakte Referenz',
+  designPrintHint:
+    'Für dunkle PDFs Hintergrundgrafiken im Druckdialog aktivieren. Größere Auswahlen werden auf weiteren Seiten fortgesetzt.',
   panelTitle: 'PDF erstellen',
   panelIntro:
     'Wähle aus, was ins Dokument kommt, und speichere es dann im Druckdialog als PDF. Der Text bleibt markierbar und durchsuchbar.',

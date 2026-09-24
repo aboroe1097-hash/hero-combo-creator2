@@ -1,5 +1,11 @@
 // Turkish copy for the hub PDFs tabs. Keys and {tokens} mirror ./en.js.
 export default Object.freeze({
+  design: 'Tasarım',
+  designDashboard: 'Koyu Panel',
+  designMidnight: 'Gece Özeti',
+  designReference: 'Kompakt Başvuru',
+  designPrintHint:
+    'Koyu PDF için yazdırma penceresinde arka plan grafiklerini etkinleştirin. Büyük seçimler ek sayfalarda devam eder.',
   panelTitle: 'PDF oluştur',
   panelIntro:
     'Belgeye nelerin gireceğini seç, ardından yazdırma penceresinden PDF olarak kaydet. Metin seçilebilir ve aranabilir kalır.',
