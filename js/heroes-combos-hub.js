@@ -198,6 +198,18 @@ export function bootHeroesCombosHub() {
     bar.querySelector(`[data-hub-subtab="${target}"]`)?.focus({ preventScroll: true });
   });
 
+  // The Atlas view switch (Heroes / Skins / Hero Tables) is static markup, but
+  // the Atlas only wires it after its lazy module has loaded and rendered, so an
+  // early click would be lost. Until the Atlas marks the switch as wired, route
+  // the click through the matching sub-tab: its event carries the Atlas mode, and
+  // app.js applies that mode as soon as the Atlas has loaded.
+  const atlasModeBar = root.querySelector('[data-atlas-mode]')?.closest('[role="tablist"]');
+  atlasModeBar?.addEventListener('click', (event) => {
+    if (atlasModeBar.dataset.atlasModeWired === '1') return;
+    const button = event.target.closest('[data-atlas-mode]');
+    if (button) openHeroesCombosSubtab(button.dataset.atlasMode);
+  });
+
   const intent = readHeroesCombosIntent();
   openHeroesCombosSubtab(intent || HEROES_COMBOS_DEFAULT_SUBTAB);
 }

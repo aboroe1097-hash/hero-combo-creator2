@@ -1506,9 +1506,17 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     else {
       onTabActivated('heroes');
       // The Atlas may still be booting; setHeroAtlasMode is idempotent, so
-      // applying the mode again after it renders is harmless.
+      // applying the mode again after it renders is harmless. Separate import()
+      // calls do not settle in call order, so apply the mode the hub shows once
+      // the Atlas has loaded, not the one captured here: otherwise an earlier
+      // sub-tab event could undo a later one, such as an early Hero Tables tap.
       import('./app-hero-atlas.js?v=20260924_211430')
-        .then((mod) => mod.setHeroAtlasMode?.(atlasMode || 'heroes'))
+        .then((mod) => {
+          const mode = _heroesHubModule
+            ? _heroesHubModule.atlasModeForSubtab?.(heroesCombosSubtab())
+            : atlasMode || 'heroes';
+          if (mode) mod.setHeroAtlasMode?.(mode);
+        })
         .catch(() => {
           /* the Atlas boot path reports its own failure */
         });
