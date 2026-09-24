@@ -4,7 +4,7 @@ This is the release history, newest first. Entries describe their release-time b
 
 ## 16.5.5 - 2026-09-24
 
-- The Competition #12 registration form collects Artifact Power. It is optional, like the rules: some Power panels do not show the artifact row, and an empty box is left out of the document rather than saved as a zero. The Unit Specialty row now says Towers, because that is where most of it comes from and members were asking which line to read.
+- The Competition #12 registration form collects optional Artifact Power, matching the existing signup/rules contract. Blank entries are omitted, while an explicit zero is preserved. The Unit Specialty row now says Towers, because that is where most of it comes from and members were asking which line to read.
 
 ## 16.5.4 - 2026-09-24
 

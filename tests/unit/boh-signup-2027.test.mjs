@@ -448,8 +448,8 @@ test('the registration form collects Artifact Power, and Towers is named on the 
   const model = readFileSync('js/boh-signup-document.js', 'utf8');
   const copy = readFileSync('js/vts-score-i18n.js', 'utf8');
 
-  // The artifact row is collected but not required, matching the rules, which
-  // accept it and do not demand it: some Power panels do not show it.
+  // The artifact row is collected but remains optional under the existing
+  // signup/rules contract.
   const artifact = page.match(/<label for="vtsScoreSignupArtifactPower">[\s\S]*?<\/label>/);
   assert.ok(artifact, 'the artifact power field is on the page');
   assert.match(artifact[0], /data-boh-field="stats\.artifactPower"/);

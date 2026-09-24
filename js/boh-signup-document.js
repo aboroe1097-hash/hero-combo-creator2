@@ -133,9 +133,8 @@ export const BOH_SIGNUP_FIELD_PATHS = Object.freeze({
     'stats.heroCombatPower',
     'stats.dragonPower',
     'stats.unitSpecialtyPower',
-    // Optional, like the rules: some accounts' Power panel does not show the
-    // artifact row, so an empty input stays out of the document or writes null
-    // rather than becoming a zero.
+    // Optional under the signup/rules contract. Blank values must stay absent
+    // rather than becoming zero.
     'stats.artifactPower',
   ]),
   troopLists: Object.freeze([
