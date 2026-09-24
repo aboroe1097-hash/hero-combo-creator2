@@ -825,4 +825,15 @@ export async function initLane5Planners(host) {
   renderPresetsPanel(panels.presets);
   renderCastlePanel(panels.castle);
   renderStaminaPanel(panels.stamina);
+
+  // Deep link: #researchTowers?subtab=research&planner=castle opens a planner
+  // tab directly (the More menu's Buildings entry uses it).
+  const openFromHash = () => {
+    const wanted = new URLSearchParams(location.hash.split('?')[1] || '').get('planner');
+    if (!wanted || !panels[wanted]) return;
+    shell.querySelector(`[data-pln-tab="${wanted}"]`)?.click();
+    requestAnimationFrame(() => shell.scrollIntoView({ block: 'start' }));
+  };
+  openFromHash();
+  window.addEventListener('hashchange', openFromHash);
 }
