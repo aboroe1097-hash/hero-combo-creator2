@@ -138,6 +138,83 @@ export function createAudio() {
       );
     },
     ui: () => tone({ freq: 620, type: 'sine', duration: 0.07, gain: 0.14 }),
+
+    // Per-element impacts: ice is glassy and high, fire is a low crackle.
+    hitIce: () => {
+      tone({ freq: 2100 + Math.random() * 300, to: 1500, type: 'sine', duration: 0.07, gain: 0.08 });
+      noise({ duration: 0.05, gain: 0.08, filter: 6200, sweepTo: 3000 });
+    },
+    hitFire: () => {
+      noise({ duration: 0.11, gain: 0.14, filter: 1300, sweepTo: 380 });
+      tone({ freq: 140, to: 80, type: 'triangle', duration: 0.08, gain: 0.1 });
+    },
+    killIce: (options) => {
+      const step = Math.min(8, options?.step || 0);
+      const base = 1320 * 2 ** (step / 12);
+      tone({ freq: base, type: 'triangle', duration: 0.12, gain: 0.14 });
+      tone({ freq: base * 1.26, type: 'sine', duration: 0.2, gain: 0.1, delay: 0.04 });
+      noise({ duration: 0.16, gain: 0.12, filter: 7000, sweepTo: 2500 });
+    },
+    killFire: (options) => {
+      const step = Math.min(8, options?.step || 0);
+      const base = 180 * 2 ** (step / 12);
+      tone({ freq: base, to: base * 0.5, type: 'sawtooth', duration: 0.22, gain: 0.16 });
+      noise({ duration: 0.28, gain: 0.2, filter: 1800, sweepTo: 200 });
+    },
+    crit: () => {
+      tone({ freq: 1760, to: 2640, type: 'square', duration: 0.08, gain: 0.08 });
+      tone({ freq: 880, type: 'triangle', duration: 0.12, gain: 0.1, delay: 0.02 });
+    },
+    dash: () => noise({ duration: 0.18, gain: 0.16, filter: 3600, sweepTo: 700 }),
+    dodge: () => tone({ freq: 990, to: 1480, type: 'sine', duration: 0.14, gain: 0.12 }),
+    ult: () => {
+      tone({ freq: 110, to: 220, type: 'sawtooth', duration: 0.8, gain: 0.26 });
+      tone({ freq: 660, to: 1320, type: 'triangle', duration: 0.6, gain: 0.14, delay: 0.1 });
+      noise({ duration: 0.7, gain: 0.22, filter: 4000, sweepTo: 600 });
+    },
+    telegraph: () => {
+      tone({ freq: 70, to: 55, type: 'sawtooth', duration: 1.1, gain: 0.22 });
+      tone({ freq: 440, type: 'square', duration: 0.09, gain: 0.08, delay: 0.1 });
+      tone({ freq: 440, type: 'square', duration: 0.09, gain: 0.08, delay: 0.5 });
+      tone({ freq: 520, type: 'square', duration: 0.09, gain: 0.1, delay: 0.9 });
+    },
+    slam: () => {
+      tone({ freq: 60, to: 30, type: 'sine', duration: 0.6, gain: 0.4 });
+      noise({ duration: 0.5, gain: 0.3, filter: 900, sweepTo: 120 });
+    },
+    shieldBreak: () => {
+      noise({ duration: 0.22, gain: 0.18, filter: 8000, sweepTo: 3000 });
+      tone({ freq: 1560, to: 780, type: 'triangle', duration: 0.2, gain: 0.1 });
+    },
+    streak: (options) => {
+      const level = Math.min(4, options?.level || 0);
+      [0, 4, 7, 12].forEach((semi, index) =>
+        tone({
+          freq: 392 * 2 ** ((semi + level * 2) / 12),
+          type: 'triangle',
+          duration: 0.18,
+          gain: 0.14,
+          delay: index * 0.06,
+        })
+      );
+    },
+    upgrade: (options) => {
+      const level = Math.min(5, options?.level || 2);
+      for (let index = 0; index < level; index += 1) {
+        tone({ freq: 330 * 2 ** ((index * 4) / 12), type: 'square', duration: 0.1, gain: 0.1, delay: index * 0.05 });
+      }
+      noise({ duration: 0.2, gain: 0.12, filter: 1200, sweepTo: 300 });
+    },
+    bossDown: () => {
+      tone({ freq: 196, to: 98, type: 'sawtooth', duration: 0.9, gain: 0.26 });
+      [523.25, 659.25, 783.99].forEach((freq, index) =>
+        tone({ freq, type: 'triangle', duration: 0.3, gain: 0.14, delay: 0.3 + index * 0.1 })
+      );
+    },
+    step: () => {
+      tone({ freq: 880, type: 'sine', duration: 0.09, gain: 0.12 });
+      tone({ freq: 1320, type: 'sine', duration: 0.12, gain: 0.1, delay: 0.06 });
+    },
   };
 
   return {

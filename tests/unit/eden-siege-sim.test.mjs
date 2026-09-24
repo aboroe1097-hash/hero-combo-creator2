@@ -151,25 +151,25 @@ test('the player can kill, loot and score without any input beyond attacking', (
   assert.ok(world.state.gold > 0, 'loot exists to collect');
 });
 
-test('gold buys towers on free sockets and upgrades them to level three', () => {
+test('gold buys towers on free sockets and upgrades them to level five', () => {
   const world = createWorld({ mapId: 'keep', seed: 'keep:build', heroName: 'Sky Breaker' });
-  world.state.gold = 500;
+  world.state.gold = 5000;
   world.input.buildSocket = 0;
   world.input.buildKind = 'frost';
   world.step();
   assert.equal(world.state.sockets[0].occupant, 'frost');
   assert.equal(world.state.towers.length, 1);
-  const spent = 500 - world.state.gold;
+  const spent = 5000 - world.state.gold;
   assert.equal(spent, 60, 'the frost spire costs 60');
 
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  for (let attempt = 0; attempt < 4; attempt += 1) {
     world.input.upgradeSocket = 0;
     world.step();
   }
-  assert.equal(world.state.towers[0].level, 3);
+  assert.equal(world.state.towers[0].level, 5);
   world.input.upgradeSocket = 0;
   world.step();
-  assert.equal(world.state.towers[0].level, 3, 'level three is the cap');
+  assert.equal(world.state.towers[0].level, 5, 'level five is the cap');
 
   world.state.gold = 0;
   world.input.buildSocket = 1;
