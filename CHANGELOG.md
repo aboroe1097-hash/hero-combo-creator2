@@ -4,7 +4,7 @@ This is the release history, newest first. Entries describe their release-time b
 
 ## 16.5.5 - 2026-09-24
 
-- The Eden Hub lands on the current season again after you have used the hub. Clicking a sub-tab wrote it into the URL, and that leftover was read back as a request for that sub-tab, so one click on Royal Bounty kept the hub off the season for the rest of the session. A sub-tab you clicked is still in the URL while you are on it, and a link someone shares still opens the sub-tab it names.
+- The Eden Hub lands on the current season again after you have used the hub. Clicking a sub-tab wrote it into the URL, and that leftover was read back as a request for that sub-tab, so one click on Royal Bounty kept the hub off the season for the rest of the session. On refresh, that click-only sub-tab URL is cleared to match the season landing; a link someone shares still opens the sub-tab it names.
 
 ## 16.5.4 - 2026-09-24
 

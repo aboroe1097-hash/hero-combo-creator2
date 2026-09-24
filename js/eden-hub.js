@@ -18,6 +18,7 @@ import { translations } from './translations.js';
 import { currentLanguage } from './state.js';
 import { edenWorkspaceFirestorePath, isPublishedEdenProjection } from './eden-workspaces.js';
 import { mountHubPdfPanel } from './hub-pdf-tab.js';
+import { resolveEdenHubInitialRoute } from './eden-hub-routing.js';
 
 const LOYALTY_SRC = 'tabs/loyalty.html?v=20260924_155646';
 const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260924_155646';
@@ -436,14 +437,18 @@ export function bootEdenHub() {
   // follows a click still lands there — while a shared link, which carries no
   // history state, still opens exactly the sub-tab it names.
   const clicked = subTabClickedThisSession();
-  const intent = requested && requested !== 'vote' && requested === clicked ? '' : requested;
+  const { intent, useCurrentSeasonDefault } = resolveEdenHubInitialRoute(
+    requested,
+    clicked,
+    window.history
+  );
   if (intent === 'season' || intent === 'vote') {
     if (!openIntent(intent, { scroll: true })) openSeasonIntentWhenPublished(intent);
   } else if (intent) {
     openIntent(intent);
     void revealPublishedSeason(root);
   }
-  if (!intent) {
+  if (useCurrentSeasonDefault) {
     openIntent('bounty');
     void Promise.race([
       revealPublishedSeason(root),
