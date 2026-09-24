@@ -31,6 +31,7 @@ import {
   researchSearchText,
   researchTreeText,
 } from './i18n/research/index.js';
+import { renderCostCurves } from './research-cost-curve.js';
 import '../css/research-v14.css';
 
 const RESEARCH_PROGRESS_KEY = 'vts_research_v1';
@@ -69,6 +70,42 @@ function getResearchNodeBuff(tech, node) {
 
 function formatResearchNumber(value) {
   return formatLocaleNumber(value, currentLanguage, { maximumFractionDigits: 2 });
+}
+
+/** Per-level medal cost curve for the node inspector, from the canonical tech-db costs. */
+function renderNodeCostCurve(node, level) {
+  const wb = [];
+  const cm = [];
+  for (let i = 0; i < node.maxLevel; i += 1) {
+    const medals = getNodeLevelMedals(node, i);
+    wb.push(medals.wb);
+    cm.push(medals.cm);
+  }
+  const series = [];
+  if (wb.some((value) => value > 0)) {
+    series.push({
+      key: 'wb',
+      label: appT('researchWarBadges'),
+      shortLabel: appT('researchWarBadgesShort'),
+      values: wb,
+    });
+  }
+  if (cm.some((value) => value > 0)) {
+    series.push({
+      key: 'cm',
+      label: appT('researchCourageMedals'),
+      shortLabel: appT('researchCourageMedalsShort'),
+      values: cm,
+    });
+  }
+  return renderCostCurves(series, level, {
+    caption: (label) => appT('researchPerLevel', { value: label }),
+    completed: appT('researchCompleted'),
+    remaining: appT('researchRemaining'),
+    levelShort: appT('researchLevelShort'),
+    tableSummary: appT('researchVariesPerLevel'),
+    formatNumber: formatResearchNumber,
+  });
 }
 
 function localizeNodeBuffProgress(tech, node, level) {
@@ -1684,7 +1721,8 @@ function renderGameNodeInspector(rootEl, tech, node) {
       <div class="research-node-inspector-detail">
         <div><span>${escapeHtml(appT('researchRemaining'))}</span><div class="research-node-inspector-cost">${remainingHtml}</div></div>
         <div class="research-node-inspector-buff">${buffHtml}</div>
-      </div>`;
+      </div>
+      ${renderNodeCostCurve(node, level)}`;
 
   inspector.querySelector('.research-node-inspector-close')?.addEventListener('click', () => {
     rootEl.dataset.selectedNodeId = '';

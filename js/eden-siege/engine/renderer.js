@@ -13,16 +13,18 @@ import { createTextures } from './textures.js';
 import { createVelo } from './velo.js';
 import { ASSETS, FACTIONS, TOWER_ART } from '../data/theme.js';
 
-const POOL = { units: 150, bolts: 120, pickups: 64, fx: 56 };
+const POOL = { units: 150, bolts: 120, pickups: 64, fx: 56, sparks: 160, shields: 48, telegraphs: 4 };
 
 const QUALITY = {
-  low: { pixelRatio: 1, shadows: false, ringFx: 24, shadowMap: 512, banners: false },
-  medium: { pixelRatio: 1.5, shadows: true, ringFx: 40, shadowMap: 1024, banners: true },
-  high: { pixelRatio: 2, shadows: true, ringFx: 56, shadowMap: 2048, banners: true },
+  low: { pixelRatio: 1, shadows: false, ringFx: 24, shadowMap: 512, banners: false, sparks: 60 },
+  medium: { pixelRatio: 1.5, shadows: true, ringFx: 40, shadowMap: 1024, banners: true, sparks: 120 },
+  high: { pixelRatio: 2, shadows: true, ringFx: 56, shadowMap: 2048, banners: true, sparks: 160 },
 };
 
+const MODIFIER_RING = { swift: 0xd9f99d, armored: 0xcbd5e1, shielded: 0xe0f2fe };
+
 export function createRenderer({ canvas, map, themeName = 'dark', quality = 'medium' }) {
-  const settings = QUALITY[quality] || QUALITY.medium;
+  const settings = { ...(QUALITY[quality] || QUALITY.medium) };
   const textures = createTextures();
   const loader = new THREE.TextureLoader();
   const iconCache = new Map();
@@ -323,6 +325,7 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
   const bolts = createPool(POOL.bolts);
   const pickups = createPool(POOL.pickups);
   const fxPool = createPool(POOL.fx);
+  const shieldPool = createPool(POOL.shields);
 
   function resetPool(pool) {
     pool.used = 0;
@@ -400,6 +403,8 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
     head: translated(new THREE.SphereGeometry(0.24, 10, 8), 1.12),
     mount: translated(new THREE.BoxGeometry(0.5, 0.46, 1.15), 0.26),
     shoulders: translated(new THREE.BoxGeometry(1.0, 0.2, 0.6), 1.0),
+    // Armoured units wear a flat-topped helm, readable from the camera angle.
+    helm: translated(new THREE.CylinderGeometry(0.27, 0.3, 0.26, 8), 1.24),
   };
 
   function createInstanced(geometry, count) {
@@ -422,6 +427,7 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
   const actorHead = createInstanced(actorParts.head, POOL.units);
   const actorMount = createInstanced(actorParts.mount, POOL.units);
   const actorShoulders = createInstanced(actorParts.shoulders, POOL.units);
+  const actorHelm = createInstanced(actorParts.helm, POOL.units);
 
   const actorMatrix = new THREE.Matrix4();
   const actorPosition = new THREE.Vector3();
@@ -431,6 +437,7 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
   const actorColor = new THREE.Color();
 
   function actorScaleFor(kind) {
+    if (kind === 'warlord') return 2.3;
     if (kind === 'dreadnought') return 1.5;
     if (kind === 'cavalry') return 1.12;
     return 1;
@@ -459,6 +466,55 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
   const particles = new THREE.Points(particleGeometry, particleMaterial);
   particles.frustumCulled = false;
   scene.add(particles);
+
+  // ── hit sparks: cosmetic particles that never touch the simulation ─────────
+  // Ice throws pale shards that fall; fire throws embers that rise. A crit
+  // throws more of them, whiter.
+  const sparkPool = createPool(POOL.sparks);
+  const sparks = [];
+  function spark(x, z, element, { count = 5, crit = false, y = 0.9, speed = 4.5 } = {}) {
+    const budget = Math.max(0, settings.sparks - sparks.length);
+    const total = Math.min(budget, crit ? count * 2 : count);
+    for (let index = 0; index < total; index += 1) {
+      const angle = Math.random() * Math.PI * 2;
+      const velocity = speed * (0.45 + Math.random() * 0.7);
+      const fire = element === 'fire';
+      sparks.push({
+        x,
+        y,
+        z,
+        vx: Math.cos(angle) * velocity,
+        vy: fire ? 1.5 + Math.random() * 2.5 : 2.5 + Math.random() * 2,
+        vz: Math.sin(angle) * velocity,
+        gravity: fire ? -1.5 : 12,
+        life: 0,
+        max: 260 + Math.random() * 220,
+        color: crit ? 0xffffff : fire ? (Math.random() < 0.5 ? 0xfb923c : 0xf5c451) : Math.random() < 0.5 ? 0x7dd3fc : 0xe0f2fe,
+        size: (crit ? 0.42 : 0.3) * (0.7 + Math.random() * 0.6),
+      });
+    }
+  }
+
+  // ── boss telegraph: a flat ring plus a disc that fills as the slam nears ───
+  const telegraphRingGeometry = new THREE.RingGeometry(0.93, 1, 48);
+  const telegraphDiscGeometry = new THREE.CircleGeometry(1, 48);
+  const telegraphs = [];
+  for (let index = 0; index < POOL.telegraphs; index += 1) {
+    const ring = new THREE.Mesh(
+      telegraphRingGeometry,
+      new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide })
+    );
+    const disc = new THREE.Mesh(
+      telegraphDiscGeometry,
+      new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide })
+    );
+    for (const mesh of [ring, disc]) {
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.visible = false;
+      scene.add(mesh);
+    }
+    telegraphs.push({ ring, disc });
+  }
 
   // ── player rig ────────────────────────────────────────────────────────────
   const playerShadow = new THREE.Sprite(
@@ -521,7 +577,59 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
     for (const material of rig.resources.materials) material.dispose();
   }
 
-  function buildTowerRig(kind, resources) {
+  // Every tier changes the silhouette: L2 adds a trim collar, L3 raises the
+  // crown and crenellates the base, L4 adds orbiting shards, L5 turns gold and
+  // grows a crown jewel. The lane tells you how far a tower has been pushed.
+  function buildTowerTiers(group, kind, level, resources, art) {
+    const tall = level >= 3 ? 1.25 : 1;
+    if (level >= 2) {
+      const collar = new THREE.Mesh(
+        towerGeometry(resources, 'collar', () => new THREE.TorusGeometry(0.8, 0.09, 8, 20)),
+        towerMaterial(resources, { color: level >= 5 ? 0xf5c451 : art.trim, emissive: art.emissive, emissiveIntensity: 0.4, roughness: 0.4, metalness: 0.5 })
+      );
+      collar.rotation.x = Math.PI / 2;
+      collar.position.y = 0.78;
+      group.add(collar);
+    }
+    if (level >= 3) {
+      for (let index = 0; index < 6; index += 1) {
+        const merlon = new THREE.Mesh(
+          towerGeometry(resources, 'merlon', () => new THREE.BoxGeometry(0.26, 0.3, 0.26)),
+          towerMaterial(resources, { color: art.body, roughness: 0.8 })
+        );
+        const angle = (index / 6) * Math.PI * 2;
+        merlon.position.set(Math.cos(angle) * 0.92, 0.82, Math.sin(angle) * 0.92);
+        group.add(merlon);
+      }
+    }
+    if (level >= 4) {
+      const orbit = new THREE.Group();
+      orbit.name = 'orbit';
+      orbit.position.y = 2.2 * tall;
+      for (let index = 0; index < 3; index += 1) {
+        const shard = new THREE.Mesh(
+          towerGeometry(resources, 'shard', () => new THREE.OctahedronGeometry(0.2, 0)),
+          towerMaterial(resources, { color: art.trim, emissive: art.emissive, emissiveIntensity: 1.2, roughness: 0.25 })
+        );
+        const angle = (index / 3) * Math.PI * 2;
+        shard.position.set(Math.cos(angle) * 1.05, 0, Math.sin(angle) * 1.05);
+        orbit.add(shard);
+      }
+      group.add(orbit);
+    }
+    if (level >= 5) {
+      const jewel = new THREE.Mesh(
+        towerGeometry(resources, 'jewel', () => new THREE.OctahedronGeometry(0.34, 0)),
+        towerMaterial(resources, { color: 0xfff1c1, emissive: 0xf5c451, emissiveIntensity: 1.6, roughness: 0.2 })
+      );
+      jewel.name = 'jewel';
+      jewel.position.y = kind === 'frost' ? 3.55 : 2.95;
+      group.add(jewel);
+    }
+    return tall;
+  }
+
+  function buildTowerRig(kind, resources, level = 1) {
     const art = TOWER_ART[kind] || TOWER_ART.frost;
     const group = new THREE.Group();
     const base = new THREE.Mesh(
@@ -543,6 +651,11 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
         })
       );
       spire.position.y = 1.9;
+      if (level >= 3) {
+        spire.scale.y = 1.25;
+        spire.position.y = 2.2;
+      }
+      if (level >= 5) spire.material.color.setHex(0xf5c451);
       group.add(spire);
     } else {
       const post = new THREE.Mesh(
@@ -561,8 +674,15 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
         })
       );
       bowl.position.y = 2;
+      if (level >= 3) {
+        bowl.scale.setScalar(1.25);
+        post.scale.y = 1.2;
+        bowl.position.y = 2.2;
+      }
+      if (level >= 5) bowl.material.color.setHex(0xf5c451);
       group.add(bowl);
     }
+    buildTowerTiers(group, kind, level, resources, art);
     const haloMaterial = new THREE.SpriteMaterial({
         map: kind === 'frost' ? textures.ringIce : textures.ringFire,
         transparent: true,
@@ -573,25 +693,52 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
     resources.materials.add(haloMaterial);
     const halo = new THREE.Sprite(haloMaterial);
     halo.position.y = 0.07;
-    halo.scale.set(3.4, 3.4, 1);
+    halo.scale.set(3.4 + (level - 1) * 0.35, 3.4 + (level - 1) * 0.35, 1);
     group.add(halo);
+    if (level >= 5) group.scale.setScalar(1.12);
     return group;
   }
 
-  function syncTowers(state) {
+  function syncTowers(state, dtMs) {
     for (const tower of state.towers) {
       let rig = towerRigs.get(tower.socket);
+      if (rig && rig.level !== tower.level) {
+        // A new tier is a new model: rebuild it and pop it into place.
+        disposeTowerRig(rig);
+        towerRigs.delete(tower.socket);
+        rig = null;
+      }
       if (!rig) {
         const resources = { geometries: new Set(), materials: new Set() };
-        rig = { group: buildTowerRig(tower.kind, resources), pips: new THREE.Group(), resources };
+        rig = {
+          group: buildTowerRig(tower.kind, resources, tower.level),
+          pips: new THREE.Group(),
+          resources,
+          level: tower.level,
+          popMs: reducedMotion ? 0 : 420,
+          baseScale: tower.level >= 5 ? 1.12 : 1,
+        };
+        rig.orbit = rig.group.getObjectByName('orbit') || null;
+        rig.jewel = rig.group.getObjectByName('jewel') || null;
         rig.group.add(rig.pips);
         rig.group.position.set(tower.x, 0, tower.z);
         scene.add(rig.group);
         towerRigs.set(tower.socket, rig);
       }
       rig.group.children.forEach((child) => {
-        if (child.isMesh) child.rotation.y = tower.angle;
+        if (child.isMesh && child.name !== 'jewel') child.rotation.y = tower.angle;
       });
+      if (rig.orbit) rig.orbit.rotation.y += (dtMs / 1000) * (reducedMotion ? 0.3 : 1.6);
+      if (rig.jewel) rig.jewel.rotation.y += (dtMs / 1000) * 1.2;
+      if (rig.popMs > 0) {
+        rig.popMs = Math.max(0, rig.popMs - dtMs);
+        const t = 1 - rig.popMs / 420;
+        // Overshoot then settle: a quick elastic pop.
+        const pop = t < 0.55 ? 0.35 + (t / 0.55) * 0.85 : 1.2 - ((t - 0.55) / 0.45) * 0.2;
+        rig.group.scale.setScalar(rig.baseScale * pop);
+      } else {
+        rig.group.scale.setScalar(rig.baseScale);
+      }
       const pipCount = rig.pips.children.length;
       for (let level = pipCount; level < tower.level - 1; level += 1) {
         const pip = new THREE.Mesh(
@@ -677,6 +824,9 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
     let torsoCount = 0;
     let mountCount = 0;
     let shoulderCount = 0;
+    let helmCount = 0;
+    let telegraphCount = 0;
+    resetPool(shieldPool);
     for (const unit of state.units) {
       const faction = FACTIONS[unit.element] || FACTIONS.ice;
       const scale = actorScaleFor(unit.kind);
@@ -701,10 +851,44 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
         actorMount.setMatrixAt(mountCount, actorMatrix);
         actorMount.setColorAt(mountCount, actorColor.setHex(flash ? 0xffffff : trim));
         mountCount += 1;
-      } else if (unit.kind === 'dreadnought') {
+      } else if (unit.kind === 'dreadnought' || unit.boss) {
         actorShoulders.setMatrixAt(shoulderCount, actorMatrix);
-        actorShoulders.setColorAt(shoulderCount, actorColor.setHex(flash ? 0xffffff : trim));
+        actorShoulders.setColorAt(
+          shoulderCount,
+          actorColor.setHex(flash ? 0xffffff : unit.boss ? 0xf5c451 : trim)
+        );
         shoulderCount += 1;
+      }
+      if (unit.modifier === 'armored' || unit.boss) {
+        actorHelm.setMatrixAt(helmCount, actorMatrix);
+        actorHelm.setColorAt(helmCount, actorColor.setHex(flash ? 0xffffff : unit.boss ? 0x7f1d1d : 0x94a3b8));
+        helmCount += 1;
+      }
+      if (unit.shield > 0) {
+        const bubble = unit.radius * actorScaleFor(unit.kind) * 2.6;
+        take(shieldPool, {
+          texture: textures.glowWhite,
+          color: 0xbae6fd,
+          position: { x: unit.x, y: 0.9 * actorScaleFor(unit.kind), z: unit.z },
+          scale: { x: bubble, y: bubble * 1.15 },
+          opacity: 0.18 + 0.3 * (unit.shield / (unit.maxShield || 1)),
+          additive: true,
+        });
+      }
+      if (unit.telegraph && telegraphCount < telegraphs.length) {
+        const slot = telegraphs[telegraphCount];
+        telegraphCount += 1;
+        const progress = 1 - unit.telegraph.ms / unit.telegraph.maxMs;
+        const radius = unit.telegraph.radius;
+        slot.ring.visible = true;
+        slot.disc.visible = true;
+        slot.ring.position.set(unit.telegraph.x, 0.07, unit.telegraph.z);
+        slot.disc.position.set(unit.telegraph.x, 0.06, unit.telegraph.z);
+        slot.ring.scale.setScalar(radius);
+        slot.disc.scale.setScalar(Math.max(0.05, radius * progress));
+        const pulse = reducedMotion ? 0.8 : 0.6 + Math.sin(clockMs / 60) * 0.3;
+        slot.ring.material.opacity = pulse;
+        slot.disc.material.opacity = 0.18 + progress * 0.32;
       }
 
       const ringScale = unit.radius * 3.4;
@@ -713,13 +897,23 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
         color: 0xffffff,
         position: { x: unit.x, y: 0.04, z: unit.z },
         scale: { x: ringScale * 1.45, y: ringScale * 1.45 },
-        opacity: unit.slowMs > 0 ? 0.95 : 0.5,
+        opacity: unit.slowMs > 0 ? 0.95 : unit.modifier ? 0.85 : 0.5,
         additive: true,
       });
+      if (unit.modifier && MODIFIER_RING[unit.modifier]) {
+        take(unitRings, {
+          texture: textures.ringNeutral,
+          color: MODIFIER_RING[unit.modifier],
+          position: { x: unit.x, y: 0.05, z: unit.z },
+          scale: { x: ringScale * 1.05, y: ringScale * 1.05 },
+          opacity: 0.9,
+          additive: true,
+        });
+      }
       if (settings.banners) {
         const bannerScale = unit.radius * 1.9;
         take(unitIcons, {
-          texture: icon(ASSETS.unitIcon(faction.unitColor, unit.kind, unit.tier)),
+          texture: icon(ASSETS.unitIcon(faction.unitColor, unit.art || unit.kind, unit.tier)),
           color: flash ? 0xffd9d9 : 0xffffff,
           position: {
             x: unit.x,
@@ -737,6 +931,14 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
     actorHead.count = torsoCount;
     actorMount.count = mountCount;
     actorShoulders.count = shoulderCount;
+    actorHelm.count = helmCount;
+    actorHelm.instanceMatrix.needsUpdate = true;
+    if (actorHelm.instanceColor) actorHelm.instanceColor.needsUpdate = true;
+    hideTail(shieldPool);
+    for (let index = telegraphCount; index < telegraphs.length; index += 1) {
+      telegraphs[index].ring.visible = false;
+      telegraphs[index].disc.visible = false;
+    }
     actorTorso.instanceMatrix.needsUpdate = true;
     actorHead.instanceMatrix.needsUpdate = true;
     actorMount.instanceMatrix.needsUpdate = true;
@@ -785,7 +987,7 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
           : effect.scale * (0.7 + life * 0.9);
       take(fxPool, {
         texture: effect.element === 'fire' ? textures.ringFire : textures.ringIce,
-        color: 0xffffff,
+        color: effect.kind === 'slam' ? 0xff6b6b : 0xffffff,
         position: { x: effect.x, y: effect.kind === 'nova' ? 1.1 : 0.5 + life * 0.9, z: effect.z },
         scale: { x: size * 2, y: size * 2 },
         opacity: Math.max(0, 1 - life),
@@ -794,9 +996,40 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
     }
     hideTail(fxPool);
 
+    // Sparks
+    resetPool(sparkPool);
+    const sparkStep = dtMs / 1000;
+    for (let index = sparks.length - 1; index >= 0; index -= 1) {
+      const item = sparks[index];
+      item.life += dtMs;
+      if (item.life >= item.max) {
+        sparks.splice(index, 1);
+        continue;
+      }
+      item.vy -= item.gravity * sparkStep;
+      item.x += item.vx * sparkStep;
+      item.y = Math.max(0.05, item.y + item.vy * sparkStep);
+      item.z += item.vz * sparkStep;
+      item.vx *= 0.94;
+      item.vz *= 0.94;
+      const fade = 1 - item.life / item.max;
+      take(sparkPool, {
+        texture: textures.glowWhite,
+        color: item.color,
+        position: item,
+        scale: { x: item.size * (0.6 + fade * 0.6), y: item.size * (0.6 + fade * 0.6) },
+        opacity: fade,
+        additive: true,
+      });
+    }
+    hideTail(sparkPool);
+
     // Player
     const player = state.player;
     const alive = player.alive;
+    if (alive && player.dashMs > 0 && !reducedMotion) {
+      spark(player.x, player.z, player.element, { count: 2, y: 0.8, speed: 1.2 });
+    }
     const playerColor = elementColor(player.element);
     playerShadow.visible = alive;
     playerShadow.position.set(player.x, 0.03, player.z);
@@ -805,12 +1038,16 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
     playerRing.material.needsUpdate = true;
     playerRing.position.set(player.x, 0.06, player.z);
     playerRing.material.opacity = player.slowMs > 0 ? 0.55 : 0.95;
+    const ultOn = state.ult?.activeMs > 0;
+    const ringSize = ultOn ? 4.2 + (reducedMotion ? 0 : Math.sin(clockMs / 90) * 0.35) : 3.1;
+    playerRing.scale.set(ringSize, ringSize, 1);
+    velo.setPower?.(ultOn);
 
     velo.group.visible = alive;
     velo.group.position.set(player.x, 0, player.z);
     velo.group.rotation.y = player.facing || 0;
     velo.setElement(player.element);
-    velo.setHitFlash(player.hitFlashMs > 0);
+    velo.setHitFlash(player.hitFlashMs > 0 && !(player.iframeMs > 0));
     const moving = Math.hypot(player.vx || 0, player.vz || 0) > 0.6;
     velo.update(dtMs, { moving, reducedMotion });
 
@@ -857,7 +1094,7 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
     coreRing.material.opacity = state.core.flashMs > 0 ? 1 : 0.55 + hpRatio * 0.3;
     core.position.y = state.core.flashMs > 0 && !reducedMotion ? Math.sin(clockMs / 40) * 0.06 : 0;
 
-    syncTowers(state);
+    syncTowers(state, dtMs);
 
     // Camera: follows the player, never the other way round.
     if (shakeMs > 0) {
@@ -897,10 +1134,41 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
     return bestIndex;
   }
 
+  // World point -> CSS pixels inside the canvas, for the HUD's floating
+  // numbers. Returns null when the point is behind the camera.
+  const projectPoint = new THREE.Vector3();
+  function project(x, y, z, width, height) {
+    projectPoint.set(x, y, z).project(camera);
+    if (projectPoint.z > 1) return null;
+    return {
+      x: ((projectPoint.x + 1) / 2) * width,
+      y: ((1 - projectPoint.y) / 2) * height,
+    };
+  }
+
+  // Auto-quality: drop shadows, trim particles and the pixel ratio when the
+  // game loop reports sustained slow frames. One way only; never flaps.
+  let degraded = false;
+  function setQuality(next) {
+    if (next !== 'low' || degraded) return false;
+    degraded = true;
+    Object.assign(settings, QUALITY.low);
+    renderer.shadowMap.enabled = false;
+    key.castShadow = false;
+    renderer.setPixelRatio(1);
+    particleGeometry.setDrawRange(0, Math.min(particleCount, 80));
+    sparks.length = Math.min(sparks.length, settings.sparks);
+    return true;
+  }
+
   return {
     kind: 'webgl',
     render,
     socketAtScreen,
+    project,
+    spark,
+    setQuality,
+    quality: () => (degraded ? 'low' : quality),
     resize,
     setTheme: applyTheme,
     setReducedMotion: (value) => {

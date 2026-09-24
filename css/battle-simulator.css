@@ -2746,3 +2746,48 @@ summary:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+
+/* Touch targets on phones: tower tabs, research nodes, the setup-JSON toggle,
+   the brand link and checkboxes all reach 44px (checkboxes through their
+   label row). */
+@media (max-width: 640px) {
+  .battle-brand {
+    min-width: 44px;
+  }
+
+  .battle-profile-towers .specialization-tower-tab {
+    min-height: 44px;
+  }
+
+  .battle-profile-towers .specialization-research-node {
+    min-width: 44px;
+  }
+
+  .battle-profile-towers button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .battle-compact-button {
+    min-height: 44px;
+  }
+
+  .battle-app summary,
+  body summary {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+  }
+
+  body input[type='checkbox'],
+  body input[type='radio'] {
+    width: 22px;
+    height: 22px;
+  }
+
+  body label:has(> input[type='checkbox']),
+  body label:has(> input[type='radio']) {
+    min-height: 44px;
+    align-items: center;
+  }
+}

@@ -105,9 +105,13 @@ async function preparePage(page) {
 }
 
 async function bootSiege(page, query = '') {
+  // First visits get the training wave; the contract tests below are about
+  // wave one, so they opt out unless a query asks for the tutorial itself.
+  let url = `/eden-siege.html${query}`;
+  if (!/[?&]tutorial=/u.test(url)) url += `${url.includes('?') ? '&' : '?'}tutorial=0`;
   // domcontentloaded, not load: a stalled third-party stylesheet must not be
   // able to hang the run before the engine gets a chance to report in.
-  await page.goto(`/eden-siege.html${query}`, { waitUntil: 'domcontentloaded' });
+  await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => Boolean(window.__EDEN_SIEGE__), null, { timeout: 45000 });
   await expect(page.locator('#siegeStatus')).toBeHidden({ timeout: 15000 });
   return page.evaluate(() => ({
@@ -348,6 +352,98 @@ test.describe('Eden Siege', () => {
     await page.goto('/eden-siege.html?lang=ko', { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => Boolean(window.__EDEN_SIEGE__), null, { timeout: 45000 });
     await expect(page.locator('html')).toHaveAttribute('lang', 'ko');
+  });
+
+  test('a first run offers the training wave, which can be skipped', async ({ page }) => {
+    const failures = await preparePage(page);
+    await bootSiege(page, '?tutorial=1');
+    await beginRun(page);
+    await expect(page.locator('.siege-tutorial')).toBeVisible();
+    await expect(page.locator('.siege-tutorial li')).toHaveCount(5);
+    await page.keyboard.down('KeyD');
+    await page.waitForTimeout(700);
+    await page.keyboard.up('KeyD');
+    await expect(page.locator('.siege-tutorial li.is-done')).not.toHaveCount(0);
+    await page.locator('.siege-tutorial .siege-btn').click();
+    await expect(page.locator('.siege-tutorial')).toBeHidden();
+    const state = await page.evaluate(() => {
+      const scene = window.__EDEN_SIEGE__.scene();
+      return { done: scene.tutorial.done, skipped: scene.tutorial.skipped, phase: scene.phase };
+    });
+    expect(state).toEqual({ done: true, skipped: true, phase: 'build' });
+    expect(await page.evaluate(() => localStorage.getItem('vts_siege_tutorial_v1'))).toBe('done');
+
+    // Touch players have no Enter key: the build picker calls the next wave.
+    await page.locator('.siege-build-call').click();
+    await expect
+      .poll(() => page.evaluate(() => window.__EDEN_SIEGE__.scene().phase))
+      .toBe('wave');
+    expect(failures).toEqual([]);
+  });
+
+  test('the Daily Siege boots the shared seed in endless mode', async ({ page }) => {
+    const failures = await preparePage(page);
+    const boot = await bootSiege(page, '?mode=daily');
+    expect(boot.seed).toMatch(/^daily:(keep|ship):\d{4}-\d{2}-\d{2}$/u);
+    const stamp = new Date().toISOString().slice(0, 10);
+    expect(boot.seed).toContain(stamp);
+    await expect(page.locator('.siege-chip.is-active')).toHaveCount(1);
+    await beginRun(page);
+    const scene = await page.evaluate(() => ({
+      mode: window.__EDEN_SIEGE__.scene().mode,
+      endless: window.__EDEN_SIEGE__.scene().endless,
+    }));
+    expect(scene).toEqual({ mode: 'daily', endless: true });
+    expect(failures).toEqual([]);
+  });
+
+  test('dash, ultimate and the results screen with stars and history', async ({ page }) => {
+    const failures = await preparePage(page);
+    await bootSiege(page);
+    await beginRun(page);
+    await page.keyboard.down('KeyD');
+    await page.keyboard.press('ShiftLeft');
+    await page.waitForTimeout(300);
+    await page.keyboard.up('KeyD');
+    const dash = await page.evaluate(() => window.__EDEN_SIEGE__.scene().player.dashCdMs);
+    expect(dash, 'the dash went on cooldown').toBeGreaterThan(0);
+
+    await page.evaluate(() => {
+      const scene = window.__EDEN_SIEGE__.scene();
+      scene.ult.charge = 100;
+      scene.ult.ready = true;
+    });
+    await page.keyboard.press('KeyR');
+    await expect
+      .poll(() => page.evaluate(() => window.__EDEN_SIEGE__.scene().ult.activeMs))
+      .toBeGreaterThan(0);
+
+    await page.evaluate(() => {
+      window.__EDEN_SIEGE__.scene().core.hp = 0.01;
+      window.__EDEN_SIEGE__.scene().core.burnMs = 5000;
+    });
+    await expect(page.locator('.siege-overlay')).toBeVisible();
+    await expect(page.locator('.siege-stars i')).toHaveCount(3);
+    await expect(page.locator('.siege-overlay-stat')).toHaveCount(8);
+    await expect(page.locator('.siege-history li')).toHaveCount(1);
+    const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('vts_siege_progress_v1')));
+    expect(stored.history).toHaveLength(1);
+    expect(failures).toEqual([]);
+  });
+
+  test('auto-quality can drop to the low tier without breaking the run', async ({ page }) => {
+    const failures = await preparePage(page);
+    const boot = await bootSiege(page, '?quality=medium');
+    test.skip(boot.mode !== 'webgl', 'quality tiers belong to the 3D renderer');
+    await beginRun(page);
+    const quality = await page.evaluate(() => window.__EDEN_SIEGE__.game.degradeQuality());
+    expect(quality).toBe('low');
+    const before = await page.evaluate(() => window.__EDEN_SIEGE__.game.stats().frames);
+    await page.waitForTimeout(600);
+    const after = await page.evaluate(() => window.__EDEN_SIEGE__.game.stats());
+    expect(after.frames).toBeGreaterThan(before);
+    expect(after.quality).toBe('low');
+    expect(failures).toEqual([]);
   });
 
   test.skip(isRemotePreview, 'local-only check');

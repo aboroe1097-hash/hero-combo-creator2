@@ -60,6 +60,9 @@ function signupValues(overrides = {}) {
       preferredRole: 'offensive',
       secondaryRole: 'rune',
       fightingTimeIds: ['+12', '+14'],
+      bohTimeSlots: ['+20', '+8'],
+      epicTimeSlots: ['+10'],
+      publicComparisonConsent: true,
       vts1097Member: true,
       contactNumber: '',
       joinReason: 'Team fight in Eden',
@@ -174,9 +177,12 @@ test('the built document matches the shape firestore.rules enforces', () => {
   for (const key of commitmentKeys) {
     assert.ok(commitmentHasOnly.includes(key), `commitment.${key} allowed`);
   }
-  // The rules require exactly two distinct fighting times.
-  assert.equal(document.commitment.fightingTimeIds.length, 2);
-  assert.equal(new Set(document.commitment.fightingTimeIds).size, 2);
+  // Competition #12: the BoH and Epic Showdown slots keep the member's order,
+  // and the growth-board consent is a real boolean.
+  assert.deepEqual(document.commitment.bohTimeSlots, ['+20', '+8']);
+  assert.deepEqual(document.commitment.epicTimeSlots, ['+10']);
+  assert.equal(document.commitment.publicComparisonConsent, true);
+  assert.ok(document.commitment.fightingTimeIds.length <= 2);
 });
 
 test('signup validation rejects what the rules would reject, with reasons', () => {
@@ -286,7 +292,10 @@ test('the VtsScore page carries the revived signup as its first member step', ()
   assert.match(page, /data-boh-field="gameName"/);
   assert.match(page, /data-boh-field="stats\.totalCastlePower"/);
   assert.match(page, /data-boh-field="stats\.unitSpecialtyPower"/);
-  assert.match(page, /data-boh-field="commitment\.fightingTimeIds"/);
+  assert.match(page, /data-boh-list="true"\s+data-boh-field="commitment\.bohTimeSlots"/);
+  assert.match(page, /data-boh-list="true"\s+data-boh-field="commitment\.epicTimeSlots"/);
+  assert.match(page, /type="checkbox"\s+data-boh-field="commitment\.publicComparisonConsent"/);
+  assert.doesNotMatch(page, /commitment\.fightingTimeIds/);
   assert.match(page, /data-boh-field="commitment\.vts1097Member"/);
   // The signup step precedes the score upload, and the workspace still needs
   // the member grant the PIN form issues.
@@ -319,7 +328,9 @@ test('every signup string on the page exists in all six VtsScore languages', () 
   for (const key of [
     'signupKicker',
     'signupSave',
-    'signupErrorFightingTimes',
+    'signupErrorBohSlots',
+    'signupErrorEpicSlots',
+    'publicConsent',
     'signupStateSaved',
   ]) {
     assert.ok(VTS_SCORE_COPY_KEYS.includes(key), `${key} must exist`);

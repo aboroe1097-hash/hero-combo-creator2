@@ -12,10 +12,13 @@ import {
   BOH_SIGNUP_ADMIN_DEFAULTS,
   BOH_SIGNUP_ADMIN_ENDPOINT,
   BOH_SIGNUP_ADMIN_ERROR_KEYS,
+  bohSignupAdminSlotProblem,
   buildBohSignupAdminRequest,
   renderBohSignupRows,
   saveBohSignupSeasonConfig,
+  toggleOrderedSlot,
 } from '../../js/boh-signup-admin.js';
+import { COMPETITION_BOH_SLOTS } from '../../js/competition-schedule.js';
 import {
   BOH_SIGNUP_REQUIRED_DOCUMENT_KEYS,
   buildBohSignupDocument,
@@ -57,7 +60,10 @@ const FORM_VALUES = {
     rocLevel: '61',
   },
   commitment: {
-    fightingTimeIds: ['+12', '+16'],
+    fightingTimeIds: [],
+    bohTimeSlots: ['+14', '+8'],
+    epicTimeSlots: ['+19', '+10'],
+    publicComparisonConsent: false,
     preferredRole: 'offensive',
     vts1097Member: true,
     notes: 'Sent by DM',
@@ -340,7 +346,11 @@ test('create derives the account id and writes the pinned document', async () =>
   assert.equal(document.entryMethod, 'manual');
   assert.equal(document.status, 'submitted');
   assert.equal(document.revision, 1);
-  assert.deepEqual(document.commitment.fightingTimeIds, ['+12', '+16']);
+  // A Competition #12 entry names BoH and Epic Showdown slots in order, not
+  // the two classic fighting times.
+  assert.deepEqual(document.commitment.fightingTimeIds, []);
+  assert.deepEqual(document.commitment.bohTimeSlots, ['+14', '+8']);
+  assert.deepEqual(document.commitment.epicTimeSlots, ['+19', '+10']);
   assert.equal(document.commitment.notes, 'Sent by DM');
   assert.equal(document.commitment.availability, BOH_SIGNUP_ADMIN_DEFAULTS.commitment.availability);
   assert.equal(
@@ -377,7 +387,10 @@ test('create derives the account id and writes the pinned document', async () =>
       commitment: {
         availability: 'all',
         preferredRole: 'offensive',
-        fightingTimeIds: ['+12', '+16'],
+        fightingTimeIds: [],
+        bohTimeSlots: ['+14', '+8'],
+        epicTimeSlots: ['+19', '+10'],
+        publicComparisonConsent: false,
         vts1097Member: true,
         notes: 'Sent by DM',
       },
@@ -510,7 +523,8 @@ test('the admin panel request carries every key the Function pins', () => {
   assert.equal(create.stats.level50HeroCount, 9);
   assert.deepEqual(create.stats.t9TroopTypes, ['Spearman', 'Archer']);
   assert.deepEqual(create.stats.readySpeedHeroes, []);
-  assert.equal(create.commitment.fightingTimeIds.length, 2);
+  assert.equal(create.commitment.fightingTimeIds.length, 0);
+  assert.deepEqual(create.commitment.bohTimeSlots, ['+14', '+8']);
   assert.equal(create.commitment.availability, BOH_SIGNUP_ADMIN_DEFAULTS.commitment.availability);
   assert.equal(create.commitment.vts1097Member, true);
 
@@ -532,12 +546,14 @@ test('the admin panel request carries every key the Function pins', () => {
   assert.equal(sparse.commitment.vts1097Member, false);
 });
 
-test('the season picker writes exactly the four keys the rules validator allows', async () => {
+test('the season picker writes exactly the keys the rules validator allows', async () => {
   const writes = [];
+  let stored = null;
   const context = {
     db: { kind: 'test' },
     firestore: {
       doc: (_db, path) => ({ path }),
+      getDoc: async () => ({ exists: () => stored !== null, data: () => ({ ...stored }) }),
       setDoc: async (ref, payload) => writes.push({ path: ref.path, payload }),
     },
   };
@@ -554,6 +570,53 @@ test('the season picker writes exactly the four keys the rules validator allows'
     'scoringProfileId',
   ]);
   assert.deepEqual(writes[0].payload, saved);
+
+  // The optional fifth key, `acceptNewSignups`, belongs to the schedule
+  // Function: a season save carries the stored value forward unchanged and
+  // never invents one.
+  stored = { activeSeason: SEASON, open: false, acceptNewSignups: false };
+  const preserved = await saveBohSignupSeasonConfig(
+    {
+      activeSeason: SEASON,
+      scoringProfileId: PROFILE,
+      open: true,
+      grantDurationMinutes: 720,
+      acceptNewSignups: true,
+    },
+    context
+  );
+  assert.equal(writes.length, 2);
+  assert.deepEqual(Object.keys(writes[1].payload).sort(), [
+    'acceptNewSignups',
+    'activeSeason',
+    'grantDurationMinutes',
+    'open',
+    'scoringProfileId',
+  ]);
+  assert.equal(preserved.acceptNewSignups, false, 'the stored flag wins over a stale copy');
+  const rules = readFileSync('firestore.rules', 'utf8');
+  const validator = rules.match(/function validAllStarBohConfig\(\) \{[\s\S]*?\n {4}\}/)[0];
+  const allowed = validator
+    .match(/hasOnly\(\[([\s\S]*?)\]\)/)[1]
+    .match(/'([A-Za-z0-9]+)'/g)
+    .map((key) => key.slice(1, -1))
+    .sort();
+  assert.deepEqual(Object.keys(writes[1].payload).sort(), allowed);
+  stored = null;
+  writes.length = 1;
+
+  // Without a readable context the caller's copy is carried instead.
+  const offline = await saveBohSignupSeasonConfig(
+    {
+      activeSeason: SEASON,
+      scoringProfileId: PROFILE,
+      open: true,
+      grantDurationMinutes: 720,
+      acceptNewSignups: true,
+    },
+    { db: context.db, firestore: { doc: context.firestore.doc, setDoc: async () => {} } }
+  );
+  assert.equal(offline.acceptNewSignups, true);
   await assert.rejects(
     saveBohSignupSeasonConfig(
       {
@@ -602,6 +665,34 @@ test('the admin tab is wired into the dashboard and the nav', () => {
   assert.match(admin, /id="dashSubtabBohSignups"/);
   assert.match(admin, /id="dashBohSignupsSeasonForm"[\s\S]*data-requires-superadmin/);
   assert.match(admin, /id="dashBohSignupForm"/);
+  // Competition #12: the two classic fighting-time selects are replaced by
+  // ordered BoH / Epic Showdown slot pickers and the growth-board consent.
+  const form = admin.match(/<form id="dashBohSignupForm"[\s\S]*?<\/form>/)[0];
+  assert.doesNotMatch(form, /<select[^>]*data-boh-field="commitment\.fightingTimeIds"/);
+  assert.match(
+    form,
+    /<input type="hidden" data-boh-field="commitment\.fightingTimeIds" data-boh-list="true"/
+  );
+  for (const [path, slots] of [
+    ['commitment.bohTimeSlots', ['+8', '+12', '+14', '+20']],
+    ['commitment.epicTimeSlots', ['+10', '+13', '+16', '+19']],
+  ]) {
+    const picker = form.match(
+      new RegExp(`<fieldset[^>]*data-boh-slot-picker="${path}"[\\s\\S]*?</fieldset>`)
+    )[0];
+    assert.match(
+      picker,
+      new RegExp(`<input type="hidden" data-boh-field="${path}" data-boh-list="true"`)
+    );
+    assert.deepEqual(
+      [...picker.matchAll(/data-boh-slot="([^"]+)"/g)].map((match) => match[1]),
+      slots
+    );
+  }
+  assert.match(
+    form,
+    /<input type="checkbox" data-boh-field="commitment\.publicComparisonConsent" \/>/
+  );
   assert.match(admin, /id="dashBohSignupsList"/);
   assert.match(admin, /data-i18n="adminBohSignupsTab"/);
   // The picker is superadmin-only and the tab itself is reachable by any admin,
@@ -610,6 +701,75 @@ test('the admin tab is wired into the dashboard and the nav', () => {
     /const SUPERADMIN_DASH_SUBTABS = new Set\(\[[\s\S]*?\]\)/
   )[0];
   assert.doesNotMatch(superadminTabs, /bohSignups/);
+});
+
+test('the slot pickers keep the tap order and the request needs both lists', () => {
+  let list = [];
+  list = toggleOrderedSlot(list, '+20', COMPETITION_BOH_SLOTS);
+  list = toggleOrderedSlot(list.join(','), '+8', COMPETITION_BOH_SLOTS);
+  assert.deepEqual(list, ['+20', '+8']);
+  assert.deepEqual(toggleOrderedSlot(list, '+20', COMPETITION_BOH_SLOTS), ['+8']);
+  assert.deepEqual(toggleOrderedSlot(list, '+10', COMPETITION_BOH_SLOTS), ['+20', '+8']);
+
+  const request = (commitment) =>
+    buildBohSignupAdminRequest({
+      values: { ...FORM_VALUES, commitment: { ...FORM_VALUES.commitment, ...commitment } },
+      seasonId: SEASON,
+      scoringProfileId: PROFILE,
+    });
+  assert.equal(bohSignupAdminSlotProblem(request({})), '');
+  assert.equal(
+    bohSignupAdminSlotProblem(request({ epicTimeSlots: [] })),
+    'adminBohSignupErrorSlots'
+  );
+  const legacy = request({ fightingTimeIds: ['+12', '+16'] });
+  delete legacy.commitment.bohTimeSlots;
+  delete legacy.commitment.epicTimeSlots;
+  assert.equal(bohSignupAdminSlotProblem(legacy), '', 'a 2026 record keeps its fighting times');
+  legacy.commitment.fightingTimeIds = [];
+  assert.equal(bohSignupAdminSlotProblem(legacy), 'adminBohSignupErrorSlots');
+});
+
+test('the signup list shows each signup’s slots in order and its consent', () => {
+  const html = renderBohSignupRows(
+    [
+      {
+        submissionUid: 'uid-1',
+        gameName: 'Bil.',
+        revision: 1,
+        entryMethod: 'manual',
+        commitment: {
+          bohTimeSlots: ['+20', '+8'],
+          epicTimeSlots: ['+10'],
+          publicComparisonConsent: true,
+        },
+      },
+      {
+        submissionUid: 'uid-2',
+        gameName: 'Old',
+        revision: 1,
+        entryMethod: 'ocr',
+        commitment: { fightingTimeIds: ['+12', '+16'] },
+      },
+      {
+        submissionUid: 'uid-3',
+        gameName: 'Quiet',
+        revision: 1,
+        entryMethod: 'ocr',
+        commitment: {
+          bohTimeSlots: ['+14'],
+          epicTimeSlots: ['+19'],
+          publicComparisonConsent: false,
+        },
+      },
+    ],
+    (key, _vars, fallback) => fallback || key
+  );
+  assert.match(html, /BoH 20:00 › 08:00 · Epic 10:00/);
+  assert.match(html, /Classic \+12 › \+16/);
+  assert.match(html, /class="dash-boh-consent is-public">Public board</);
+  assert.match(html, /class="dash-boh-consent">Private</);
+  assert.match(html, /Times \(game time\)/);
 });
 
 test('the signup list renders an edit action per row', () => {
@@ -640,4 +800,30 @@ test('the signup list renders an edit action per row', () => {
     BOH_SIGNUP_ADMIN_ERROR_KEYS.admin_required,
     BOH_SIGNUP_ADMIN_ERROR_KEYS.invalid_auth
   );
+});
+
+test('the Function accepts both the 2026 shape and Competition #12 slots, and nothing else', async () => {
+  const { handler } = handlerWith();
+  const post = async (body) => {
+    const response = fakeResponse();
+    await handler(fakeRequest({ body }), response);
+    return response;
+  };
+  const base = createBody();
+  const legacyCommitment = { ...base.commitment, fightingTimeIds: ['+12', '+16'] };
+  delete legacyCommitment.bohTimeSlots;
+  delete legacyCommitment.epicTimeSlots;
+  delete legacyCommitment.publicComparisonConsent;
+  const legacy = await post({ ...base, gameName: 'Legacy', commitment: legacyCommitment });
+  assert.equal(legacy.statusCode, 200, JSON.stringify(legacy.payload));
+
+  for (const commitment of [
+    { ...base.commitment, bohTimeSlots: ['+10'] },
+    { ...base.commitment, bohTimeSlots: [] },
+    { ...base.commitment, epicTimeSlots: ['+8'] },
+    { ...base.commitment, epicTimeSlots: ['+10', '+13', '+16', '+19', '+22'] },
+  ]) {
+    const response = await post({ ...base, gameName: 'Bad Slots', commitment });
+    assert.equal(response.payload?.error, 'invalid_request', JSON.stringify(commitment));
+  }
 });

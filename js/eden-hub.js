@@ -9,6 +9,7 @@
 //   - season:   the current Eden season (eden-x2.html), revealed only after an
 //               admin publishes that workspace's projection
 //   - previous: previous-season rankings (eden-x1.html) in a lazy iframe
+//   - pdfs:     the PDF document builder for the Eden tables (loaded on open)
 //
 // Legacy deep links (#loyalty, #edenX1) are routed here by shell-v14.js,
 // which stashes the intended sub-tab in document.body.dataset.edenHubSubtab.
@@ -16,10 +17,11 @@
 import { translations } from './translations.js';
 import { currentLanguage } from './state.js';
 import { edenWorkspaceFirestorePath, isPublishedEdenProjection } from './eden-workspaces.js';
+import { mountHubPdfPanel } from './hub-pdf-tab.js';
 
-const LOYALTY_SRC = 'tabs/loyalty.html?v=20260924_124627';
-const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260924_124627';
-const PLAYBOOK_SRC = 'tabs/eden-playbook.html?v=20260924_124627';
+const LOYALTY_SRC = 'tabs/loyalty.html?v=20260924_155646';
+const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260924_155646';
+const PLAYBOOK_SRC = 'tabs/eden-playbook.html?v=20260924_155646';
 const PREVIOUS_SRC = 'eden-x1.html?embed=1';
 const SEASON_SRC = 'eden-x2.html?embed=1';
 // How long the hub waits for the season publication check before landing on
@@ -31,12 +33,14 @@ const SEASON_LANDING_TIMEOUT_MS = 2500;
 const SEASON_LINK_TIMEOUT_MS = 8000;
 const EDEN_HUB_SUBTABS = [
   'map',
+  'pathing',
   'loyalty',
   'operations',
   'bounty',
   'playbook',
   'season',
   'previous',
+  'pdfs',
 ];
 
 let booted = false;
@@ -103,7 +107,7 @@ function refreshMapViewport() {
   requestAnimationFrame(() => {
     // Use the same module identity as the planner boot. A different query
     // string creates a second module instance with no canvas state to refresh.
-    import('./eden-map.js?v=20260924_124627')
+    import('./eden-map.js?v=20260924_155646')
       .then((module) => module.refreshEdenMapViewport?.())
       .catch(() => {
         /* Eden map boot reports its own load errors. */
@@ -155,7 +159,7 @@ async function loadLoyalty(root, panel) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
     localizeFragment(panel);
-    const module = await import('./loyalty-spa.js?v=20260924_124627');
+    const module = await import('./loyalty-spa.js?v=20260924_155646');
     module.initLoyaltyCalculator?.();
     loyaltyLoaded = true;
   } catch (error) {
@@ -163,6 +167,18 @@ async function loadLoyalty(root, panel) {
     panel.innerHTML = loadFailedMarkup(catalogFor(currentLanguage).tabLoyalty || 'Loyalty');
   } finally {
     loyaltyLoading = false;
+  }
+}
+
+// Eden Pathing loads its module (and stylesheet) only when opened. Re-running
+// init on every open lets a freshly followed share link import its plan.
+async function loadPathing(panel) {
+  try {
+    const module = await import('./eden-pathing.js');
+    await module.initEdenPathing?.(panel.querySelector('#edenPathingRoot'));
+  } catch (error) {
+    console.warn('[eden-hub] Eden Pathing failed to load', error);
+    panel.innerHTML = loadFailedMarkup('Eden Pathing');
   }
 }
 
@@ -238,7 +254,7 @@ async function loadBounty(panel) {
     const response = await fetch(BOUNTY_SRC);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
-    const module = await import('./bounty-guide.js?v=20260924_124627');
+    const module = await import('./bounty-guide.js?v=20260924_155646');
     const mount = panel.querySelector('#bountyGuideRoot');
     if (mount) module.renderBountyGuide(mount);
     bountyLoaded = true;
@@ -332,11 +348,13 @@ export function bootEdenHub() {
 
   function loadPanelFor(name, panel, options = {}) {
     if (name === 'loyalty') loadLoyalty(root, panel);
+    if (name === 'pathing') loadPathing(panel);
     if (name === 'operations') loadOperations(panel);
     if (name === 'bounty') loadBounty(panel);
     if (name === 'playbook') loadPlaybook(panel);
     if (name === 'previous') loadPrevious(panel);
     if (name === 'season') loadSeason(panel, options);
+    if (name === 'pdfs') mountHubPdfPanel('eden', panel);
   }
 
   function openIntent(requested, options = {}) {

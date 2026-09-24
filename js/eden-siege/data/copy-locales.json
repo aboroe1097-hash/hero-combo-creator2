@@ -24,7 +24,12 @@
       "backToArcade": "Arcade",
       "swap": "Cambiar ala",
       "attack": "Atacar",
-      "controls": "WASD / flechas mover · Espacio atacar · Q E cambiar ala · F nova · Esc pausa"
+      "controls": "WASD / flechas mover · Espacio atacar · Mayús esquivar · Q E cambiar ala · F nova · R definitiva · Esc pausa",
+      "dash": "Esquivar",
+      "ult": "Definitiva",
+      "training": "Entrenamiento",
+      "endless": "Sin fin",
+      "boss": "Señor de la guerra"
     },
     "elements": {
       "elementIce": "Hielo",
@@ -43,7 +48,10 @@
       "victoryTitle": "Fortaleza en pie",
       "victoryBody": "Todas las oleadas rotas. Las alas quedaron saciadas.",
       "defeatTitle": "La puerta cayó",
-      "defeatBody": "La fortaleza se perdió, pero el récord sigue en pie."
+      "defeatBody": "La fortaleza se perdió, pero el récord sigue en pie.",
+      "buildCall": "Llamar la siguiente oleada",
+      "endlessTitle": "Asedio sin fin",
+      "endlessBody": "La campaña está ganada. Las puertas se abren otra vez: ¿cuánto aguantarás?"
     },
     "results": {
       "score": "Puntuación final",
@@ -53,7 +61,16 @@
       "kills": "Bajas",
       "share": "Compartir",
       "copied": "Copiado",
-      "playAgain": "Otra vez"
+      "playAgain": "Otra vez",
+      "stars": "Estrellas",
+      "maxChain": "Mejor cadena",
+      "towers": "Torres",
+      "time": "Tiempo",
+      "bossKills": "Señores",
+      "history": "Partidas recientes",
+      "continueEndless": "Seguir: sin fin",
+      "playDaily": "Asedio diario",
+      "campaignWon": "Campaña superada"
     },
     "maps": {
       "mapKeepName": "Muralla del Torreón",
@@ -70,7 +87,8 @@
     "enemies": {
       "enemyRanger": "Explorador",
       "enemyCavalry": "Caballería",
-      "enemyDreadnought": "Acorazado"
+      "enemyDreadnought": "Acorazado",
+      "enemyWarlord": "Señor de la guerra"
     },
     "towers": {
       "towerFrost": "Aguja de Escarcha",
@@ -83,13 +101,24 @@
       "coreUnderAttack": "La fortaleza está bajo ataque",
       "novaReady": "Nova lista",
       "revived": "De vuelta en la muralla",
-      "bossIncoming": "Se acerca el Acorazado",
+      "bossIncoming": "Un señor de la guerra encabeza esta oleada",
       "waveCleared": "Oleada superada",
       "socketEmpty": "Espacio vacío",
       "socketBuilt": "{tower} construida",
       "socketUpgraded": "{tower} al nivel {level}",
       "playerDown": "Has caído; reaparecerás en la fortaleza",
-      "pausedByContext": "Se perdió el contexto gráfico; la partida está en pausa"
+      "pausedByContext": "Se perdió el contexto gráfico; la partida está en pausa",
+      "crit": "Crítico",
+      "multiKill": "Multibaja ×{n}",
+      "bossDown": "¡Señor de la guerra abatido!",
+      "slamIncoming": "¡Golpe en camino: esquiva!",
+      "dodge": "Esquivado",
+      "ultReady": "Definitiva lista: pulsa R",
+      "ultActive": "¡Tormenta de alas!",
+      "shieldBreak": "Escudo roto",
+      "towerMax": "{tower} está al nivel máximo",
+      "qualityLowered": "Efectos reducidos para mantener la fluidez",
+      "endlessBegins": "Asedio sin fin: ¿cuánto aguantarás?"
     },
     "challenge": {
       "daily": "Semilla diaria",
@@ -103,6 +132,42 @@
       "failedTitle": "No se pudo cargar el motor",
       "failedBody": "Comprueba la conexión e inténtalo de nuevo. No se perdió nada.",
       "retry": "Intentar de nuevo"
+    },
+    "modes": {
+      "label": "Modo",
+      "arena": "Arena",
+      "campaign": "Campaña",
+      "endless": "Sin fin",
+      "daily": "Asedio diario",
+      "campaignDesc": "Diez oleadas, dos señores de la guerra. Tres estrellas si la fortaleza apenas sufre.",
+      "endlessDesc": "Las puertas nunca se cierran. Cada quinta oleada trae un señor de la guerra.",
+      "dailyDesc": "Un mapa, una semilla, el mismo asedio para todos hoy ({date})."
+    },
+    "tutorial": {
+      "title": "Oleada de entrenamiento",
+      "body": "Unos exploradores lentos para practicar. Completa cada paso y empieza el asedio real.",
+      "move": "Moverse: WASD, flechas o el joystick",
+      "attack": "Atacar: mantén Espacio o el botón de ataque",
+      "swap": "Cambiar ala: Q / E o los botones de ala",
+      "build": "Construir: toca un espacio brillante",
+      "nova": "Nova: pulsa F o el botón de nova",
+      "skip": "Saltar entrenamiento",
+      "done": "Entrenamiento completo: empieza el asedio"
+    },
+    "streaks": [
+      "¡Cadena alada!",
+      "¡Arrasando!",
+      "¡Imparable!",
+      "¡Tormenta de Eden!",
+      "¡Leyenda de 1097!"
+    ],
+    "modifiers": {
+      "armored": "Blindado",
+      "swift": "Veloz",
+      "shielded": "Escudado",
+      "armoredHint": "Enemigos blindados: el Fuego atraviesa la armadura",
+      "shieldedHint": "Enemigos escudados: el Hielo rompe los escudos",
+      "swiftHint": "Enemigos veloces: frénalos con Hielo"
     }
   },
   "pt": {
@@ -130,7 +195,12 @@
       "backToArcade": "Arcade",
       "swap": "Trocar asa",
       "attack": "Atacar",
-      "controls": "WASD / setas mover · Espaço atacar · Q E trocar asa · F nova · Esc pausa"
+      "controls": "WASD / setas mover · Espaço atacar · Shift investida · Q E trocar asa · F nova · R suprema · Esc pausa",
+      "dash": "Investida",
+      "ult": "Suprema",
+      "training": "Treino",
+      "endless": "Infinito",
+      "boss": "Senhor da guerra"
     },
     "elements": {
       "elementIce": "Gelo",
@@ -149,7 +219,10 @@
       "victoryTitle": "Fortaleza mantida",
       "victoryBody": "Todas as ondas rompidas. As asas se fartaram.",
       "defeatTitle": "O portão caiu",
-      "defeatBody": "A fortaleza foi perdida, mas o recorde continua de pé."
+      "defeatBody": "A fortaleza foi perdida, mas o recorde continua de pé.",
+      "buildCall": "Chamar a próxima onda",
+      "endlessTitle": "Cerco infinito",
+      "endlessBody": "A campanha foi vencida. Os portões se abrem de novo — quanto tempo você aguenta?"
     },
     "results": {
       "score": "Pontuação final",
@@ -159,7 +232,16 @@
       "kills": "Abates",
       "share": "Compartilhar",
       "copied": "Copiado",
-      "playAgain": "Jogar de novo"
+      "playAgain": "Jogar de novo",
+      "stars": "Estrelas",
+      "maxChain": "Melhor corrente",
+      "towers": "Torres",
+      "time": "Tempo",
+      "bossKills": "Senhores da guerra",
+      "history": "Partidas recentes",
+      "continueEndless": "Continuar: Infinito",
+      "playDaily": "Cerco diário",
+      "campaignWon": "Campanha concluída"
     },
     "maps": {
       "mapKeepName": "Muralha do Torreão",
@@ -176,7 +258,8 @@
     "enemies": {
       "enemyRanger": "Batedor",
       "enemyCavalry": "Cavalaria",
-      "enemyDreadnought": "Encouraçado"
+      "enemyDreadnought": "Encouraçado",
+      "enemyWarlord": "Senhor da guerra"
     },
     "towers": {
       "towerFrost": "Agulha de Gelo",
@@ -189,13 +272,24 @@
       "coreUnderAttack": "A fortaleza está sob ataque",
       "novaReady": "Nova pronta",
       "revived": "De volta à muralha",
-      "bossIncoming": "Encouraçado se aproximando",
+      "bossIncoming": "Um senhor da guerra lidera esta onda",
       "waveCleared": "Onda eliminada",
       "socketEmpty": "Espaço vazio",
       "socketBuilt": "{tower} construída",
       "socketUpgraded": "{tower} ao nível {level}",
       "playerDown": "Você caiu — renascendo na fortaleza",
-      "pausedByContext": "Contexto gráfico perdido — a partida está pausada"
+      "pausedByContext": "Contexto gráfico perdido — a partida está pausada",
+      "crit": "Crítico",
+      "multiKill": "Abate múltiplo ×{n}",
+      "bossDown": "Senhor da guerra derrubado!",
+      "slamIncoming": "Pancada chegando — saia com a investida!",
+      "dodge": "Esquivou",
+      "ultReady": "Suprema pronta — aperte R",
+      "ultActive": "Tempestade de asas!",
+      "shieldBreak": "Escudo estilhaçado",
+      "towerMax": "{tower} está no nível máximo",
+      "qualityLowered": "Efeitos reduzidos para manter a fluidez",
+      "endlessBegins": "Cerco infinito — quanto tempo você aguenta?"
     },
     "challenge": {
       "daily": "Semente diária",
@@ -209,6 +303,42 @@
       "failedTitle": "O motor não carregou",
       "failedBody": "Verifique sua conexão e tente novamente — nada foi perdido.",
       "retry": "Tentar novamente"
+    },
+    "modes": {
+      "label": "Modo",
+      "arena": "Arena",
+      "campaign": "Campanha",
+      "endless": "Infinito",
+      "daily": "Cerco diário",
+      "campaignDesc": "Dez ondas, dois senhores da guerra. Três estrelas para uma fortaleza quase sem arranhões.",
+      "endlessDesc": "Os portões nunca fecham. A cada cinco ondas chega um senhor da guerra.",
+      "dailyDesc": "Um mapa, uma semente, o mesmo cerco para todos os jogadores hoje ({date})."
+    },
+    "tutorial": {
+      "title": "Onda de treino",
+      "body": "Alguns batedores lentos para praticar. Cumpra cada passo e o cerco de verdade começa.",
+      "move": "Mover — WASD, setas ou o direcional",
+      "attack": "Atacar — segure Espaço ou o botão de ataque",
+      "swap": "Trocar asa — Q / E ou os botões de asa",
+      "build": "Construir — toque num encaixe brilhante",
+      "nova": "Nova — aperte F ou o botão de nova",
+      "skip": "Pular treino",
+      "done": "Treino concluído — o cerco começa"
+    },
+    "streaks": [
+      "Corrente alada!",
+      "Massacre!",
+      "Imparável!",
+      "Tempestade de Eden!",
+      "Lenda de 1097!"
+    ],
+    "modifiers": {
+      "armored": "Blindado",
+      "swift": "Veloz",
+      "shielded": "Com escudo",
+      "armoredHint": "Inimigos blindados: o Fogo atravessa a armadura",
+      "shieldedHint": "Inimigos com escudo: o Gelo estilhaça escudos",
+      "swiftHint": "Inimigos velozes: desacelere-os com Gelo"
     }
   },
   "de": {
@@ -236,7 +366,12 @@
       "backToArcade": "Arcade",
       "swap": "Flügel wechseln",
       "attack": "Angriff",
-      "controls": "WASD / Pfeiltasten bewegen · Leertaste angreifen · Q E Flügel wechseln · F Nova · Esc Pause"
+      "controls": "WASD / Pfeiltasten bewegen · Leertaste angreifen · Shift Sprint · Q E Flügel wechseln · F Nova · R Ultimate · Esc Pause",
+      "dash": "Sprint",
+      "ult": "Ultimate",
+      "training": "Training",
+      "endless": "Endlos",
+      "boss": "Kriegsherr"
     },
     "elements": {
       "elementIce": "Eis",
@@ -255,7 +390,10 @@
       "victoryTitle": "Festung gehalten",
       "victoryBody": "Jede Welle gebrochen. Die Flügel holten sich ihren Teil.",
       "defeatTitle": "Das Tor fiel",
-      "defeatBody": "Die Festung ist verloren — doch der Rekord steht noch."
+      "defeatBody": "Die Festung ist verloren — doch der Rekord steht noch.",
+      "buildCall": "Nächste Welle rufen",
+      "endlessTitle": "Endlose Belagerung",
+      "endlessBody": "Die Kampagne ist gewonnen. Die Tore öffnen sich erneut — wie lange hältst du durch?"
     },
     "results": {
       "score": "Endpunktzahl",
@@ -265,7 +403,16 @@
       "kills": "Abschüsse",
       "share": "Lauf teilen",
       "copied": "Kopiert",
-      "playAgain": "Nochmal spielen"
+      "playAgain": "Nochmal spielen",
+      "stars": "Sterne",
+      "maxChain": "Beste Kette",
+      "towers": "Türme",
+      "time": "Zeit",
+      "bossKills": "Kriegsherren",
+      "history": "Letzte Läufe",
+      "continueEndless": "Weiter: Endlos",
+      "playDaily": "Tägliche Belagerung",
+      "campaignWon": "Kampagne geschafft"
     },
     "maps": {
       "mapKeepName": "Burgwall",
@@ -282,7 +429,8 @@
     "enemies": {
       "enemyRanger": "Späher",
       "enemyCavalry": "Kavallerie",
-      "enemyDreadnought": "Schlachtschiff"
+      "enemyDreadnought": "Schlachtschiff",
+      "enemyWarlord": "Kriegsherr"
     },
     "towers": {
       "towerFrost": "Frostspitze",
@@ -295,13 +443,24 @@
       "coreUnderAttack": "Die Festung wird angegriffen",
       "novaReady": "Nova bereit",
       "revived": "Zurück auf der Mauer",
-      "bossIncoming": "Schlachtschiff nähert sich",
+      "bossIncoming": "Ein Kriegsherr führt diese Welle an",
       "waveCleared": "Welle geschafft",
       "socketEmpty": "Leerer Platz",
       "socketBuilt": "{tower} errichtet",
       "socketUpgraded": "{tower} auf Stufe {level}",
       "playerDown": "Du bist gefallen — Wiederbelebung an der Festung",
-      "pausedByContext": "Grafikkontext verloren — der Lauf ist pausiert"
+      "pausedByContext": "Grafikkontext verloren — der Lauf ist pausiert",
+      "crit": "Kritisch",
+      "multiKill": "Mehrfach-Kill ×{n}",
+      "bossDown": "Kriegsherr besiegt!",
+      "slamIncoming": "Stampfer kommt — sprinte raus!",
+      "dodge": "Ausgewichen",
+      "ultReady": "Ultimate bereit — drücke R",
+      "ultActive": "Flügelsturm!",
+      "shieldBreak": "Schild zerschmettert",
+      "towerMax": "{tower} hat die Höchststufe",
+      "qualityLowered": "Effekte reduziert, damit die Bildrate flüssig bleibt",
+      "endlessBegins": "Endlose Belagerung — wie lange hältst du durch?"
     },
     "challenge": {
       "daily": "Täglicher Seed",
@@ -315,6 +474,42 @@
       "failedTitle": "Die Engine wurde nicht geladen",
       "failedBody": "Prüfe deine Verbindung und versuche es erneut — nichts ist verloren.",
       "retry": "Erneut versuchen"
+    },
+    "modes": {
+      "label": "Modus",
+      "arena": "Arena",
+      "campaign": "Kampagne",
+      "endless": "Endlos",
+      "daily": "Tägliche Belagerung",
+      "campaignDesc": "Zehn Wellen, zwei Kriegsherren. Drei Sterne für eine Festung, die kaum einen Kratzer abbekommt.",
+      "endlessDesc": "Die Tore schließen sich nie. Jede fünfte Welle bringt einen Kriegsherrn.",
+      "dailyDesc": "Eine Karte, ein Seed, dieselbe Belagerung für alle Spieler heute ({date})."
+    },
+    "tutorial": {
+      "title": "Trainingswelle",
+      "body": "Ein paar langsame Späher zum Üben. Hake jeden Schritt ab, dann beginnt die echte Belagerung.",
+      "move": "Bewegen — WASD, Pfeiltasten oder der Stick",
+      "attack": "Angreifen — Leertaste oder Angriffstaste halten",
+      "swap": "Flügel wechseln — Q / E oder die Flügeltasten",
+      "build": "Bauen — tippe auf einen leuchtenden Sockel",
+      "nova": "Nova — drücke F oder die Nova-Taste",
+      "skip": "Training überspringen",
+      "done": "Training abgeschlossen — die Belagerung beginnt"
+    },
+    "streaks": [
+      "Flügelkette!",
+      "Amoklauf!",
+      "Unaufhaltsam!",
+      "Eden-Sturm!",
+      "Legende von 1097!"
+    ],
+    "modifiers": {
+      "armored": "Gepanzert",
+      "swift": "Flink",
+      "shielded": "Geschützt",
+      "armoredHint": "Gepanzerte Gegner: Feuer brennt durch die Panzerung",
+      "shieldedHint": "Geschützte Gegner: Eis zerschmettert Schilde",
+      "swiftHint": "Flinke Gegner: bremse sie mit Eis"
     }
   },
   "fr": {
@@ -342,7 +537,12 @@
       "backToArcade": "Arcade",
       "swap": "Changer d'aile",
       "attack": "Attaquer",
-      "controls": "WASD / flèches déplacer · Espace attaquer · Q E changer d'aile · F nova · Esc pause"
+      "controls": "WASD / flèches déplacer · Espace attaquer · Maj ruée · Q E changer d'aile · F nova · R ultime · Esc pause",
+      "dash": "Ruée",
+      "ult": "Ultime",
+      "training": "Entraînement",
+      "endless": "Sans fin",
+      "boss": "Seigneur de guerre"
     },
     "elements": {
       "elementIce": "Glace",
@@ -361,7 +561,10 @@
       "victoryTitle": "Forteresse tenue",
       "victoryBody": "Chaque vague brisée. Les ailes ont pris leur dû.",
       "defeatTitle": "La porte est tombée",
-      "defeatBody": "La forteresse est perdue — mais le record tient toujours."
+      "defeatBody": "La forteresse est perdue — mais le record tient toujours.",
+      "buildCall": "Appeler la vague suivante",
+      "endlessTitle": "Siège sans fin",
+      "endlessBody": "La campagne est gagnée. Les portes se rouvrent — combien de temps tiendrez-vous ?"
     },
     "results": {
       "score": "Score final",
@@ -371,7 +574,16 @@
       "kills": "Éliminations",
       "share": "Partager la partie",
       "copied": "Copié",
-      "playAgain": "Rejouer"
+      "playAgain": "Rejouer",
+      "stars": "Étoiles",
+      "maxChain": "Meilleure chaîne",
+      "towers": "Tours",
+      "time": "Temps",
+      "bossKills": "Seigneurs",
+      "history": "Parties récentes",
+      "continueEndless": "Continuer : sans fin",
+      "playDaily": "Siège du jour",
+      "campaignWon": "Campagne réussie"
     },
     "maps": {
       "mapKeepName": "Rempart du Donjon",
@@ -388,7 +600,8 @@
     "enemies": {
       "enemyRanger": "Éclaireur",
       "enemyCavalry": "Cavalerie",
-      "enemyDreadnought": "Cuirassé"
+      "enemyDreadnought": "Cuirassé",
+      "enemyWarlord": "Seigneur de guerre"
     },
     "towers": {
       "towerFrost": "Flèche de Givre",
@@ -401,13 +614,24 @@
       "coreUnderAttack": "La forteresse est attaquée",
       "novaReady": "Nova prête",
       "revived": "De retour sur le rempart",
-      "bossIncoming": "Cuirassé en approche",
+      "bossIncoming": "Un seigneur de guerre mène cette vague",
       "waveCleared": "Vague nettoyée",
       "socketEmpty": "Emplacement vide",
       "socketBuilt": "{tower} érigée",
       "socketUpgraded": "{tower} au niveau {level}",
       "playerDown": "Vous êtes tombé — réapparition à la forteresse",
-      "pausedByContext": "Contexte graphique perdu — la partie est en pause"
+      "pausedByContext": "Contexte graphique perdu — la partie est en pause",
+      "crit": "Critique",
+      "multiKill": "Élimination multiple ×{n}",
+      "bossDown": "Seigneur de guerre abattu !",
+      "slamIncoming": "Frappe imminente — esquivez !",
+      "dodge": "Esquivé",
+      "ultReady": "Ultime prêt — appuyez sur R",
+      "ultActive": "Tempête d'ailes !",
+      "shieldBreak": "Bouclier brisé",
+      "towerMax": "{tower} est au niveau maximum",
+      "qualityLowered": "Effets réduits pour garder une image fluide",
+      "endlessBegins": "Siège sans fin — combien de temps tiendrez-vous ?"
     },
     "challenge": {
       "daily": "Graine du jour",
@@ -421,6 +645,42 @@
       "failedTitle": "Le moteur n'a pas chargé",
       "failedBody": "Vérifiez votre connexion et réessayez — rien n'a été perdu.",
       "retry": "Réessayer"
+    },
+    "modes": {
+      "label": "Mode",
+      "arena": "Arène",
+      "campaign": "Campagne",
+      "endless": "Sans fin",
+      "daily": "Siège du jour",
+      "campaignDesc": "Dix vagues, deux seigneurs de guerre. Trois étoiles pour une forteresse à peine égratignée.",
+      "endlessDesc": "Les portes ne se ferment jamais. Toutes les cinq vagues, un seigneur de guerre arrive.",
+      "dailyDesc": "Une carte, une graine, le même siège pour tous les joueurs aujourd'hui ({date})."
+    },
+    "tutorial": {
+      "title": "Vague d'entraînement",
+      "body": "Quelques éclaireurs lents pour s'exercer. Validez chaque étape et le vrai siège commence.",
+      "move": "Se déplacer — WASD, flèches ou le joystick",
+      "attack": "Attaquer — maintenez Espace ou le bouton d'attaque",
+      "swap": "Changer d'aile — Q / E ou les boutons d'aile",
+      "build": "Construire — touchez un emplacement lumineux",
+      "nova": "Nova — appuyez sur F ou le bouton nova",
+      "skip": "Passer l'entraînement",
+      "done": "Entraînement terminé — le siège commence"
+    },
+    "streaks": [
+      "Chaîne ailée !",
+      "Carnage !",
+      "Inarrêtable !",
+      "Tempête d'Eden !",
+      "Légende de 1097 !"
+    ],
+    "modifiers": {
+      "armored": "Blindé",
+      "swift": "Rapide",
+      "shielded": "Bouclier",
+      "armoredHint": "Ennemis blindés : le Feu perce l'armure",
+      "shieldedHint": "Ennemis à bouclier : la Glace brise les boucliers",
+      "swiftHint": "Ennemis rapides : ralentissez-les avec la Glace"
     }
   },
   "hr": {
@@ -448,7 +708,12 @@
       "backToArcade": "Arkada",
       "swap": "Zamijeni krilo",
       "attack": "Napad",
-      "controls": "WASD / strelice kretanje · Razmak napad · Q E zamjena krila · F nova · Esc pauza"
+      "controls": "WASD / strelice kretanje · Razmak napad · Shift jurnjava · Q E zamjena krila · F nova · R vrhunska moć · Esc pauza",
+      "dash": "Jurnjava",
+      "ult": "Vrhunska moć",
+      "training": "Trening",
+      "endless": "Beskonačno",
+      "boss": "Vojskovođa"
     },
     "elements": {
       "elementIce": "Led",
@@ -467,7 +732,10 @@
       "victoryTitle": "Tvrđava izdržala",
       "victoryBody": "Svaki val slomljen. Krila su se namirila.",
       "defeatTitle": "Vrata su pala",
-      "defeatBody": "Tvrđava je izgubljena — ali rekord još stoji."
+      "defeatBody": "Tvrđava je izgubljena — ali rekord još stoji.",
+      "buildCall": "Pozovi sljedeći val",
+      "endlessTitle": "Beskonačna opsada",
+      "endlessBody": "Kampanja je dobivena. Vrata se opet otvaraju — koliko dugo možeš izdržati?"
     },
     "results": {
       "score": "Konačni rezultat",
@@ -477,7 +745,16 @@
       "kills": "Ubojstva",
       "share": "Podijeli rundu",
       "copied": "Kopirano",
-      "playAgain": "Igraj ponovno"
+      "playAgain": "Igraj ponovno",
+      "stars": "Zvjezdice",
+      "maxChain": "Najbolji lanac",
+      "towers": "Tornjevi",
+      "time": "Vrijeme",
+      "bossKills": "Vojskovođe",
+      "history": "Nedavne igre",
+      "continueEndless": "Nastavi: beskonačno",
+      "playDaily": "Dnevna opsada",
+      "campaignWon": "Kampanja završena"
     },
     "maps": {
       "mapKeepName": "Zid tvrđave",
@@ -494,7 +771,8 @@
     "enemies": {
       "enemyRanger": "Izviđač",
       "enemyCavalry": "Konjica",
-      "enemyDreadnought": "Bojni brod"
+      "enemyDreadnought": "Bojni brod",
+      "enemyWarlord": "Vojskovođa"
     },
     "towers": {
       "towerFrost": "Ledeni toranj",
@@ -507,13 +785,24 @@
       "coreUnderAttack": "Tvrđava je pod napadom",
       "novaReady": "Nova spremna",
       "revived": "Ponovno na zidu",
-      "bossIncoming": "Bojni brod se približava",
+      "bossIncoming": "Vojskovođa predvodi ovaj val",
       "waveCleared": "Val očišćen",
       "socketEmpty": "Prazno mjesto",
       "socketBuilt": "{tower} podignut",
       "socketUpgraded": "{tower} na razinu {level}",
       "playerDown": "Pao si — oživljavaš kod tvrđave",
-      "pausedByContext": "Grafički kontekst izgubljen — runda je pauzirana"
+      "pausedByContext": "Grafički kontekst izgubljen — runda je pauzirana",
+      "crit": "Kritično",
+      "multiKill": "Višestruko ubojstvo ×{n}",
+      "bossDown": "Vojskovođa pao!",
+      "slamIncoming": "Udarac dolazi — izmakni se!",
+      "dodge": "Izbjegnuto",
+      "ultReady": "Vrhunska moć spremna — pritisni R",
+      "ultActive": "Oluja krila!",
+      "shieldBreak": "Štit razbijen",
+      "towerMax": "{tower} je na najvišoj razini",
+      "qualityLowered": "Efekti smanjeni radi glatke slike",
+      "endlessBegins": "Beskonačna opsada — koliko dugo možeš izdržati?"
     },
     "challenge": {
       "daily": "Dnevni seed",
@@ -527,6 +816,42 @@
       "failedTitle": "Motor se nije učitao",
       "failedBody": "Provjeri vezu i pokušaj ponovno — ništa nije izgubljeno.",
       "retry": "Pokušaj ponovno"
+    },
+    "modes": {
+      "label": "Način",
+      "arena": "Arena",
+      "campaign": "Kampanja",
+      "endless": "Beskonačno",
+      "daily": "Dnevna opsada",
+      "campaignDesc": "Deset valova, dva vojskovođe. Tri zvjezdice za tvrđavu koja je jedva ogrebena.",
+      "endlessDesc": "Vrata se nikad ne zatvaraju. Svaki peti val dovodi vojskovođu.",
+      "dailyDesc": "Jedna karta, jedan seed, ista opsada za sve igrače danas ({date})."
+    },
+    "tutorial": {
+      "title": "Val za vježbu",
+      "body": "Nekoliko sporih izviđača za vježbu. Odradi svaki korak i počinje prava opsada.",
+      "move": "Kretanje — WASD, strelice ili palica",
+      "attack": "Napad — drži Razmak ili gumb za napad",
+      "swap": "Zamjena krila — Q / E ili gumbi krila",
+      "build": "Gradnja — dodirni svjetleće ležište",
+      "nova": "Nova — pritisni F ili gumb za novu",
+      "skip": "Preskoči trening",
+      "done": "Trening završen — opsada počinje"
+    },
+    "streaks": [
+      "Lanac krila!",
+      "Pokolj!",
+      "Nezaustavljiv!",
+      "Oluja Edena!",
+      "Legenda 1097!"
+    ],
+    "modifiers": {
+      "armored": "Oklopljen",
+      "swift": "Brz",
+      "shielded": "Sa štitom",
+      "armoredHint": "Oklopljeni neprijatelji: Vatra probija oklop",
+      "shieldedHint": "Neprijatelji sa štitom: Led razbija štitove",
+      "swiftHint": "Brzi neprijatelji: uspori ih Ledom"
     }
   },
   "tr": {
@@ -554,7 +879,12 @@
       "backToArcade": "Atari",
       "swap": "Kanat değiştir",
       "attack": "Saldır",
-      "controls": "WASD / oklar hareket · Boşluk saldırı · Q E kanat değiştir · F nova · Esc duraklat"
+      "controls": "WASD / oklar hareket · Boşluk saldırı · Shift atılma · Q E kanat değiştir · F nova · R nihai · Esc duraklat",
+      "dash": "Atılma",
+      "ult": "Nihai",
+      "training": "Eğitim",
+      "endless": "Sonsuz",
+      "boss": "Savaş Lordu"
     },
     "elements": {
       "elementIce": "Buz",
@@ -573,7 +903,10 @@
       "victoryTitle": "Kale korundu",
       "victoryBody": "Tüm dalgalar kırıldı. Kanatlar doydu.",
       "defeatTitle": "Kapı düştü",
-      "defeatBody": "Kale kaybedildi — ama rekor hâlâ ayakta."
+      "defeatBody": "Kale kaybedildi — ama rekor hâlâ ayakta.",
+      "buildCall": "Sonraki dalgayı çağır",
+      "endlessTitle": "Sonsuz kuşatma",
+      "endlessBody": "Sefer kazanıldı. Kapılar yeniden açılıyor — ne kadar dayanabilirsin?"
     },
     "results": {
       "score": "Final puanı",
@@ -583,7 +916,16 @@
       "kills": "Öldürme",
       "share": "Koşuyu paylaş",
       "copied": "Kopyalandı",
-      "playAgain": "Tekrar oyna"
+      "playAgain": "Tekrar oyna",
+      "stars": "Yıldız",
+      "maxChain": "En iyi zincir",
+      "towers": "Kuleler",
+      "time": "Süre",
+      "bossKills": "Savaş lordları",
+      "history": "Son oyunlar",
+      "continueEndless": "Devam et: Sonsuz",
+      "playDaily": "Günlük Kuşatma",
+      "campaignWon": "Sefer tamamlandı"
     },
     "maps": {
       "mapKeepName": "Kale Suru",
@@ -600,7 +942,8 @@
     "enemies": {
       "enemyRanger": "Avcı",
       "enemyCavalry": "Süvari",
-      "enemyDreadnought": "Zırhlı"
+      "enemyDreadnought": "Zırhlı",
+      "enemyWarlord": "Savaş Lordu"
     },
     "towers": {
       "towerFrost": "Buz Kulesi",
@@ -613,13 +956,24 @@
       "coreUnderAttack": "Kale saldırı altında",
       "novaReady": "Nova hazır",
       "revived": "Sura geri döndün",
-      "bossIncoming": "Zırhlı yaklaşıyor",
+      "bossIncoming": "Bu dalgayı bir savaş lordu yönetiyor",
       "waveCleared": "Dalga temizlendi",
       "socketEmpty": "Boş yuva",
       "socketBuilt": "{tower} kuruldu",
       "socketUpgraded": "{tower} {level}. seviyeye",
       "playerDown": "Düştün — kalede yeniden doğuyorsun",
-      "pausedByContext": "Grafik bağlamı kayboldu — koşu duraklatıldı"
+      "pausedByContext": "Grafik bağlamı kayboldu — koşu duraklatıldı",
+      "crit": "Kritik",
+      "multiKill": "Çoklu öldürme ×{n}",
+      "bossDown": "Savaş lordu düştü!",
+      "slamIncoming": "Darbe geliyor — atılarak kaç!",
+      "dodge": "Kaçınıldı",
+      "ultReady": "Nihai hazır — R'ye bas",
+      "ultActive": "Kanat fırtınası!",
+      "shieldBreak": "Kalkan parçalandı",
+      "towerMax": "{tower} en yüksek seviyede",
+      "qualityLowered": "Akıcılık için efektler azaltıldı",
+      "endlessBegins": "Sonsuz kuşatma — ne kadar dayanabilirsin?"
     },
     "challenge": {
       "daily": "Günlük tohum",
@@ -633,6 +987,42 @@
       "failedTitle": "Motor yüklenmedi",
       "failedBody": "Bağlantını kontrol et ve tekrar dene — hiçbir şey kaybolmadı.",
       "retry": "Tekrar dene"
+    },
+    "modes": {
+      "label": "Mod",
+      "arena": "Arena",
+      "campaign": "Sefer",
+      "endless": "Sonsuz",
+      "daily": "Günlük Kuşatma",
+      "campaignDesc": "On dalga, iki savaş lordu. Kale neredeyse çiziksiz kalırsa üç yıldız.",
+      "endlessDesc": "Kapılar hiç kapanmaz. Her beşinci dalgada bir savaş lordu gelir.",
+      "dailyDesc": "Tek harita, tek tohum; bugün her oyuncu için aynı kuşatma ({date})."
+    },
+    "tutorial": {
+      "title": "Eğitim dalgası",
+      "body": "Alıştırma için birkaç yavaş avcı. Her adımı tamamla, gerçek kuşatma başlasın.",
+      "move": "Hareket — WASD, oklar veya çubuk",
+      "attack": "Saldırı — Boşluk'u ya da saldırı düğmesini basılı tut",
+      "swap": "Kanat değiştir — Q / E veya kanat düğmeleri",
+      "build": "İnşa — parlayan bir yuvaya dokun",
+      "nova": "Nova — F'ye ya da nova düğmesine bas",
+      "skip": "Eğitimi atla",
+      "done": "Eğitim tamamlandı — kuşatma başlıyor"
+    },
+    "streaks": [
+      "Kanat zinciri!",
+      "Kırıp geçiyor!",
+      "Durdurulamaz!",
+      "Eden fırtınası!",
+      "1097 efsanesi!"
+    ],
+    "modifiers": {
+      "armored": "Zırhlı",
+      "swift": "Çevik",
+      "shielded": "Kalkanlı",
+      "armoredHint": "Zırhlı düşmanlar: Ateş zırhı deler",
+      "shieldedHint": "Kalkanlı düşmanlar: Buz kalkanları parçalar",
+      "swiftHint": "Çevik düşmanlar: onları Buzla yavaşlat"
     }
   },
   "ru": {
@@ -660,7 +1050,12 @@
       "backToArcade": "Аркада",
       "swap": "Сменить крыло",
       "attack": "Атака",
-      "controls": "WASD / стрелки — движение · Пробел — атака · Q E — крыло · F — нова · Esc — пауза"
+      "controls": "WASD / стрелки — движение · Пробел — атака · Shift — рывок · Q E — крыло · F — нова · R — ульта · Esc — пауза",
+      "dash": "Рывок",
+      "ult": "Ульта",
+      "training": "Обучение",
+      "endless": "Бесконечно",
+      "boss": "Военачальник"
     },
     "elements": {
       "elementIce": "Лёд",
@@ -679,7 +1074,10 @@
       "victoryTitle": "Крепость устояла",
       "victoryBody": "Все волны отбиты.",
       "defeatTitle": "Ворота пали",
-      "defeatBody": "Крепость потеряна, но рекорд остался."
+      "defeatBody": "Крепость потеряна, но рекорд остался.",
+      "buildCall": "Вызвать следующую волну",
+      "endlessTitle": "Бесконечная осада",
+      "endlessBody": "Кампания пройдена. Ворота открываются снова — сколько продержишься?"
     },
     "results": {
       "score": "Итоговый счёт",
@@ -689,7 +1087,16 @@
       "kills": "Убийств",
       "share": "Поделиться",
       "copied": "Скопировано",
-      "playAgain": "Ещё раз"
+      "playAgain": "Ещё раз",
+      "stars": "Звёзды",
+      "maxChain": "Лучшая цепь",
+      "towers": "Башни",
+      "time": "Время",
+      "bossKills": "Военачальники",
+      "history": "Последние забеги",
+      "continueEndless": "Дальше: бесконечно",
+      "playDaily": "Осада дня",
+      "campaignWon": "Кампания пройдена"
     },
     "maps": {
       "mapKeepName": "Стена цитадели",
@@ -706,7 +1113,8 @@
     "enemies": {
       "enemyRanger": "Стрелок",
       "enemyCavalry": "Кавалерия",
-      "enemyDreadnought": "Дредноут"
+      "enemyDreadnought": "Дредноут",
+      "enemyWarlord": "Военачальник"
     },
     "towers": {
       "towerFrost": "Ледяной шпиль",
@@ -719,13 +1127,24 @@
       "coreUnderAttack": "Крепость под атакой",
       "novaReady": "Нова готова",
       "revived": "Вы снова на стене",
-      "bossIncoming": "Приближается Дредноут",
+      "bossIncoming": "Эту волну ведёт военачальник",
       "waveCleared": "Волна отбита",
       "socketEmpty": "Свободная площадка",
       "socketBuilt": "Построено: {tower}",
       "socketUpgraded": "{tower}: уровень {level}",
       "playerDown": "Вы пали — возрождение у крепости",
-      "pausedByContext": "Графический контекст потерян — игра на паузе"
+      "pausedByContext": "Графический контекст потерян — игра на паузе",
+      "crit": "Крит",
+      "multiKill": "Мультикилл ×{n}",
+      "bossDown": "Военачальник повержен!",
+      "slamIncoming": "Удар по земле — уходи рывком!",
+      "dodge": "Уклонение",
+      "ultReady": "Ульта готова — нажми R",
+      "ultActive": "Буря крыльев!",
+      "shieldBreak": "Щит разбит",
+      "towerMax": "{tower}: максимальный уровень",
+      "qualityLowered": "Эффекты снижены ради плавности",
+      "endlessBegins": "Бесконечная осада — сколько продержишься?"
     },
     "challenge": {
       "daily": "Семя дня",
@@ -739,6 +1158,42 @@
       "failedTitle": "Не удалось загрузить движок",
       "failedBody": "Проверьте подключение и попробуйте снова — прогресс не потерян.",
       "retry": "Повторить"
+    },
+    "modes": {
+      "label": "Режим",
+      "arena": "Арена",
+      "campaign": "Кампания",
+      "endless": "Бесконечный",
+      "daily": "Осада дня",
+      "campaignDesc": "Десять волн, два военачальника. Три звезды — если крепость почти не пострадала.",
+      "endlessDesc": "Ворота не закрываются. Каждая пятая волна ведёт военачальника.",
+      "dailyDesc": "Одна карта, одно семя, одна осада для всех игроков сегодня ({date})."
+    },
+    "tutorial": {
+      "title": "Учебная волна",
+      "body": "Несколько медленных стрелков для практики. Выполни все шаги — и начнётся настоящая осада.",
+      "move": "Движение — WASD, стрелки или стик",
+      "attack": "Атака — удерживай Пробел или кнопку атаки",
+      "swap": "Смена крыла — Q / E или кнопки крыльев",
+      "build": "Стройка — нажми на светящееся гнездо",
+      "nova": "Нова — нажми F или кнопку новы",
+      "skip": "Пропустить обучение",
+      "done": "Обучение пройдено — осада начинается"
+    },
+    "streaks": [
+      "Цепь крыльев!",
+      "Разгром!",
+      "Неудержим!",
+      "Буря Эдема!",
+      "Легенда 1097!"
+    ],
+    "modifiers": {
+      "armored": "Бронированный",
+      "swift": "Быстрый",
+      "shielded": "Со щитом",
+      "armoredHint": "Бронированные враги: Огонь прожигает броню",
+      "shieldedHint": "Враги со щитом: Лёд разбивает щиты",
+      "swiftHint": "Быстрые враги: замедляй их Льдом"
     }
   },
   "id": {
@@ -766,7 +1221,12 @@
       "backToArcade": "Arkade",
       "swap": "Ganti sayap",
       "attack": "Serang",
-      "controls": "WASD / panah bergerak · Spasi serang · Q E ganti sayap · F nova · Esc jeda"
+      "controls": "WASD / panah bergerak · Spasi serang · Shift terjang · Q E ganti sayap · F nova · R pamungkas · Esc jeda",
+      "dash": "Terjang",
+      "ult": "Pamungkas",
+      "training": "Latihan",
+      "endless": "Tanpa akhir",
+      "boss": "Panglima"
     },
     "elements": {
       "elementIce": "Es",
@@ -785,7 +1245,10 @@
       "victoryTitle": "Benteng bertahan",
       "victoryBody": "Semua gelombang dipatahkan. Sayap sudah puas.",
       "defeatTitle": "Gerbang jatuh",
-      "defeatBody": "Benteng hilang — tetapi rekor masih berdiri."
+      "defeatBody": "Benteng hilang — tetapi rekor masih berdiri.",
+      "buildCall": "Panggil gelombang berikutnya",
+      "endlessTitle": "Pengepungan tanpa akhir",
+      "endlessBody": "Kampanye dimenangkan. Gerbang terbuka lagi — berapa lama kamu bisa bertahan?"
     },
     "results": {
       "score": "Skor akhir",
@@ -795,7 +1258,16 @@
       "kills": "Bunuh",
       "share": "Bagikan",
       "copied": "Disalin",
-      "playAgain": "Main lagi"
+      "playAgain": "Main lagi",
+      "stars": "Bintang",
+      "maxChain": "Rantai terbaik",
+      "towers": "Menara",
+      "time": "Waktu",
+      "bossKills": "Panglima",
+      "history": "Permainan terakhir",
+      "continueEndless": "Lanjut: tanpa akhir",
+      "playDaily": "Pengepungan Harian",
+      "campaignWon": "Kampanye selesai"
     },
     "maps": {
       "mapKeepName": "Tembok Benteng",
@@ -812,7 +1284,8 @@
     "enemies": {
       "enemyRanger": "Penembak",
       "enemyCavalry": "Kavaleri",
-      "enemyDreadnought": "Kapal Perang"
+      "enemyDreadnought": "Kapal Perang",
+      "enemyWarlord": "Panglima"
     },
     "towers": {
       "towerFrost": "Menara Beku",
@@ -825,13 +1298,24 @@
       "coreUnderAttack": "Benteng diserang",
       "novaReady": "Nova siap",
       "revived": "Kembali ke tembok",
-      "bossIncoming": "Kapal perang mendekat",
+      "bossIncoming": "Seorang panglima memimpin gelombang ini",
       "waveCleared": "Gelombang dibersihkan",
       "socketEmpty": "Slot kosong",
       "socketBuilt": "{tower} dibangun",
       "socketUpgraded": "{tower} ke level {level}",
       "playerDown": "Kau tumbang — bangkit di benteng",
-      "pausedByContext": "Konteks grafis hilang — permainan dijeda"
+      "pausedByContext": "Konteks grafis hilang — permainan dijeda",
+      "crit": "Kritis",
+      "multiKill": "Multi-kill ×{n}",
+      "bossDown": "Panglima tumbang!",
+      "slamIncoming": "Hantaman datang — terjang keluar!",
+      "dodge": "Menghindar",
+      "ultReady": "Pamungkas siap — tekan R",
+      "ultActive": "Badai sayap!",
+      "shieldBreak": "Perisai pecah",
+      "towerMax": "{tower} sudah level maksimum",
+      "qualityLowered": "Efek dikurangi agar tetap lancar",
+      "endlessBegins": "Pengepungan tanpa akhir — berapa lama kamu bisa bertahan?"
     },
     "challenge": {
       "daily": "Seed harian",
@@ -845,6 +1329,42 @@
       "failedTitle": "Mesin gagal dimuat",
       "failedBody": "Periksa koneksimu dan coba lagi — tidak ada yang hilang.",
       "retry": "Coba lagi"
+    },
+    "modes": {
+      "label": "Mode",
+      "arena": "Arena",
+      "campaign": "Kampanye",
+      "endless": "Tanpa akhir",
+      "daily": "Pengepungan Harian",
+      "campaignDesc": "Sepuluh gelombang, dua panglima. Tiga bintang untuk benteng yang nyaris tak tergores.",
+      "endlessDesc": "Gerbang tak pernah tertutup. Setiap gelombang kelima membawa panglima.",
+      "dailyDesc": "Satu peta, satu seed, pengepungan yang sama untuk semua pemain hari ini ({date})."
+    },
+    "tutorial": {
+      "title": "Gelombang latihan",
+      "body": "Beberapa penembak lambat untuk berlatih. Selesaikan setiap langkah dan pengepungan sungguhan dimulai.",
+      "move": "Bergerak — WASD, panah, atau stik",
+      "attack": "Serang — tahan Spasi atau tombol serang",
+      "swap": "Ganti sayap — Q / E atau tombol sayap",
+      "build": "Bangun — ketuk soket yang menyala",
+      "nova": "Nova — tekan F atau tombol nova",
+      "skip": "Lewati latihan",
+      "done": "Latihan selesai — pengepungan dimulai"
+    },
+    "streaks": [
+      "Rantai sayap!",
+      "Mengamuk!",
+      "Tak terhentikan!",
+      "Badai Eden!",
+      "Legenda 1097!"
+    ],
+    "modifiers": {
+      "armored": "Berlapis baja",
+      "swift": "Gesit",
+      "shielded": "Berperisai",
+      "armoredHint": "Musuh berlapis baja: Api menembus baja",
+      "shieldedHint": "Musuh berperisai: Es memecahkan perisai",
+      "swiftHint": "Musuh gesit: perlambat dengan Es"
     }
   },
   "zh": {
@@ -872,7 +1392,12 @@
       "backToArcade": "街机",
       "swap": "切换翼",
       "attack": "攻击",
-      "controls": "WASD/方向键移动 · 空格攻击 · Q E 切换翼 · F 新星 · Esc 暂停"
+      "controls": "WASD/方向键移动 · 空格攻击 · Shift 冲刺 · Q E 切换翼 · F 新星 · R 终极技 · Esc 暂停",
+      "dash": "冲刺",
+      "ult": "终极技",
+      "training": "训练",
+      "endless": "无尽",
+      "boss": "督军"
     },
     "elements": {
       "elementIce": "冰",
@@ -891,7 +1416,10 @@
       "victoryTitle": "要塞守住了",
       "victoryBody": "所有波次都被击破。",
       "defeatTitle": "城门失守",
-      "defeatBody": "要塞失守，但记录仍在。"
+      "defeatBody": "要塞失守，但记录仍在。",
+      "buildCall": "召唤下一波",
+      "endlessTitle": "无尽攻城",
+      "endlessBody": "战役已胜。城门再次打开——你能坚持多久？"
     },
     "results": {
       "score": "最终得分",
@@ -901,7 +1429,16 @@
       "kills": "击杀",
       "share": "分享",
       "copied": "已复制",
-      "playAgain": "再来一局"
+      "playAgain": "再来一局",
+      "stars": "星级",
+      "maxChain": "最佳连锁",
+      "towers": "塔",
+      "time": "时间",
+      "bossKills": "督军",
+      "history": "最近战绩",
+      "continueEndless": "继续：无尽模式",
+      "playDaily": "每日攻城",
+      "campaignWon": "战役通关"
     },
     "maps": {
       "mapKeepName": "堡垒城墙",
@@ -918,7 +1455,8 @@
     "enemies": {
       "enemyRanger": "游骑兵",
       "enemyCavalry": "骑兵",
-      "enemyDreadnought": "无畏战舰"
+      "enemyDreadnought": "无畏战舰",
+      "enemyWarlord": "督军"
     },
     "towers": {
       "towerFrost": "寒霜尖塔",
@@ -931,13 +1469,24 @@
       "coreUnderAttack": "要塞正在遭受攻击",
       "novaReady": "新星已就绪",
       "revived": "已重返城墙",
-      "bossIncoming": "无畏战舰正在接近",
+      "bossIncoming": "督军率领本波敌军",
       "waveCleared": "波次已清除",
       "socketEmpty": "空置塔位",
       "socketBuilt": "已建造{tower}",
       "socketUpgraded": "{tower}已升至{level}级",
       "playerDown": "你已倒下，将在要塞复活",
-      "pausedByContext": "图形上下文已丢失，战斗已暂停"
+      "pausedByContext": "图形上下文已丢失，战斗已暂停",
+      "crit": "暴击",
+      "multiKill": "多杀 ×{n}",
+      "bossDown": "督军倒下！",
+      "slamIncoming": "重击来袭——冲刺闪开！",
+      "dodge": "闪避",
+      "ultReady": "终极技就绪——按 R",
+      "ultActive": "翼之风暴！",
+      "shieldBreak": "护盾破碎",
+      "towerMax": "{tower} 已达最高等级",
+      "qualityLowered": "已降低特效以保持流畅",
+      "endlessBegins": "无尽攻城——你能坚持多久？"
     },
     "challenge": {
       "daily": "每日种子",
@@ -951,6 +1500,42 @@
       "failedTitle": "引擎加载失败",
       "failedBody": "请检查网络后重试，进度不会丢失。",
       "retry": "重试"
+    },
+    "modes": {
+      "label": "模式",
+      "arena": "战场",
+      "campaign": "战役",
+      "endless": "无尽",
+      "daily": "每日攻城",
+      "campaignDesc": "十波敌人、两名督军。要塞几乎无损即可获得三星。",
+      "endlessDesc": "城门永不关闭。每第五波由督军率领。",
+      "dailyDesc": "同一地图、同一种子，今天所有玩家面对同一场攻城（{date}）。"
+    },
+    "tutorial": {
+      "title": "训练波",
+      "body": "几名缓慢的游骑兵供你练手。完成每一步，真正的攻城就会开始。",
+      "move": "移动 — WASD、方向键或摇杆",
+      "attack": "攻击 — 按住空格或攻击按钮",
+      "swap": "切换翼 — Q / E 或翼按钮",
+      "build": "建造 — 点击发光的塔位",
+      "nova": "新星 — 按 F 或新星按钮",
+      "skip": "跳过训练",
+      "done": "训练完成——攻城开始"
+    },
+    "streaks": [
+      "翼之连锁！",
+      "横扫！",
+      "势不可挡！",
+      "伊甸风暴！",
+      "1097 传奇！"
+    ],
+    "modifiers": {
+      "armored": "重甲",
+      "swift": "迅捷",
+      "shielded": "护盾",
+      "armoredHint": "重甲敌人：火焰可烧穿护甲",
+      "shieldedHint": "护盾敌人：寒冰可击碎护盾",
+      "swiftHint": "迅捷敌人：用寒冰减速"
     }
   },
   "ar": {
@@ -978,7 +1563,12 @@
       "backToArcade": "الأركيد",
       "swap": "تبديل الجناح",
       "attack": "هجوم",
-      "controls": "WASD للحركة · مسافة للهجوم · Q E للجناح · F لنوفا · Esc للإيقاف"
+      "controls": "WASD للحركة · مسافة للهجوم · Shift للاندفاع · Q E للجناح · F لنوفا · R للقدرة القصوى · Esc للإيقاف",
+      "dash": "اندفاع",
+      "ult": "القدرة القصوى",
+      "training": "تدريب",
+      "endless": "بلا نهاية",
+      "boss": "أمير الحرب"
     },
     "elements": {
       "elementIce": "جليد",
@@ -997,7 +1587,10 @@
       "victoryTitle": "صمد الحصن",
       "victoryBody": "كُسرت كل الموجات.",
       "defeatTitle": "سقطت البوابة",
-      "defeatBody": "ضاع الحصن، لكن الرقم القياسي ما زال قائماً."
+      "defeatBody": "ضاع الحصن، لكن الرقم القياسي ما زال قائماً.",
+      "buildCall": "استدعِ الموجة التالية",
+      "endlessTitle": "حصار بلا نهاية",
+      "endlessBody": "انتصرت في الحملة. البوابات تُفتح من جديد — إلى متى ستصمد؟"
     },
     "results": {
       "score": "النتيجة النهائية",
@@ -1007,7 +1600,16 @@
       "kills": "القتلى",
       "share": "شارك",
       "copied": "تم النسخ",
-      "playAgain": "العب مرة أخرى"
+      "playAgain": "العب مرة أخرى",
+      "stars": "النجوم",
+      "maxChain": "أفضل سلسلة",
+      "towers": "الأبراج",
+      "time": "الوقت",
+      "bossKills": "أمراء الحرب",
+      "history": "آخر الجولات",
+      "continueEndless": "واصل: بلا نهاية",
+      "playDaily": "حصار اليوم",
+      "campaignWon": "اكتملت الحملة"
     },
     "maps": {
       "mapKeepName": "سور القلعة",
@@ -1024,7 +1626,8 @@
     "enemies": {
       "enemyRanger": "رامٍ",
       "enemyCavalry": "فرسان",
-      "enemyDreadnought": "مدرّعة"
+      "enemyDreadnought": "مدرّعة",
+      "enemyWarlord": "أمير الحرب"
     },
     "towers": {
       "towerFrost": "برج الصقيع",
@@ -1037,13 +1640,24 @@
       "coreUnderAttack": "الحصن يتعرض للهجوم",
       "novaReady": "نوفا جاهزة",
       "revived": "عدت إلى السور",
-      "bossIncoming": "المدرّعة تقترب",
+      "bossIncoming": "أمير حرب يقود هذه الموجة",
       "waveCleared": "تم صد الموجة",
       "socketEmpty": "موضع فارغ",
       "socketBuilt": "تم بناء {tower}",
       "socketUpgraded": "تمت ترقية {tower} إلى المستوى {level}",
       "playerDown": "سقطت — ستُبعث عند الحصن",
-      "pausedByContext": "فُقد سياق الرسوم — الجولة متوقفة مؤقتاً"
+      "pausedByContext": "فُقد سياق الرسوم — الجولة متوقفة مؤقتاً",
+      "crit": "ضربة حرجة",
+      "multiKill": "قتل متعدد ×{n}",
+      "bossDown": "سقط أمير الحرب!",
+      "slamIncoming": "ضربة أرضية قادمة — اندفع بعيدًا!",
+      "dodge": "تفادٍ",
+      "ultReady": "القدرة القصوى جاهزة — اضغط R",
+      "ultActive": "عاصفة الأجنحة!",
+      "shieldBreak": "تحطم الدرع",
+      "towerMax": "{tower} في أعلى مستوى",
+      "qualityLowered": "خُفّضت المؤثرات للحفاظ على السلاسة",
+      "endlessBegins": "حصار بلا نهاية — إلى متى ستصمد؟"
     },
     "challenge": {
       "daily": "بذرة اليوم",
@@ -1057,6 +1671,42 @@
       "failedTitle": "تعذّر تحميل المحرك",
       "failedBody": "تحقّق من اتصالك وحاول مجدداً — لم يضع شيء.",
       "retry": "حاول مجدداً"
+    },
+    "modes": {
+      "label": "الوضع",
+      "arena": "الساحة",
+      "campaign": "الحملة",
+      "endless": "بلا نهاية",
+      "daily": "حصار اليوم",
+      "campaignDesc": "عشر موجات وأميرا حرب. ثلاث نجوم إذا بقي الحصن شبه سليم.",
+      "endlessDesc": "البوابات لا تُغلق. كل موجة خامسة يقودها أمير حرب.",
+      "dailyDesc": "خريطة واحدة وبذرة واحدة والحصار نفسه لكل اللاعبين اليوم ({date})."
+    },
+    "tutorial": {
+      "title": "موجة التدريب",
+      "body": "بعض الرماة البطيئين للتدرب. أكمل كل خطوة ليبدأ الحصار الحقيقي.",
+      "move": "تحرّك — WASD أو الأسهم أو عصا التحكم",
+      "attack": "هاجم — اضغط مطولًا على المسافة أو زر الهجوم",
+      "swap": "بدّل الجناح — Q / E أو أزرار الجناح",
+      "build": "ابنِ — المس مقبسًا مضيئًا",
+      "nova": "نوفا — اضغط F أو زر نوفا",
+      "skip": "تخطَّ التدريب",
+      "done": "اكتمل التدريب — يبدأ الحصار"
+    },
+    "streaks": [
+      "سلسلة الأجنحة!",
+      "اكتساح!",
+      "لا يُوقف!",
+      "عاصفة عدن!",
+      "أسطورة 1097!"
+    ],
+    "modifiers": {
+      "armored": "مدرّع",
+      "swift": "سريع",
+      "shielded": "بدرع واقٍ",
+      "armoredHint": "أعداء مدرّعون: النار تخترق الدروع",
+      "shieldedHint": "أعداء بدروع واقية: الجليد يحطم الدروع",
+      "swiftHint": "أعداء سريعون: أبطئهم بالجليد"
     }
   },
   "kr": {
@@ -1084,7 +1734,12 @@
       "backToArcade": "아케이드",
       "swap": "날개 교체",
       "attack": "공격",
-      "controls": "WASD / 방향키 이동 · 스페이스 공격 · Q E 날개 교체 · F 노바 · Esc 일시정지"
+      "controls": "WASD / 방향키 이동 · 스페이스 공격 · Shift 대시 · Q E 날개 교체 · F 노바 · R 궁극기 · Esc 일시정지",
+      "dash": "대시",
+      "ult": "궁극기",
+      "training": "훈련",
+      "endless": "무한",
+      "boss": "군주"
     },
     "elements": {
       "elementIce": "얼음",
@@ -1103,7 +1758,10 @@
       "victoryTitle": "요새 사수",
       "victoryBody": "모든 웨이브를 막았습니다. 날개가 만족했습니다.",
       "defeatTitle": "성문이 무너졌다",
-      "defeatBody": "요새를 잃었지만 기록은 남아 있습니다."
+      "defeatBody": "요새를 잃었지만 기록은 남아 있습니다.",
+      "buildCall": "다음 웨이브 호출",
+      "endlessTitle": "무한 공성전",
+      "endlessBody": "캠페인 승리. 성문이 다시 열립니다 — 얼마나 버틸 수 있나요?"
     },
     "results": {
       "score": "최종 점수",
@@ -1113,7 +1771,16 @@
       "kills": "킬",
       "share": "기록 공유",
       "copied": "복사됨",
-      "playAgain": "다시 플레이"
+      "playAgain": "다시 플레이",
+      "stars": "별",
+      "maxChain": "최고 연쇄",
+      "towers": "타워",
+      "time": "시간",
+      "bossKills": "군주",
+      "history": "최근 기록",
+      "continueEndless": "계속: 무한 모드",
+      "playDaily": "일일 공성전",
+      "campaignWon": "캠페인 완료"
     },
     "maps": {
       "mapKeepName": "성채 성벽",
@@ -1130,7 +1797,8 @@
     "enemies": {
       "enemyRanger": "레인저",
       "enemyCavalry": "기병",
-      "enemyDreadnought": "드레드노트"
+      "enemyDreadnought": "드레드노트",
+      "enemyWarlord": "군주"
     },
     "towers": {
       "towerFrost": "서리 첨탑",
@@ -1143,13 +1811,24 @@
       "coreUnderAttack": "요새가 공격받고 있습니다",
       "novaReady": "노바 준비 완료",
       "revived": "성벽으로 복귀",
-      "bossIncoming": "드레드노트 접근 중",
+      "bossIncoming": "군주가 이번 웨이브를 이끕니다",
       "waveCleared": "웨이브 정리 완료",
       "socketEmpty": "빈 슬롯",
       "socketBuilt": "{tower} 건설됨",
       "socketUpgraded": "{tower} 레벨 {level}",
       "playerDown": "쓰러졌습니다 — 요새에서 부활합니다",
-      "pausedByContext": "그래픽 컨텍스트 손실 — 게임이 일시정지되었습니다"
+      "pausedByContext": "그래픽 컨텍스트 손실 — 게임이 일시정지되었습니다",
+      "crit": "치명타",
+      "multiKill": "다중 처치 ×{n}",
+      "bossDown": "군주 격파!",
+      "slamIncoming": "내려찍기 임박 — 대시로 피하세요!",
+      "dodge": "회피",
+      "ultReady": "궁극기 준비 — R을 누르세요",
+      "ultActive": "날개 폭풍!",
+      "shieldBreak": "방패 파괴",
+      "towerMax": "{tower} 최대 레벨",
+      "qualityLowered": "프레임 유지를 위해 효과를 줄였습니다",
+      "endlessBegins": "무한 공성전 — 얼마나 버틸 수 있나요?"
     },
     "challenge": {
       "daily": "일일 시드",
@@ -1163,6 +1842,42 @@
       "failedTitle": "엔진을 불러오지 못했습니다",
       "failedBody": "연결을 확인하고 다시 시도하세요 — 잃은 것은 없습니다.",
       "retry": "다시 시도"
+    },
+    "modes": {
+      "label": "모드",
+      "arena": "전장",
+      "campaign": "캠페인",
+      "endless": "무한",
+      "daily": "일일 공성전",
+      "campaignDesc": "웨이브 10개, 군주 둘. 요새가 거의 긁히지 않으면 별 세 개.",
+      "endlessDesc": "성문은 닫히지 않습니다. 다섯 번째 웨이브마다 군주가 옵니다.",
+      "dailyDesc": "맵 하나, 시드 하나, 오늘 모든 플레이어에게 같은 공성전 ({date})."
+    },
+    "tutorial": {
+      "title": "훈련 웨이브",
+      "body": "연습용으로 느린 레인저 몇 명. 모든 단계를 마치면 진짜 공성전이 시작됩니다.",
+      "move": "이동 — WASD, 방향키 또는 스틱",
+      "attack": "공격 — 스페이스나 공격 버튼을 누르고 있기",
+      "swap": "날개 교체 — Q / E 또는 날개 버튼",
+      "build": "건설 — 빛나는 소켓을 탭",
+      "nova": "노바 — F 또는 노바 버튼",
+      "skip": "훈련 건너뛰기",
+      "done": "훈련 완료 — 공성전 시작"
+    },
+    "streaks": [
+      "날개 연쇄!",
+      "대학살!",
+      "막을 수 없다!",
+      "에덴의 폭풍!",
+      "1097의 전설!"
+    ],
+    "modifiers": {
+      "armored": "중갑",
+      "swift": "신속",
+      "shielded": "방패",
+      "armoredHint": "중갑 적: 불이 갑옷을 태워 뚫습니다",
+      "shieldedHint": "방패 적: 얼음이 방패를 부숩니다",
+      "swiftHint": "신속한 적: 얼음으로 느리게 하세요"
     }
   },
   "it": {
@@ -1190,7 +1905,12 @@
       "backToArcade": "Arcade",
       "swap": "Cambia ala",
       "attack": "Attacca",
-      "controls": "WASD / frecce muovi · Spazio attacca · Q E cambia ala · F nova · Esc pausa"
+      "controls": "WASD / frecce muovi · Spazio attacca · Maiusc scatto · Q E cambia ala · F nova · R suprema · Esc pausa",
+      "dash": "Scatto",
+      "ult": "Suprema",
+      "training": "Allenamento",
+      "endless": "Infinito",
+      "boss": "Signore della guerra"
     },
     "elements": {
       "elementIce": "Ghiaccio",
@@ -1209,7 +1929,10 @@
       "victoryTitle": "Fortezza tenuta",
       "victoryBody": "Ogni ondata infranta. Le ali si sono saziate.",
       "defeatTitle": "Il cancello è caduto",
-      "defeatBody": "La fortezza è perduta, ma il record resiste ancora."
+      "defeatBody": "La fortezza è perduta, ma il record resiste ancora.",
+      "buildCall": "Chiama la prossima ondata",
+      "endlessTitle": "Assedio infinito",
+      "endlessBody": "La campagna è vinta. Le porte si riaprono — quanto riesci a resistere?"
     },
     "results": {
       "score": "Punteggio finale",
@@ -1219,7 +1942,16 @@
       "kills": "Uccisioni",
       "share": "Condividi",
       "copied": "Copiato",
-      "playAgain": "Gioca ancora"
+      "playAgain": "Gioca ancora",
+      "stars": "Stelle",
+      "maxChain": "Catena migliore",
+      "towers": "Torri",
+      "time": "Tempo",
+      "bossKills": "Signori della guerra",
+      "history": "Partite recenti",
+      "continueEndless": "Continua: Infinito",
+      "playDaily": "Assedio del giorno",
+      "campaignWon": "Campagna completata"
     },
     "maps": {
       "mapKeepName": "Mura del Torrione",
@@ -1236,7 +1968,8 @@
     "enemies": {
       "enemyRanger": "Esploratore",
       "enemyCavalry": "Cavalleria",
-      "enemyDreadnought": "Corazzata"
+      "enemyDreadnought": "Corazzata",
+      "enemyWarlord": "Signore della guerra"
     },
     "towers": {
       "towerFrost": "Aguglia del Gelo",
@@ -1249,13 +1982,24 @@
       "coreUnderAttack": "La fortezza è sotto attacco",
       "novaReady": "Nova pronta",
       "revived": "Di nuovo sulle mura",
-      "bossIncoming": "Corazzata in avvicinamento",
+      "bossIncoming": "Un signore della guerra guida questa ondata",
       "waveCleared": "Ondata superata",
       "socketEmpty": "Slot vuoto",
       "socketBuilt": "{tower} costruita",
       "socketUpgraded": "{tower} al livello {level}",
       "playerDown": "Sei caduto — rinascita alla fortezza",
-      "pausedByContext": "Contesto grafico perso — la partita è in pausa"
+      "pausedByContext": "Contesto grafico perso — la partita è in pausa",
+      "crit": "Critico",
+      "multiKill": "Uccisione multipla ×{n}",
+      "bossDown": "Signore della guerra abbattuto!",
+      "slamIncoming": "Schianto in arrivo — scatta via!",
+      "dodge": "Schivato",
+      "ultReady": "Suprema pronta — premi R",
+      "ultActive": "Tempesta d'ali!",
+      "shieldBreak": "Scudo frantumato",
+      "towerMax": "{tower} è al livello massimo",
+      "qualityLowered": "Effetti ridotti per mantenere la fluidità",
+      "endlessBegins": "Assedio infinito — quanto riesci a resistere?"
     },
     "challenge": {
       "daily": "Seme giornaliero",
@@ -1269,6 +2013,42 @@
       "failedTitle": "Il motore non si è caricato",
       "failedBody": "Controlla la connessione e riprova — non è andato perso nulla.",
       "retry": "Riprova"
+    },
+    "modes": {
+      "label": "Modalità",
+      "arena": "Arena",
+      "campaign": "Campagna",
+      "endless": "Infinito",
+      "daily": "Assedio del giorno",
+      "campaignDesc": "Dieci ondate, due signori della guerra. Tre stelle per una fortezza appena scalfita.",
+      "endlessDesc": "Le porte non si chiudono mai. Ogni quinta ondata arriva un signore della guerra.",
+      "dailyDesc": "Una mappa, un seme, lo stesso assedio per tutti i giocatori oggi ({date})."
+    },
+    "tutorial": {
+      "title": "Ondata di allenamento",
+      "body": "Qualche esploratore lento per fare pratica. Completa ogni passo e inizia il vero assedio.",
+      "move": "Muoviti — WASD, frecce o la levetta",
+      "attack": "Attacca — tieni premuto Spazio o il pulsante d'attacco",
+      "swap": "Cambia ala — Q / E o i pulsanti ala",
+      "build": "Costruisci — tocca uno slot luminoso",
+      "nova": "Nova — premi F o il pulsante nova",
+      "skip": "Salta l'allenamento",
+      "done": "Allenamento completato — l'assedio inizia"
+    },
+    "streaks": [
+      "Catena alata!",
+      "Carneficina!",
+      "Inarrestabile!",
+      "Tempesta di Eden!",
+      "Leggenda del 1097!"
+    ],
+    "modifiers": {
+      "armored": "Corazzato",
+      "swift": "Rapido",
+      "shielded": "Con scudo",
+      "armoredHint": "Nemici corazzati: il Fuoco brucia l'armatura",
+      "shieldedHint": "Nemici con scudo: il Ghiaccio frantuma gli scudi",
+      "swiftHint": "Nemici rapidi: rallentali con il Ghiaccio"
     }
   }
 }

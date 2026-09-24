@@ -924,13 +924,43 @@ body.is-arcade-embed .nav-back {
 }
 @keyframes float-up {
   0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.6);
+  }
+  14% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(-4px) scale(1.18);
+  }
+  28% {
+    transform: translateY(-8px) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translateY(-36px) scale(1.2);
+    transform: translateY(-36px) scale(1.1);
   }
+}
+
+/* Reduced motion keeps the score text readable: it fades in place, no travel or pop. */
+@keyframes float-fade {
+  0%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Hit shards (§4.8): created by BootGame.shatter only when motion is allowed. */
+.fx-shard {
+  position: absolute;
+  z-index: 34;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 6px currentColor;
 }
 
 /* ── Hero Arena (Mode H) ─────────────────────────────── */
@@ -1079,5 +1109,13 @@ body.is-arcade-embed .nav-back {
   .gate.hurt,
   .piece.pop {
     animation: none !important;
+  }
+
+  .float-text {
+    animation-name: float-fade;
+  }
+
+  .fx-shard {
+    display: none;
   }
 }

@@ -203,6 +203,71 @@ input {
   background: rgb(245 165 36 / 8%);
 }
 
+.vts-score-countdown {
+  margin: 0;
+}
+
+.vts-score-countdown b {
+  margin-inline-start: 6px;
+  color: var(--vts-warning);
+  font-size: 1.3rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Competition #12 ordered slot pickers: one toggle per slot, the badge shows
+   the member's preference rank. */
+.vts-score-slots {
+  margin: 16px 0 0;
+  padding: 0;
+  border: 0;
+  font-weight: 800;
+}
+
+.vts-score-slot-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.vts-score-slot {
+  display: grid;
+  padding: 8px 4px;
+  place-items: center;
+  border: 1px solid var(--vts-border-strong);
+  background: var(--vts-surface-solid);
+  color: var(--vts-text);
+}
+
+.vts-score-slot small {
+  color: var(--vts-subtle);
+  font-size: 0.7rem;
+}
+
+.vts-score-slot__rank {
+  width: 22px;
+  border-radius: 50%;
+  color: var(--vts-subtle);
+}
+
+.vts-score-slot[aria-pressed='true'] {
+  border-color: var(--vts-accent);
+  background: var(--vts-surface-soft);
+}
+
+[aria-pressed='true'] .vts-score-slot__rank {
+  background: var(--vts-accent);
+  color: var(--vts-accent-text);
+}
+
+[data-readonly='true'] :disabled {
+  cursor: auto;
+}
+
+.vts-score-phase-notice p {
+  margin: 0;
+}
+
 .vts-score-status {
   margin: 18px 0;
   padding: 14px 18px;
@@ -712,6 +777,10 @@ footer a {
 
   .vts-score-signup-grid {
     grid-template-columns: 1fr;
+  }
+
+  .vts-score-slot-list {
+    grid-template-columns: 1fr 1fr;
   }
 
   .vts-score-progress {

@@ -7,6 +7,8 @@
 //   - codex:     the Hero Atlas, Codex mode (16.0.0 flagship)
 //   - heroes:    the Hero Atlas, hero mode
 //   - skins:     the Hero Atlas, skin mode
+//   - pdfs:      the PDF document builder (button and panel added at boot,
+//                form loaded on first open — see js/hub-pdf-tab.js)
 //
 // Heroes and Skins were an in-panel toggle inside the Atlas; they are sub-tabs
 // here, so both drive the same #heroesSection panel and differ only by the
@@ -14,12 +16,15 @@
 // link, footer link and command-palette entry still resolves; app.js maps the
 // old tab names onto this hub through document.body.dataset.heroesCombosSubtab.
 
+import { createHubTabButton, createHubTabPanel, mountHubPdfPanel } from './hub-pdf-tab.js';
+
 export const HEROES_COMBOS_SUBTABS = Object.freeze([
   'manual',
   'generator',
   'codex',
   'heroes',
   'skins',
+  'pdfs',
 ]);
 export const HEROES_COMBOS_DEFAULT_SUBTAB = 'generator';
 
@@ -30,6 +35,7 @@ const PANEL_FOR_SUBTAB = Object.freeze({
   codex: 'heroes',
   heroes: 'heroes',
   skins: 'heroes',
+  pdfs: 'pdfs',
 });
 
 // Which sub-tab BUTTON stands for each sub-tab. Codex and Skins no longer have
@@ -44,6 +50,7 @@ const TAB_FOR_SUBTAB = Object.freeze({
   codex: 'heroes',
   heroes: 'heroes',
   skins: 'heroes',
+  pdfs: 'pdfs',
 });
 const ATLAS_MODE_FOR_SUBTAB = Object.freeze({
   codex: 'codex',
@@ -103,6 +110,7 @@ export function openHeroesCombosSubtab(name, { notify = true } = {}) {
   if (!root) return '';
   applySubtab(root, subtab);
   updateSubtabHash(subtab);
+  if (subtab === 'pdfs') mountHubPdfPanel('heroes', document.getElementById('heroesPdfsSection'));
   if (notify) {
     try {
       window.dispatchEvent(
@@ -132,11 +140,39 @@ export function readHeroesCombosIntent() {
   }
 }
 
+// index.html has no byte headroom, so the PDFs tab is added here.
+function addPdfsTab(root) {
+  const bar = root.querySelector('.vts-hub-subtabs');
+  if (!bar || bar.querySelector('[data-hub-subtab="pdfs"]')) return;
+  bar.append(
+    createHubTabButton({
+      name: 'pdfs',
+      i18nKey: 'hubPdfsTab',
+      fallback: 'PDFs',
+      attribute: 'hubSubtab',
+      className: 'vts-hub-subtab',
+      controls: 'heroesPdfsSection',
+      id: 'heroesCombosTabPdfs',
+    })
+  );
+  bar.classList.replace('vts-hub-subtabs--3', 'vts-hub-subtabs--4');
+  root.append(
+    createHubTabPanel({
+      id: 'heroesPdfsSection',
+      attribute: 'hubSubtabPanel',
+      name: 'pdfs',
+      className: 'vts-hub-subtab-panel',
+      labelledBy: 'heroesCombosTabPdfs',
+    })
+  );
+}
+
 export function bootHeroesCombosHub() {
   if (booted) return;
   const root = document.getElementById('heroesCombosSection');
   if (!root) return;
   booted = true;
+  addPdfsTab(root);
 
   // Only the bar's own buttons, never a [data-hub-subtab] that some future
   // panel content might carry.

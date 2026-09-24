@@ -917,6 +917,55 @@ html[data-theme='light'] {
   content: '';
 }
 
+/* Connector (§4.5): a static accent segment from the first research to the next one still to
+   finish. It draws in once, transform-only, when its column first scrolls into view. */
+.specialization-node-list::after {
+  position: absolute;
+  z-index: 0;
+  inset-block-start: var(--connector-start, 0);
+  inset-inline-start: calc(50% - 1px);
+  width: 3px;
+  height: var(--connector-length, 0);
+  border-radius: 2px;
+  background: var(--column-accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--column-accent) 60%, transparent);
+  content: '';
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: 50% 0;
+}
+
+.specialization-node-list[data-connector-fill='true']::after {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .specialization-node-list[data-connector-reveal='pending']::after {
+    transform: scaleY(0);
+  }
+
+  .specialization-node-list[data-connector-reveal='run']::after {
+    animation: specialization-connector-draw 420ms var(--ff-ease-expand, ease-out) both;
+  }
+}
+
+@keyframes specialization-connector-draw {
+  from {
+    transform: scaleY(0);
+  }
+
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@media (forced-colors: active) {
+  .specialization-node-list::after {
+    background: Highlight;
+    box-shadow: none;
+  }
+}
+
 .specialization-research,
 [data-specialization-research] {
   position: relative;
@@ -1541,8 +1590,19 @@ html[data-theme='light'] {
 
 .specialization-progress-control {
   display: grid;
-  grid-template-columns: 44px minmax(56px, 1fr) 44px repeat(4, minmax(44px, auto));
+  /* Two rows: step − / value / step + over the four milestone presets. On one
+     row the seven controls needed ~380px and overflowed the 327px inspector
+     from 1440px up, clipping the 100% preset and the panel's close button. */
+  grid-template-columns: repeat(4, minmax(44px, 1fr));
   gap: 6px;
+}
+
+.specialization-progress-control > output {
+  grid-column: 2 / span 2;
+}
+
+.specialization-progress-control > button:nth-child(3) {
+  grid-column: 4;
 }
 
 .specialization-progress-control button,
@@ -2277,14 +2337,6 @@ dialog[data-specialization-dialog][open] {
   .specialization-workspace {
     grid-template-columns: minmax(0, 1fr) 326px;
   }
-
-  .specialization-progress-control {
-    grid-template-columns: 44px minmax(54px, 1fr) 44px repeat(2, minmax(44px, auto));
-  }
-
-  .specialization-progress-control button:nth-last-child(-n + 2) {
-    grid-column: span 1;
-  }
 }
 
 @media (max-width: 1024px) {
@@ -2643,7 +2695,7 @@ dialog[data-specialization-dialog][open] {
   }
 
   .specialization-progress-control {
-    grid-template-columns: 44px minmax(54px, 1fr) 44px repeat(2, minmax(48px, auto));
+    grid-template-columns: repeat(4, minmax(48px, 1fr));
   }
 
   .specialization-attribute-grid {
@@ -2693,14 +2745,6 @@ dialog[data-specialization-dialog][open] {
 
   .specialization-summary-label {
     white-space: normal;
-  }
-
-  .specialization-progress-control {
-    grid-template-columns: 44px minmax(56px, 1fr) 44px;
-  }
-
-  .specialization-progress-control button:nth-child(n + 4) {
-    grid-column: span 1;
   }
 
   .specialization-recorded-medals,

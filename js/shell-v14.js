@@ -706,14 +706,14 @@
     });
   }
 
-  // Two destinations that are not tabs: the PDF downloads page, and the
-  // Buildings planner, which lives in Research & Towers ▸ Planners ▸ Castle.
+  // Two destinations that are not top-level tabs: the PDF downloads page, and
+  // the Buildings planner, which is the Research & Towers ▸ Buildings sub-tab.
   // Built here rather than in index.html, which has no byte headroom.
   const moreLinks = document.createElement('div');
   moreLinks.className = 'shell-more-links';
   [
     ['downloadsLink', 'downloads.html'],
-    ['buildingsLink', '#researchTowers?subtab=research&planner=castle'],
+    ['buildingsLink', '#researchTowers?subtab=buildings'],
   ].forEach(([key, href]) => {
     const link = document.createElement('a');
     link.className = 'shell-more-link';
@@ -838,6 +838,26 @@
   });
 
   languageSelect?.addEventListener('change', () => window.setTimeout(applyLocale, 0));
+  // The app applies a stored or URL language with `languageSelect.value = x`,
+  // which fires no change event, so the button kept the old label. Re-sync on
+  // every programmatic set of this element as well.
+  if (languageSelect) {
+    ['value', 'selectedIndex'].forEach((property) => {
+      const native = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, property);
+      if (!native?.set || !native.get) return;
+      Object.defineProperty(languageSelect, property, {
+        configurable: true,
+        enumerable: native.enumerable,
+        get() {
+          return native.get.call(this);
+        },
+        set(next) {
+          native.set.call(this, next);
+          window.setTimeout(applyLocale, 0);
+        },
+      });
+    });
+  }
   window.addEventListener('edenLanguageUpdate', applyLocale);
   window.addEventListener('hashchange', syncActiveState);
   window.addEventListener('popstate', () => {

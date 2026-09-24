@@ -51,3 +51,7 @@ export function dailySeed(mapId, date = new Date()) {
   const stamp = date.toISOString().slice(0, 10);
   return `${mapId}:${stamp}`;
 }
+
+// The "Daily Siege" score attack: one map and one seed per UTC date for
+// everyone. Shared with the Arcade banner through a module outside this folder.
+export { dailySiegeFor } from '../siege-daily.js';

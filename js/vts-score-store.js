@@ -8,6 +8,18 @@
 // value or bypass the OCR audit. The admin surface therefore only ever reads,
 // which is why this module is a few getDocs calls rather than the validating
 // store the removed command center carried.
+//
+// The one exception is Competition #12: a superadmin saves baseline match
+// decisions (`boh_allstar_competition/matches`) and publishes the public growth
+// board (`boh_allstar_competition/board`). Neither touches a race score, and
+// firestore.rules pins both documents to the superadmin claim.
+
+import {
+  COMPETITION_BASELINE_SEASON,
+  COMPETITION_BOARD_DOC_PATH,
+  COMPETITION_MATCHES_DOC_PATH,
+  COMPETITION_SCHEDULE_DOC_PATH,
+} from './competition-growth.js';
 
 const SEASON_PATTERN = /^[a-z0-9_-]{1,80}$/iu;
 
@@ -67,6 +79,77 @@ export async function loadVtsScoreActiveSeason() {
   );
   if (!season) throw new Error('The active VtsScore season is not configured.');
   return season;
+}
+
+function docsWithUid(snapshot) {
+  return snapshot.docs.map((entry) => ({ submissionUid: entry.id, ...entry.data() }));
+}
+
+/**
+ * Everything the Competition #12 growth table needs: the competition season's
+ * sign-ups and re-uploads, last season's VtsScore uploads (the proposed
+ * baselines), the schedule (for the re-upload window) and the superadmin's
+ * saved baseline decisions. Read-only; the baseline season is never written.
+ */
+export async function loadCompetitionGrowthSnapshot(seasonId) {
+  const season = normalizeVtsScoreSeasonId(seasonId) || (await loadVtsScoreActiveSeason());
+  if (season === COMPETITION_BASELINE_SEASON) {
+    throw new Error('The competition season must not be the baseline season.');
+  }
+  const { db, firestore } = await adminContext();
+  const { collection, doc, getDoc, getDocs } = firestore;
+  const [submissions, raceScores, baselineRaceScores, schedule, matches] = await Promise.all([
+    getDocs(collection(db, getVtsScoreSubmissionsPath(season))),
+    getDocs(collection(db, getVtsScoreRaceScoresPath(season))),
+    getDocs(collection(db, getVtsScoreRaceScoresPath(COMPETITION_BASELINE_SEASON))),
+    getDoc(doc(db, COMPETITION_SCHEDULE_DOC_PATH)),
+    getDoc(doc(db, COMPETITION_MATCHES_DOC_PATH)),
+  ]);
+  const scheduleData = schedule?.exists?.() ? schedule.data() : null;
+  const matchesData = matches?.exists?.() ? matches.data() : null;
+  return {
+    season,
+    submissions: docsWithUid(submissions),
+    raceScores: docsWithUid(raceScores),
+    baselineRaceScores: docsWithUid(baselineRaceScores),
+    schedule: scheduleData?.seasonId === season ? scheduleData : null,
+    confirmations:
+      matchesData?.seasonId === season && matchesData.decisions ? { ...matchesData.decisions } : {},
+  };
+}
+
+async function writeStamped(path, data) {
+  const { db, user, firestore } = await adminContext();
+  const { doc, serverTimestamp, setDoc } = firestore;
+  const uid = String(user?.uid || '');
+  if (!uid) throw new Error('Sign in as a superadmin first.');
+  await setDoc(doc(db, path), { ...data, updatedAt: serverTimestamp(), updatedBy: uid });
+}
+
+/** Saves the superadmin's baseline decisions for the competition season. */
+export async function saveCompetitionMatchDecisions(seasonId, decisions) {
+  const season = normalizeVtsScoreSeasonId(seasonId);
+  if (!season || season === COMPETITION_BASELINE_SEASON) throw new Error('Invalid season.');
+  await writeStamped(COMPETITION_MATCHES_DOC_PATH, {
+    schemaVersion: 1,
+    seasonId: season,
+    decisions,
+  });
+}
+
+/** Publishes the public growth board projection (superadmin). */
+export async function publishCompetitionGrowthBoard(projection) {
+  const season = normalizeVtsScoreSeasonId(projection?.seasonId);
+  if (!season || season === COMPETITION_BASELINE_SEASON) throw new Error('Invalid season.');
+  const { schemaVersion, rows, winners, notRanked, publishedAt } = projection;
+  await writeStamped(COMPETITION_BOARD_DOC_PATH, {
+    schemaVersion,
+    seasonId: season,
+    rows,
+    winners,
+    notRanked,
+    publishedAt,
+  });
 }
 
 // The admin rows builder is defensive about record shape, so documents are

@@ -275,6 +275,15 @@
     gate.classList.remove('hit', 'hurt');
     void gate.offsetWidth;
     gate.classList.add(kind === 'hurt' ? 'hurt' : 'hit');
+    if (kind === 'hurt') {
+      shakeStage();
+      return;
+    }
+    const stage = document.querySelector('.stage');
+    if (!stage) return;
+    const g = gate.getBoundingClientRect();
+    const st = stage.getBoundingClientRect();
+    shatter(g.left + g.width / 2 - st.left, g.top + g.height / 2 - st.top);
   }
 
   function refreshDynamicGameCopy() {
@@ -369,6 +378,7 @@
     document.getElementById('best').textContent = String(best);
     resetWings();
     localizeGame();
+    watchScore(document.getElementById('score'));
 
     document.addEventListener('visibilitychange', () => {
       const pause = document.getElementById('btnPause');
@@ -496,6 +506,139 @@
     setTimeout(() => el.remove(), 700);
   }
 
+  /* ── Hit juice (plan §4.8): finite, bounded, and off for reduced motion / Save-Data ── */
+  const FX_MAX_SHARDS = 18;
+  const FX_SHARDS_PER_BURST = 6;
+  const FX_SHARD_MS = 420;
+  const FX_SHAKE_MS = 80;
+  const FX_SHAKE_GAP_MS = 400;
+  const FX_SHARD_COLORS = ['#7dd3fc', '#fbbf24', '#34d399', '#c4b5fd'];
+  let fxLiveShards = 0;
+  let fxLastShakeAt = -Infinity;
+  let fxScorePop = null;
+  let fxCountingUp = false;
+
+  function fxMotionAllowed() {
+    try {
+      if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return false;
+      if (navigator.connection?.saveData === true) return false;
+    } catch {
+      return false;
+    }
+    return document.visibilityState !== 'hidden';
+  }
+
+  /** Evenly spread burst directions with a little jitter; pure for tests. */
+  function shardVectors(count, random = Math.random) {
+    const vectors = [];
+    for (let i = 0; i < count; i += 1) {
+      const angle = (i / count) * Math.PI * 2 + (random() - 0.5) * 0.6;
+      const distance = 44 + random() * 26;
+      vectors.push({
+        dx: Math.round(Math.cos(angle) * distance),
+        dy: Math.round(Math.sin(angle) * distance),
+      });
+    }
+    return vectors;
+  }
+
+  /** Finite shard burst at stage coordinates; returns the number of shards shown. */
+  function shatter(x, y, color) {
+    if (!fxMotionAllowed()) return 0;
+    const stage = document.querySelector('.stage');
+    if (!stage || typeof stage.animate !== 'function') return 0;
+    const count = Math.min(FX_SHARDS_PER_BURST, FX_MAX_SHARDS - fxLiveShards);
+    if (count <= 0) return 0;
+    shardVectors(count).forEach(({ dx, dy }, i) => {
+      const shard = document.createElement('span');
+      shard.className = 'fx-shard';
+      shard.setAttribute('aria-hidden', 'true');
+      shard.style.left = `${x}px`;
+      shard.style.top = `${y}px`;
+      shard.style.background = color || FX_SHARD_COLORS[i % FX_SHARD_COLORS.length];
+      stage.appendChild(shard);
+      fxLiveShards += 1;
+      let settled = false;
+      const settle = () => {
+        if (settled) return;
+        settled = true;
+        shard.remove();
+        fxLiveShards -= 1;
+      };
+      try {
+        const animation = shard.animate(
+          [
+            { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+            {
+              offset: 0.6,
+              transform: `translate(calc(-50% + ${Math.round(dx * 0.8)}px), calc(-50% + ${Math.round(dy * 0.8)}px)) scale(0.9)`,
+              opacity: 1,
+            },
+            {
+              transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.4)`,
+              opacity: 0,
+            },
+          ],
+          { duration: FX_SHARD_MS, easing: 'ease-out' }
+        );
+        animation.onfinish = settle;
+        animation.oncancel = settle;
+      } catch {
+        settle();
+      }
+      window.setTimeout(settle, FX_SHARD_MS + 120);
+    });
+    return count;
+  }
+
+  /** Opt-in 80 ms stage nudge for damage; never in reduced motion, at most every 400 ms. */
+  function shakeStage() {
+    if (!fxMotionAllowed()) return false;
+    const stage = document.querySelector('.stage');
+    if (!stage || typeof stage.animate !== 'function') return false;
+    const at = now();
+    if (at - fxLastShakeAt < FX_SHAKE_GAP_MS) return false;
+    fxLastShakeAt = at;
+    try {
+      stage.animate(
+        [
+          { translate: '0 0' },
+          { translate: '-3px 1px' },
+          { translate: '2px -1px' },
+          { translate: '0 0' },
+        ],
+        { duration: FX_SHAKE_MS, easing: 'linear' }
+      );
+    } catch {
+      return false;
+    }
+    return true;
+  }
+
+  /** Small scale pop on the score readout after the text has already changed. */
+  function popScore(scoreEl) {
+    if (!scoreEl || !fxMotionAllowed() || typeof scoreEl.animate !== 'function') return;
+    if (fxScorePop && fxScorePop.playState === 'running') return;
+    try {
+      fxScorePop = scoreEl.animate(
+        [{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }],
+        { duration: 160, easing: 'ease-out' }
+      );
+    } catch {
+      fxScorePop = null;
+    }
+  }
+
+  function watchScore(scoreEl) {
+    if (!scoreEl || typeof MutationObserver !== 'function') return;
+    let last = scoreEl.textContent;
+    new MutationObserver(() => {
+      const next = scoreEl.textContent;
+      if (!fxCountingUp && Number(next) > Number(last)) popScore(scoreEl);
+      last = next;
+    }).observe(scoreEl, { childList: true, characterData: true, subtree: true });
+  }
+
   /* ── Unified keyboard (A/D, arrows, Space/Esc, R) ── */
   const KB_KEYS = {
     left: ['a', 'A', 'ArrowLeft'],
@@ -549,11 +692,14 @@
     if (score > prevBest && score > 0) reportArcadeScore(scoreKey, score);
     let cur = 0;
     const step = Math.max(1, Math.floor(score / 50));
+    // The count-up already animates the number; the per-hit score pop stays out of it.
+    fxCountingUp = true;
     const interval = setInterval(() => {
       cur = Math.min(cur + step, score);
       scoreEl.textContent = String(cur);
       if (cur >= score) {
         clearInterval(interval);
+        fxCountingUp = false;
         const title = isNewBest ? `★ ${activeCopy.newBest}` : activeCopy.gameOver;
         const body = `${activeCopy.score} ${score}  ·  ${activeCopy.best} ${best}`;
         showOverlay(title, body, { isNewBest, score, best });
@@ -654,6 +800,9 @@
     createComboBadge,
     showComboBadge,
     floatText,
+    shatter,
+    shakeStage,
+    shardVectors,
     setupKeyboard,
     animateGameOver,
     togglePauseBtn,

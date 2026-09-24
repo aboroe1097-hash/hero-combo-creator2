@@ -6,6 +6,11 @@ import {
   getAllStarBohGrantPath,
   isAllowedAllStarBohOrigin,
 } from './all-star-boh-auth.js';
+import {
+  COMPETITION_SCHEDULE_DOC_PATH,
+  getCompetitionPhase,
+  normalizeCompetitionSchedule,
+} from './competition-phase.js';
 
 export const VTS_SCORE_SCHEMA_VERSION = 1;
 export const VTS_SCORE_RECORD_SCHEMA_VERSION = 2;
@@ -374,6 +379,18 @@ async function listPlayers(dependencies, uid) {
   return { seasonId, players };
 }
 
+// Competition #12: once a schedule exists for the season, final values are
+// accepted only inside its re-upload window, so growth is measured on values
+// uploaded when every member had the same chance. A season without a schedule
+// (or with an unreadable one) keeps the open behaviour it always had.
+function assertUploadWindowOpen(rawSchedule, seasonId, nowMs) {
+  const schedule = normalizeCompetitionSchedule(rawSchedule);
+  if (!schedule || schedule.seasonId !== seasonId) return;
+  if (getCompetitionPhase(schedule, nowMs) !== 'reupload') {
+    throw new VtsScoreError(403, 'upload_closed', 'The re-upload window is closed.');
+  }
+}
+
 async function saveScore(dependencies, uid, input) {
   const nowMs = Math.max(0, Math.trunc(Number(dependencies.now())));
   const grantRef = dependencies.db.doc(getAllStarBohGrantPath(uid));
@@ -383,14 +400,17 @@ async function saveScore(dependencies, uid, input) {
   const scoreRef = dependencies.db.doc(
     `boh_allstar/${input.seasonId}/raceScores/${input.submissionUid}`
   );
+  const scheduleRef = dependencies.db.doc(COMPETITION_SCHEDULE_DOC_PATH);
   let saved;
   await dependencies.db.runTransaction(async (transaction) => {
-    const [grantSnapshot, submissionSnapshot, scoreSnapshot] = await Promise.all([
+    const [grantSnapshot, submissionSnapshot, scoreSnapshot, scheduleSnapshot] = await Promise.all([
       transaction.get(grantRef),
       transaction.get(submissionRef),
       transaction.get(scoreRef),
+      transaction.get(scheduleRef),
     ]);
     validateGrant(snapshotData(grantSnapshot), uid, nowMs, input.seasonId);
+    assertUploadWindowOpen(snapshotData(scheduleSnapshot), input.seasonId, nowMs);
     const submission = snapshotData(submissionSnapshot);
     if (!submission || submission.status !== 'submitted') {
       throw new VtsScoreError(404, 'signup_not_found', 'Signup was not found.');

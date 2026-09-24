@@ -32,3 +32,13 @@ test('language popovers support keyboard navigation, focus return, RTL, and view
   assert.match(standaloneStyles, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(standaloneStyles, /position:\s*fixed/);
 });
+
+test('language buttons re-sync when a page sets the select value in code', () => {
+  for (const source of [shellSource, standaloneSource]) {
+    assert.match(
+      source,
+      /Object\.getOwnPropertyDescriptor\(HTMLSelectElement\.prototype, property\)/
+    );
+    assert.match(source, /\['value', 'selectedIndex'\]/);
+  }
+});

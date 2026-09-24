@@ -1,10 +1,22 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.3";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.4";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.5.4",
+    "date": "2026-09-24",
+    "highlights": [
+      "VtsScore is now **Competition #12**, a pre-season growth competition. Members sign up with their BoH time slots (+8, +12, +14, +20) and Epic Showdown time slots (+10, +13, +16, +19) in order of preference, all in game time, and can opt in to the public comparison. Each player is…",
+      "VTS Admin: superadmins set the competition's start, phase-one close, deadline, re-upload window and winners start/end in game time. A scheduled job opens and closes sign-ups and re-uploads at those instants.",
+      "Eden Hub gained **Eden Pathing**, a route planner on the Eden map with PNG export, and Eden Map routes can be played back step by step.",
+      "Heroes & Combos, Research & Towers, Class Development and Eden each have a **PDFs** tab that builds a printable document from your choices (season, troop, focus, paper size, level of detail), with numbered sections, repeated table headers and page numbers. Unknown values print a…",
+      "Eden Siege fun pass: five tower tiers, armoured, swift and shielded enemies, warlord boss waves, Velo's dash and ultimate, a training wave, endless mode and a Daily Siege with the same seed for everyone. Runs end on a results screen with stars and recent runs saved in the browse…",
+      "Motion: Specialization Towers draw the connectors between nodes, the research planner shows a cost curve, Arcade gives hit feedback, and combo PNGs carry a background generated from the combos."
+    ]
+  },
   {
     "version": "16.5.3",
     "date": "2026-09-24",
@@ -92,18 +104,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-09-17",
     "highlights": [
       "The Eden X1 and X2 pages load 142 KiB less CSS (805 to 663 KiB on desktop). Both import the admin dashboard stylesheet for weighted-contribution detail, so they had been downloading every admin panel style as well. The 1,144 rules no Eden page can match now live in css/ocr-dashb…"
-    ]
-  },
-  {
-    "version": "16.0.14",
-    "date": "2026-09-16",
-    "highlights": [
-      "Fixed the mobile bottom dock slicing its own labels. \"Heroes & Combos Hub\" wrapped to three lines inside a pill that hides overflow, so the last line rendered as cut-off letter tops; labels now clamp to two lines with an ellipsis and fit.",
-      "Fixed hero card badges overflowing their card at 375px, where 111px of chips had 82px to sit in and the season chip, skin chip and PAID pill collided over the portrait. The chips shrink below 480px and the paid pill keeps its gem without the word.",
-      "Styled the admin suggestion filter row, which shipped in 16.0.9 with no CSS at all, so the filter pills sat on top of the \"Show\" label. Show all and Approve all also stayed on screen with nothing to act on, because a dashboard rule outranked the browser's own [hidden] handling; …",
-      "That guard also restores two hidden states the same specificity bug had been defeating: the superadmin-only dashboard navigation no longer renders for admins who are not superadmins, and Publish and Unpublish no longer appear on an archived workspace that cannot accept either.",
-      "Eden X2 scoring: Kika's two decorated main-account spellings now pool into her family, and Take Ur Shin, the account now named Anne, pools into Anne's family together with its conduct penalty. That leaves no answered name scoring for nobody.",
-      "Banner, Pather and Shield Wall review rows have an \"Add name\" control for a target that used two banners. It adds a second row for the same target, time and group; when the uploaded cell already holds two names (\"Anne, Roha\") the row splits between them. Comma-separated cells al…"
     ]
   }
 ].map((release) =>

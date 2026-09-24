@@ -159,6 +159,16 @@ const entries = [
     keywords: ['arcade', 'games', 'leaderboard', 'merge rush', 'sort hoard', 'crystal relay', 'set assembly', 'hero rumble', 'high score'],
   },
   {
+    id: 'edenSiege',
+    name: 'Eden Siege',
+    kind: 'page',
+    href: 'eden-siege.html',
+    summary:
+      'Real-time Ice & Fire arena game: play Velo, hold the stronghold, raise five-tier towers, beat warlord bosses, try the Daily Siege shared seed or Endless mode.',
+    answers: ['Is there a real-time game?', 'What is the Daily Siege?', 'How do I play Eden Siege?'],
+    keywords: ['eden siege', 'siege', 'game', 'arena', 'tower defense', 'velo', 'daily siege', 'endless', 'warlord', 'play'],
+  },
+  {
     id: 'edenX1',
     name: 'Eden X1 Dashboard',
     kind: 'page',
