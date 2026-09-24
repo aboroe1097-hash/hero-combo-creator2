@@ -13,7 +13,6 @@ This is the release history, newest first. Entries describe their release-time b
 - The Eden Hub lands on the current season again after you have used the hub. Clicking a sub-tab wrote it into the URL, and that leftover was read back as a request for that sub-tab, so one click on Royal Bounty kept the hub off the season for the rest of the session. On refresh, a leftover non-season sub-tab query is cleared so the hub returns to the season landing; direct season and ballot links and shared sub-tab links still open their named destinations.
 - The Competition #12 registration form collects optional Artifact Power, matching the existing signup/rules contract. Blank entries are omitted, while an explicit zero is preserved. The Unit Specialty row now says Towers, because that is where most of it comes from and members were asking which line to read.
 
-
 ## 16.5.4 - 2026-09-24
 
 - VtsScore is now **Competition #12**, a pre-season growth competition. Members sign up with their BoH time slots (+8, +12, +14, +20) and Epic Showdown time slots (+10, +13, +16, +19) in order of preference, all in game time, and can opt in to the public comparison. Each player is compared with their Season 2026 data (28/29 July) once a superadmin confirms the name match; without a match, the sign-up values are the baseline. Winners are ranked by castle power growth between the baseline and the re-upload, and the comparison board shows only players who agreed to it.

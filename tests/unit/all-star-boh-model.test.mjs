@@ -2064,3 +2064,18 @@ test('plan validation finds missing instructions and invalid rotation players', 
     invalidRotation.errors.some((error) => error.code === 'boh_rotation_player_not_in_team')
   );
 });
+
+test('blank optional powers stay absent while an explicit zero is kept', () => {
+  const stats = (extra) =>
+    normalizeBohSignup({ gameName: 'Blank Power', stats: { totalCastlePower: 1000, ...extra } })
+      .stats;
+  for (const blank of ['', '   ', null, undefined]) {
+    const result = stats({ artifactPower: blank, royalTechPower: blank });
+    assert.equal('artifactPower' in result, false, `artifactPower ${JSON.stringify(blank)}`);
+    assert.equal('royalTechPower' in result, false, `royalTechPower ${JSON.stringify(blank)}`);
+  }
+  assert.equal(stats({ artifactPower: '0' }).artifactPower, 0);
+  assert.equal(stats({ artifactPower: 0 }).artifactPower, 0);
+  assert.equal(stats({ artifactPower: '1,567,700' }).artifactPower, 1567700);
+  assert.equal(stats({ royalTechPower: 42 }).royalTechPower, 42);
+});
