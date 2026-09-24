@@ -86,6 +86,15 @@ await expectDenied('plain admin cannot set the schedule', () => setDoc(doc(admin
 await expectOk('superadmin sets a valid schedule', () => setDoc(doc(superadmin, 'boh_allstar_competition/current'), { ...good, updatedAt: serverTimestamp(), updatedBy: 'sup' }));
 await expectDenied('out-of-order schedule is rejected', () => setDoc(doc(superadmin, 'boh_allstar_competition/current'), { ...good, deadlineAt: good.opensAt, updatedAt: serverTimestamp(), updatedBy: 'sup' }));
 await expectDenied('member cannot set the schedule', () => setDoc(doc(m1, 'boh_allstar_competition/current'), { ...good, updatedAt: serverTimestamp(), updatedBy: 'm1' }));
+// Growth board (published by a superadmin) and the private baseline matches
+const board = { schemaVersion: 1, seasonId: SEASON, rows: [{ rank: 1, gameName: 'MalakAbo', baselineSource: 'signup', growthPct: 12.5, growthAbs: 1000, fields: {} }], winners: [{ rank: 1, gameName: 'MalakAbo', growthPct: 12.5, growthAbs: 1000 }], notRanked: 0, publishedAt: new Date().toISOString() };
+await expectOk('superadmin publishes a valid growth board', () => setDoc(doc(superadmin, 'boh_allstar_competition/board'), { ...board, updatedAt: serverTimestamp(), updatedBy: 'sup' }));
+await expectOk('anonymous visitor reads the growth board', () => getDoc(doc(anon, 'boh_allstar_competition/board')));
+await expectDenied('plain admin cannot publish the growth board', () => setDoc(doc(admin, 'boh_allstar_competition/board'), { ...board, updatedAt: serverTimestamp(), updatedBy: 'adm' }));
+await expectDenied('growth board with an extra key is rejected', () => setDoc(doc(superadmin, 'boh_allstar_competition/board'), { ...board, raw: 1, updatedAt: serverTimestamp(), updatedBy: 'sup' }));
+await expectOk('superadmin saves baseline match decisions', () => setDoc(doc(superadmin, 'boh_allstar_competition/matches'), { schemaVersion: 1, seasonId: SEASON, decisions: { m1: { decision: 'signup', matchedSubmissionUid: '' } }, updatedAt: serverTimestamp(), updatedBy: 'sup' }));
+await expectOk('admin reads baseline match decisions', () => getDoc(doc(admin, 'boh_allstar_competition/matches')));
+await expectDenied('anonymous visitor cannot read baseline match decisions', () => getDoc(doc(anon, 'boh_allstar_competition/matches')));
 // No schedule: the 2026 shape still works under the open switch alone
 await wipe(); await seedBase(null);
 const legacy = { ...values(), commitment: { availability: 'all', preferredRole: 'offensive', fightingTimeIds: ['+12', '+14'], vts1097Member: true } };
