@@ -1,10 +1,22 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.1";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.2";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.5.2",
+    "date": "2026-09-24",
+    "highlights": [
+      "One look across the standalone tools: VtsScore, Downloads, Arcade, Eden, Eden Siege, Specialization Towers and Battle Simulator share the same footer and link set, and VtsScore and Downloads gained the branded bar with Back to tools. Eden's deck button now reads Back to Tools, a…",
+      "More tools lists PDF downloads and Buildings; Buildings opens Planners ▸ Castle directly (#researchTowers?subtab=research&planner=castle).",
+      "Research planner: a full visual pass — sub-tab pills, cards, styled fields, stat tiles for remaining costs, scrollable tables with sticky headers, and a progress bar per path node — for dark and light themes, phones and right-to-left languages.",
+      "Specialization Towers: every node now shows its medal cost from the community workbook for all three troops (735 nodes each), where it used to say the cost was unknown. Repeated node names at different strengths are matched by the strength the workbook states, and five naming di…",
+      "Eden Operations Lab: a task board with six common jobs filtered by season stage and role, a saved three-step checklist per job, one-tap Critical/Essential/Advanced specialty routes, attacker and support counters for the chosen siege objective, links into Eden Map and Loyalty, an…",
+      "Duty list PNGs no longer carry a data-sources line: they are the alliance's own records. Exports whose credit list does not fit now point to the site instead of naming only the first contributor."
+    ]
+  },
   {
     "version": "16.5.1",
     "date": "2026-09-24",
@@ -94,14 +106,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Corrected the Lofty Warrior research data: the final Might tier is 40%, three level-2 costs are 840, and the Archer and Cavalry research names are back on the right troops.",
       "Eden X2 demolition and duty credit no longer score for nobody. OCR spellings that split one player across contribution and demolition rows now join their account, which returned about 3.5M demolition to weighted scores; one row read twice from overlapping screenshots is counted …",
       "Banner and Pather uploads in Eden X2 suggest names again, and an operator note in a duty cell earns credit when it names a player the season already knows. Both asked a roster that X2 never had; they now use the names the season already holds."
-    ]
-  },
-  {
-    "version": "16.0.12",
-    "date": "2026-09-08",
-    "highlights": [
-      "Fixed every duty weight save failing with \"Missing or insufficient permissions\". The weights document shipped without a Firestore rule, so it could be neither written nor read. Admins may now read it and superadmins alone may change it, and its shape is validated rather than tru…",
-      "Fixed pathing points missing from Alliance View totals. That table recomputed duty points from the raw counts at a flat value, discarding the weighting it had already been handed, so pathing on a main scored 10,000 instead of 30,000. It now uses the computed points, keeps the fl…"
     ]
   }
 ].map((release) =>

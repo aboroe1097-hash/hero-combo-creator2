@@ -2,6 +2,8 @@
 // next to the PDFs, so the page can never advertise a file that did not ship.
 
 import { mountToolShell } from './tool-shell.js';
+import '../css/standalone-footer-v14.css';
+import '../css/tool-shell.css';
 
 const GROUPS = [
   {

@@ -1,4 +1,6 @@
 import { mountToolShell } from './tool-shell.js';
+import '../css/standalone-footer-v14.css';
+import '../css/tool-shell.css';
 import { createAllStarBohAccessClient, AllStarBohAccessError } from './all-star-boh-access.js';
 import {
   buildBohStatsOcrRequest,

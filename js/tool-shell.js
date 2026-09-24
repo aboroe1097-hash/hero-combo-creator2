@@ -10,8 +10,11 @@
 // Strings live here rather than in the main packs because these pages load
 // different i18n systems (or none). The module follows <html lang>, which each
 // page's own language switcher already maintains.
-import '../css/standalone-footer-v14.css';
-import '../css/tool-shell.css';
+//
+// This module carries no CSS on purpose: Eden, Arcade and Eden Siege already
+// link css/standalone-footer-v14.css, and importing it here duplicated it on
+// every one of them. Pages that need the footer or bar styles import
+// css/standalone-footer-v14.css and css/tool-shell.css in their own entry.
 
 const STRINGS = {
   en: {
