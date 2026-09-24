@@ -6,6 +6,7 @@ import {
   getClassDevelopmentProfile,
   getNextClassCheckpoint,
 } from './class-development-data.js';
+import { createHubTabButton, createHubTabPanel, mountHubPdfPanel } from './hub-pdf-tab.js';
 
 const STORAGE_PROFILE = 'vts_class_development_profile';
 const STORAGE_LEVELS = 'vts_class_development_levels';
@@ -187,8 +188,78 @@ function comparisonRows() {
   ).join('');
 }
 
-function render() {
+const CD_SUBTABS = Object.freeze([
+  {
+    name: 'roadmap',
+    i18nKey: 'hubClassRoadmapTab',
+    fallback: 'Roadmaps',
+    id: 'classDevelopmentTabRoadmap',
+    panelId: 'classDevelopmentRoadmap',
+  },
+  {
+    name: 'pdfs',
+    i18nKey: 'hubPdfsTab',
+    fallback: 'PDFs',
+    id: 'classDevelopmentTabPdfs',
+    panelId: 'classDevelopmentPdfsSection',
+  },
+]);
+
+// The hub's two sub-tabs: the roadmap planner and the PDFs document builder.
+// Built here because index.html has no byte headroom for more markup.
+function ensureSubtabs(root) {
+  if (root.querySelector('#classDevelopmentRoadmap')) return;
+  const bar = document.createElement('div');
+  bar.className = 'vts-hub-subtabs';
+  bar.setAttribute('role', 'tablist');
+  bar.setAttribute('aria-label', copy().title);
+  root.replaceChildren(bar);
+  for (const tab of CD_SUBTABS) {
+    bar.append(
+      createHubTabButton({
+        ...tab,
+        attribute: 'cdSubtab',
+        className: 'vts-hub-subtab',
+        controls: tab.panelId,
+      })
+    );
+    root.append(
+      createHubTabPanel({
+        id: tab.panelId,
+        attribute: 'cdSubtabPanel',
+        name: tab.name,
+        className: 'vts-hub-subtab-panel',
+        labelledBy: tab.id,
+      })
+    );
+  }
+  bar.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-cd-subtab]');
+    if (button) openClassDevelopmentSubtab(button.dataset.cdSubtab);
+  });
+}
+
+export function openClassDevelopmentSubtab(name) {
   const root = document.getElementById('classDevelopmentRoot');
+  if (!root) return;
+  const subtab = CD_SUBTABS.some((tab) => tab.name === name) ? name : 'roadmap';
+  root.querySelectorAll('[data-cd-subtab]').forEach((button) => {
+    const active = button.dataset.cdSubtab === subtab;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', String(active));
+    button.tabIndex = active ? 0 : -1;
+  });
+  root.querySelectorAll('[data-cd-subtab-panel]').forEach((panel) => {
+    const active = panel.dataset.cdSubtabPanel === subtab;
+    panel.classList.toggle('active', active);
+    panel.hidden = !active;
+  });
+  if (subtab === 'pdfs')
+    mountHubPdfPanel('class', document.getElementById('classDevelopmentPdfsSection'));
+}
+
+function render() {
+  const root = document.getElementById('classDevelopmentRoadmap');
   if (!root) return;
   const t = copy();
   const profile = getClassDevelopmentProfile(selectedId) || CLASS_DEVELOPMENT_PROFILES[0];
@@ -275,11 +346,19 @@ export function initClassDevelopment() {
   const root = document.getElementById('classDevelopmentRoot');
   if (!root) return false;
   if (!initialized) {
+    ensureSubtabs(root);
     readState();
     root.addEventListener('click', onClick);
     root.addEventListener('change', onInput);
     window.addEventListener('vts:language-change', render);
     initialized = true;
+    let linked = '';
+    try {
+      linked = new URLSearchParams(window.location.hash.split('?')[1] || '').get('subtab') || '';
+    } catch {
+      /* URL state is optional */
+    }
+    openClassDevelopmentSubtab(linked);
   }
   render();
   return true;

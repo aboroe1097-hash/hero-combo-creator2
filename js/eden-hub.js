@@ -9,6 +9,7 @@
 //   - season:   the current Eden season (eden-x2.html), revealed only after an
 //               admin publishes that workspace's projection
 //   - previous: previous-season rankings (eden-x1.html) in a lazy iframe
+//   - pdfs:     the PDF document builder for the Eden tables (loaded on open)
 //
 // Legacy deep links (#loyalty, #edenX1) are routed here by shell-v14.js,
 // which stashes the intended sub-tab in document.body.dataset.edenHubSubtab.
@@ -16,6 +17,7 @@
 import { translations } from './translations.js';
 import { currentLanguage } from './state.js';
 import { edenWorkspaceFirestorePath, isPublishedEdenProjection } from './eden-workspaces.js';
+import { mountHubPdfPanel } from './hub-pdf-tab.js';
 
 const LOYALTY_SRC = 'tabs/loyalty.html?v=20260924_153352';
 const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260924_153352';
@@ -38,6 +40,7 @@ const EDEN_HUB_SUBTABS = [
   'playbook',
   'season',
   'previous',
+  'pdfs',
 ];
 
 let booted = false;
@@ -351,6 +354,7 @@ export function bootEdenHub() {
     if (name === 'playbook') loadPlaybook(panel);
     if (name === 'previous') loadPrevious(panel);
     if (name === 'season') loadSeason(panel, options);
+    if (name === 'pdfs') mountHubPdfPanel('eden', panel);
   }
 
   function openIntent(requested, options = {}) {

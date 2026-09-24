@@ -1407,6 +1407,8 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     document.body.classList.toggle('tab-specialization-active', subtab === 'towers');
     if (subtab === 'artifact') onTabActivated('artifact');
     else if (subtab === 'research') onTabActivated('research');
+    // Buildings and PDFs are mounted by the hub controller itself.
+    else if (subtab === 'buildings' || subtab === 'pdfs') return;
     else onTabActivated('specialization');
   }
 
@@ -1499,6 +1501,8 @@ function wireUIActions({ preserveInitialHash = false } = {}) {
     syncComboChrome(subtab);
     if (subtab === 'manual') onTabActivated('manual');
     else if (subtab === 'generator') onTabActivated('generator');
+    // The hub mounts its PDFs panel itself.
+    else if (subtab === 'pdfs') return;
     else {
       onTabActivated('heroes');
       // The Atlas may still be booting; setHeroAtlasMode is idempotent, so
