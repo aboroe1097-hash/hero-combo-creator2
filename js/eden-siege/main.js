@@ -6,7 +6,8 @@
 // run.
 
 import { mountToolShell } from '../tool-shell.js';
-import { getCopy, normalizeLocale } from './data/copy.js';
+import { loadCopy, normalizeLocale } from './data/copy.js';
+import copyLocalesUrl from './data/copy-locales.json?url';
 import { HEROES, heroByName } from './data/theme.js';
 import { MAP_ORDER, mapById } from './data/maps.js';
 import { dailySeed } from './rng.js';
@@ -77,7 +78,7 @@ async function boot() {
 
   const lang = currentLang();
   localizedDirection(lang);
-  const copy = getCopy(lang);
+  const copy = await loadCopy(lang, copyLocalesUrl);
   const mapId = MAP_ORDER.includes(params().get('map')) ? params().get('map') : 'keep';
   const map = mapById(mapId);
   const hero = heroForToday(mapId);
@@ -99,7 +100,7 @@ async function boot() {
       hudRoot,
       mapId,
       heroName: hero.name,
-      lang,
+      copy,
       theme: currentTheme(),
       reducedMotion,
       allowWebgl: webgl,

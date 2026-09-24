@@ -1,10 +1,20 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.2";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.3";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.5.3",
+    "date": "2026-09-24",
+    "highlights": [
+      "Downloads and the Buildings planner now follow the selected site language across all supported locales, and Eden Siege has complete localized game copy for all 13 locales.",
+      "Eden's light theme uses darker frost accents, and the vote countdown is translated instead of showing English day/hour abbreviations.",
+      "Velo stays clear of phone content while scrolling, returns when users scroll up or focus it, and the install prompt controls meet the 44-pixel touch target.",
+      "Velo's Eden guide, scoring and season answers now use the published Eden X2 projection, report requested-season mismatches, and never reuse X1 management-vote data."
+    ]
+  },
   {
     "version": "16.5.2",
     "date": "2026-09-24",
@@ -94,18 +104,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "That guard also restores two hidden states the same specificity bug had been defeating: the superadmin-only dashboard navigation no longer renders for admins who are not superadmins, and Publish and Unpublish no longer appear on an archived workspace that cannot accept either.",
       "Eden X2 scoring: Kika's two decorated main-account spellings now pool into her family, and Take Ur Shin, the account now named Anne, pools into Anne's family together with its conduct penalty. That leaves no answered name scoring for nobody.",
       "Banner, Pather and Shield Wall review rows have an \"Add name\" control for a target that used two banners. It adds a second row for the same target, time and group; when the uploaded cell already holds two names (\"Anne, Roha\") the row splits between them. Comma-separated cells al…"
-    ]
-  },
-  {
-    "version": "16.0.13",
-    "date": "2026-09-15",
-    "highlights": [
-      "Added the Class Development Hub: the four L96 class roadmaps (Raider, Farmer, Trader, Craftsman) with a next-reset navigator and each sheet's red reset priorities, all re-read from the source sheets. Farmer's late priorities had been shifted one checkpoint, and Craftsman's carri…",
-      "Added the Eden Operations Lab to the Eden Hub: specialty route planning, Honor needed for levels 1–143, Honor Boost against Special Training, building material costs with discounts, Coalition Camp tiling and objective staffing, with CSV, PNG and plan exports, in all twelve Eden …",
-      "Added DM equipment guidance: offensive and defensive six-piece priorities and the set-bonus do's and don'ts.",
-      "Corrected the Lofty Warrior research data: the final Might tier is 40%, three level-2 costs are 840, and the Archer and Cavalry research names are back on the right troops.",
-      "Eden X2 demolition and duty credit no longer score for nobody. OCR spellings that split one player across contribution and demolition rows now join their account, which returned about 3.5M demolition to weighted scores; one row read twice from overlapping screenshots is counted …",
-      "Banner and Pather uploads in Eden X2 suggest names again, and an operator note in a duty cell earns credit when it names a player the season already knows. Both asked a roster that X2 never had; they now use the names the season already holds."
     ]
   }
 ].map((release) =>

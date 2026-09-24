@@ -4,18 +4,29 @@ import {
   CASTLE_UPGRADE_COSTS,
   CASTLE_UPGRADE_COST_SOURCE,
 } from './building-upgrade-data.js';
+import { currentLanguage } from './state.js';
+import {
+  formatBuildingUpgradesText,
+  getBuildingUpgradesCopy,
+  loadBuildingUpgradesCopy,
+} from './i18n/building-upgrades-copy.js';
+import buildingUpgradesCopyLocalesUrl from './i18n/building-upgrades-copy-locales.json?url';
 
 const RESOURCE_META = [
-  ['orichalcum', 'Orichalcum', 'crystal'],
-  ['gold', 'Gold', 'coin'],
-  ['food', 'Food', 'wheat'],
-  ['lumber', 'Lumber', 'wood'],
-  ['charcoal', 'Charcoal', 'flame'],
-  ['marble', 'Marble', 'stone'],
-  ['iron', 'Iron', 'iron'],
+  ['orichalcum', 'crystal'],
+  ['gold', 'coin'],
+  ['food', 'wheat'],
+  ['lumber', 'wood'],
+  ['charcoal', 'flame'],
+  ['marble', 'stone'],
+  ['iron', 'iron'],
 ];
 const numberFormat = new Intl.NumberFormat('en-US');
 const formatNumber = (value) => numberFormat.format(value);
+
+function text(copy, key, vars) {
+  return formatBuildingUpgradesText(copy[key] ?? key, vars);
+}
 const escapeHtml = (value) =>
   String(value ?? '').replace(/[&<>"']/g, (char) => {
     const entities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
@@ -61,25 +72,25 @@ function genericBuildingIcon(name) {
   return '<svg class="building-row-generic-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 27h24M7 27V14l9-7 9 7v13M12 17h3v3h-3zm6 0h3v3h-3zm-4 10v-5h4v5"/><path d="m4 14 12-9 12 9"/></svg>';
 }
 
-function renderResourceCard([key, label, icon], amount, { compact = false } = {}) {
+function renderResourceCard([key, icon], amount, copy, { compact = false } = {}) {
   return `<div class="building-resource-card${compact ? ' is-compact' : ''}" data-resource="${key}">
     <span class="building-resource-card__icon">${resourceIcon(icon)}</span>
-    <span class="building-resource-card__label">${label}</span>
-    <strong>${amount == null ? 'Not listed' : formatNumber(amount)}</strong>
+    <span class="building-resource-card__label">${copy.resources[key]}</span>
+    <strong>${amount == null ? text(copy, 'notListed') : formatNumber(amount)}</strong>
   </div>`;
 }
 
-function currentLevelControl(id, label, value, min = 25, max = 29) {
+function currentLevelControl(id, label, value, copy, min = 25, max = 29) {
   const options = Array.from({ length: max - min + 1 }, (_, index) => min + index)
     .map(
       (level) =>
-        `<option value="${level}"${level === value ? ' selected' : ''}>Level ${level}</option>`
+        `<option value="${level}"${level === value ? ' selected' : ''}>${text(copy, 'level', { level })}</option>`
     )
     .join('');
   return `<label class="building-select-control" for="${id}"><span>${label}</span><select id="${id}">${options}</select></label>`;
 }
 
-function renderCastle(currentLevel) {
+function renderCastle(currentLevel, copy) {
   const targetCosts = CASTLE_UPGRADE_COSTS.filter((item) => item.toLevel > currentLevel);
   const totals = Object.fromEntries(
     RESOURCE_META.map(([key]) => [
@@ -95,28 +106,30 @@ function renderCastle(currentLevel) {
     .map((step) => {
       const sheetLevel = relevantSheetLevels.find((item) => item.level === step.toLevel);
       return `<article class="building-step-card">
-      <header><span class="building-step-card__level">Castle ${step.toLevel}</span><span class="building-step-card__caption">Upgrade cost</span></header>
-      <div class="building-resource-grid building-resource-grid--step">${RESOURCE_META.map((resource) => renderResourceCard(resource, step.resources[resource[0]], { compact: true })).join('')}</div>
-      <div class="building-prerequisite"><span>Sheet prerequisite</span><strong>${escapeHtml(sheetLevel?.prerequisite || 'Not listed')}</strong></div>
+      <header><span class="building-step-card__level">${text(copy, 'castleLevel', { level: step.toLevel })}</span><span class="building-step-card__caption">${copy.upgradeCost}</span></header>
+      <div class="building-resource-grid building-resource-grid--step">${RESOURCE_META.map((resource) => renderResourceCard(resource, step.resources[resource[0]], copy, { compact: true })).join('')}</div>
+      <div class="building-prerequisite"><span>${copy.sheetPrerequisite}</span><strong>${escapeHtml(sheetLevel?.prerequisite || text(copy, 'notListed'))}</strong></div>
     </article>`;
     })
     .join('');
 
+  const steps = `${targetCosts.length} ${targetCosts.length === 1 ? copy.stepSingular : copy.stepPlural}`;
+
   return `<section class="building-planner-view" aria-labelledby="castlePlannerTitle">
     <div class="building-hero-card building-hero-card--castle">
       <div class="building-hero-card__art">${buildingIcon()}</div>
-      <div class="building-hero-card__copy"><span class="building-eyebrow">Castle progression</span><h2 id="castlePlannerTitle">Castle levels 26–30</h2><p>Plan direct Castle costs across all seven resources, with the matching Orichalcum prerequisite note from the community sheet.</p></div>
-      <div class="building-hero-card__control">${currentLevelControl('castleCurrentLevel', 'Your current Castle', currentLevel)}</div>
+      <div class="building-hero-card__copy"><span class="building-eyebrow">${copy.castleProgression}</span><h2 id="castlePlannerTitle">${copy.castleTitle}</h2><p>${copy.castleIntro}</p></div>
+      <div class="building-hero-card__control">${currentLevelControl('castleCurrentLevel', copy.yourCurrentCastle, currentLevel, copy)}</div>
     </div>
-    <div class="building-section-heading"><div><span class="building-eyebrow">Upgrade budget</span><h3>Resources to Castle 30</h3></div><span class="building-range-label">From level ${currentLevel} · ${targetCosts.length} step${targetCosts.length === 1 ? '' : 's'}</span></div>
-    <div class="building-resource-grid building-resource-grid--totals">${RESOURCE_META.map((resource) => renderResourceCard(resource, totals[resource[0]])).join('')}</div>
-    <div class="building-section-heading building-section-heading--steps"><div><span class="building-eyebrow">Level by level</span><h3>Requirements and direct costs</h3></div></div>
-    <div class="building-step-list">${rows || '<p class="building-empty-state">Castle is already level 30.</p>'}</div>
-    <p class="building-source-note"><strong>Cost source:</strong> <a href="${escapeHtml(CASTLE_UPGRADE_COST_SOURCE.sourceUrl)}" target="_blank" rel="noreferrer">ROCAcademy Castle Upgrade Costs</a>. Figures are direct Castle costs; prerequisite buildings are not included. The source notes that accumulated totals may vary with current building levels.</p>
+    <div class="building-section-heading"><div><span class="building-eyebrow">${copy.upgradeBudget}</span><h3>${copy.resourcesToCastle}</h3></div><span class="building-range-label">${text(copy, 'fromLevel', { level: currentLevel, steps })}</span></div>
+    <div class="building-resource-grid building-resource-grid--totals">${RESOURCE_META.map((resource) => renderResourceCard(resource, totals[resource[0]], copy)).join('')}</div>
+    <div class="building-section-heading building-section-heading--steps"><div><span class="building-eyebrow">${copy.levelByLevel}</span><h3>${copy.requirementsDirectCosts}</h3></div></div>
+    <div class="building-step-list">${rows || `<p class="building-empty-state">${copy.castleMaxed}</p>`}</div>
+    <p class="building-source-note"><strong>${copy.costSourceLabel}</strong> <a href="${escapeHtml(CASTLE_UPGRADE_COST_SOURCE.sourceUrl)}" target="_blank" rel="noreferrer">${copy.costSourceLink}</a>. ${copy.costSourceBody}</p>
   </section>`;
 }
 
-function renderBuildingRow(building, currentLevel) {
+function renderBuildingRow(building, currentLevel, copy) {
   const levels = building.levels.filter((item) => item.level > currentLevel);
   const knownTotal = levels.reduce(
     (sum, item) => sum + (typeof item.cost === 'number' ? item.cost : 0),
@@ -124,24 +137,24 @@ function renderBuildingRow(building, currentLevel) {
   );
   const missing = levels.filter((item) => item.cost == null).length;
   const costSummary = missing
-    ? `${formatNumber(knownTotal)} known · ${missing} level${missing === 1 ? '' : 's'} missing`
+    ? text(copy, 'summaryKnown', { known: formatNumber(knownTotal), missing })
     : formatNumber(knownTotal);
   const levelLines = levels
     .map(
       (item) => `<div class="building-level-line">
-    <span class="building-level-line__target">Level ${item.level}</span>
-    <strong>${item.cost == null ? '<span class="building-unknown">Not listed</span>' : formatNumber(item.cost)}</strong>
-    <span class="building-level-line__prerequisite">${escapeHtml(item.prerequisite || 'No prerequisite listed')}</span>
+    <span class="building-level-line__target">${text(copy, 'level', { level: item.level })}</span>
+    <strong>${item.cost == null ? `<span class="building-unknown">${text(copy, 'notListed')}</span>` : formatNumber(item.cost)}</strong>
+    <span class="building-level-line__prerequisite">${escapeHtml(item.prerequisite || copy.noPrerequisite)}</span>
   </div>`
     )
     .join('');
   return `<details class="building-row-card" data-building-name="${escapeHtml(building.name.toLowerCase())}">
-    <summary><span class="building-row-icon" aria-hidden="true">${genericBuildingIcon(building.name)}</span><span class="building-row-name"><strong>${escapeHtml(building.name)}</strong><small>Source row ${building.sourceNo}</small></span><span class="building-row-total${missing ? ' is-incomplete' : ''}"><small>${missing ? 'Partial total' : 'Selected levels'}</small><strong>${costSummary}</strong></span><span class="building-row-chevron" aria-hidden="true">⌄</span></summary>
-    <div class="building-row-details"><div class="building-level-list">${levelLines || '<p class="building-empty-state">No levels remain in this plan.</p>'}</div><p class="building-bonus"><span>Bonus at level 30</span><strong>${escapeHtml(building.bonus || 'Not listed')}</strong></p></div>
+    <summary><span class="building-row-icon" aria-hidden="true">${genericBuildingIcon(building.name)}</span><span class="building-row-name"><strong>${escapeHtml(building.name)}</strong><small>${text(copy, 'sourceRow', { row: building.sourceNo })}</small></span><span class="building-row-total${missing ? ' is-incomplete' : ''}"><small>${missing ? copy.partialTotal : copy.selectedLevels}</small><strong>${costSummary}</strong></span><span class="building-row-chevron" aria-hidden="true">⌄</span></summary>
+    <div class="building-row-details"><div class="building-level-list">${levelLines || `<p class="building-empty-state">${copy.noLevelsRemain}</p>`}</div><p class="building-bonus"><span>${copy.bonusAt30}</span><strong>${escapeHtml(building.bonus || text(copy, 'notListed'))}</strong></p></div>
   </details>`;
 }
 
-function renderAllBuildings(currentLevel, search = '') {
+function renderAllBuildings(currentLevel, copy, search = '') {
   const sourceRowCount = BUILDING_UPGRADE_DATA.sourceRowCount;
   const selectedLevels = [26, 27, 28, 29, 30].filter((level) => level > currentLevel);
   const allCosts = BUILDING_UPGRADE_DATA.buildings.flatMap((building) =>
@@ -153,21 +166,21 @@ function renderAllBuildings(currentLevel, search = '') {
   );
   const missingCells = allCosts.filter((item) => item.cost == null).length;
   const summary = missingCells
-    ? `${formatNumber(knownTotal)} known · ${missingCells} cost cells missing`
-    : `${formatNumber(knownTotal)} Orichalcum`;
+    ? text(copy, 'summaryKnown', { known: formatNumber(knownTotal), missing: missingCells })
+    : text(copy, 'summaryOrichalcum', { known: formatNumber(knownTotal) });
 
   return `<section class="building-planner-view" aria-labelledby="allBuildingsTitle">
     <div class="building-hero-card building-hero-card--list">
-      <div class="building-hero-card__art building-hero-card__art--monogram"><span>${sourceRowCount}</span><small>buildings</small></div>
-      <div class="building-hero-card__copy"><span class="building-eyebrow">Community upgrade sheet</span><h2 id="allBuildingsTitle">All building upgrades</h2><p>Compare Orichalcum costs, prerequisites and level 30 bonuses across the buildings listed in the source sheet.</p></div>
-      <div class="building-hero-card__control">${currentLevelControl('allBuildingsCurrentLevel', 'Your current level', currentLevel)}</div>
+      <div class="building-hero-card__art building-hero-card__art--monogram"><span>${sourceRowCount}</span><small>${copy.buildingsUnit}</small></div>
+      <div class="building-hero-card__copy"><span class="building-eyebrow">${copy.communitySheet}</span><h2 id="allBuildingsTitle">${copy.allBuildingsTitle}</h2><p>${copy.allBuildingsIntro}</p></div>
+      <div class="building-hero-card__control">${currentLevelControl('allBuildingsCurrentLevel', copy.yourCurrentLevel, currentLevel, copy)}</div>
     </div>
-    <div class="building-budget-banner"><div><span class="building-eyebrow">Known source costs${selectedLevels.length ? ` · levels ${selectedLevels[0]}–30` : ''}</span><strong>${summary}</strong></div><span>${sourceRowCount} buildings</span></div>
-    ${missingCells ? `<p class="building-data-warning" role="status"><strong>Some costs are missing in the source.</strong> Missing cells remain unknown and are not counted as zero; displayed totals are partial.</p>` : ''}
-    <div class="building-list-toolbar"><label class="building-search-control"><span class="building-search-icon" aria-hidden="true">⌕</span><input id="buildingSearch" type="search" value="${escapeHtml(search)}" placeholder="Search buildings" aria-label="Search buildings"></label><span data-building-count>${sourceRowCount} of ${sourceRowCount}</span></div>
-    <div class="building-row-list">${BUILDING_UPGRADE_DATA.buildings.map((building) => renderBuildingRow(building, currentLevel)).join('')}<p class="building-empty-state" data-building-empty hidden>No buildings match this search.</p></div>
-    <p class="building-data-warning"><strong>The sheet’s displayed total is ${formatNumber(BUILDING_UPGRADE_DATA.totalOrichalcum)}.</strong> The listed building totals add to ${formatNumber(BUILDING_UPGRADE_DATA.buildings.reduce((sum, building) => sum + (building.totalOrichalcum || 0), 0))}; the sheet formula omits Market and Institute.</p>
-    <details class="building-source-note building-source-note--sheet"><summary>About the source data</summary><p>${escapeHtml(BUILDING_UPGRADE_DATA.sourceCaveat)}</p><p>Data: <a href="${escapeHtml(BUILDING_UPGRADE_DATA.sourceUrl)}" target="_blank" rel="noreferrer">Google Sheet</a> · observed ${escapeHtml(BUILDING_UPGRADE_DATA.observedAt)} · credited to Raven G.</p><p>Every building mark here is a generic symbol drawn for this tool; no external icon set is loaded.</p></details>
+    <div class="building-budget-banner"><div><span class="building-eyebrow">${copy.knownSourceCosts}${selectedLevels.length ? text(copy, 'knownCostsRange', { from: selectedLevels[0] }) : ''}</span><strong>${summary}</strong></div><span>${text(copy, 'buildingsCount', { count: sourceRowCount })}</span></div>
+    ${missingCells ? `<p class="building-data-warning" role="status"><strong>${copy.missingWarningStrong}</strong> ${copy.missingWarningBody}</p>` : ''}
+    <div class="building-list-toolbar"><label class="building-search-control"><span class="building-search-icon" aria-hidden="true">⌕</span><input id="buildingSearch" type="search" value="${escapeHtml(search)}" placeholder="${escapeHtml(copy.searchPlaceholder)}" aria-label="${escapeHtml(copy.searchPlaceholder)}"></label><span data-building-count>${text(copy, 'countOf', { shown: sourceRowCount, total: sourceRowCount })}</span></div>
+    <div class="building-row-list">${BUILDING_UPGRADE_DATA.buildings.map((building) => renderBuildingRow(building, currentLevel, copy)).join('')}<p class="building-empty-state" data-building-empty hidden>${copy.noMatches}</p></div>
+    <p class="building-data-warning"><strong>${text(copy, 'sheetTotalsStrong', { total: formatNumber(BUILDING_UPGRADE_DATA.totalOrichalcum) })}</strong> ${text(copy, 'sheetTotalsBody', { listed: formatNumber(BUILDING_UPGRADE_DATA.buildings.reduce((sum, building) => sum + (building.totalOrichalcum || 0), 0)) })}</p>
+    <details class="building-source-note building-source-note--sheet"><summary>${copy.aboutSource}</summary><p>${escapeHtml(BUILDING_UPGRADE_DATA.sourceCaveat)}</p><p>${copy.dataLabel} <a href="${escapeHtml(BUILDING_UPGRADE_DATA.sourceUrl)}" target="_blank" rel="noreferrer">${copy.googleSheet}</a> ${text(copy, 'observedLine', { date: BUILDING_UPGRADE_DATA.observedAt })}</p><p>${copy.genericIcons}</p></details>
   </section>`;
 }
 
@@ -179,6 +192,8 @@ export function initBuildingUpgrades(host) {
   let castleLevel = 25;
   let allBuildingsLevel = 25;
   let search = '';
+  let copy = getBuildingUpgradesCopy('en');
+  let localeRequest = 0;
 
   // The search box filters the rendered rows in place. Rebuilding the list on every
   // keystroke destroyed the input that was being typed into, so the caret had to be
@@ -193,7 +208,10 @@ export function initBuildingUpgrades(host) {
     });
     const count = root.querySelector('[data-building-count]');
     if (count) {
-      count.textContent = `${shown} of ${BUILDING_UPGRADE_DATA.sourceRowCount}`;
+      count.textContent = text(copy, 'countOf', {
+        shown,
+        total: BUILDING_UPGRADE_DATA.sourceRowCount,
+      });
     }
     const empty = root.querySelector('[data-building-empty]');
     if (empty) empty.hidden = shown > 0;
@@ -202,13 +220,13 @@ export function initBuildingUpgrades(host) {
   const render = () => {
     const content =
       activeMode === 'castle'
-        ? renderCastle(castleLevel)
-        : renderAllBuildings(allBuildingsLevel, search);
+        ? renderCastle(castleLevel, copy)
+        : renderAllBuildings(allBuildingsLevel, copy, search);
     root.innerHTML = `<div class="building-upgrades-tool">
-      <header class="building-tool-header"><div><span class="building-eyebrow">Rise of Castles · Upgrade planner</span><h2>Buildings</h2><p>Plan Castle 26–30 and calculate Orichalcum across all listed buildings.</p></div><div class="building-tool-mark" aria-hidden="true">${buildingIcon()}</div></header>
-      <div class="building-mode-switch" role="group" aria-label="Building upgrade planner">
-        <button type="button" aria-pressed="${activeMode === 'castle'}" class="${activeMode === 'castle' ? 'is-active' : ''}" data-building-mode="castle">Castle 26–30</button>
-        <button type="button" aria-pressed="${activeMode === 'all'}" class="${activeMode === 'all' ? 'is-active' : ''}" data-building-mode="all">All buildings</button>
+      <header class="building-tool-header"><div><span class="building-eyebrow">${copy.plannerEyebrow}</span><h2>${copy.buildingsHeading}</h2><p>${copy.buildingsIntro}</p></div><div class="building-tool-mark" aria-hidden="true">${buildingIcon()}</div></header>
+      <div class="building-mode-switch" role="group" aria-label="${escapeHtml(copy.plannerAria)}">
+        <button type="button" aria-pressed="${activeMode === 'castle'}" class="${activeMode === 'castle' ? 'is-active' : ''}" data-building-mode="castle">${copy.modeCastle}</button>
+        <button type="button" aria-pressed="${activeMode === 'all'}" class="${activeMode === 'all' ? 'is-active' : ''}" data-building-mode="all">${copy.modeAll}</button>
       </div>
       <div class="building-mode-content">${content}</div>
     </div>`;
@@ -233,6 +251,22 @@ export function initBuildingUpgrades(host) {
     if (activeMode === 'all') applyBuildingFilter();
   };
 
+  const updateLanguage = async () => {
+    const requestId = ++localeRequest;
+    const locale = currentLanguage;
+    const nextCopy = await loadBuildingUpgradesCopy(locale, buildingUpgradesCopyLocalesUrl);
+    if (requestId !== localeRequest) return;
+    copy = nextCopy;
+    render();
+  };
+
+  if (root.__buildingLangHandler) {
+    window.removeEventListener('edenLanguageUpdate', root.__buildingLangHandler);
+  }
+  root.__buildingLangHandler = updateLanguage;
+  window.addEventListener('edenLanguageUpdate', root.__buildingLangHandler);
+
   render();
+  void updateLanguage();
   return true;
 }

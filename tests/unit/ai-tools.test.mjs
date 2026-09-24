@@ -790,6 +790,11 @@ test('Eden context defers raw ballots and exposes bounded public leaderboard and
         },
       ],
     },
+    rewardSettings: {
+      quotas: { support: 1, contribution: 10, management: 3, team: 3 },
+      guildMasterSource: 'support_top1',
+      r5PlayerKey: '',
+    },
   };
   const publicResult = await executeAiToolCall(
     {
@@ -822,7 +827,66 @@ test('Eden context defers raw ballots and exposes bounded public leaderboard and
   assert.equal(rewards.ok, true);
   assert.equal(rewards.data.support.length, 1);
   assert.equal(rewards.data.management[0].playerName, 'Management Pick');
-  assert.match(rewards.data.distribution.team, /Top 3 eligible public team-vote names/);
+  assert.match(rewards.data.distribution.team, /Up to 3 eligible public team-vote names/);
+
+  const rewardsWithoutR5 = await executeAiToolCall(
+    { name: 'get_eden_context', arguments: { kind: 'rewards', season: 'X2' } },
+    { ...staticContext, edenPublicData: { ...publicData, rewardSettings: null } }
+  );
+  assert.equal(rewardsWithoutR5.ok, true);
+  assert.doesNotMatch(JSON.stringify(rewardsWithoutR5.data.support), /MalakAbo/u);
+
+  const currentSeasonData = {
+    ...publicData,
+    season: 'season-2027',
+    seasonLabel: 'X2',
+    sourceRevision: 4,
+    weights: { contribution: 1, duties: 2 },
+    premiumCutoff: 18,
+    scoring: { includeDemolitionPoints: true },
+    rewardSettings: { quotas: { support: 2, contribution: 8, management: 1, team: 2 } },
+  };
+  const overview = await executeAiToolCall(
+    { name: 'get_eden_context', arguments: { kind: 'overview', season: 'X2' } },
+    { ...staticContext, edenPublicData: currentSeasonData }
+  );
+  assert.equal(overview.ok, true);
+  assert.equal(overview.data.season, 'X2');
+  assert.deepEqual(overview.meta.warnings, []);
+  assert.equal(overview.data.action.id, 'open_eden_x2');
+  assert.equal(overview.data.action.hash, '#edenHub');
+
+  const guide = await executeAiToolCall(
+    { name: 'get_eden_context', arguments: { kind: 'guide', season: 'X1' } },
+    { ...staticContext, edenPublicData: currentSeasonData }
+  );
+  assert.equal(guide.data.season, 'X2');
+  assert.equal(guide.data.action.id, 'open_eden_x2');
+  assert.match(
+    guide.meta.warnings[0],
+    /current published Eden X2 data is for season-2027, not X1/u
+  );
+  assert.doesNotMatch(guide.data.howToPlay.join(' '), /planned Top 20 flow is 4 Support/u);
+
+  const scoring = await executeAiToolCall(
+    { name: 'get_eden_context', arguments: { kind: 'scoring_rules', season: 'X1' } },
+    { ...staticContext, edenPublicData: currentSeasonData }
+  );
+  assert.equal(scoring.ok, true);
+  assert.equal(scoring.data.season, 'X2');
+  assert.equal(scoring.data.seasonId, 'season-2027');
+  assert.equal(scoring.data.sourceRevision, 4);
+  assert.equal(scoring.data.premiumCutoff, 18);
+  assert.match(
+    scoring.meta.warnings[0],
+    /current published Eden X2 data is for season-2027, not X1/u
+  );
+  assert.deepEqual(scoring.data.rewardSettings.quotas, {
+    support: 2,
+    contribution: 8,
+    management: 1,
+    team: 2,
+  });
 });
 
 test('Eden loyalty calculations and admin data both enforce their contracts', async () => {

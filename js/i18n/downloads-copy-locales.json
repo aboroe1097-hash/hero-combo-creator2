@@ -1,0 +1,278 @@
+{
+  "es": {
+    "title": "Descargas de la comunidad",
+    "skip": "Ir a la lista de descargas",
+    "intro": "Todos los desgloses de este sitio, como PDF que puedes guardar y compartir. Un clic por documento, sin registro. Cada archivo se genera con los mismos datos del juego que usa el sitio, y cada uno indica su fuente y revisión de datos en la última página.",
+    "noteStrong": "Datos de la comunidad.",
+    "noteBody": "Estas cifras provienen de libros de trabajo de la comunidad y capturas del juego, y pueden cambiar cuando el juego se actualiza. Comprueba cualquier gasto importante en el juego real antes de invertir recursos. Cuando un valor no se publica, el documento lo indica en lugar de adivinar.",
+    "loading": "Cargando la lista de descargas…",
+    "error": "No se pudo cargar la lista de descargas. Recarga la página o abre un documento directamente desde la carpeta de descargas.",
+    "groups": {
+      "research": "Investigación",
+      "unitSpecialisation": "Especialización de unidades",
+      "eden": "Eden",
+      "dragonMaster": "Maestro de Dragones",
+      "heroesSkins": "Héroes y aspectos",
+      "reference": "Referencia",
+      "more": "Más"
+    },
+    "stats": {
+      "documents": "Documentos",
+      "totalSize": "Tamaño total",
+      "built": "Generado"
+    }
+  },
+  "pt": {
+    "title": "Downloads da comunidade",
+    "skip": "Ir para a lista de downloads",
+    "intro": "Todos os detalhamentos deste site, em PDF que você pode guardar e compartilhar. Um clique por documento, sem cadastro. Cada arquivo é gerado com os mesmos dados do jogo usados no site, e cada um informa a fonte e a revisão dos dados na última página.",
+    "noteStrong": "Dados da comunidade.",
+    "noteBody": "Estes números vêm de planilhas da comunidade e capturas do jogo, e podem mudar quando o jogo é atualizado. Confira qualquer gasto alto no jogo ao vivo antes de investir recursos. Quando um valor não é publicado, o documento diz isso em vez de adivinhar.",
+    "loading": "Carregando a lista de downloads…",
+    "error": "Não foi possível carregar a lista de downloads. Recarregue a página ou abra um documento direto da pasta de downloads.",
+    "groups": {
+      "research": "Pesquisa",
+      "unitSpecialisation": "Especialização de unidades",
+      "eden": "Eden",
+      "dragonMaster": "Mestre dos Dragões",
+      "heroesSkins": "Heróis e visuais",
+      "reference": "Referência",
+      "more": "Mais"
+    },
+    "stats": {
+      "documents": "Documentos",
+      "totalSize": "Tamanho total",
+      "built": "Gerado"
+    }
+  },
+  "de": {
+    "title": "Community-Downloads",
+    "skip": "Zur Download-Liste springen",
+    "intro": "Jede Auswertung dieser Seite als PDF zum Behalten und Teilen. Ein Klick pro Dokument, keine Anmeldung. Jede Datei wird aus denselben Spieldaten erzeugt, die die Seite nutzt, und nennt ihre Quelle und Datenrevision auf der letzten Seite.",
+    "noteStrong": "Community-Daten.",
+    "noteBody": "Diese Werte stammen aus Community-Tabellen und In-Game-Aufnahmen und können sich ändern, wenn das Spiel aktualisiert wird. Prüfe alles Teure im Live-Spiel, bevor du Ressourcen einsetzt. Wo ein Wert nicht veröffentlicht ist, sagt das Dokument es, statt zu raten.",
+    "loading": "Download-Liste wird geladen…",
+    "error": "Die Download-Liste konnte nicht geladen werden. Lade die Seite neu oder öffne ein Dokument direkt aus dem Download-Ordner.",
+    "groups": {
+      "research": "Forschung",
+      "unitSpecialisation": "Einheiten-Spezialisierung",
+      "eden": "Eden",
+      "dragonMaster": "Drachenmeister",
+      "heroesSkins": "Helden und Skins",
+      "reference": "Referenz",
+      "more": "Mehr"
+    },
+    "stats": {
+      "documents": "Dokumente",
+      "totalSize": "Gesamtgröße",
+      "built": "Erstellt"
+    }
+  },
+  "fr": {
+    "title": "Téléchargements communautaires",
+    "skip": "Aller à la liste des téléchargements",
+    "intro": "Tous les détails de ce site, en PDF à conserver et à partager. Un clic par document, sans inscription. Chaque fichier est généré à partir des mêmes données de jeu que le site, et chacun indique sa source et sa révision de données en dernière page.",
+    "noteStrong": "Données communautaires.",
+    "noteBody": "Ces chiffres proviennent de classeurs communautaires et de captures en jeu ; ils peuvent changer lorsque le jeu est mis à jour. Vérifiez tout coût important dans le jeu en direct avant d'engager des ressources. Lorsqu'une valeur n'est pas publiée, le document le dit au lieu de deviner.",
+    "loading": "Chargement de la liste des téléchargements…",
+    "error": "La liste des téléchargements n'a pas pu être chargée. Rechargez la page ou ouvrez un document directement depuis le dossier des téléchargements.",
+    "groups": {
+      "research": "Recherche",
+      "unitSpecialisation": "Spécialisation des unités",
+      "eden": "Eden",
+      "dragonMaster": "Maître des Dragons",
+      "heroesSkins": "Héros et apparences",
+      "reference": "Référence",
+      "more": "Plus"
+    },
+    "stats": {
+      "documents": "Documents",
+      "totalSize": "Taille totale",
+      "built": "Généré"
+    }
+  },
+  "hr": {
+    "title": "Preuzimanja zajednice",
+    "skip": "Skoči na popis preuzimanja",
+    "intro": "Svi pregledi s ove stranice, kao PDF koji možeš zadržati i podijeliti. Jedan klik po dokumentu, bez prijave. Svaka je datoteka izrađena od istih podataka igre koje stranica koristi i navodi svoj izvor i reviziju podataka na zadnjoj stranici.",
+    "noteStrong": "Podaci zajednice.",
+    "noteBody": "Ove brojke dolaze iz tablica zajednice i snimki iz igre te se mogu promijeniti kad se igra ažurira. Provjeri svaki skuplji trošak u živoj igri prije nego uložiš resurse. Kad vrijednost nije objavljena, dokument to kaže umjesto da nagađa.",
+    "loading": "Učitavanje popisa preuzimanja…",
+    "error": "Popis preuzimanja nije se mogao učitati. Osvježi stranicu ili otvori dokument izravno iz mape preuzimanja.",
+    "groups": {
+      "research": "Istraživanje",
+      "unitSpecialisation": "Specijalizacija jedinica",
+      "eden": "Eden",
+      "dragonMaster": "Gospodar zmajeva",
+      "heroesSkins": "Heroji i izgledi",
+      "reference": "Referenca",
+      "more": "Više"
+    },
+    "stats": {
+      "documents": "Dokumenti",
+      "totalSize": "Ukupna veličina",
+      "built": "Izrađeno"
+    }
+  },
+  "tr": {
+    "title": "Topluluk indirmeleri",
+    "skip": "İndirme listesine geç",
+    "intro": "Bu sitedeki tüm dökümler, saklayıp paylaşabileceğiniz PDF olarak. Belge başına bir tık, kayıt yok. Her dosya, sitenin kullandığı aynı oyun verilerinden üretilir ve her biri son sayfada kaynağını ve veri revizyonunu belirtir.",
+    "noteStrong": "Topluluk verileri.",
+    "noteBody": "Bu değerler topluluk çalışma kitaplarından ve oyun içi kayıtlardan gelir ve oyun güncellendiğinde değişebilir. Kaynak harcamadan önce pahalı her şeyi canlı oyunda kontrol edin. Bir değer yayımlanmamışsa belge tahmin etmek yerine bunu söyler.",
+    "loading": "İndirme listesi yükleniyor…",
+    "error": "İndirme listesi yüklenemedi. Sayfayı yenileyin veya bir belgeyi doğrudan indirmeler klasöründen açın.",
+    "groups": {
+      "research": "Araştırma",
+      "unitSpecialisation": "Birlik Uzmanlaşması",
+      "eden": "Eden",
+      "dragonMaster": "Ejderha Efendisi",
+      "heroesSkins": "Kahramanlar ve görünümler",
+      "reference": "Referans",
+      "more": "Daha fazla"
+    },
+    "stats": {
+      "documents": "Belgeler",
+      "totalSize": "Toplam boyut",
+      "built": "Oluşturulma"
+    }
+  },
+  "ru": {
+    "title": "Загрузки сообщества",
+    "skip": "Перейти к списку загрузок",
+    "intro": "Все разборы этого сайта в виде PDF, которые можно сохранить и передать. Один клик на документ, без регистрации. Каждый файл создаётся из тех же игровых данных, что использует сайт, и на последней странице указывает источник и ревизию данных.",
+    "noteStrong": "Данные сообщества.",
+    "noteBody": "Эти цифры взяты из таблиц сообщества и игровых снимков и могут меняться при обновлении игры. Проверяйте всё дорогое в живой игре, прежде чем тратить ресурсы. Если значение не опубликовано, документ говорит об этом, а не угадывает.",
+    "loading": "Загрузка списка…",
+    "error": "Не удалось загрузить список загрузок. Обновите страницу или откройте документ прямо из папки загрузок.",
+    "groups": {
+      "research": "Исследования",
+      "unitSpecialisation": "Специализация войск",
+      "eden": "Эдем",
+      "dragonMaster": "Мастер драконов",
+      "heroesSkins": "Герои и облики",
+      "reference": "Справочник",
+      "more": "Ещё"
+    },
+    "stats": {
+      "documents": "Документы",
+      "totalSize": "Общий размер",
+      "built": "Собрано"
+    }
+  },
+  "id": {
+    "title": "Unduhan komunitas",
+    "skip": "Lompat ke daftar unduhan",
+    "intro": "Semua rincian situs ini, sebagai PDF yang bisa kau simpan dan bagikan. Satu klik per dokumen, tanpa pendaftaran. Setiap berkas dibuat dari data game yang sama dengan yang dipakai situs, dan mencantumkan sumber serta revisi datanya di halaman terakhir.",
+    "noteStrong": "Data komunitas.",
+    "noteBody": "Angka-angka ini berasal dari buku kerja komunitas dan tangkapan dalam game, dan bisa berubah saat game diperbarui. Periksa hal mahal di game langsung sebelum menginvestasikan sumber daya. Bila suatu nilai tidak dipublikasikan, dokumen menyebutkannya alih-alih menebak.",
+    "loading": "Memuat daftar unduhan…",
+    "error": "Daftar unduhan tidak dapat dimuat. Muat ulang halaman, atau buka dokumen langsung dari folder unduhan.",
+    "groups": {
+      "research": "Riset",
+      "unitSpecialisation": "Spesialisasi Unit",
+      "eden": "Eden",
+      "dragonMaster": "Penguasa Naga",
+      "heroesSkins": "Pahlawan dan tampilan",
+      "reference": "Referensi",
+      "more": "Lainnya"
+    },
+    "stats": {
+      "documents": "Dokumen",
+      "totalSize": "Ukuran total",
+      "built": "Dibuat"
+    }
+  },
+  "zh": {
+    "title": "社区下载",
+    "skip": "跳到下载列表",
+    "intro": "本站所有数据解析，均可作为 PDF 保存和分享。每个文档一键下载，无需注册。每个文件都由网站所用的同一份游戏数据生成，并在最后一页注明来源和数据版本。",
+    "noteStrong": "社区数据。",
+    "noteBody": "这些数字来自社区工作表和游戏内截图，游戏更新后可能变化。在投入资源前，请先在游戏中核实任何昂贵项目。若某项数值未公开，文档会如实说明而不是猜测。",
+    "loading": "正在加载下载列表…",
+    "error": "无法加载下载列表。请刷新页面，或直接从下载文件夹打开文档。",
+    "groups": {
+      "research": "研究",
+      "unitSpecialisation": "兵种专精",
+      "eden": "伊甸",
+      "dragonMaster": "龙之大师",
+      "heroesSkins": "英雄与外观",
+      "reference": "参考",
+      "more": "更多"
+    },
+    "stats": {
+      "documents": "文档",
+      "totalSize": "总大小",
+      "built": "生成时间"
+    }
+  },
+  "ar": {
+    "title": "تنزيلات المجتمع",
+    "skip": "الانتقال إلى قائمة التنزيلات",
+    "intro": "كل التحليلات على هذا الموقع بصيغة PDF يمكنك الاحتفاظ بها ومشاركتها. نقرة واحدة لكل مستند، دون تسجيل. يُنشأ كل ملف من بيانات اللعبة نفسها التي يستخدمها الموقع، ويذكر مصدره ومراجعة بياناته في الصفحة الأخيرة.",
+    "noteStrong": "بيانات المجتمع.",
+    "noteBody": "تأتي هذه الأرقام من جداول المجتمع ولقطات داخل اللعبة، وقد تتغير عند تحديث اللعبة. تحقّق من أي بند مكلف في اللعبة المباشرة قبل إنفاق الموارد. وإذا لم تُنشر قيمة ما، يذكر المستند ذلك بدل التخمين.",
+    "loading": "جارٍ تحميل قائمة التنزيلات…",
+    "error": "تعذّر تحميل قائمة التنزيلات. أعد تحميل الصفحة أو افتح مستنداً مباشرة من مجلد التنزيلات.",
+    "groups": {
+      "research": "الأبحاث",
+      "unitSpecialisation": "تخصص الوحدات",
+      "eden": "عدن",
+      "dragonMaster": "سيد التنانين",
+      "heroesSkins": "الأبطال والمظاهر",
+      "reference": "مرجع",
+      "more": "المزيد"
+    },
+    "stats": {
+      "documents": "المستندات",
+      "totalSize": "الحجم الإجمالي",
+      "built": "أُنشئ"
+    }
+  },
+  "kr": {
+    "title": "커뮤니티 다운로드",
+    "skip": "다운로드 목록으로 건너뛰기",
+    "intro": "이 사이트의 모든 분석 자료를 보관하고 공유할 수 있는 PDF로 제공합니다. 문서당 한 번의 클릭, 가입 불필요. 각 파일은 사이트가 사용하는 것과 동일한 게임 데이터로 생성되며 마지막 페이지에 출처와 데이터 버전을 명시합니다.",
+    "noteStrong": "커뮤니티 데이터.",
+    "noteBody": "이 수치는 커뮤니티 워크북과 게임 내 캡처에서 나온 것이며 게임이 업데이트되면 바뀔 수 있습니다. 자원을 투자하기 전에 값비싼 항목은 실제 게임에서 확인하세요. 공개되지 않은 값은 문서에서 추측하지 않고 그대로 밝힙니다.",
+    "loading": "다운로드 목록을 불러오는 중…",
+    "error": "다운로드 목록을 불러오지 못했습니다. 페이지를 새로 고치거나 다운로드 폴더에서 문서를 직접 여세요.",
+    "groups": {
+      "research": "연구",
+      "unitSpecialisation": "병종 전문화",
+      "eden": "에덴",
+      "dragonMaster": "드래곤 마스터",
+      "heroesSkins": "영웅 및 스킨",
+      "reference": "참고",
+      "more": "더 보기"
+    },
+    "stats": {
+      "documents": "문서",
+      "totalSize": "전체 크기",
+      "built": "생성"
+    }
+  },
+  "it": {
+    "title": "Download della community",
+    "skip": "Vai alla lista dei download",
+    "intro": "Tutti gli approfondimenti di questo sito, come PDF da conservare e condividere. Un clic per documento, senza registrazione. Ogni file è generato dagli stessi dati di gioco usati dal sito e indica fonte e revisione dei dati nell'ultima pagina.",
+    "noteStrong": "Dati della community.",
+    "noteBody": "Queste cifre provengono da cartelle di lavoro della community e catture in gioco, e possono cambiare quando il gioco viene aggiornato. Controlla ogni spesa importante nel gioco live prima di impegnare risorse. Quando un valore non è pubblicato, il documento lo dice invece di indovinare.",
+    "loading": "Caricamento della lista dei download…",
+    "error": "Impossibile caricare la lista dei download. Ricarica la pagina o apri un documento direttamente dalla cartella dei download.",
+    "groups": {
+      "research": "Ricerca",
+      "unitSpecialisation": "Specializzazione unità",
+      "eden": "Eden",
+      "dragonMaster": "Maestro dei Draghi",
+      "heroesSkins": "Eroi e skin",
+      "reference": "Riferimento",
+      "more": "Altro"
+    },
+    "stats": {
+      "documents": "Documenti",
+      "totalSize": "Dimensione totale",
+      "built": "Generato"
+    }
+  }
+}

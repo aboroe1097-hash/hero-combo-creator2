@@ -85,7 +85,7 @@ import {
   resolveEdenAccountPlayer,
 } from './eden-account-link.js';
 
-export const APP_VERSION = '16.5.2';
+export const APP_VERSION = '16.5.3';
 // Season-configured viewer: eden-x1.html keeps its archive defaults, while
 // eden-x2.html marks the body with data-eden-workspace="x2" and this renderer
 // switches to the published-projection read path, X2 vote collections, and
@@ -6877,7 +6877,16 @@ function edenMarqueeStatusState() {
     return { state: 'closed', label: t('edenX1VoteClosedShort'), countdown: '', urgent: false };
   }
   const parts = getEdenVoteCountdownParts(closesAt, now);
-  const countdown = `${parts.days}d ${parts.hours}h ${pad2(parts.minutes)}m`;
+  const vars = {
+    days: parts.days,
+    hours: pad2(parts.hours),
+    minutes: pad2(parts.minutes),
+    seconds: pad2(parts.seconds),
+  };
+  const countdown = tf(
+    parts.days ? 'edenX1VoteCountdownDays' : 'edenX1VoteCountdownClock',
+    vars
+  );
   const urgent = parts.remainingSeconds <= 86_400;
   return {
     state: urgent ? 'urgent' : 'open',

@@ -7,6 +7,7 @@ import {
   GUILD_MASTER_SOURCES,
   MAX_REWARD_QUOTA,
   REWARD_QUOTA_KEYS,
+  normalizePublishedRewardSettings,
   normalizeRewardSettings,
   resolveGuildMasterSlot,
   allocateSupportRewards,
@@ -31,6 +32,22 @@ test('reward settings default to the distribution the owner asked for', () => {
   assert.equal(rewardQuota(null, 'contribution'), 10);
   // Unknown categories fall back to the default rather than to zero.
   assert.equal(rewardQuota(null, 'nonsense'), DEFAULT_REWARD_SETTINGS.quotas.nonsense ?? 0);
+});
+
+test('published reward settings never invent an R5 from missing or malformed projection values', () => {
+  const settings = normalizePublishedRewardSettings({ quotas: { support: 2 } });
+  assert.equal(settings.quotas.support, 2);
+  assert.equal(settings.guildMasterSource, 'r5');
+  assert.equal(settings.r5PlayerKey, '');
+  assert.equal(guildMasterIsReserved(settings), false);
+
+  for (const r5PlayerKey of [undefined, null, 123, {}]) {
+    const malformed = normalizePublishedRewardSettings({ r5PlayerKey });
+    assert.equal(malformed.r5PlayerKey, '');
+  }
+
+  const configured = normalizePublishedRewardSettings({ r5PlayerKey: 'Current X2 R5' });
+  assert.equal(configured.r5PlayerKey, 'Current X2 R5');
 });
 
 test('reward settings treat the document as hostile input', () => {

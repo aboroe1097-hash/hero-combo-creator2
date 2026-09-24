@@ -46,6 +46,9 @@ test('public modal and phone-sheet popovers use the blocking-layer contract', ()
 test('Eden X1 light theme preserves primary and inset surface hierarchy', () => {
   assert.match(edenCss, /:root\[data-theme='light'\] \.eden-x1-page \{/);
   assert.match(edenCss, /--frost-void:\s*#f4f7fb/);
+  assert.match(edenCss, /--fr-cyan:\s*#0369a1/);
+  assert.match(edenCss, /--fr-fire:\s*#c2410c/);
+  assert.match(edenCss, /--fr-gold:\s*#a16207/);
   const parityStart = edenCss.indexOf('v14 Eden X1 parity completion');
   assert.notEqual(parityStart, -1);
   const parity = edenCss.slice(parityStart);
@@ -116,7 +119,7 @@ test('public heatmap is a named, conditionally focusable overflow region', () =>
   assert.match(edenCss, /#edenX1PublicHeatmapScroll\s*{[\s\S]*?overflow-x:\s*auto/);
   assert.match(
     edenCss,
-    /#edenX1PublicHeatmapScroll:focus-visible\s*{[\s\S]*?outline:\s*2px solid var\(--frost-cyan\)/
+    /#edenX1PublicHeatmapScroll:focus-visible\s*{[\s\S]*?outline:\s*2px solid var\(--fr-cyan\)/
   );
 });
 

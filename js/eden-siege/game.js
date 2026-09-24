@@ -10,7 +10,7 @@ import { createInput } from './engine/input.js';
 import { createAudio } from './engine/audio.js';
 import { createHud } from './ui/hud.js';
 import { STEP_MS, MAX_STEPS_PER_FRAME, TOWERS } from './data/balance.js';
-import { getCopy, formatCopy } from './data/copy.js';
+import { formatCopy } from './data/copy.js';
 import { dailySeed } from './rng.js';
 
 const BEST_KEY_PREFIX = 'vts_siege_best_';
@@ -45,13 +45,12 @@ export async function startSiege({
   hudRoot,
   mapId = 'keep',
   heroName,
-  lang = 'en',
+  copy,
   theme = 'dark',
   reducedMotion = false,
   allowWebgl = true,
   quality: qualityOverride = null,
 }) {
-  const copy = getCopy(lang);
   const seed = dailySeed(mapId);
   const world = createWorld({ mapId, heroName, seed });
   // A pinned tier from ?quality= wins over detection: CI and low-end devices
