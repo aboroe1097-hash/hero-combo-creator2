@@ -474,3 +474,38 @@ test('the registration form collects Artifact Power, and Towers is named on the 
   assert.equal(specialty.length, 6, 'six page locales carry the label');
   for (const line of specialty) assert.match(line, /\(/);
 });
+
+test('optional Artifact Power stays absent when blank and round-trips when filled', () => {
+  const field = (value) =>
+    fakeRoot([
+      {
+        type: 'number',
+        dataset: { bohField: 'stats.artifactPower' },
+        value,
+      },
+    ]);
+  const baseStats = signupValues().stats;
+
+  const blankForm = readBohSignupFormValues(field(''));
+  const blankSignup = build({
+    values: signupValues({
+      stats: { ...baseStats, artifactPower: blankForm.stats.artifactPower },
+    }),
+  });
+  assert.equal(blankForm.stats.artifactPower, null);
+  assert.equal(Object.hasOwn(blankSignup.stats, 'artifactPower'), false);
+
+  for (const value of ['0', '12345']) {
+    const filledForm = readBohSignupFormValues(field(value));
+    const savedSignup = build({
+      values: signupValues({
+        stats: { ...baseStats, artifactPower: filledForm.stats.artifactPower },
+      }),
+    });
+    assert.equal(savedSignup.stats.artifactPower, Number(value));
+
+    const reopenedForm = field('');
+    writeBohSignupFormValues(reopenedForm, savedSignup);
+    assert.equal(reopenedForm.nodes[0].value, value);
+  }
+});
