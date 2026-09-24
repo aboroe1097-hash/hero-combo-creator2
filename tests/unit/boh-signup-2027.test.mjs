@@ -442,3 +442,70 @@ test('the active-season prompt and the admin tab read from the site catalogue', 
     }
   }
 });
+
+test('the registration form collects Artifact Power, and Towers is named on the specialty row', () => {
+  const page = readFileSync('vtsscore.html', 'utf8');
+  const model = readFileSync('js/boh-signup-document.js', 'utf8');
+  const copy = readFileSync('js/vts-score-i18n.js', 'utf8');
+
+  // The artifact row is collected but remains optional under the existing
+  // signup/rules contract.
+  const artifact = page.match(/<label for="vtsScoreSignupArtifactPower">[\s\S]*?<\/label>/);
+  assert.ok(artifact, 'the artifact power field is on the page');
+  assert.match(artifact[0], /data-boh-field="stats\.artifactPower"/);
+  assert.match(artifact[0], /data-vts-i18n="fieldArtifactPower"/);
+  assert.doesNotMatch(artifact[0], /\brequired\b/);
+
+  // Filled back from a saved signup, which walks the declared paths.
+  assert.match(model, /'stats\.unitSpecialtyPower',[\s\S]{0,220}'stats\.artifactPower',/);
+  // Not required in the document contract either. Scope to the array body:
+  // the string "artifactPower" appears later in the file for the optional
+  // validation, so a loose pattern would match past the list.
+  const requiredBlock = model.match(
+    /BOH_SIGNUP_STAT_REQUIRED_FIELDS = Object\.freeze\(\[([\s\S]*?)\]\)/
+  );
+  assert.ok(requiredBlock, 'the required-field list is declared');
+  assert.doesNotMatch(requiredBlock[1], /artifactPower/);
+  assert.match(requiredBlock[1], /'unitSpecialtyPower'/);
+
+  // The specialty row names Towers, in every page locale, and nowhere is it
+  // still the bare label.
+  const specialty = copy.match(/fieldUnitSpecialtyPower: '[^']+'/g) || [];
+  assert.equal(specialty.length, 6, 'six page locales carry the label');
+  for (const line of specialty) assert.match(line, /\(/);
+});
+
+test('optional Artifact Power stays absent when blank and round-trips when filled', () => {
+  const field = (value) =>
+    fakeRoot([
+      {
+        type: 'number',
+        dataset: { bohField: 'stats.artifactPower' },
+        value,
+      },
+    ]);
+  const baseStats = signupValues().stats;
+
+  const blankForm = readBohSignupFormValues(field(''));
+  const blankSignup = build({
+    values: signupValues({
+      stats: { ...baseStats, artifactPower: blankForm.stats.artifactPower },
+    }),
+  });
+  assert.equal(blankForm.stats.artifactPower, null);
+  assert.equal(Object.hasOwn(blankSignup.stats, 'artifactPower'), false);
+
+  for (const value of ['0', '12345']) {
+    const filledForm = readBohSignupFormValues(field(value));
+    const savedSignup = build({
+      values: signupValues({
+        stats: { ...baseStats, artifactPower: filledForm.stats.artifactPower },
+      }),
+    });
+    assert.equal(savedSignup.stats.artifactPower, Number(value));
+
+    const reopenedForm = field('');
+    writeBohSignupFormValues(reopenedForm, savedSignup);
+    assert.equal(reopenedForm.nodes[0].value, value);
+  }
+});

@@ -133,6 +133,9 @@ export const BOH_SIGNUP_FIELD_PATHS = Object.freeze({
     'stats.heroCombatPower',
     'stats.dragonPower',
     'stats.unitSpecialtyPower',
+    // Optional under the signup/rules contract. Blank values must stay absent
+    // rather than becoming zero.
+    'stats.artifactPower',
   ]),
   troopLists: Object.freeze([
     'stats.t9TroopTypes',
@@ -212,7 +215,14 @@ export function readBohSignupFormValues(root) {
   for (const element of fieldElements(root)) {
     const path = textValue(element?.dataset?.bohField);
     if (!path) continue;
-    setPathValue(values, path, elementValue(element));
+    const value = elementValue(element);
+    // This optional field is omitted by the signup model for null, while an
+    // empty string is normalized to zero. Preserve blank as absent.
+    const normalizedValue =
+      path === 'stats.artifactPower' && typeof value === 'string' && !value.trim()
+        ? null
+        : value;
+    setPathValue(values, path, normalizedValue);
   }
   return values;
 }
