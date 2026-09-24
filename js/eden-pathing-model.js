@@ -253,7 +253,11 @@ export function buildRouteLegs(stops = [], router, canRoute = () => true) {
     let leg;
     if (canRoute(from, to)) {
       const result = router(from, to);
-      leg = { from, to, path: result.path, blocked: Boolean(result.blocked), pending: false };
+      // A router that finds nothing (an empty or missing path) falls back to
+      // the straight line, so the tile count and the renderers never read an
+      // empty path.
+      const path = Array.isArray(result?.path) && result.path.length ? result.path : [from, to];
+      leg = { from, to, path, blocked: Boolean(result?.blocked), pending: false };
     } else {
       leg = { from, to, path: [from, to], blocked: false, pending: true };
       pending = true;
@@ -353,7 +357,10 @@ export function formatSteps(stops = [], legs = [], { structureLabel = (type) => 
       badge,
       name,
       label,
-      legTiles: leg ? leg.tiles : null,
+      // The tiles this leg adds to the route, so the rows sum to the total;
+      // `legWalked` is the full leg length, shown when it differs.
+      legTiles: leg ? (leg.newTiles ?? leg.tiles) : null,
+      legWalked: leg ? leg.tiles : null,
       legBlocked: leg ? Boolean(leg.blocked) : false,
     };
   });

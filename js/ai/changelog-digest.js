@@ -9,7 +9,7 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "version": "16.5.5",
     "date": "2026-09-24",
     "highlights": [
-      "Eden Pathing now counts the tiles a route actually occupies instead of adding up the length of every leg, so a route that crosses itself or doubles back no longer reports the same ground twice. The panel shows the occupied tiles, how many were walked twice, and how many pathers …"
+      "Eden Pathing now counts the tiles a route actually occupies instead of adding up the length of every leg, so a route that crosses itself or doubles back no longer reports the same ground twice. The panel shows the occupied tiles, how many were walked twice, and an estimated path…"
     ]
   },
   {
