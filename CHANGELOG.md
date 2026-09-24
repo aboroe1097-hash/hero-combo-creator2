@@ -2,6 +2,10 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.6 - 2026-09-25
+
+- The combo database carries the X8 catch-up bracket again: 82 formations that need at least one X8 hero, restored from the name-matched X8 availability set that was dropped when the database was limited to S0-X2. Every lane records the tier and source score it was ranked by, and the lanes sit after the S0-X2 list, so no existing rank or counter badge is renumbered and the Hero Atlas still caps a hero's combos at their own season. X8 stays off in the Combo Generator's season strip until it is ticked, because it is a catch-up bracket rather than a season everybody plays.
+
 ## 16.5.5 - 2026-09-24
 
 - Eden Pathing now counts the tiles a route actually occupies instead of adding up the length of every leg, so a route that crosses itself or doubles back no longer reports the same ground twice. The panel shows the occupied tiles, how many were walked twice, and an estimated pather count assuming 40 tiles per pather — the assumption is shown beside the figure because it is a planning estimate rather than a game constant. Each step shows the new tiles it adds, with the tiles it walks in parentheses when some of that ground was already counted, so the steps add up to the total. A leg into impassable terrain is filled in tile by tile, so a straight fallback line is counted as the tiles it crosses.
@@ -13,7 +17,6 @@ This is the release history, newest first. Entries describe their release-time b
 - The Eden Hub lands on the current season again after you have used the hub. Clicking a sub-tab wrote it into the URL, and that leftover was read back as a request for that sub-tab, so one click on Royal Bounty kept the hub off the season for the rest of the session. On refresh, a leftover non-season sub-tab query is cleared so the hub returns to the season landing; direct season and ballot links and shared sub-tab links still open their named destinations.
 - The Competition #12 registration form collects optional Artifact Power, matching the existing signup/rules contract. Blank entries are omitted, while an explicit zero is preserved. The Unit Specialty row now says Towers, because that is where most of it comes from and members were asking which line to read.
 - The Hero Atlas **Hero Tables** and **Skins** switches no longer ignore a tap made while the Atlas is still loading: the view you picked opens as soon as it is ready.
-- The combo database carries the X8 catch-up bracket again: 82 formations that need at least one X8 hero, restored from the name-matched X8 availability set that was dropped when the database was limited to S0-X2. Every lane records the tier and source score it was ranked by, and the lanes sit after the S0-X2 list, so no existing rank or counter badge is renumbered and the Hero Atlas still caps a hero's combos at their own season. X8 stays off in the Combo Generator's season strip until it is ticked, because it is a catch-up bracket rather than a season everybody plays.
 
 ## 16.5.4 - 2026-09-24
 
