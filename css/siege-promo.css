@@ -145,15 +145,15 @@
 /* ── homepage callout ─────────────────────────────────────────────────── */
 .siege-callout {
   position: fixed;
-  /* Bottom end corner, left of Velo's launcher: the start side holds the
+  /* Bottom end corner, left of Velo's 188px launcher pill: the start side holds the
      desktop search box. */
-  inset-inline-end: calc(96px + env(safe-area-inset-right));
+  inset-inline-end: calc(224px + env(safe-area-inset-right));
   bottom: calc(12px + env(safe-area-inset-bottom));
   z-index: 160;
   display: flex;
   align-items: center;
   gap: 10px;
-  max-width: min(380px, calc(100vw - 110px));
+  max-width: min(380px, calc(100vw - 248px));
   padding: 10px 10px 10px 14px;
   border-radius: 16px;
   border: 1px solid rgba(125, 211, 252, 0.45);
