@@ -2,6 +2,10 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.5 - 2026-09-24
+
+- The Eden Hub lands on the current season again after you have used the hub. Clicking a sub-tab wrote it into the URL, and that leftover was read back as a request for that sub-tab, so one click on Royal Bounty kept the hub off the season for the rest of the session. A sub-tab you clicked is still in the URL while you are on it, and a link someone shares still opens the sub-tab it names.
+
 ## 16.5.4 - 2026-09-24
 
 - VtsScore is now **Competition #12**, a pre-season growth competition. Members sign up with their BoH time slots (+8, +12, +14, +20) and Epic Showdown time slots (+10, +13, +16, +19) in order of preference, all in game time, and can opt in to the public comparison. Each player is compared with their Season 2026 data (28/29 July) once a superadmin confirms the name match; without a match, the sign-up values are the baseline. Winners are ranked by castle power growth between the baseline and the re-upload, and the comparison board shows only players who agreed to it.

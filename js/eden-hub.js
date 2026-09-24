@@ -336,6 +336,35 @@ function readSubtabIntent() {
   return null;
 }
 
+// Clicking a sub-tab writes the hash so the URL matches what is on screen, but
+// that must not become the hub's default: without this marker, one click on
+// Royal Bounty made every later visit land there and skip the season entirely.
+// history.state travels with the session but never with a shared link, so a
+// pasted URL still opens the sub-tab it names.
+const SUBTAB_CLICK_STATE_KEY = 'edenHubSubtabClicked';
+
+function subTabClickedThisSession() {
+  try {
+    const clicked = window.history.state?.[SUBTAB_CLICK_STATE_KEY];
+    return EDEN_HUB_SUBTABS.includes(clicked) ? clicked : null;
+  } catch {
+    return null;
+  }
+}
+
+function rememberSubTabClick(name) {
+  const hash = `#edenHub?subtab=${name}`;
+  try {
+    window.history.replaceState(
+      { ...(window.history.state || {}), [SUBTAB_CLICK_STATE_KEY]: name },
+      '',
+      hash
+    );
+  } catch {
+    window.history.replaceState(window.history.state, '', hash);
+  }
+}
+
 export function bootEdenHub() {
   if (booted) return;
   const root = document.getElementById('edenMapRoot');
@@ -401,7 +430,13 @@ export function bootEdenHub() {
   // Deferring the first paint instead left the hub able to yank a panel away
   // from someone who had already clicked, which is a worse bug than a brief
   // flash of the wrong tab.
-  const intent = readSubtabIntent();
+  const requested = readSubtabIntent();
+  // A sub-tab this session clicked is not a request for it: the click only
+  // owned the URL. The hub's default stays the current season, so a visit that
+  // follows a click still lands there — while a shared link, which carries no
+  // history state, still opens exactly the sub-tab it names.
+  const clicked = subTabClickedThisSession();
+  const intent = requested && requested !== 'vote' && requested === clicked ? '' : requested;
   if (intent === 'season' || intent === 'vote') {
     if (!openIntent(intent, { scroll: true })) openSeasonIntentWhenPublished(intent);
   } else if (intent) {
@@ -424,7 +459,7 @@ export function bootEdenHub() {
     if (!button) return;
     userPickedSubtab = true;
     const name = button.dataset.edenSubtab;
-    window.history.replaceState(window.history.state, '', `#edenHub?subtab=${name}`);
+    rememberSubTabClick(name);
     openIntent(name, { scroll: true });
   });
 
