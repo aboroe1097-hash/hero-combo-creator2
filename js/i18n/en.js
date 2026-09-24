@@ -296,7 +296,7 @@ const en = {
     'In-game contribution is the leaderboard contribution plus ex-guild points. The support weight scales all support work — shield walls, pathing, banners and the form\'s bonus points — so 2 doubles it. 0.5 on contribution halves it. 1 leaves both terms exactly as they are today.',
   adminRewardSettingsTitle: 'Reward distribution',
   adminRewardSettingsNote:
-    'How many players each category rewards this season. Changing it renumbers the reward slots; the published page shows the new distribution after the next publish.',
+    'Sets the number of players each category rewards. The R5 guild-master reward counts as one Support Work slot; with a quota of 0, the R5 row still remains. Changes renumber slots; the public page updates after the next publish.',
   adminRewardSettingsCategory: 'Category',
   adminRewardSettingsSlots: 'Slots',
   adminRewardSettingsGuildMaster: 'Guild-master reward goes to',
