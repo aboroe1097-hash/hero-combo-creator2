@@ -21,6 +21,7 @@ import {
   setResearchNodes,
   toggleResearchNode,
 } from './specialization-towers-v2-model.js';
+import { getWorkbookNodeMedalCosts } from './specialization-towers-medal-index.js';
 import {
   buildStatContributionSnapshot,
   summarizeStatContributions,
@@ -486,6 +487,12 @@ function renderMilestones(research, progress) {
     </section>`;
 }
 
+/** Workbook per-level medal costs for the active troop's node ("151 + 158"), or unknown. */
+function nodeMedalCostLabel(researchId, nodeId) {
+  const costs = getWorkbookNodeMedalCosts(activeTroop, researchId, nodeId);
+  return costs ? costs.map((cost) => formatNumber(cost)).join(' + ') : t('medalsUnknown');
+}
+
 function renderAttributeNode(research, node, progress, index, { passive = false, access } = {}) {
   const selected = progress.selectedNodeIds.includes(node.id);
   const effect = passive
@@ -498,7 +505,7 @@ function renderAttributeNode(research, node, progress, index, { passive = false,
     <button type="button" class="specialization-node" data-specialization-attribute-node="${node.id}" data-research-id="${research.id}" data-node-state="${access.state}"${access.pathBranch ? ` data-path-branch="${escapeAttribute(access.pathBranch)}"` : ''} aria-pressed="${selected}" aria-label="${escapeAttribute(`${name}: ${effect}. ${status}`)}" title="${escapeAttribute(`${name}: ${effect}`)}"${disabled ? ' disabled' : ''}>
       <span class="specialization-node-icon" aria-hidden="true">${selected ? '✓' : access.state === 'locked' ? '🔒' : index + 1}</span>
       <span class="specialization-sr-only">${escapeHtml(name)} · ${escapeHtml(effect)}</span>
-      <span class="specialization-sr-only" data-specialization-node-cost>${escapeHtml(t('medalsUnknown'))}</span>
+      <span class="specialization-sr-only" data-specialization-node-cost>${escapeHtml(nodeMedalCostLabel(research.id, node.id))}</span>
     </button>`;
 }
 
@@ -540,7 +547,7 @@ function renderNodePathBody() {
         <div class="specialization-node-path__mastery"><strong>${percent}%</strong><span>${escapeHtml(displayName)}</span></div>
       </div>
       <ol class="specialization-effect-list">
-        ${visibleNodes.map((item) => `<li class="specialization-effect-row" data-node-state="${item.access.state}"><span class="specialization-node-icon" aria-hidden="true">${progress.selectedNodeIds.includes(item.id) ? '✓' : item.access.state === 'locked' ? '🔒' : item.index + 1}</span><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.effect)}</small></div><span class="specialization-skill-status">${escapeHtml(nodeAccessStatusLabel(item.access))}</span></li>`).join('')}
+        ${visibleNodes.map((item) => `<li class="specialization-effect-row" data-node-state="${item.access.state}"><span class="specialization-node-icon" aria-hidden="true">${progress.selectedNodeIds.includes(item.id) ? '✓' : item.access.state === 'locked' ? '🔒' : item.index + 1}</span><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.effect)}</small><span class="specialization-node-cost" data-specialization-node-cost>${escapeHtml(nodeMedalCostLabel(research.id, item.id))}</span></div><span class="specialization-skill-status">${escapeHtml(nodeAccessStatusLabel(item.access))}</span></li>`).join('')}
       </ol>
       ${nodeAccess.hiddenCount ? `<p class="specialization-hidden-node-count" data-specialization-hidden-node-count>${escapeHtml(t('hiddenNodeCount', { count: nodeAccess.hiddenCount }))}</p>` : ''}
       <p>${escapeHtml(t('exactMedalDataOnly'))}</p>
