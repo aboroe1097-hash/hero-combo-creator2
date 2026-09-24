@@ -100,5 +100,8 @@ export default {
     subTabBounty: 'Taglia Reale Eden X2',
     subTabSeason: 'Stagione attuale · {currentSeason}',
     subTabPrevious: 'Stagioni precedenti · {previousSeason}',
+    subTabPathing: 'Percorsi Eden',
+    subTabPathingDesc:
+      'Pianifica percorsi tra porte da A a B con tappe in montagna ed esporta un PNG.',
   },
 };
