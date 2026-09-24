@@ -44,3 +44,27 @@ test('Eden X1 active voting and reward machinery remains in source for next seas
   assert.match(js, /if \(target === 'team'\)/);
   assert.match(js, /currentRewardView === 'management' \|\| currentRewardView === 'team'/);
 });
+
+test('a reward category click scrolls to the table whenever the table is not on screen', async () => {
+  // This used to be a 768px width test, so on a desktop or laptop the card
+  // click swapped the table in below the fold and looked like nothing happened.
+  assert.doesNotMatch(js, /shouldScrollRewardTableOnClick/);
+  assert.doesNotMatch(js, /max-width: 768px'\)\.matches === true/);
+  assert.match(js, /function rewardTableIsOnScreen\(\)/);
+  assert.match(js, /scrollIntoView: !rewardTableIsOnScreen\(\)/);
+
+  // Clicking the card that is already active re-renders nothing, so it scrolls
+  // instead of silently doing nothing.
+  assert.match(
+    js,
+    /if \(view === currentRewardView\) \{\s*\n\s*queueRewardTableScroll\(\);\s*\n\s*return;\s*\n\s*\}/
+  );
+
+  // The scroll target is the rendered reward table, and it honours reduced motion.
+  assert.match(
+    js,
+    /dashWeightedContributionPanel'\)\?\.querySelector\('\.eden-x1-weighted-card'\)/
+  );
+  assert.match(js, /prefers-reduced-motion: reduce/);
+  assert.match(js, /behavior: reducedMotion \? 'auto' : 'smooth'/);
+});

@@ -85,7 +85,7 @@ import {
   resolveEdenAccountPlayer,
 } from './eden-account-link.js';
 
-export const APP_VERSION = '16.5.4';
+export const APP_VERSION = '16.5.5';
 // Season-configured viewer: eden-x1.html keeps its archive defaults, while
 // eden-x2.html marks the body with data-eden-workspace="x2" and this renderer
 // switches to the published-projection read path, X2 vote collections, and
@@ -3097,8 +3097,17 @@ function setEdenPanelLoading(loading) {
   }
 }
 
-function shouldScrollRewardTableOnClick() {
-  return window.matchMedia?.('(max-width: 768px)').matches === true;
+// Whether the reward table is already on screen, which is what decides if a
+// category click also scrolls. This used to be a 768px width test, so on a
+// desktop or a laptop the card click swapped the table in below the fold and
+// looked like nothing had happened.
+function rewardTableIsOnScreen() {
+  const target = $('dashWeightedContributionPanel')?.querySelector('.eden-x1-weighted-card');
+  if (!target) return false;
+  const rect = target.getBoundingClientRect();
+  const viewport = window.innerHeight || 0;
+  // Require a useful slice of the table rather than a sliver at the edge.
+  return rect.top >= 0 && rect.top <= viewport - 120;
 }
 
 function scrollRewardTableIntoView() {
@@ -3373,12 +3382,18 @@ function bindRewardFlowControls() {
     button.addEventListener('click', () => {
       if (!rewardFlowReady) return;
       const view = button.dataset.rewardView || 'all';
-      if (view === currentRewardView) return;
+      // Clicking the card that is already active has nothing to re-render, but
+      // the click still means "show me that table", so scroll rather than
+      // silently doing nothing.
+      if (view === currentRewardView) {
+        queueRewardTableScroll();
+        return;
+      }
       runEdenNavigationTransition(() => {
         currentTableSort = null;
         resetWeightedTablePagination(weightedTablePagination);
         currentRewardView = view;
-        scheduleCurrentTableRender({ scrollIntoView: shouldScrollRewardTableOnClick() });
+        scheduleCurrentTableRender({ scrollIntoView: !rewardTableIsOnScreen() });
       });
     });
   });
