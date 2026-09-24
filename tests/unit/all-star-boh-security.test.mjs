@@ -682,8 +682,11 @@ test('Firestore private and published paths enforce admin/member boundaries with
   // drop it and a later writer cannot smuggle an extra key in beside it.
   assert.match(
     configValidator,
-    /keys\(\)\.hasOnly\(\[\s*'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId'\s*\]\)/
+    /keys\(\)\.hasOnly\(\[\s*'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId',\s*'acceptNewSignups'\s*\]\)/
   );
+  // Competition #12: `acceptNewSignups` is optional (absent means yes), set by
+  // the syncCompetitionPhase Function, and must be a boolean when present.
+  assert.match(configValidator, /get\('acceptNewSignups', true\) is bool/);
   assert.match(
     configValidator,
     /keys\(\)\.hasAll\(\[\s*'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId'\s*\]\)/
@@ -1412,4 +1415,41 @@ test('Firestore rules cover All-Star schedule, standby, and co-leader publicatio
   assert.match(teamValidator, /validAllStarBohShortIdentifierList\(data\.coLeaderIds\)/);
   assert.match(teamValidator, /validAllStarBohIdentifier\(data\.coLeaderIds\[0\], false\)/);
   assert.match(teamValidator, /validAllStarBohIdentifier\(data\.coLeaderIds\[1\], false\)/);
+});
+
+test('Competition #12 schedule is superadmin-written, public-readable, and new sign-ups follow the phase flag', () => {
+  const rules = readFileSync('firestore.rules', 'utf8');
+  const block = rulesMatch(
+    rules,
+    /match \/boh_allstar_competition\/current \{[\s\S]*?\n {4}\}/,
+    'competition schedule'
+  );
+  assert.match(block, /allow get: if signedIn\(\)/);
+  assert.match(block, /allow list: if false/);
+  assert.match(
+    block,
+    /allow create, update: if isSuperAdmin\(\) && validAllStarBohCompetitionSchedule\(\)/
+  );
+  assert.match(block, /allow delete: if false/);
+  const validator = rulesMatch(
+    rules,
+    /function validAllStarBohCompetitionSchedule\(\) \{[\s\S]*?\n {4}\}/,
+    'schedule validator'
+  );
+  assert.match(validator, /d\.opensAt < d\.phase1ClosesAt/);
+  assert.match(validator, /d\.winnersStartAt < d\.winnersEndAt/);
+  assert.match(validator, /d\.updatedAt == request\.time/);
+  assert.match(validator, /d\.updatedBy == request\.auth\.uid/);
+  // New member sign-ups read one flag from the config the rule already loads;
+  // the member write path has no expression budget for per-write time windows.
+  const submissions = rulesMatch(
+    rules,
+    /match \/submissions\/\{uid\} \{[\s\S]*?\n {6}\}/,
+    'submissions'
+  );
+  assert.match(
+    submissions,
+    /allow create: if isOwner\(uid\)[\s\S]*?allStarBohAcceptsNewSignups\(\)/
+  );
+  assert.doesNotMatch(submissions, /boh_allstar_competition/);
 });
