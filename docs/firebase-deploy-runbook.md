@@ -6,9 +6,9 @@ GitHub Pages ships only the static site. `firestore.rules` and the Functions are
 
 ## Before any Firebase deploy
 
-1. Deploy from an up-to-date `gh-pages` checkout (the owner's is `D:\Project\hcc2-release`):
+1. Deploy from your up-to-date `gh-pages` checkout:
    ```powershell
-   cd D:\Project\hcc2-release
+   cd <your gh-pages checkout>
    git status            # must be on gh-pages with no local edits
    git pull origin gh-pages
    ```
@@ -26,7 +26,7 @@ The deploy is done only when `firestore-rules-status` prints `LIVE MATCHES THIS 
 
 ### If the deploy fails with 503 or 409
 
-Nothing in the rules file causes these errors, so do not edit or shrink it. A compile error comes back as a 400 that names a line, and a permission problem comes back as a 403. Retry until the status script reports a match:
+Nothing in the rules file causes these errors, so do not edit or shrink it. A compile error comes back as a 400 that names a line, and a permission problem comes back as a 403; both stop the loop below. Otherwise it retries until the status script reports a match. The first attempt runs the full CLI deploy. Later attempts only re-point the release with `firestore-rules-release.mjs`, and upload again with the CLI only when no uploaded ruleset matches the checkout (exit code 3). Paste it into Windows PowerShell 5 as one block:
 
 ```powershell
 function Test-RulesMatch {
@@ -36,22 +36,53 @@ function Test-RulesMatch {
   return ($statusExitCode -eq 0 -and $statusOutput.Contains('RESULT: LIVE MATCHES THIS CHECKOUT'))
 }
 
+# Runs the CLI deploy and returns $true when it failed for a reason retrying cannot fix.
+function Invoke-RulesDeploy {
+  $deployOutput = npx firebase deploy --only firestore:rules --project abocombo 2>&1 | Out-String
+  Write-Host $deployOutput
+  return ($deployOutput -match 'HTTP Error: 40[03]' -or $deployOutput -match 'Compilation errors')
+}
+
+$outcome = 'unconfirmed'
 for ($i = 1; $i -le 8; $i++) {
   Write-Host "--- attempt $i"
-  npx firebase deploy --only firestore:rules --project abocombo
-  if (Test-RulesMatch) { Write-Host "Rules are live."; break }
-  node scripts/firestore-rules-release.mjs release
-  if (Test-RulesMatch) { Write-Host "Rules are live."; break }
-  Start-Sleep -Seconds (30 * $i)
+  if ($i -eq 1) {
+    if (Invoke-RulesDeploy) { $outcome = 'stopped'; break }
+  } else {
+    node scripts/firestore-rules-release.mjs release
+    $releaseExitCode = $LASTEXITCODE
+    if ($releaseExitCode -eq 4) { $outcome = 'stopped'; break }
+    if ($releaseExitCode -eq 3) {
+      if (Invoke-RulesDeploy) { $outcome = 'stopped'; break }
+    }
+  }
+  if (Test-RulesMatch) { $outcome = 'live'; break }
+  if ($i -lt 8) { Start-Sleep -Seconds (30 * $i) }
 }
-if (-not (Test-RulesMatch)) { throw "Could not confirm that the checkout's rules are live after all retries." }
+switch ($outcome) {
+  'live'    { Write-Host "Rules are live." }
+  'stopped' { Write-Host "Stopped: a 400/403, a compile error or a missing release. Read the output above; retrying will not help." }
+  default   { Write-Host "Could not confirm that the checkout's rules are live after all retries." }
+}
 ```
 
 What the two scripts do:
 
-- `scripts/firestore-rules-status.mjs` (`npm run rules:status`): read-only. It reports which ruleset is live and diffs it against the checkout.
-- `scripts/firestore-rules-release.mjs release` (`npm run rules:release`) finds the already-uploaded ruleset whose text matches `./firestore.rules` after normalizing line endings. It points production at that ruleset, retrying through 503s, and confirms by reading the release back. It never uploads or deletes anything.
-- `scripts/firestore-rules-release.mjs probe` sends an idempotent PATCH to the ruleset that is already live, then reads the release back. It reports success only when the PATCH is acknowledged and the GET confirms the same ruleset; a matching GET after a failed PATCH is not enough to prove the endpoint works. If repeated probes remain unconfirmed, inspect the API response and credentials before escalating.
+- `scripts/firestore-rules-status.mjs` (`npm run rules:status`): read-only. It reports which ruleset is live and diffs it against the checkout. It uses the same full-source match as the release script, and prints the live file count when the ruleset holds more than one file.
+- `scripts/firestore-rules-release.mjs release` (`npm run rules:release`) finds the already-uploaded ruleset whose full source matches `./firestore.rules`: exactly one file, with the same text after normalizing line endings. A multi-file ruleset never matches. When several uploaded rulesets are identical, it picks the newest by `createTime`. It points production at that ruleset, retrying through 503s, and confirms by reading the release back. Its GETs (live release, ruleset list, each ruleset) retry on 429, 500 and 503 with the same backoff. It never uploads or deletes anything.
+- `npm run rules:release -- --dry-run` (or `node scripts/firestore-rules-release.mjs release --dry-run`) prints the candidate ruleset, its `createTime` and the live ruleset, then stops without changing the release.
+- `scripts/firestore-rules-release.mjs probe` re-points the release at the ruleset that is already live, then reads the release back. The enforced rules stay unchanged; the PATCH does bump the release's `updateTime`. It reports success only when the PATCH is acknowledged and the GET confirms the same ruleset; a matching GET after a failed PATCH is not enough to prove the endpoint works. If repeated probes remain unconfirmed, inspect the API response and credentials before escalating.
+- `probe` and `release` need an existing `cloud.firestore` release. They cannot bootstrap a new project: its first rules deploy must use the Firebase CLI.
+
+Exit codes of `firestore-rules-release.mjs`:
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Done, already live, or a dry run. |
+| 1 | Unconfirmed after retries, or a transient error. Retry. |
+| 2 | Usage error: pass exactly one of `probe` or `release`; `--dry-run` works only with `release`. |
+| 3 | No uploaded ruleset matches `./firestore.rules`. Upload it with `npx firebase deploy --only firestore:rules --project abocombo`. |
+| 4 | Permanent API error (400, 403 or 404), including a missing release. Retrying will not help. |
 
 ## Functions
 
@@ -66,7 +97,7 @@ npx firebase deploy --only "functions:<name>,functions:<name>" --project abocomb
 - `npm ci` in `functions/` is required on a fresh checkout. Without it, deploy fails with "User code failed to load … Timeout after 10000".
 - `FUNCTIONS_DISCOVERY_TIMEOUT=120` avoids the same timeout on a slow first load of the Admin SDK. Set it in the same PowerShell window as the deploy.
 - Deploy only the functions the release changed, and name them in the PR's "Separate backend deployment" section. If the CLI offers to delete functions that are not in the code, answer **No**.
-- The member unlock returns 503 when a secret is too short: `BOH_MEMBER_PIN` needs at least 12 characters (`MIN_CONFIGURED_PIN_LENGTH`), and `BOH_THROTTLE_PEPPER` needs at least 32. Check them with `npx firebase functions:secrets:access <NAME> --project abocombo` before suspecting the code.
+- The member unlock returns 503 when a secret is too short: `BOH_MEMBER_PIN` needs at least 12 characters (`MIN_CONFIGURED_PIN_LENGTH`), and `BOH_THROTTLE_PEPPER` needs at least 32. Check them with `npx firebase functions:secrets:access <NAME> --project abocombo` before suspecting the code. That command prints the secret value in plain text: check only its length, and never paste the value into a PR, issue, chat or log.
 
 ## For agents preparing a release
 
