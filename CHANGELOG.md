@@ -8,7 +8,7 @@ This is the release history, newest first. Entries describe their release-time b
 
 ## 16.5.7 - 2026-09-25
 
-- Community Hub PDF exports now download directly as PDF or image files, with dark and light themes and controls for content, detail, paper size and orientation. The dense page layouts keep the selected reference material readable and reduce unnecessary pages.
+- Community Hub PDFs are one simple screen: pick what to include, the detail level and a dark or light theme, then press Download PDF or Download image. Files download directly, with no print dialog, paper-size or orientation settings. Hero sheets are dense, with small portraits and four combos a row, so all seasons and troops at 10 combos per troop fit in 5 pages instead of 14.
 
 ## 16.5.6 - 2026-09-25
 
