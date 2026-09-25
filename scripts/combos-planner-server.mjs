@@ -24,6 +24,7 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const toolDir = path.join(rootDir, 'tools', 'combos-planner');
 const combosPath = path.join(rootDir, 'js', 'combos-db.js');
 const queuePath = path.join(toolDir, 'x8-queue.json');
+const queueJsPath = path.join(toolDir, 'x8-queue.js');
 const heroesPath = path.join(rootDir, 'js', 'heroes-data.js');
 const HOST = '127.0.0.1';
 const DEFAULT_PORT = 5396;
@@ -138,28 +139,37 @@ export function readBaseOrder(plan, view) {
   const ids = plan.baseOrder.map(String);
   const known = new Set(view.base.map((b) => b.id));
   if (ids.length !== known.size)
-    throw new Error('baseOrder must list every S0-X2 lineup exactly once');
+    throw new Error('baseOrder must list every current lineup exactly once');
   const seen = new Set();
   for (const id of ids) {
-    if (!known.has(id)) throw new Error(`unknown S0-X2 lineup ${id}`);
-    if (seen.has(id)) throw new Error(`S0-X2 lineup ${id} is listed twice`);
+    if (!known.has(id)) throw new Error(`unknown current lineup ${id}`);
+    if (seen.has(id)) throw new Error(`current lineup ${id} is listed twice`);
     seen.add(id);
   }
   return ids;
 }
 
-/** Changed S0-X2 lines, keyed by base id. Every edit is checked against the hero list. */
-export function readBaseEdits(plan, { baseIds, heroNames, isX8Lane }) {
+/** Changed lines, keyed by lineup id: S0-X2 (b…) or X8 (x…) alike. */
+export function readLaneEdits(plan, { baseIds, x8Ids, heroNames, isX8Lane }) {
+  const list = Array.isArray(plan.edits)
+    ? plan.edits
+    : Array.isArray(plan.baseEdits)
+      ? plan.baseEdits
+      : [];
   const edits = new Map();
-  for (const edit of Array.isArray(plan.baseEdits) ? plan.baseEdits : []) {
+  for (const edit of list) {
     const id = String((edit && edit.id) || '');
-    if (!baseIds.has(id)) throw new Error(`unknown S0-X2 lineup ${id || '(no id)'}`);
+    const isBase = baseIds.has(id);
+    if (!isBase && !x8Ids.has(id)) throw new Error(`unknown lineup ${id || '(no id)'}`);
     const heroes = Array.isArray(edit.heroes) ? edit.heroes.map(String) : [];
     if (heroes.length !== 3 || new Set(heroes).size !== 3)
       throw new Error('an edited lineup needs three different heroes');
     for (const name of heroes) if (!heroNames.has(name)) throw new Error(`unknown hero: ${name}`);
-    if (isX8Lane({ heroes }))
-      throw new Error(`${heroes.join(' / ')} uses an X8 hero, so it stays out of the S0-X2 list`);
+    const usesX8 = isX8Lane({ heroes });
+    if (isBase && usesX8)
+      throw new Error(`${heroes.join(' / ')} uses an X8 hero, so it stays out of the current lineups`);
+    if (!isBase && !usesX8)
+      throw new Error(`${heroes.join(' / ')} has no X8 hero, so it belongs in the current lineups`);
     const skin = edit.skin ? String(edit.skin) : '';
     if (skin && !/^[123]{3}$/.test(skin)) throw new Error('skin code must be three digits of 1-3');
     edits.set(id, { heroes, skin });
@@ -178,14 +188,19 @@ export function buildComboSource(parsed, plan, { heroNames, isX8Lane }) {
   const lanes = new Map(view.x8.map((lane) => [lane.id, lane]));
   const added = Array.isArray(plan.added) ? plan.added : [];
   const keyOf = (combo) => `${combo.heroes.join('|')}#${combo.skin || ''}`;
-  const edits = readBaseEdits(plan, { baseIds, heroNames, isX8Lane });
+  const x8Ids = new Set(view.x8.map((l) => l.id));
+  const edits = readLaneEdits(plan, { baseIds, x8Ids, heroNames, isX8Lane });
   const baseOrder = readBaseOrder(plan, view);
   const base = view.base.map((b) => {
     const edit = edits.get(b.id);
     return edit ? { ...b, ...edit } : b;
   });
-  const keys = new Set([...base, ...view.x8].map(keyOf));
-  if (keys.size !== base.length + view.x8.length)
+  const x8View = view.x8.map((l) => {
+    const edit = edits.get(l.id);
+    return edit ? { ...l, ...edit, edited: true } : l;
+  });
+  const keys = new Set([...base, ...x8View].map(keyOf));
+  if (keys.size !== base.length + x8View.length)
     throw new Error('that edit would make two lineups in combos-db.js identical');
   for (const lane of added) {
     if (!/^n-[a-z0-9_-]{1,200}$/.test(String(lane.id))) throw new Error('bad id for an added lane');
@@ -202,6 +217,11 @@ export function buildComboSource(parsed, plan, { heroNames, isX8Lane }) {
     keys.add(keyOf(lane));
     lanes.set(lane.id, { ...lane, added: true });
   }
+  // Lineups the planner marked as not worth keeping: their lines leave the file.
+  const removed = new Set((Array.isArray(plan.removed) ? plan.removed : []).map(String));
+  for (const id of removed)
+    if (!baseIds.has(id) && !x8Ids.has(id) && !lanes.has(id))
+      throw new Error(`unknown lineup ${id} to remove`);
   const placedAbove = new Map();
   const order = Array.isArray(plan.order) ? plan.order : [];
   const seen = new Set();
@@ -214,15 +234,27 @@ export function buildComboSource(parsed, plan, { heroNames, isX8Lane }) {
     if (!placedAbove.has(anchor)) placedAbove.set(anchor, []);
     placedAbove.get(anchor).push(id);
   }
+  // A removed lineup takes nothing with it: its anchored lanes fall back to the
+  // tail block instead of disappearing, so no placement is lost by accident.
+  for (const id of removed) placedAbove.delete(id);
+  for (const [anchor, ids] of [...placedAbove]) {
+    const keep = ids.filter((id) => !removed.has(id));
+    if (keep.length) placedAbove.set(anchor, keep);
+    else placedAbove.delete(anchor);
+  }
+  const x8Lines = parsed.items.filter((item) => item.kind === 'x8').map((item) => item.line);
+  const x8IndexOf = new Map(view.x8.map((lane, i) => [lane.id, i]));
   const lineOf = (id) => {
     const lane = lanes.get(id);
-    if (lane.added) return entryLine(lane);
-    return parsed.items.find((item) => item.kind === 'x8' && item.combo.heroes === lane.heroes)
-      .line;
+    const line = lane.added ? entryLine(lane) : x8Lines[x8IndexOf.get(id)];
+    const edit = edits.get(id);
+    return edit ? editedEntryLine(line, edit) : line;
   };
   const placedIds = new Set([...placedAbove.values()].flat());
   // Unplaced new lanes stay in the queue file; only placed ones enter the database.
-  const tailLanes = view.x8.map((lane) => lane.id).filter((id) => !placedIds.has(id));
+  const tailLanes = view.x8
+    .map((lane) => lane.id)
+    .filter((id) => !placedIds.has(id) && !removed.has(id));
   const baseLines = parsed.items.filter((item) => item.kind === 'base').map((item) => item.line);
   // Base lines are held as slot placeholders: a slot keeps its comment lines, and
   // the plan's order decides which S0-X2 lineup is written into each one.
@@ -260,10 +292,13 @@ export function buildComboSource(parsed, plan, { heroNames, isX8Lane }) {
   out.push(...textRun);
   const rendered = baseOrder.map((id) => {
     const original = Number(String(id).slice(1));
+    if (removed.has(id)) return null;
     const edit = edits.get(id);
     return edit ? editedEntryLine(baseLines[original], edit) : baseLines[original];
   });
-  const written = out.map((line) => (typeof line === 'string' ? line : rendered[line.base]));
+  const written = out
+    .map((line) => (typeof line === 'string' ? line : rendered[line.base]))
+    .filter((line) => line !== null);
   return [...parsed.head, ...written, ...parsed.tail].join('\n');
 }
 
@@ -299,10 +334,23 @@ export function readQueue(json, { heroNames, isX8Lane, existingKeys }) {
         heroes,
         skin,
         source: entry.source ? String(entry.source) : '',
+        queuedFrom: entry.queuedFrom ? String(entry.queuedFrom) : 'x8-queue.json',
       });
     }
   }
   return { lanes, skipped };
+}
+
+/** Combos to rank and add: the hand-written list in tools/combos-planner/x8-queue.js. */
+async function readHandWritten() {
+  try {
+    const module = await importFresh(queueJsPath);
+    const list = Array.isArray(module.lanes) ? module.lanes : [];
+    return list.map((lane) => ({ ...lane, queuedFrom: 'x8-queue.js' }));
+  } catch (error) {
+    if (error.code === 'ENOENT' || error.code === 'ERR_MODULE_NOT_FOUND') return [];
+    throw new Error(`x8-queue.js could not be read: ${error.message}`);
+  }
 }
 
 async function loadAll() {
@@ -332,11 +380,17 @@ async function loadAll() {
   const existingKeys = combosModule.rankedCombos.map(
     (c) => `${c.heroes.join('|')}#${c.skin || ''}`
   );
-  const queue = readQueue(queueJson, {
-    heroNames: new Set(Object.keys(heroes)),
-    isX8Lane,
-    existingKeys,
-  });
+  const queue = readQueue(
+    {
+      // Hand-written lineups first, then the ones the Add form has kept.
+      lanes: [...(await readHandWritten()), ...(Array.isArray(queueJson.lanes) ? queueJson.lanes : [])],
+    },
+    {
+      heroNames: new Set(Object.keys(heroes)),
+      isX8Lane,
+      existingKeys,
+    }
+  );
   return { heroes, isX8Lane, parsed, queue, queueJson };
 }
 
@@ -398,7 +452,14 @@ async function stamped(pathname, body) {
 }
 
 function send(res, status, body, type = 'application/json; charset=utf-8') {
-  res.writeHead(status, { 'content-type': type, 'cache-control': 'no-store' });
+  res.writeHead(status, {
+    'content-type': type,
+    // Browsers happily reuse a cached module or page across a reload, which would
+    // hide an edited planner, so every response forbids caching.
+    'cache-control': 'no-store, no-cache, must-revalidate, max-age=0',
+    pragma: 'no-cache',
+    expires: '0',
+  });
   res.end(typeof body === 'string' ? body : JSON.stringify(body));
 }
 

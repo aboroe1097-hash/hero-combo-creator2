@@ -171,7 +171,7 @@ test('a reorder must list every S0-X2 lineup exactly once', () => {
   );
   assert.throws(
     () => buildComboSource(parsed, plan([...ids.slice(1), 'b999']), { heroNames, isX8Lane }),
-    /unknown S0-X2 lineup b999/
+    /unknown current lineup b999/
   );
 });
 
@@ -209,8 +209,8 @@ test('clearing a skin code drops the key and keeps the note', () => {
   );
 });
 
-test('an edit is refused when it duplicates a lineup or drags in an X8 hero', () => {
-  const plan = (baseEdits) => ({ order: currentOrder(), added: [], baseEdits });
+test('an edit is refused when it duplicates a lineup, or crosses the X8 / S0-X2 line', () => {
+  const plan = (edits) => ({ order: currentOrder(), added: [], edits });
   const other = view.base[1];
   assert.throws(
     () =>
@@ -228,7 +228,16 @@ test('an edit is refused when it duplicates a lineup or drags in an X8 hero', ()
         plan([{ id: view.base[0].id, heroes: ['Lawman', [...X8][0], 'The Avalanche'], skin: '' }]),
         { heroNames, isX8Lane }
       ),
-    /stays out of the S0-X2 list/
+    /stays out of the current lineups/
+  );
+  assert.throws(
+    () =>
+      buildComboSource(
+        parsed,
+        plan([{ id: view.x8[0].id, heroes: ['Lawman', 'Lancelot', 'Jane'], skin: '' }]),
+        { heroNames, isX8Lane }
+      ),
+    /no X8 hero/
   );
   assert.throws(
     () =>
@@ -247,6 +256,96 @@ test('an edit is refused when it duplicates a lineup or drags in an X8 hero', ()
       ),
     /skin code/
   );
+  assert.throws(
+    () =>
+      buildComboSource(parsed, plan([{ id: 'x999', heroes: ['Lawman', [...X8][0], 'Jane'] }]), {
+        heroNames,
+        isX8Lane,
+      }),
+    /unknown lineup/
+  );
+});
+
+test('an X8 lineup can change its three heroes and skin code, and keeps its note', () => {
+  const lane = view.x8[0];
+  assert.ok(lane.note.includes('tier'), 'the first X8 lane carries a source note');
+  const x8Hero = [...X8][0];
+  const heroes = ['Lawman', x8Hero, 'The Avalanche'];
+  const out = buildComboSource(
+    parsed,
+    { order: currentOrder(), added: [], edits: [{ id: lane.id, heroes, skin: '222' }] },
+    { heroNames, isX8Lane }
+  );
+  const line = entriesOf(out).find((l) => l.includes(`'${x8Hero}'`) && l.includes('Lawman'));
+  assert.ok(line, 'the edited X8 line is written');
+  assert.ok(line.includes("skin: '222'"));
+  assert.ok(line.includes(lane.note.slice(0, 20)), 'the source note stays on the line');
+  assert.equal(entriesOf(out).length, entriesOf(source).length);
+  assert.deepEqual(entryTextLines(out), entryTextLines(source));
+});
+
+test('a removed lineup leaves the file, and the lane it anchored falls back to the tail', () => {
+  const anchor = view.base[3];
+  const lane = view.x8[view.x8.length - 1];
+  const order = currentOrder().map((o) =>
+    o.id === lane.id ? { id: lane.id, anchor: anchor.id } : o
+  );
+  const before = entriesOf(source);
+  const anchorLine = before[3];
+  const laneLine = before.find(
+    (line) => line.includes(`${lane.heroes[0]}`) && line.includes(`${lane.heroes[2]}`)
+  );
+  const out = buildComboSource(
+    parsed,
+    { order, added: [], removed: [anchor.id] },
+    { heroNames, isX8Lane }
+  );
+  const after = entriesOf(out);
+  assert.equal(after.length, before.length - 1);
+  assert.equal(after.includes(anchorLine), false, 'the removed S0-X2 line is gone');
+  assert.equal(after[after.length - 1], laneLine, 'its X8 lane drops back into the tail block');
+});
+
+test('a removed X8 lineup leaves the file, and an unknown id is refused', () => {
+  const lane = view.x8[view.x8.length - 1];
+  const before = entriesOf(source);
+  const laneLine = before.find(
+    (line) => line.includes(`${lane.heroes[0]}`) && line.includes(`${lane.heroes[2]}`)
+  );
+  const out = buildComboSource(
+    parsed,
+    { order: currentOrder(), added: [], removed: [lane.id] },
+    { heroNames, isX8Lane }
+  );
+  const after = entriesOf(out);
+  assert.equal(after.length, before.length - 1);
+  assert.equal(after.includes(laneLine), false);
+  assert.deepEqual(entryTextLines(out), entryTextLines(source));
+  assert.throws(
+    () =>
+      buildComboSource(
+        parsed,
+        { order: currentOrder(), added: [], removed: ['x999'] },
+        { heroNames, isX8Lane }
+      ),
+    /unknown lineup/
+  );
+});
+
+test('the hand-written x8-queue.js lists only lineups the planner can place', async () => {
+  const { lanes } = await import(
+    new URL('../../tools/combos-planner/x8-queue.js', import.meta.url)
+  );
+  assert.ok(Array.isArray(lanes), 'x8-queue.js exports a lanes array');
+  for (const lane of lanes) {
+    assert.equal(lane.heroes.length, 3, `${lane.heroes.join(' / ')} needs three heroes`);
+    for (const name of lane.heroes) assert.ok(heroNames.has(name), `unknown hero: ${name}`);
+    assert.ok(isX8Lane(lane), `${lane.heroes.join(' / ')} has no X8 hero`);
+    if (lane.skin) assert.match(String(lane.skin), /^[123]{3}$/);
+  }
+  const existingKeys = rankedCombos.map((c) => `${c.heroes.join('|')}#${c.skin || ''}`);
+  const ready = readQueue({ lanes }, { heroNames, isX8Lane, existingKeys });
+  assert.equal(ready.lanes.length, lanes.length, `skipped: ${ready.skipped.join('; ')}`);
 });
 
 test('a placed X8 lane stays above its S0-X2 lineup when that lineup moves', () => {

@@ -1,78 +1,80 @@
+/* Branding follows the site's own tokens (css/_tokens.css): void/deep surfaces,
+   cyan · mint · rose troop colours, gold for the X8 accent, violet for paid. */
 :root {
-  --bg: #f3f4f7;
+  --bg: #f4f7fd;
   --panel: #ffffff;
-  --panel2: #eceef3;
-  --ink: #1b2130;
-  --muted: #5d6577;
-  --line: #d9dce5;
-  --x8: #b7791f;
-  --x8-bg: #fdf3e1;
-  --x8-line: #e8c27a;
-  --paid: #7a4fc7;
-  --paid-bg: #efe8fb;
-  --cav: #2f6fb3;
-  --arc: #2f8a55;
-  --foot: #a3452f;
-  --focus: #2f6fb3;
-  --target: #2f6fb3;
-  --target-bg: #e3eefb;
-  --row-cav: #eaf1fa;
-  --row-arc: #e8f4ed;
-  --row-foot: #faeeea;
-  --row-mixed: #f0f1f5;
-  --shadow: 0 1px 2px rgba(20, 28, 45, 0.08);
+  --panel2: #eef3fa;
+  --ink: #0f172a;
+  --muted: #5a6b85;
+  --line: rgba(15, 23, 42, 0.14);
+  --x8: #b45309;
+  --x8-bg: #fef3e2;
+  --x8-line: #f5c451;
+  --paid: #6d28d9;
+  --paid-bg: #eee9fe;
+  --cav: #0284c7;
+  --arc: #047857;
+  --foot: #be123c;
+  --focus: #0284c7;
+  --target: #0284c7;
+  --target-bg: #e6f4fd;
+  --row-cav: #eaf4fb;
+  --row-arc: #e8f6f0;
+  --row-foot: #fdeef1;
+  --row-mixed: #f1f4fa;
+  --shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #12151d;
-    --panel: #1a1f2a;
-    --panel2: #222836;
-    --ink: #e7eaf1;
-    --muted: #9aa3b5;
-    --line: #2e3545;
-    --x8: #f0b54a;
-    --x8-bg: #2d2415;
+    --bg: #070b16;
+    --panel: #101827;
+    --panel2: #162236;
+    --ink: #eef4ff;
+    --muted: #9fb0cc;
+    --line: rgba(159, 176, 204, 0.22);
+    --x8: #f5c451;
+    --x8-bg: #2a2113;
     --x8-line: #6b5427;
-    --paid: #b99af0;
-    --paid-bg: #2a2340;
-    --cav: #79aee6;
-    --arc: #6cc795;
-    --foot: #e98a72;
-    --focus: #79aee6;
-    --target: #79aee6;
-    --target-bg: #1d2a3d;
-    --row-cav: #172130;
-    --row-arc: #15231d;
-    --row-foot: #251a17;
-    --row-mixed: #1d212e;
-    --shadow: none;
+    --paid: #a78bfa;
+    --paid-bg: #241d3d;
+    --cav: #7dd3fc;
+    --arc: #34d399;
+    --foot: #fb7185;
+    --focus: #7dd3fc;
+    --target: #7dd3fc;
+    --target-bg: #12243a;
+    --row-cav: rgba(125, 211, 252, 0.09);
+    --row-arc: rgba(52, 211, 153, 0.09);
+    --row-foot: rgba(251, 113, 133, 0.09);
+    --row-mixed: rgba(159, 176, 204, 0.07);
+    --shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
     color-scheme: dark;
   }
 }
 :root[data-theme='dark'] {
-  --bg: #12151d;
-  --panel: #1a1f2a;
-  --panel2: #222836;
-  --ink: #e7eaf1;
-  --muted: #9aa3b5;
-  --line: #2e3545;
-  --x8: #f0b54a;
-  --x8-bg: #2d2415;
+  --bg: #070b16;
+  --panel: #101827;
+  --panel2: #162236;
+  --ink: #eef4ff;
+  --muted: #9fb0cc;
+  --line: rgba(159, 176, 204, 0.22);
+  --x8: #f5c451;
+  --x8-bg: #2a2113;
   --x8-line: #6b5427;
-  --paid: #b99af0;
-  --paid-bg: #2a2340;
-  --cav: #79aee6;
-  --arc: #6cc795;
-  --foot: #e98a72;
-  --focus: #79aee6;
-  --target: #79aee6;
-  --target-bg: #1d2a3d;
-  --row-cav: #172130;
-  --row-arc: #15231d;
-  --row-foot: #251a17;
-  --row-mixed: #1d212e;
-  --shadow: none;
+  --paid: #a78bfa;
+  --paid-bg: #241d3d;
+  --cav: #7dd3fc;
+  --arc: #34d399;
+  --foot: #fb7185;
+  --focus: #7dd3fc;
+  --target: #7dd3fc;
+  --target-bg: #12243a;
+  --row-cav: rgba(125, 211, 252, 0.09);
+  --row-arc: rgba(52, 211, 153, 0.09);
+  --row-foot: rgba(251, 113, 133, 0.09);
+  --row-mixed: rgba(159, 176, 204, 0.07);
+  --shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
   color-scheme: dark;
 }
 * {
@@ -82,17 +84,19 @@ body {
   background: var(--bg);
   color: var(--ink);
   font:
-    15px/1.45 Barlow,
+    14.5px/1.5 Sora,
     system-ui,
+    -apple-system,
+    'Segoe UI',
     sans-serif;
-  padding-inline: 16px;
-  padding-block: 16px 48px;
+  padding-inline: 24px;
+  padding-block: 20px 56px;
 }
 h1,
 h2,
 .rank,
 .stat b {
-  font-family: 'Barlow Condensed', Barlow, system-ui, sans-serif;
+  font-family: Sora, system-ui, sans-serif;
 }
 h1 {
   font-size: 28px;
@@ -107,10 +111,37 @@ h2 {
   letter-spacing: 0.06em;
 }
 .wrap {
-  max-width: 1180px;
+  max-width: 1560px;
   margin: 0 auto;
   display: grid;
-  gap: 16px;
+  gap: 14px;
+}
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+.badge.beta {
+  background: #d97706;
+  color: #ffffff;
+  border: 1px solid #b45309;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .badge.beta {
+    background: #f59e0b;
+    color: #0f172a;
+    border-color: #fbbf24;
+  }
+}
+:root[data-theme='dark'] .badge.beta {
+  background: #f59e0b;
+  color: #0f172a;
+  border-color: #fbbf24;
 }
 header {
   display: grid;
@@ -170,7 +201,7 @@ header p {
 }
 .grid {
   display: grid;
-  grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 }
@@ -271,16 +302,18 @@ select:focus-visible,
 }
 .seg {
   display: flex;
+  flex: 0 0 auto;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 10px;
   overflow: hidden;
 }
 .seg button {
   border: 0;
   border-radius: 0;
-  flex: 1;
+  flex: 0 0 auto;
   min-height: 34px;
   font-size: 13px;
+  white-space: nowrap;
 }
 .seg button[aria-pressed='true'] {
   background: var(--ink);
@@ -462,22 +495,41 @@ select:focus-visible,
   gap: 6px;
   padding: 10px 12px;
 }
-/* The three heroes of a tray lineup stay on one line: smaller portraits, tighter
-   gaps, and the skin code moved down to the meta chips. */
-.card .lineup {
-  flex-wrap: nowrap;
-  gap: 3px 4px;
-  font-size: 12.5px;
+/* Tray lineups stack each hero as a portrait with the name underneath, so three
+   heroes always fit and long names wrap inside their own column. */
+.lineup.stack {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
-.card .lineup .portrait {
-  width: 20px;
-  height: 20px;
+.herobox {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: 0;
 }
-.card .lineup .hero {
+.herobox .portrait {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+}
+.herobox.isx8 .portrait {
+  outline: 2px solid var(--x8);
+}
+.herobox .heroname {
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.herobox.isx8 .heroname {
+  color: var(--x8);
+  font-weight: 600;
+}
+.herofoot {
+  display: inline-flex;
+  align-items: center;
   gap: 3px;
-}
-.card .lineup .chip {
-  padding: 2px 4px;
 }
 .hint {
   font-size: 13px;
@@ -640,9 +692,9 @@ details summary {
 }
 
 .portrait {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   object-fit: cover;
   background: var(--panel2);
   flex: none;
@@ -654,16 +706,15 @@ details summary {
 /* --- Filters, folding, and editing the S0-X2 list ----------------------- */
 
 .tray .controls {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   gap: 6px;
 }
 .tray .controls > input[type='search'] {
-  grid-column: 1 / -1;
+  flex: 1 1 auto;
 }
-.tray .controls select {
-  min-height: 34px;
-  font-size: 13px;
+.tray .controls > button {
+  flex: 0 0 auto;
+  min-height: 40px;
 }
 .headrow {
   display: flex;
@@ -671,6 +722,10 @@ details summary {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
+}
+.headrow h2 {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .countrow {
   display: flex;
@@ -731,6 +786,12 @@ details summary {
   background: var(--x8-bg);
   border: 1px solid var(--x8-line);
   border-radius: 6px;
+}
+.warn button {
+  margin-left: 8px;
+  min-height: 30px;
+  padding: 3px 10px;
+  font-size: 13px;
 }
 .stat.warn b,
 .stat.warn span {
@@ -811,6 +872,85 @@ kbd {
   flex-wrap: wrap;
   gap: 8px 14px;
   align-items: center;
+}
+
+/* --- Troop logos, filter panel, edit actions ---------------------------- */
+
+.troopicon {
+  flex: none;
+  vertical-align: -2px;
+}
+.troop.Cavalry,
+.herofoot.Cavalry {
+  color: var(--cav);
+}
+.troop.Archers,
+.herofoot.Archers {
+  color: var(--arc);
+}
+.troop.Footmen,
+.herofoot.Footmen {
+  color: var(--foot);
+}
+.troop.Mixed,
+.herofoot.Mixed,
+.troop.All,
+.herofoot.All {
+  color: var(--muted);
+}
+.filterbox {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.filterbox select {
+  min-height: 34px;
+  font-size: 13px;
+}
+button.on {
+  border-color: var(--focus);
+  color: var(--focus);
+}
+button.danger {
+  color: var(--foot);
+}
+button.danger:hover {
+  border-color: var(--foot);
+  background: var(--row-foot);
+}
+.iconbtn {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1;
+  border-radius: 10px;
+}
+.meta .iconbtn,
+.actions .iconbtn {
+  margin-left: 2px;
+}
+.skinhint {
+  grid-column: 1 / -1;
+  margin: 2px 0 0;
+  font-size: 12px;
+}
+/* Keep short labels on one line so nothing wraps into a second row. */
+.stat,
+.stat span,
+.stat b,
+.count,
+.checkline,
+.rankjump,
+.bannertool button,
+.savebar button,
+.headrow h2,
+.kind,
+.chip {
+  white-space: nowrap;
 }
 .row.base.edited {
   outline: 2px dashed var(--focus);

@@ -1,5 +1,5 @@
 // Combos Planner page. Loads the combo database from the local planner server,
-// lets you place X8 lanes between the S0-X2 lanes and (in edit mode) adjust the
+// lets you place X8 lanes between the S0-X2 lanes and — in edit mode — change the
 // S0-X2 list itself, then saves the result back to js/combos-db.js.
 // Run with: npm run combos:plan
 import {
@@ -32,18 +32,44 @@ const slug = (heroes, skin) =>
     .join('_') +
   (skin ? '-' + skin : '');
 
+// Mini troop logos, drawn here so the planner needs no downloads and matches the
+// site's own colour language: horseshoe, bow, shield, half-filled disc.
+const TROOP_ICONS = {
+  Cavalry: '<path d="M7 20v-5a5 5 0 0 1 10 0v5"/><path d="M5 20h4M15 20h4"/>',
+  Archers: '<path d="M7 3c5 3.5 5 14.5 0 18"/><path d="M4 12h13"/><path d="M17 12l-3.5-3.5M17 12l-3.5 3.5"/>',
+  Footmen: '<path d="M12 3.5l7 3v5.5c0 3.8-2.9 6.3-7 8.5-4.1-2.2-7-4.7-7-8.5V6.5z"/>',
+  Mixed: '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/>',
+  All: '<circle cx="12" cy="12" r="8.5"/><path d="M9 12h6M12 9v6"/>',
+};
+const TROOP_LABEL = { Cavalry: 'Cavalry', Archers: 'Archers', Footmen: 'Footmen', Mixed: 'Mixed troops', All: 'Any troop' };
+
+function troopIcon(troop, size = 17) {
+  const body = TROOP_ICONS[troop] || TROOP_ICONS.All;
+  return (
+    '<svg class="troopicon" viewBox="0 0 24 24" width="' +
+    size +
+    '" height="' +
+    size +
+    '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+    body +
+    '</svg>'
+  );
+}
+
 let H = {};
 let BASE = [];
 let lanes = new Map();
 let baseOrder = [];
-let baseEdits = new Map();
+let edits = new Map();
+let removed = new Set();
 let holding = null;
 let editing = null;
+let pendingRemove = null;
 let editMode = false;
 let trayMode = 'unplaced';
 let dirty = false;
 
-const allLanes = () => [...lanes.values()];
+const allLanes = () => [...lanes.values()].filter((l) => !removed.has(l.id));
 const troopOf = (heroes) => troopOfHeroes(heroes, H);
 const hasPaid = (heroes) => heroIsPaid(heroes, H);
 const isX8Hero = (n) => H[n] && H[n].s === 'X8';
@@ -52,6 +78,7 @@ const kindBadge = (heroes) =>
   hasPaid(heroes)
     ? '<span class="kind paid" title="Uses at least one paid hero">Paid</span>'
     : '<span class="kind free" title="Free heroes only">Free</span>';
+const keyOf = (c) => c.heroes.join('|') + '#' + (c.skin || '');
 
 const trayFilters = () => ({
   mode: trayMode,
@@ -71,14 +98,15 @@ const rankFiltered = () => {
   const f = rankFilters();
   return !!(f.hero || f.troop || f.cost || f.near);
 };
-const keyOf = (c) => c.heroes.join('|') + '#' + (c.skin || '');
 
 function load(data) {
   H = data.heroes;
   BASE = data.base;
   baseOrder = BASE.map((b) => b.id);
-  baseEdits = new Map();
+  edits = new Map();
+  removed = new Set();
   editing = null;
+  pendingRemove = null;
   lanes = new Map();
   const slots = new Map();
   for (const l of data.x8) {
@@ -95,7 +123,7 @@ function load(data) {
   setDirty(false);
   render();
   if (data.skipped && data.skipped.length) {
-    setStatus('Skipped in x8-queue.json: ' + data.skipped.join('; '));
+    setStatus('Skipped in the queue files: ' + data.skipped.join('; '));
     return true;
   }
   return false;
@@ -110,6 +138,10 @@ function setDirty(value) {
 function setStatus(msg) {
   $('status').textContent = msg;
 }
+const touch = () => {
+  setDirty(true);
+  setStatus('Not saved yet. Press Save to write js/combos-db.js.');
+};
 
 // The panels stay put while the page scrolls, so keep them clear of the sticky
 // save bar and the placing banner by measuring that strip.
@@ -141,25 +173,34 @@ function revealRow(selector, block = 'center') {
   });
 }
 
-/** The S0-X2 list in the planned order, with any pending edits applied. */
+/** A lineup with any pending edit applied, so every view shows what will be saved. */
+function laneFor(l) {
+  const edit = edits.get(l.id);
+  return edit ? { ...l, heroes: edit.heroes, skin: edit.skin, edited: true } : l;
+}
+const laneViews = () => allLanes().map(laneFor);
+
+/** The S0-X2 list in the planned order, with removals and edits applied. */
 function baseView() {
   const byId = new Map(BASE.map((b) => [b.id, b]));
-  return baseOrder.map((id, i) => {
-    const original = byId.get(id) || { heroes: [], skin: '' };
-    const edit = baseEdits.get(id);
-    return {
-      id,
-      heroes: edit ? edit.heroes : original.heroes,
-      skin: edit ? edit.skin : original.skin,
-      edited: !!edit,
-      rank: i + 1,
-    };
-  });
+  return baseOrder
+    .filter((id) => !removed.has(id))
+    .map((id, i) => {
+      const original = byId.get(id) || { heroes: [], skin: '' };
+      const edit = edits.get(id);
+      return {
+        id,
+        heroes: edit ? edit.heroes : original.heroes,
+        skin: edit ? edit.skin : original.skin,
+        edited: !!edit,
+        rank: i + 1,
+      };
+    });
 }
 
 function merged(excludeId) {
   const by = new Map();
-  for (const l of allLanes()) {
+  for (const l of laneViews()) {
     if (!l.anchor || l.id === excludeId) continue;
     if (!by.has(l.anchor)) by.set(l.anchor, []);
     by.get(l.anchor).push(l);
@@ -201,8 +242,7 @@ function placementAt(list, j) {
 
 function update(id, patch) {
   lanes.set(id, { ...lanes.get(id), ...patch });
-  setDirty(true);
-  setStatus('Not saved yet. Press Save to write js/combos-db.js.');
+  touch();
   render();
 }
 
@@ -231,7 +271,7 @@ function startHolding(id) {
   holding = id;
   document.body.classList.add('placing');
   $('banner').hidden = false;
-  $('bannerText').innerHTML = bannerText(lanes.get(id));
+  $('bannerText').innerHTML = bannerText(laneFor(lanes.get(id)));
   $('placeRank').value = '';
   render();
 }
@@ -254,8 +294,7 @@ function moveBase(id, delta) {
   const j = i + (delta < 0 ? -1 : 1);
   if (i < 0 || j < 0 || j >= baseOrder.length) return;
   [baseOrder[i], baseOrder[j]] = [baseOrder[j], baseOrder[i]];
-  setDirty(true);
-  setStatus('Not saved yet. Press Save to write js/combos-db.js.');
+  touch();
   render();
   revealRow('[data-rank="' + (j + 1) + '"]', 'nearest');
 }
@@ -314,9 +353,9 @@ function bannerText(held) {
     rows.push({ match: matchOf(rowOf(e), held), where: whereOf(e) });
   });
   // Lineups still waiting in the tray are the likeliest duplicates, so count them too.
-  for (const l of allLanes()) {
+  for (const l of laneViews()) {
     if (l.id === held.id || l.anchor) continue;
-    rows.push({ match: matchOf(l, held), where: 'the X8 block at the end' });
+    rows.push({ match: matchOf(l, held), where: 'the end of the list' });
   }
   const trio = rows.filter((r) => r.match.sameTrio);
   const duo = rows.filter((r) => r.match.shared === 2);
@@ -344,6 +383,7 @@ function bannerText(held) {
 
 function heroHtml(n) {
   const h = H[n] || {};
+  const troop = h.t || 'All';
   return (
     '<span class="hero' +
     (h.s === 'X8' ? ' isx8' : '') +
@@ -353,13 +393,14 @@ function heroHtml(n) {
         esc(h.i) +
         '" alt="" loading="lazy" width="32" height="32">'
       : '') +
-    '<span class="dot ' +
-    esc(h.t || 'All') +
+    '<span class="troop ' +
+    esc(troop) +
     '" title="' +
-    esc(h.t || '') +
-    '"></span>' +
+    esc(TROOP_LABEL[troop] || troop) +
+    '">' +
+    troopIcon(troop) +
+    '</span>' +
     esc(n) +
-    (h.p ? ' <span class="chip paid" title="Paid hero">$</span>' : '') +
     '</span>'
   );
 }
@@ -375,6 +416,33 @@ function lineupHtml(heroes, skin) {
     '</div>'
   );
 }
+
+/** Tray card heroes stack as a portrait with the name underneath. */
+function heroBoxHtml(n) {
+  const h = H[n] || {};
+  const troop = h.t || 'All';
+  return (
+    '<span class="herobox' +
+    (h.s === 'X8' ? ' isx8' : '') +
+    '" title="' +
+    esc(n + ' — ' + (TROOP_LABEL[troop] || troop) + (h.p ? ', paid hero' : '')) +
+    '">' +
+    (h.i
+      ? '<img class="portrait" src="' +
+        esc(h.i) +
+        '" alt="" loading="lazy" width="46" height="46">'
+      : '<span class="portrait"></span>') +
+    '<span class="heroname">' +
+    esc(n) +
+    '</span>' +
+    '<span class="herofoot ' +
+    esc(troop) +
+    '">' +
+    troopIcon(troop, 16) +
+    '</span></span>'
+  );
+}
+const stackHtml = (heroes) => '<div class="lineup stack">' + heroes.map(heroBoxHtml).join('') + '</div>';
 
 /** Keep whatever has been typed into an open editor alive across re-renders. */
 function captureEditing() {
@@ -393,14 +461,14 @@ function captureEditing() {
   };
 }
 
-function editorHtml(b) {
+function editorHtml(lane) {
   const value = (name, fallback) =>
-    esc(editing && editing.id === b.id && editing[name] != null ? editing[name] : fallback);
-  const field = (name, label, value_) =>
+    esc(editing && editing.id === lane.id && editing[name] != null ? editing[name] : fallback);
+  const field = (name, label, current) =>
     '<input type="text" name="' +
     name +
     '" list="heroNames" value="' +
-    value_ +
+    current +
     '" placeholder="' +
     label +
     '" aria-label="' +
@@ -408,18 +476,19 @@ function editorHtml(b) {
     ' hero" autocomplete="off">';
   return (
     '<form class="editrow" data-edit="' +
-    esc(b.id) +
+    esc(lane.id) +
     '">' +
     '<div class="rank">edit</div>' +
     '<div class="editfields">' +
-    field('front', 'Front', value('front', b.heroes[0])) +
-    field('middle', 'Middle', value('middle', b.heroes[1])) +
-    field('back', 'Back', value('back', b.heroes[2])) +
+    field('front', 'Front', value('front', lane.heroes[0])) +
+    field('middle', 'Middle', value('middle', lane.heroes[1])) +
+    field('back', 'Back', value('back', lane.heroes[2])) +
     '<input type="text" name="skin" value="' +
-    value('skin', b.skin) +
+    value('skin', lane.skin) +
     '" placeholder="Skin code" aria-label="Skin code" inputmode="numeric" maxlength="3">' +
     '<button type="submit" class="primary">Save lineup</button>' +
     '<button type="button" data-canceledit>Cancel</button>' +
+    '<p class="hint skinhint">Skin code is one digit per hero in Front / Middle / Back order: <b>3</b> you must own that hero\'s skin, <b>2</b> the skin is recommended, <b>1</b> it is optional. Leave it empty when no skin changes the lineup.</p>' +
     '</div></form>'
   );
 }
@@ -433,16 +502,19 @@ function baseActions(b) {
     '<button type="button" data-basedown="' +
     esc(b.id) +
     '" aria-label="Move this lineup down one rank">▼</button>' +
-    '<button type="button" data-baseedit="' +
+    '<button type="button" data-edit="' +
     esc(b.id) +
-    '">Edit</button>'
+    '" aria-label="Edit this lineup">Edit</button>' +
+    '<button type="button" class="iconbtn danger" data-remove="' +
+    esc(b.id) +
+    '" title="Remove this lineup" aria-label="Remove this lineup">✕</button>'
   );
 }
 
 function renderList() {
   captureEditing();
   const full = merged();
-  const held = holding ? lanes.get(holding) : null;
+  const held = holding ? laneFor(lanes.get(holding)) : null;
   // While a lineup is being placed, every row says how many heroes it shares.
   const marks = held ? matchList(held) : null;
   const list = holding ? merged(holding) : full;
@@ -530,7 +602,7 @@ function renderList() {
     parts.push(
       '<button type="button" class="gap" data-gap="' +
         list.length +
-        '" aria-label="Leave unplaced in the X8 block"><span>Leave in the X8 block at the end</span></button>'
+        '" aria-label="Leave it waiting at the end of the list"><span>Leave it waiting at the end</span></button>'
     );
   }
   const html = shown
@@ -549,23 +621,30 @@ function renderList() {
 function renderTray() {
   const filters = trayFilters();
   const above = aboveMap();
-  const held = holding ? lanes.get(holding) : null;
-  const { items, total } = selectLanes(allLanes(), filters, H, (id) => above.get(id));
+  const held = holding ? laneFor(lanes.get(holding)) : null;
+  const { items, total } = selectLanes(laneViews(), filters, H, (id) => above.get(id));
+  const active = [filters.troop, filters.cost, filters.tier].filter(Boolean).length;
   $('trayCount').textContent = total
     ? items.length + ' of ' + total + ' shown'
     : trayMode === 'unplaced'
-      ? 'Every X8 lineup is placed'
+      ? 'Every new lineup is placed'
       : 'Nothing in this view';
   $('trayClear').hidden = !isFiltered(filters);
+  $('trayFilterToggle').textContent = active ? 'Filters · ' + active : 'Filters';
+  $('trayFilterToggle').classList.toggle('on', active > 0);
   const html = items.length
     ? items
-        .map((l) => cardHtml(l, above.get(l.id), held && l.id !== held.id ? matchOf(l, held) : null))
+        .map(
+          (l) =>
+            cardHtml(l, above.get(l.id), held && l.id !== held.id ? matchOf(l, held) : null) +
+            (editing && editing.id === l.id ? editorHtml(l) : '')
+        )
         .join('')
     : '<div class="empty">' +
       (isFiltered(filters)
         ? 'No X8 lineup matches these filters. <button type="button" class="link" data-cleartray>Clear filters</button>'
         : trayMode === 'unplaced'
-          ? 'Every X8 lineup is placed.'
+          ? 'Every new lineup is placed.'
           : 'Nothing here yet.') +
       '</div>';
   keepScroll($('cards'), () => {
@@ -575,20 +654,31 @@ function renderTray() {
 
 function cardHtml(l, aboveRank, match) {
   const placed = !!l.anchor;
+  const confirming = pendingRemove === l.id;
   const where = placed
     ? '<button type="button" class="link" data-show="' +
       esc(l.id) +
-      '" title="Scroll the ranking to this lineup">above #' +
+      '" title="Scroll the list to this lineup">above #' +
       aboveRank +
       '</button>'
     : '<span>' +
-      (l.queued ? 'in x8-queue.json' : l.added ? 'new, not saved' : 'in the X8 block') +
+      (l.queued
+        ? 'in ' + esc(l.queuedFrom || 'x8-queue.json')
+        : l.added
+          ? 'new, not saved'
+          : 'not placed yet') +
       '</span>';
+  const removeButton = confirming
+    ? ''
+    : '<button type="button" class="iconbtn danger" data-remove="' +
+      esc(l.id) +
+      '" title="Remove this lineup" aria-label="Remove this lineup">✕</button>';
   return (
     '<div class="card' +
     rowClass(l.heroes) +
     (placed ? ' placed' : '') +
     (l.id === holding ? ' holding' : '') +
+    (l.edited ? ' edited' : '') +
     matchClass(match) +
     '" draggable="true" tabindex="0" data-card="' +
     esc(l.id) +
@@ -596,11 +686,10 @@ function cardHtml(l, aboveRank, match) {
     esc(l.heroes.join(' / ')) +
     (placed ? ', placed above rank ' + aboveRank : '') +
     '">' +
-    // The skin code sits with the meta chips so the three heroes keep one line.
-    lineupHtml(l.heroes, '') +
+    stackHtml(l.heroes) +
     '<div class="meta">' +
     (l.skin
-      ? '<span class="chip skin" title="Skin code: 3 must, 2 recommended, 1 optional">skin ' +
+      ? '<span class="chip skin" title="Skin code: 3 must own the skin, 2 recommended, 1 optional">skin ' +
         esc(l.skin) +
         '</span>'
       : '') +
@@ -610,10 +699,16 @@ function cardHtml(l, aboveRank, match) {
         (l.score != null ? ' · ' + l.score : '') +
         '</span>'
       : '') +
+    (l.edited ? '<span class="kind edited" title="Changed, not saved yet">edited</span>' : '') +
     (l.added ? '<span class="chip">new</span>' : '') +
     matchChip(match) +
     where +
     '<span class="spacer"></span>' +
+    (editMode
+      ? '<button type="button" data-edit="' +
+        esc(l.id) +
+        '" aria-label="Change this lineup\'s heroes or skin code">Edit</button>'
+      : '') +
     '<button type="button" data-move="' +
     esc(l.id) +
     '">' +
@@ -621,28 +716,36 @@ function cardHtml(l, aboveRank, match) {
     '</button>' +
     (placed ? '<button type="button" data-unplace="' + esc(l.id) + '">Unplace</button>' : '') +
     (l.added ? '<button type="button" data-delete="' + esc(l.id) + '">Delete</button>' : '') +
-    '</div></div>'
+    (l.added ? '' : removeButton) +
+    (confirming
+      ? '<button type="button" class="danger" data-remove="' +
+        esc(l.id) +
+        '">Remove?</button>'
+      : '') +    '</div></div>'
   );
 }
 
 function renderStats() {
-  const all = allLanes();
+  const all = laneViews();
   const placed = all.filter((l) => l.anchor).length;
-  const changed = baseEdits.size + baseOrder.filter((id, i) => id !== BASE[i].id).length;
+  const changed = edits.size + baseOrder.filter((id, i) => id !== BASE[i].id).length;
   $('stats').innerHTML =
     '<div class="stat"><b>' +
-    BASE.length +
-    '</b><span>S0–X2 lineups' +
+    baseView().length +
+    '</b><span>Current lineups' +
     (editMode ? ' (edit mode)' : '') +
     '</span></div>' +
     '<div class="stat"><b>' +
     placed +
-    '</b><span>X8 placed</span></div>' +
+    '</b><span>New placed</span></div>' +
     '<div class="stat"><b>' +
     (all.length - placed) +
-    '</b><span>X8 in the end block</span></div>' +
+    '</b><span>New waiting at the end</span></div>' +
     (changed
-      ? '<div class="stat warn"><b>' + changed + '</b><span>S0–X2 lines changed</span></div>'
+      ? '<div class="stat warn"><b>' + changed + '</b><span>lines changed</span></div>'
+      : '') +
+    (removed.size
+      ? '<div class="stat warn"><b>' + removed.size + '</b><span>marked to remove</span></div>'
       : '');
 }
 
@@ -654,7 +757,7 @@ function render() {
 }
 
 function clearTrayFilters() {
-  ['traySearch', 'trayTroop', 'trayCost', 'trayTier'].forEach((id) => ($(id).value = ''));
+  ['trayTroop', 'trayCost', 'trayTier'].forEach((id) => ($(id).value = ''));
   $('traySort').value = TRAY_DEFAULTS.sort;
   renderTray();
 }
@@ -667,9 +770,12 @@ function clearRankFilters() {
 }
 
 /** Save the three heroes and the skin code typed into an open editor. */
-function applyBaseEdit(form) {
+function applyEdit(form) {
   const id = form.dataset.edit;
-  const current = baseView().find((b) => b.id === id);
+  const isBase = id.startsWith('b');
+  const current = isBase
+    ? baseView().find((b) => b.id === id)
+    : laneViews().find((l) => l.id === id);
   if (!current) return;
   const field = (name) => {
     const el = form.querySelector('[name="' + name + '"]');
@@ -685,23 +791,41 @@ function applyBaseEdit(form) {
   if (bad.length)
     return fail('Unknown hero: ' + bad.map((v) => v || '(empty)').join(', ') + '.');
   if (new Set(heroes).size < 3) return fail('A lineup needs three different heroes.');
-  if (heroes.some(isX8Hero))
+  const usesX8 = heroes.some(isX8Hero);
+  if (isBase && usesX8)
     return fail('That lineup uses an X8 hero, so it belongs in the X8 list, not the S0–X2 list.');
+  if (!isBase && !usesX8)
+    return fail('That lineup has no X8 hero, so it belongs in the S0–X2 list.');
   const skin = field('skin').trim();
   if (skin && !/^[123]{3}$/.test(skin)) return fail('Skin code is three digits of 1, 2 or 3.');
   const key = heroes.join('|') + '#' + skin;
-  const others = [
-    ...baseView().filter((b) => b.id !== id),
-    ...allLanes(),
-  ].map(keyOf);
-  if (others.includes(key)) return fail('Another lineup already uses those heroes and skin code.');
+  const others = [...baseView().filter((b) => b.id !== id), ...laneViews().filter((l) => l.id !== id)];
+  if (others.some((l) => keyOf(l) === key))
+    return fail('Another lineup already uses those three heroes and skin code.');
   editing = null;
-  if (keyOf({ heroes: current.heroes, skin: current.skin }) === key) return render();
-  baseEdits.set(id, { heroes, skin });
-  setDirty(true);
-  setStatus('Not saved yet. Press Save to write js/combos-db.js.');
+  if (keyOf(current) === key) return render();
+  edits.set(id, { heroes, skin });
+  touch();
   render();
-  revealRow('[data-rank="' + current.rank + '"]', 'nearest');
+  const selector = isBase ? '[data-rank="' + current.rank + '"]' : '[data-row="' + CSS.escape(id) + '"]';
+  revealRow(selector, 'nearest');
+}
+
+/** Two-step removal: the ✕ on a lineup asks once, then takes it out of the file. */
+function removeLane(id) {
+  if (pendingRemove !== id) {
+    pendingRemove = id;
+    setStatus('Press Remove? again to take that lineup out of js/combos-db.js.');
+    return render();
+  }
+  pendingRemove = null;
+  if (editing && editing.id === id) editing = null;
+  if (holding === id) stopHolding();
+  const lane = lanes.get(id);
+  if (lane && lane.added) lanes.delete(id);
+  else removed.add(id);
+  touch();
+  render();
 }
 
 async function save() {
@@ -713,21 +837,26 @@ async function save() {
       .filter((l) => !l.anchor)
       .map((l) => ({ id: l.id, anchor: '' })),
   ];
-  const added = allLanes()
-    .filter((l) => l.added)
-    .map((l) => ({ id: l.id, heroes: l.heroes, skin: l.skin }));
-  const baseEditsList = [...baseEdits.entries()].map(([id, edit]) => ({
-    id,
-    heroes: edit.heroes,
-    skin: edit.skin,
-  }));
+  const added = lanes
+    .values()
+    .filter((l) => l.added && !removed.has(l.id))
+    .map((l) => ({ id: l.id, heroes: laneFor(l).heroes, skin: laneFor(l).skin }));
+  const editList = [...edits.entries()]
+    .filter(([id]) => !(lanes.get(id) && lanes.get(id).added) && !removed.has(id))
+    .map(([id, edit]) => ({ id, heroes: edit.heroes, skin: edit.skin }));
   $('saveBtn').disabled = true;
   setStatus('Saving…');
   try {
     const res = await fetch('/api/combos', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ order, added, baseOrder, baseEdits: baseEditsList }),
+      body: JSON.stringify({
+        order,
+        added,
+        baseOrder,
+        edits: editList,
+        removed: [...removed],
+      }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'save failed');
@@ -752,11 +881,11 @@ async function fetchCombos() {
       setStatus(
         'Loaded ' +
           data.base.length +
-          ' S0–X2 and ' +
+          ' current and ' +
           data.x8.length +
-          ' X8 lineups (' +
+          ' new lineups (' +
           queued +
-          ' from x8-queue.json).'
+          ' from the queue files).'
       );
     }
   } catch (err) {
@@ -772,6 +901,10 @@ document.addEventListener('click', (ev) => {
   const t = ev.target.closest('button');
   if (!t) return;
   const d = t.dataset;
+  if (pendingRemove && d.remove !== pendingRemove) {
+    pendingRemove = null;
+    render();
+  }
   if (d.gap != null) return placeHolding(Number(d.gap));
   if (d.move) return holding === d.move ? stopHolding() : startHolding(d.move);
   if (d.up) return moveBy(d.up, -1);
@@ -779,12 +912,16 @@ document.addEventListener('click', (ev) => {
   if (d.unplace) return update(d.unplace, { anchor: '', slot: 0 });
   if (d.baseup) return moveBase(d.baseup, -1);
   if (d.basedown) return moveBase(d.basedown, 1);
-  if (d.baseedit) {
-    const b = baseView().find((x) => x.id === d.baseedit);
-    editing = b
-      ? { id: b.id, front: b.heroes[0], middle: b.heroes[1], back: b.heroes[2], skin: b.skin }
+  if (d.remove) return removeLane(d.remove);
+  if (d.edit) {
+    const isBase = d.edit.startsWith('b');
+    const lane = isBase
+      ? baseView().find((b) => b.id === d.edit)
+      : laneViews().find((l) => l.id === d.edit);
+    editing = lane
+      ? { id: lane.id, front: lane.heroes[0], middle: lane.heroes[1], back: lane.heroes[2], skin: lane.skin }
       : null;
-    renderList();
+    render();
     const form = document.querySelector('form[data-edit]');
     if (form) {
       form.scrollIntoView({ block: 'nearest' });
@@ -795,7 +932,7 @@ document.addEventListener('click', (ev) => {
   }
   if (d.canceledit) {
     editing = null;
-    return renderList();
+    return render();
   }
   if (d.show) {
     clearRankFilters();
@@ -805,7 +942,7 @@ document.addEventListener('click', (ev) => {
   if (d.clearrank) return clearRankFilters();
   if (d.delete) {
     lanes.delete(d.delete);
-    setDirty(true);
+    touch();
     return render();
   }
   if (d.tray) {
@@ -820,7 +957,7 @@ document.addEventListener('submit', (ev) => {
   const form = ev.target.closest('form[data-edit]');
   if (!form) return;
   ev.preventDefault();
-  applyBaseEdit(form);
+  applyEdit(form);
 });
 // A portrait that fails to load shows the site's placeholder instead of a broken image.
 document.addEventListener(
@@ -843,6 +980,7 @@ $('saveBtn').addEventListener('click', save);
 $('revertBtn').addEventListener('click', fetchCombos);
 $('trayClear').addEventListener('click', clearTrayFilters);
 $('showAllRows').addEventListener('click', clearRankFilters);
+$('trayFilterToggle').addEventListener('click', () => setFiltersOpen(!filtersOpen()));
 $('placeRankGo').addEventListener('click', () => placeAboveRank($('placeRank').value));
 $('placeRank').addEventListener('keydown', (ev) => {
   if (ev.key === 'Enter') {
@@ -855,16 +993,21 @@ $('gotoForm').addEventListener('submit', (ev) => {
   jumpToRank($('gotoRank').value);
 });
 $('compactRows').addEventListener('change', (ev) => setCompact(ev.target.checked));
-$('editBase').addEventListener('change', (ev) => {
-  editMode = ev.target.checked;
+$('editDone').addEventListener('click', () => setEditMode(false));
+$('editBase').addEventListener('change', (ev) => setEditMode(ev.target.checked));
+
+function setEditMode(on) {
+  editMode = on;
   editing = null;
+  pendingRemove = null;
+  $('editBase').checked = on;
   render();
   setStatus(
-    editMode
-      ? 'Edit mode: ▲▼ reorders an S0–X2 lineup and Edit changes its heroes. This changes ranks for every player.'
-      : 'Loaded js/combos-db.js.'
+    on
+      ? 'Edit mode: change a lineup with Edit, reorder an S0–X2 lineup with ▲▼, or take one out with ✕. Press Done editing to finish.'
+      : 'Edit mode off. Everything stays as it is until you press Save.'
   );
-});
+}
 
 ['listSearch', 'troop', 'cost', 'near'].forEach((id) =>
   $(id).addEventListener('input', renderList)
@@ -875,9 +1018,13 @@ $('editBase').addEventListener('change', (ev) => {
 document.addEventListener('keydown', (ev) => {
   if (ev.key === 'Escape') {
     if (holding) return stopHolding();
+    if (pendingRemove) {
+      pendingRemove = null;
+      return render();
+    }
     if (editing) {
       editing = null;
-      return renderList();
+      return render();
     }
     const t = ev.target;
     if (t instanceof HTMLInputElement && t.type === 'search' && t.value) {
@@ -947,14 +1094,16 @@ $('addForm').addEventListener('submit', (ev) => {
     return (msg.textContent = 'A lineup needs three different heroes.');
   if (!heroes.some(isX8Hero))
     return (msg.textContent =
-      'This lineup has no X8 hero. Use edit mode on an S0–X2 row to change that list instead.');
+      'This lineup has no X8 hero. Use edit mode to change an S0–X2 lineup instead.');
   const skin = $('addSkin').value.trim();
   if (skin && !/^[123]{3}$/.test(skin))
     return (msg.textContent = 'Skin code is three digits of 1, 2 or 3, e.g. 222.');
   const key = heroes.join('|') + '#' + skin;
-  if ([...allLanes(), ...baseView()].some((l) => keyOf(l) === key))
+  if ([...laneViews(), ...baseView()].some((l) => keyOf(l) === key && !removed.has(l.id)))
     return (msg.textContent = 'That lineup is already in the database.');
   const id = slug(heroes, skin);
+  edits.delete(id);
+  removed.delete(id);
   lanes.set(id, {
     id,
     heroes,
@@ -968,7 +1117,7 @@ $('addForm').addEventListener('submit', (ev) => {
   });
   ['addFront', 'addMiddle', 'addBack', 'addSkin'].forEach((f) => ($(f).value = ''));
   msg.textContent = 'Added. Place it now, or Save to keep it in x8-queue.json for later.';
-  setDirty(true);
+  touch();
   trayMode = 'unplaced';
   document
     .querySelectorAll('[data-tray]')
@@ -976,7 +1125,8 @@ $('addForm').addEventListener('submit', (ev) => {
   render();
 });
 
-// Compact rows fit roughly twice as many lineups on screen; remember the choice.
+// Compact rows fit roughly twice as many lineups on screen; the filter panel and
+// the compact toggle both remember their state.
 function setCompact(on) {
   document.body.classList.toggle('compact', on);
   $('compactRows').checked = on;
@@ -993,6 +1143,28 @@ function readCompact() {
     return false;
   }
 }
+const filtersOpen = () => !$('trayFilterBox').hidden;
+function setFiltersOpen(open) {
+  $('trayFilterBox').hidden = !open;
+  $('trayFilterToggle').setAttribute('aria-expanded', String(open));
+  try {
+    localStorage.setItem('combosPlannerFilters', open ? '1' : '0');
+  } catch (err) {
+    /* private mode */
+  }
+}
+function readFiltersOpen() {
+  try {
+    return localStorage.getItem('combosPlannerFilters') === '1';
+  } catch (err) {
+    return false;
+  }
+}
 
 setCompact(readCompact());
+setFiltersOpen(readFiltersOpen());
+// The key carries the same mini troop logos the rows use.
+document.querySelectorAll('#legend [data-troop]').forEach((el) => {
+  el.insertAdjacentHTML('afterbegin', troopIcon(el.dataset.troop));
+});
 fetchCombos();
