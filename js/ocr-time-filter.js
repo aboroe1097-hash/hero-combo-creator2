@@ -1,4 +1,7 @@
-const GAME_TIME_UTC_OFFSET_MINUTES = 120;
+// Game time is UTC−2 (06:00 Asia/Dubai = 00:00 game time); js/game-time.js
+// owns the offset so the attack filters, the header clock and Competition #12
+// always agree on which game day it is.
+import { GAME_TIME_UTC_OFFSET_MINUTES } from './game-time.js';
 
 function pad2(value) {
   return String(value).padStart(2, '0');

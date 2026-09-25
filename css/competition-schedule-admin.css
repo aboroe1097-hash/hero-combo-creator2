@@ -56,6 +56,35 @@
   font-family: var(--ff-font-mono, monospace);
   font-weight: 700;
 }
+#ocrDashboardRoot .dash-comp-schedule-now {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+#ocrDashboardRoot .dash-comp-schedule-now:empty {
+  display: none;
+}
+#ocrDashboardRoot .dash-comp-schedule-default {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px 12px;
+}
+#ocrDashboardRoot .dash-comp-schedule-default .dash-input {
+  direction: ltr;
+  min-height: var(--tap-min, 44px);
+}
+#ocrDashboardRoot .dash-comp-schedule-default .dash-btn {
+  min-height: var(--tap-min, 44px);
+}
+#ocrDashboardRoot .dash-comp-schedule-default-help {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
 #ocrDashboardRoot .dash-comp-schedule-rows {
   display: grid;
   gap: 8px;
@@ -187,7 +216,8 @@
   color: var(--ff-success, #16a34a);
 }
 @media (max-width: 768px) {
-  #ocrDashboardRoot .dash-comp-schedule-meta {
+  #ocrDashboardRoot .dash-comp-schedule-meta,
+  #ocrDashboardRoot .dash-comp-schedule-default {
     grid-template-columns: 1fr;
   }
   #ocrDashboardRoot .dash-comp-schedule-head {

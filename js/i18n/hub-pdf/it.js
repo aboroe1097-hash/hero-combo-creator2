@@ -1,5 +1,11 @@
 // Italian copy for the hub PDFs tabs. Keys and {tokens} mirror ./en.js.
 export default Object.freeze({
+  design: 'Stile',
+  designDashboard: 'Pannello scuro',
+  designMidnight: 'Briefing notturno',
+  designReference: 'Riferimento compatto',
+  designPrintHint:
+    'Per PDF scuri, attiva la grafica di sfondo nella finestra di stampa. Le selezioni ampie proseguono su altre pagine.',
   panelTitle: 'Crea un PDF',
   panelIntro:
     'Scegli cosa inserire nel documento, poi salvalo in PDF dalla finestra di stampa. Il testo resta selezionabile e ricercabile.',

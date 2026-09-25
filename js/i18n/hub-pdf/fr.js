@@ -1,5 +1,11 @@
 // French copy for the hub PDFs tabs. Keys and {tokens} mirror ./en.js.
 export default Object.freeze({
+  design: 'Style',
+  designDashboard: 'Tableau de bord sombre',
+  designMidnight: 'Briefing de minuit',
+  designReference: 'Référence compacte',
+  designPrintHint:
+    'Pour les PDF sombres, activez les graphiques en arrière-plan dans la boîte de dialogue d’impression. Les grandes sélections continuent sur des pages supplémentaires.',
   panelTitle: 'Créer un PDF',
   panelIntro:
     'Choisissez le contenu du document, puis enregistrez-le en PDF depuis la boîte de dialogue d’impression. Le texte reste sélectionnable et consultable.',

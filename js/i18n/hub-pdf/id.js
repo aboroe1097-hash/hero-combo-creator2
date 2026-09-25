@@ -1,5 +1,11 @@
 // Indonesian copy for the hub PDFs tabs. Keys and {tokens} mirror ./en.js.
 export default Object.freeze({
+  design: 'Desain',
+  designDashboard: 'Dasbor Gelap',
+  designMidnight: 'Ringkasan Tengah Malam',
+  designReference: 'Referensi Ringkas',
+  designPrintHint:
+    'Untuk PDF gelap, aktifkan grafik latar belakang pada dialog cetak. Pilihan besar berlanjut ke halaman tambahan.',
   panelTitle: 'Buat PDF',
   panelIntro:
     'Pilih isi dokumen, lalu simpan sebagai PDF dari dialog cetak. Teks tetap bisa dipilih dan dicari.',

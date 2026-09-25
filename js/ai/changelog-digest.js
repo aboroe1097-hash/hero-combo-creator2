@@ -1,10 +1,22 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.5";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.6";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.5.6",
+    "date": "2026-09-25",
+    "highlights": [
+      "Heroes PDFs now offer three designs — Dark Dashboard, Midnight Briefing and Compact Reference — with landscape defaults, the VTS crest and wordmark in the header, real hero portraits in the top-combo lineups and beside every roster row, troop-coloured group headings, rank badges…",
+      "The combo database carries the X8 catch-up bracket again: 82 formations that need at least one X8 hero, restored from the name-matched X8 availability set that was dropped when the database was limited to S0-X2. Every lane records the tier and source score it was ranked by, and …",
+      "Competition #12 now uses the correct game time. Game time is UTC−2 (06:00 in Dubai is 00:00 game time, the same clock as the site header), but the competition schedule, the VTS Admin schedule panel and the member page's phase countdown were using UTC+2, so every competition time…",
+      "The Competition #12 schedule panel can fill a 2-week default. Pick a start date (the next game day by default) and press **Fill 2-week default**: registration runs days 1–2, the final check until the end of day 4, the growth re-upload on days 13–14 and the winners' display on da…",
+      "The VTS Admin attack log's Daily and Weekly filters use the same UTC−2 game day. Between 22:00 and midnight game time the Daily filter used to jump to the next day and hide the current day's attacks, and the Weekly filter rolled over on Sunday at 22:00 instead of midnight.",
+      "The schedule panel shows game time next to your own time: each row reads \"Game 2026-10-01 00:00 (UTC−2) · Your time: …\", and a live line shows the current game time and your time."
+    ]
+  },
   {
     "version": "16.5.5",
     "date": "2026-09-24",
@@ -101,14 +113,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Eden X2 management rankings now read the current Google Sheet's `VoteResults` tab. Kiji, Loonly, Redbull, stylized ANGEL, and Victoria/Kika names resolve to their player families.",
       "Superadmins can choose whether demolition points contribute to dashboard totals while keeping demolition activity visible.",
       "Superadmins can delete an individual Eden X2 voting ballot from the admin results table. The ballot is removed from totals and a deletion is recorded in the immutable edit history."
-    ]
-  },
-  {
-    "version": "16.0.16",
-    "date": "2026-09-18",
-    "highlights": [
-      "Shield Wall lists can now be uploaded as screenshots, the same way Banner and Pather lists are: an Upload Image button, a drop zone and a scanning indicator, in all twelve admin languages. Before this, Shield Wall only took typed or pasted names.",
-      "Shift headings in a Shield Wall list (\"Morning\", \"Evening:\", \"Night\", \"Shift 2\") now become the row's group instead of being read as a player called \"Morning\". A player on both shifts keeps a row, and a Shield Wall credit, for each one. The image reader was also told to keep tho…"
     ]
   }
 ].map((release) =>

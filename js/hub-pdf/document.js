@@ -17,6 +17,8 @@
 // on every page, and page-margin boxes carrying the site name, URL and page numbers.
 
 import { formatLocaleNumber } from '../locale-format.js';
+import { HERO_DESIGNS, heroDesignStyles, heroSectionClass } from './hero-designs.js';
+import { assetUrl, renderComboCards, thumbnailCell } from './hero-cards.js';
 
 export const PAPER_SIZES = Object.freeze(['a4', 'letter']);
 export const ORIENTATIONS = Object.freeze(['portrait', 'landscape']);
@@ -28,6 +30,7 @@ export function normalizeSettings(raw = {}) {
     orientation: ORIENTATIONS.includes(raw.orientation) ? raw.orientation : 'portrait',
     detail: DETAIL_LEVELS.includes(raw.detail) ? raw.detail : 'summary',
     sources: raw.sources !== false && raw.sources !== 'false',
+    design: HERO_DESIGNS.includes(raw.design) ? raw.design : 'classic',
   });
 }
 
@@ -108,19 +111,40 @@ export function tableOfContents(sections = []) {
 }
 
 function renderTable(block, ctx) {
+  if (ctx.heroDesign && block.presentation === 'hero-combos' && block.rows.length) {
+    return renderComboCards(block, {
+      escape: escapeHtml,
+      cell: (value) => escapeHtml(formatCell(value, ctx)),
+      assetBase: ctx.assetBase,
+    });
+  }
   const columns = block.columns || [];
   const rows = block.rows || [];
+  // Designed sheets mark every value element, so the document tests can prove a
+  // themed rendering carries the same cells, in the same order, as the plain one.
+  const marker = ctx.heroDesign ? ' data-cell' : '';
+  // The designed roster shows the hero portrait beside the data.
+  const thumbs =
+    ctx.heroDesign && block.presentation === 'hero-list' ? block.portraits || [] : null;
   const cls = (column) => (column.align === 'num' ? ' class="num"' : '');
-  const head = `<thead><tr>${columns
+  const head = `<thead><tr>${thumbs ? '<th scope="col" class="thumb-head"></th>' : ''}${columns
     .map((column) => `<th scope="col"${cls(column)}>${escapeHtml(column.label)}</th>`)
     .join('')}</tr></thead>`;
   const bodyRows = rows.length
     ? rows
-        .map((row) => {
+        .map((row, rowIndex) => {
           if (row && !Array.isArray(row) && row.group) {
-            return `<tr class="group"><th colspan="${columns.length}" scope="rowgroup">${escapeHtml(row.group)}</th></tr>`;
+            return `<tr class="group"><th colspan="${columns.length + (thumbs ? 1 : 0)}" scope="rowgroup">${escapeHtml(row.group)}</th></tr>`;
           }
-          return `<tr>${row
+          const lead = thumbs
+            ? thumbnailCell(
+                thumbs[rowIndex],
+                Array.isArray(row) ? row[0] : '',
+                ctx.assetBase,
+                escapeHtml
+              )
+            : '';
+          return `<tr>${lead}${row
             .map((cell, index) => {
               const unknown = isUnknown(cell);
               const classes = [
@@ -129,7 +153,7 @@ function renderTable(block, ctx) {
               ]
                 .filter(Boolean)
                 .join(' ');
-              return `<td${classes ? ` class="${classes}"` : ''}>${escapeHtml(formatCell(cell, ctx))}</td>`;
+              return `<td${marker}${classes ? ` class="${classes}"` : ''}>${escapeHtml(formatCell(cell, ctx))}</td>`;
             })
             .join('')}</tr>`;
         })
@@ -142,7 +166,7 @@ function renderTable(block, ctx) {
           const classes = [columns[index]?.align === 'num' ? 'num' : '', unknown ? 'unknown' : '']
             .filter(Boolean)
             .join(' ');
-          return `<td${classes ? ` class="${classes}"` : ''}>${escapeHtml(formatCell(cell, ctx))}</td>`;
+          return `<td${marker}${classes ? ` class="${classes}"` : ''}>${escapeHtml(formatCell(cell, ctx))}</td>`;
         })
         .join('')}</tr></tfoot>`
     : '';
@@ -151,7 +175,7 @@ function renderTable(block, ctx) {
       ? `<p class="table-note">${escapeHtml(block.caption)}</p>`
       : '';
   const wide = columns.length >= 7 ? ' wide' : '';
-  return `<table class="data${wide}">${head}<tbody>${bodyRows}</tbody>${foot}</table>${caption}`;
+  return `<table class="data${wide}${ctx.heroDesign && !rows.length ? ' no-rows' : ''}">${head}<tbody>${bodyRows}</tbody>${foot}</table>${caption}`;
 }
 
 function renderBlock(block, ctx) {
@@ -178,6 +202,19 @@ function renderBlock(block, ctx) {
 
 function renderBlocks(blocks, ctx) {
   return (blocks || []).map((block) => renderBlock(block, ctx)).join('');
+}
+
+function withoutEmptySubsections(section, emptyText) {
+  if (!section.subsections?.length) return section;
+  const subsections = section.subsections.filter((sub) =>
+    (sub.blocks || []).some((block) => block.type !== 'table' || (block.rows || []).length)
+  );
+  if (subsections.length) return { ...section, subsections };
+  return {
+    ...section,
+    subsections: [],
+    blocks: [...(section.blocks || []), { type: 'note', text: emptyText }],
+  };
 }
 
 export function documentStyles(settings, copy, branding) {
@@ -254,12 +291,24 @@ footer.colophon { margin-top: 14pt; padding-top: 6pt; border-top: .5pt solid #99
 export function renderDocumentHtml(
   doc,
   rawSettings,
-  { copy, language = 'en', dir = 'ltr', branding }
+  { copy, language = 'en', dir = 'ltr', branding, assetBase = branding.siteUrl }
 ) {
   const settings = normalizeSettings(rawSettings);
-  const ctx = { copy, language, settings, unknown: copy.docUnknown };
-  const sections = numberSections(doc.sections || []);
-  const toc = tableOfContents(doc.sections || []);
+  const heroDesign = doc.kind === 'heroes' && HERO_DESIGNS.includes(settings.design);
+  const ctx = { copy, language, settings, unknown: copy.docUnknown, heroDesign, assetBase };
+  // Put the visual lineups first in the designed Heroes sheets.
+  const orderedSections = heroDesign
+    ? [...(doc.sections || [])].sort(
+        (a, b) => Number(b.role === 'combos') - Number(a.role === 'combos')
+      )
+    : doc.sections || [];
+  // A designed sheet does not print "0 of 0" troop groups: an empty subsection is
+  // dropped, and a section left with none says so once.
+  const preparedSections = heroDesign
+    ? orderedSections.map((section) => withoutEmptySubsections(section, copy.docNoRows))
+    : orderedSections;
+  const sections = numberSections(preparedSections);
+  const toc = heroDesign ? [] : tableOfContents(doc.sections || []);
   const generated = branding.generatedAt || '';
   const choices = [
     ...(doc.choices || []),
@@ -287,13 +336,13 @@ export function renderDocumentHtml(
   const sectionsHtml = sections
     .map(
       (section) =>
-        `<section class="doc-section"><h2 class="section-title">${escapeHtml(section.number)}. ${escapeHtml(section.title)}</h2>${renderBlocks(
+        `<section class="doc-section${heroDesign ? heroSectionClass(section) : ''}"><h2 class="section-title">${escapeHtml(section.number)}. ${escapeHtml(section.title)}</h2>${renderBlocks(
           section.blocks,
           ctx
         )}${section.subsections
           .map(
             (sub) =>
-              `<h3 class="sub-title">${escapeHtml(sub.number)} ${escapeHtml(sub.title)}</h3>${renderBlocks(sub.blocks, ctx)}`
+              `${heroDesign ? '<div class="hero-subsection">' : ''}<h3 class="sub-title">${escapeHtml(sub.number)} ${escapeHtml(sub.title)}</h3>${renderBlocks(sub.blocks, ctx)}${heroDesign ? '</div>' : ''}`
           )
           .join('')}</section>`
     )
@@ -315,12 +364,13 @@ export function renderDocumentHtml(
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(doc.fileTitle || doc.title)}</title>
-<style>${documentStyles(settings, copy, branding)}</style>
+<style>${documentStyles(settings, copy, branding)}${heroDesign ? heroDesignStyles(settings.design, settings) : ''}</style>
 </head>
-<body>
-<div class="screen-only"><span>${escapeHtml(copy.docPrintHint)}</span><button type="button" data-doc-print>${escapeHtml(copy.docPrint)}</button></div>
+<body${heroDesign ? ` data-hero-design="${settings.design}"` : ''}>
+<div class="screen-only"><span>${escapeHtml(copy.docPrintHint)}${heroDesign ? ` ${escapeHtml(copy.designPrintHint)}` : ''}</span><button type="button" data-doc-print>${escapeHtml(copy.docPrint)}</button></div>
 <main>
 <header class="title-block">
+${heroDesign ? `<div class="brand-lockup"><img class="brand-crest" src="${escapeHtml(assetUrl('images/logo-120.webp', assetBase))}" alt=""><span class="brand-wordmark">VTS <b>1097</b></span><span class="brand-edition">${escapeHtml(copy[{ dashboard: 'designDashboard', midnight: 'designMidnight', reference: 'designReference' }[settings.design]])} · v${escapeHtml(branding.appVersion)}</span></div>` : ''}
 <p class="site">${escapeHtml(branding.siteName)} · ${escapeHtml(branding.siteUrl)}</p>
 <h1>${escapeHtml(doc.title)}</h1>
 ${doc.subtitle ? `<p class="subtitle">${escapeHtml(doc.subtitle)}</p>` : ''}
@@ -332,7 +382,7 @@ ${doc.subtitle ? `<p class="subtitle">${escapeHtml(doc.subtitle)}</p>` : ''}
     .join('')}</dl>
 </header>
 ${tocHtml}
-${sectionsHtml}
+${heroDesign ? `<div class="hero-sections">${sectionsHtml}</div>` : sectionsHtml}
 ${sources}
 <footer class="colophon">${escapeHtml(branding.siteName)} v${escapeHtml(branding.appVersion)} · ${escapeHtml(branding.siteUrl)} · ${escapeHtml(copy.docGenerated)} ${escapeHtml(generated)}</footer>
 </main>

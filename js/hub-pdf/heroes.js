@@ -196,6 +196,7 @@ export function buildHeroesDocument(rawChoices, copy, settings = {}) {
     ];
   });
   sections.push({
+    role: 'roster',
     title: copy.secRoster,
     blocks: [
       paragraph(interpolate(copy.heroesMatchCount, { n: heroes.length })),
@@ -246,21 +247,29 @@ export function buildHeroesDocument(rawChoices, copy, settings = {}) {
         skins.length ? skins.map((skin) => skin.name).join(', ') : copy.noSkin,
       ];
     };
+    // Rows carry the portrait too, so the designed sheets can show the hero.
+    const listRows = heroes.map((hero) => ({ row: rowFor(hero), portrait: hero.imageUrl }));
+    const listTable = (entries) =>
+      table(
+        columns,
+        entries.map((entry) => entry.row),
+        {
+          presentation: 'hero-list',
+          portraits: entries.map((entry) => entry.portrait),
+        }
+      );
     const subsections =
       detail === 'full'
         ? seasons
             .map((season) => ({
               title: interpolate(copy.seasonHeading, { season }),
-              blocks: [table(columns, heroes.filter((hero) => hero.season === season).map(rowFor))],
+              blocks: [listTable(listRows.filter((entry) => entry.row[1] === season))],
             }))
             .filter((sub) => sub.blocks[0].rows.length)
         : [];
     sections.push({
       title: copy.secHeroList,
-      blocks: [
-        ...(detail === 'full' ? [] : [table(columns, heroes.map(rowFor))]),
-        note(copy.heroesUnknownNote),
-      ],
+      blocks: [...(detail === 'full' ? [] : [listTable(listRows)]), note(copy.heroesUnknownNote)],
       subsections,
     });
 
@@ -304,6 +313,7 @@ export function buildHeroesDocument(rawChoices, copy, settings = {}) {
 
   // 3. Top combos per troop from the Combo Generator ranking.
   if (include.has('combos')) {
+    const portraitByName = new Map(heroes.map((hero) => [hero.name, hero.imageUrl]));
     const groups = groupCombos(choices);
     const columns = [
       numCol(copy.colRank),
@@ -315,6 +325,7 @@ export function buildHeroesDocument(rawChoices, copy, settings = {}) {
       ...(detail === 'full' ? [textCol(copy.colNote)] : []),
     ];
     sections.push({
+      role: 'combos',
       title: copy.secCombos,
       blocks: [paragraph(copy.combosIntro)],
       subsections: groups.map(({ group, combos, total }) => ({
@@ -330,7 +341,14 @@ export function buildHeroesDocument(rawChoices, copy, settings = {}) {
               combo.score,
               skinNeeds(combo, copy),
               ...(detail === 'full' ? [combo.note || '—'] : []),
-            ])
+            ]),
+            {
+              presentation: 'hero-combos',
+              troop: group,
+              portraits: combos.map((combo) =>
+                combo.heroes.map((name) => portraitByName.get(name))
+              ),
+            }
           ),
         ],
       })),
@@ -416,6 +434,7 @@ export function buildHeroesDocument(rawChoices, copy, settings = {}) {
   }
 
   return {
+    kind: 'heroes',
     title: copy.heroesDocTitle,
     fileTitle: `roc-heroes-combos-${choices.troop}-${allSeasons ? 'all' : seasons.join('-')}`,
     subtitle: copy.heroesDocSubtitle,

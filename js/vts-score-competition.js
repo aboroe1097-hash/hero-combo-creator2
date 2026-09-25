@@ -9,6 +9,7 @@
 import {
   COMPETITION_BOH_SLOTS,
   COMPETITION_EPIC_SLOTS,
+  GAME_TIME_UTC_OFFSET_MINUTES,
   slotToGameClock,
 } from './competition-schedule.js';
 
@@ -101,11 +102,16 @@ function dateParts(ms, locale, options) {
   return Object.fromEntries(parts.map((part) => [part.type, part.value]));
 }
 
-/** Epoch ms → "05 Oct 20:00" in game time (UTC+2), localized month and digits. */
+// IANA "Etc/GMT+N" zones have an inverted sign: Etc/GMT+2 is UTC−2.
+const GAME_TIME_IANA_ZONE = `Etc/GMT${GAME_TIME_UTC_OFFSET_MINUTES <= 0 ? '+' : '-'}${Math.abs(
+  GAME_TIME_UTC_OFFSET_MINUTES / 60
+)}`;
+
+/** Epoch ms → "05 Oct 20:00" in game time (UTC−2), localized month and digits. */
 export function formatGameTime(ms, locale = 'en') {
   if (!Number.isFinite(ms)) return '';
   const part = dateParts(ms, locale, {
-    timeZone: 'Etc/GMT-2',
+    timeZone: GAME_TIME_IANA_ZONE,
     day: '2-digit',
     month: 'short',
     hour: '2-digit',

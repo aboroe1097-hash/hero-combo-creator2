@@ -1,5 +1,11 @@
 // Portuguese (Brazil) copy for the hub PDFs tabs. Keys and {tokens} mirror ./en.js.
 export default Object.freeze({
+  design: 'Design',
+  designDashboard: 'Painel escuro',
+  designMidnight: 'Resumo noturno',
+  designReference: 'Referência compacta',
+  designPrintHint:
+    'Para PDFs escuros, ative os gráficos de fundo na janela de impressão. Seleções maiores continuam em páginas adicionais.',
   panelTitle: 'Criar um PDF',
   panelIntro:
     'Escolha o que entra no documento e depois salve como PDF pela janela de impressão. O texto continua selecionável e pesquisável.',

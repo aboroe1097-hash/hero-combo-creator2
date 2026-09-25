@@ -1,6 +1,23 @@
 // Eden / ROC game time — 06:00 UAE (Asia/Dubai) = 00:00 game time
 export const GAME_DAY_START_UAE_HOUR = 6;
 export const UAE_TIMEZONE = 'Asia/Dubai';
+// Dubai is a fixed UTC+4 (no daylight saving time).
+export const UAE_UTC_OFFSET_MINUTES = 4 * 60;
+// Game midnight is 06:00 in Dubai, so game time is UTC+4 minus 6 h = UTC−2.
+// This is the single source of truth for the game-time offset; the
+// Competition #12 schedule (js/competition-schedule.js) and the member page
+// (js/vts-score-competition.js) derive their conversions from it.
+export const GAME_TIME_UTC_OFFSET_MINUTES =
+  UAE_UTC_OFFSET_MINUTES - GAME_DAY_START_UAE_HOUR * 60;
+
+/** The game-time zone as a label, e.g. "UTC−2" (with a true minus sign). */
+export function formatGameClockZone(offsetMinutes = GAME_TIME_UTC_OFFSET_MINUTES) {
+  const sign = offsetMinutes < 0 ? '\u2212' : '+';
+  const abs = Math.abs(offsetMinutes);
+  const hours = Math.floor(abs / 60);
+  const minutes = abs % 60;
+  return `UTC${sign}${hours}${minutes ? `:${String(minutes).padStart(2, '0')}` : ''}`;
+}
 
 // Cache the formatter at module level — created once, reused on every tick
 const uaeDateFormatter = new Intl.DateTimeFormat('en-GB', {

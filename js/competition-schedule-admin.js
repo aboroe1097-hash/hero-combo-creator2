@@ -1,7 +1,7 @@
 // js/competition-schedule-admin.js
 //
 // The "Competition #12 schedule" panel in VTS Admin → 2027 Signups. A
-// superadmin enters seven instants in game time (UTC+2); this module turns the
+// superadmin enters seven instants in game time (UTC−2); this module turns the
 // form into the exact document firestore.rules accepts at
 // `boh_allstar_competition/current`, explains which field breaks the order, and
 // renders the phase timeline.
@@ -17,6 +17,7 @@ import {
   millisToGameTime,
   normalizeCompetitionSchedule,
 } from './competition-schedule.js';
+import { formatGameClockZone, getGameTimeState } from './game-time.js';
 
 export const COMPETITION_DEFAULT_TITLE = 'Competition #12';
 export const COMPETITION_TITLE_MAX_LENGTH = 80;
@@ -172,6 +173,67 @@ export function buildCompetitionSeasonStart(storedConfig = {}, formConfig = {}) 
     next.acceptNewSignups = stored.acceptNewSignups;
   }
   return next;
+}
+
+/* ------------------------------------------------------------------ *
+ * Default 2-week schedule
+ * ------------------------------------------------------------------ */
+
+// The owner's default: every phase opens at 00:00 game time (+0) and closes at
+// 22:00 game time (+22). Day 0 is the start date. Registration, the final
+// check, the re-upload and the winners' display each get 2 game days; the
+// competition runs 14 game days from sign-up to the re-upload close. The
+// 2-hour gaps after each 22:00 close fall in the model's gap phases (waiting,
+// results pending), which normalizeCompetitionSchedule() accepts.
+export const COMPETITION_DEFAULT_OPEN_TIME = '00:00';
+export const COMPETITION_DEFAULT_CLOSE_TIME = '22:00';
+export const COMPETITION_DEFAULT_PLAN = Object.freeze({
+  opensAt: Object.freeze({ day: 0, time: COMPETITION_DEFAULT_OPEN_TIME }),
+  phase1ClosesAt: Object.freeze({ day: 1, time: COMPETITION_DEFAULT_CLOSE_TIME }),
+  deadlineAt: Object.freeze({ day: 3, time: COMPETITION_DEFAULT_CLOSE_TIME }),
+  reuploadOpensAt: Object.freeze({ day: 12, time: COMPETITION_DEFAULT_OPEN_TIME }),
+  reuploadClosesAt: Object.freeze({ day: 13, time: COMPETITION_DEFAULT_CLOSE_TIME }),
+  winnersStartAt: Object.freeze({ day: 14, time: COMPETITION_DEFAULT_OPEN_TIME }),
+  winnersEndAt: Object.freeze({ day: 15, time: COMPETITION_DEFAULT_CLOSE_TIME }),
+});
+
+const GAME_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/u;
+
+/** "2026-10-01" + 3 → "2026-10-04" (calendar arithmetic, no time zone). */
+export function addGameDays(gameDate, days) {
+  const match = GAME_DATE_PATTERN.exec(String(gameDate || '').trim());
+  if (!match || !Number.isInteger(days)) return '';
+  const [, y, m, d] = match.map(Number);
+  const base = new Date(Date.UTC(y, m - 1, d));
+  // Reject dates the calendar rolls over (2026-02-31).
+  if (base.getUTCFullYear() !== y || base.getUTCMonth() !== m - 1 || base.getUTCDate() !== d) {
+    return '';
+  }
+  base.setUTCDate(base.getUTCDate() + days);
+  return base.toISOString().slice(0, 10);
+}
+
+/** The game day after the one in progress at `nowMs` ("YYYY-MM-DD"). */
+export function nextGameDay(nowMs = Date.now()) {
+  return addGameDays(millisToGameTime(nowMs).date, 1);
+}
+
+/**
+ * The default 2-week schedule starting on `startGameDate` (the next game day
+ * when omitted or blank; pass `nowMs` to pin "now"). Pure: returns
+ * `{ startDate, instants: { key: { date, time } } }` in the panel's form shape,
+ * or null for an invalid start date. Nothing is saved.
+ */
+export function buildDefaultCompetitionSchedule(startGameDate, { nowMs = Date.now() } = {}) {
+  const requested = String(startGameDate ?? '').trim();
+  const startDate = requested || nextGameDay(nowMs);
+  if (!addGameDays(startDate, 0)) return null;
+  const instants = {};
+  for (const key of COMPETITION_SCHEDULE_KEYS) {
+    const { day, time } = COMPETITION_DEFAULT_PLAN[key];
+    instants[key] = { date: addGameDays(startDate, day), time };
+  }
+  return { startDate, instants };
 }
 
 /* ------------------------------------------------------------------ *
@@ -347,6 +409,51 @@ export function formatGameTime(ms) {
   return date ? `${date} ${time}` : '—';
 }
 
+/** Epoch ms → "HH:MM" in the viewer's own time zone (the live clock line). */
+export function formatLocalClock(ms, { locale, timeZone } = {}) {
+  if (!Number.isFinite(ms)) return '—';
+  try {
+    return new Intl.DateTimeFormat(locale || undefined, {
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+      ...(timeZone ? { timeZone } : {}),
+    }).format(new Date(ms));
+  } catch {
+    return new Date(ms).toISOString().slice(11, 16);
+  }
+}
+
+// Left-to-right isolate (LRI … PDI): keeps "2026-10-01 00:00" and "UTC−2" in
+// reading order inside right-to-left (Arabic) sentences.
+const ltr = (value) => `\u2066${value}\u2069`;
+
+/** A row hint: "Game 2026-10-01 00:00 (UTC−2) · Your time: 1 Oct 2026, 04:00". */
+export function formatScheduleRowHint(ms, t, { locale, timeZone } = {}) {
+  return translator(t)(
+    'adminCompScheduleLocal',
+    {
+      game: ltr(formatGameTime(ms)),
+      zone: ltr(formatGameClockZone()),
+      time: formatLocalTime(ms, { locale, timeZone }),
+    },
+    'Game {game} ({zone}) · Your time: {time}'
+  );
+}
+
+/** The live line: "Now: game 14:05 · your time 16:05". */
+export function formatScheduleNowLine(nowMs, t, { locale, timeZone } = {}) {
+  const game = getGameTimeState(new Date(nowMs)).formatted;
+  return translator(t)(
+    'adminCompScheduleNow',
+    {
+      game: ltr(`${game} (${formatGameClockZone()})`),
+      local: formatLocalClock(nowMs, { locale, timeZone }),
+    },
+    'Now: game {game} · your time {local}'
+  );
+}
+
 /** The viewer's local time for an instant (the live hint next to each row). */
 export function formatLocalTime(ms, { locale, timeZone } = {}) {
   if (!Number.isFinite(ms)) return '—';
@@ -453,12 +560,57 @@ export function createCompetitionScheduleAdminView(options = {}) {
       const hint = host.querySelector(`[data-comp-schedule-local="${key}"]`);
       if (!hint) continue;
       const ms = gameTimeToMillis(values.instants[key].date, values.instants[key].time);
-      hint.textContent = t(
-        'adminCompScheduleLocal',
-        { time: formatLocalTime(ms, { locale: locale() }) },
-        'Your time: {time}'
-      );
+      hint.textContent = formatScheduleRowHint(ms, t, { locale: locale() });
     }
+  }
+
+  let clockTimer = null;
+  function tickNow(root) {
+    const line = root.querySelector('#dashCompScheduleNow');
+    if (!line || !line.isConnected) {
+      if (clockTimer) clearInterval(clockTimer);
+      clockTimer = null;
+      return;
+    }
+    line.textContent = formatScheduleNowLine(Date.now(), t, { locale: locale() });
+  }
+
+  function startClock(root) {
+    tickNow(root);
+    if (clockTimer || typeof setInterval !== 'function') return;
+    if (!root.querySelector('#dashCompScheduleNow')) return;
+    clockTimer = setInterval(() => tickNow(root), 15_000);
+  }
+
+  function writeInstants(root, instants) {
+    const host = form(root);
+    if (!host) return;
+    for (const key of COMPETITION_SCHEDULE_KEYS) {
+      const date = host.querySelector(`[data-comp-schedule-date="${key}"]`);
+      const time = host.querySelector(`[data-comp-schedule-time="${key}"]`);
+      if (date) date.value = instants[key]?.date || '';
+      if (time) time.value = instants[key]?.time || '';
+    }
+  }
+
+  function defaultStartInput(root) {
+    return form(root)?.querySelector('#dashCompScheduleDefaultStart') || null;
+  }
+
+  /**
+   * "Fill 2-week default": writes the default into the seven inputs from the
+   * start-date field (the next game day when blank). Never saves.
+   */
+  function fillDefault(root, nowMs = Date.now()) {
+    const input = defaultStartInput(root);
+    const built = buildDefaultCompetitionSchedule(input?.value, { nowMs });
+    if (!built) return false;
+    if (input) input.value = built.startDate;
+    writeInstants(root, built.instants);
+    state.dirty = true;
+    updateLocalHints(root);
+    renderTimeline(root, nowMs);
+    return true;
   }
 
   function renderTimeline(root, nowMs = Date.now()) {
@@ -471,7 +623,10 @@ export function createCompetitionScheduleAdminView(options = {}) {
       seasonId: COMPETITION_SEASON_ID,
     });
     const schedule = result.ok ? result.schedule : state.stored;
-    target.innerHTML = renderCompetitionTimeline(schedule, t, nowMs);
+    // An unsaved form (the prefilled default) is previewed under the "No
+    // schedule saved yet" note, so a preview never reads as the live schedule.
+    const unsavedNote = !state.stored && schedule ? renderCompetitionTimeline(null, t) : '';
+    target.innerHTML = unsavedNote + renderCompetitionTimeline(schedule, t, nowMs);
   }
 
   function renderSeason(root) {
@@ -490,11 +645,19 @@ export function createCompetitionScheduleAdminView(options = {}) {
     const values = competitionScheduleToFormValues(stored || {});
     const title = host.querySelector('#dashCompScheduleTitle');
     if (title) title.value = values.title;
-    for (const key of COMPETITION_SCHEDULE_KEYS) {
-      const date = host.querySelector(`[data-comp-schedule-date="${key}"]`);
-      const time = host.querySelector(`[data-comp-schedule-time="${key}"]`);
-      if (date) date.value = values.instants[key].date;
-      if (time) time.value = values.instants[key].time;
+    const startInput = defaultStartInput(root);
+    const hasStored = COMPETITION_SCHEDULE_KEYS.some((key) =>
+      Number.isFinite(toMillis(stored?.[key]))
+    );
+    if (hasStored) {
+      writeInstants(root, values.instants);
+      if (startInput) startInput.value = values.instants.opensAt.date;
+    } else {
+      // No schedule stored yet: prefill the 2-week default from the next game
+      // day. It is only a suggestion; nothing is written until "Save".
+      const built = buildDefaultCompetitionSchedule(startInput?.value);
+      if (startInput && built) startInput.value = built.startDate;
+      writeInstants(root, built ? built.instants : values.instants);
     }
     state.dirty = false;
   }
@@ -508,6 +671,7 @@ export function createCompetitionScheduleAdminView(options = {}) {
     renderSeason(root);
     updateLocalHints(root);
     renderTimeline(root);
+    startClock(root);
   }
 
   function onInput(root) {
@@ -520,5 +684,5 @@ export function createCompetitionScheduleAdminView(options = {}) {
     state.dirty = false;
   }
 
-  return Object.freeze({ render, readValues, onInput, markSaved, state });
+  return Object.freeze({ render, readValues, onInput, fillDefault, markSaved, state });
 }

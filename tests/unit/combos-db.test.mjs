@@ -12,21 +12,13 @@ import {
   selectNonOverlappingCombos,
 } from '../../js/combos-db.js';
 
-// Seasons up to X2 are in scope for the combo database; X8 heroes are excluded for now.
-const X8_HEROES = [
-  'Bjorn',
-  'Skanda',
-  'Liberator',
-  'Ashen Verdict',
-  'Warden',
-  'Warhammer',
-  'Eidolon',
-  'Scarlet Reaver',
-  'Rainforest Ranger',
-  'Fortuneteller',
-  'Ragnar',
-  'Cyrus',
-];
+// X8 (catch-up bracket) heroes are in scope, but only inside the X8 block that ends the
+// database. Its lanes are ordered by the source score recorded in each note, so the block
+// is the one part of the list whose order is evidence-driven rather than curated by hand.
+const X8_HEROES = new Set(
+  allHeroesData.filter((hero) => hero.season === 'X8').map((hero) => hero.name)
+);
+const usesX8Hero = (combo) => combo.heroes.some((hero) => X8_HEROES.has(hero));
 
 test('combo rank scoring maps first to 100 and last to 1', () => {
   assert.equal(scoreComboByRank(0, 3), '100.0');
@@ -72,9 +64,8 @@ test('non-overlap selection respects the result limit', () => {
   );
 });
 
-test('every combo uses known hero names and no X8 hero', () => {
+test('every combo uses known hero names', () => {
   const validHeroNames = new Set(allHeroesData.map((hero) => hero.name));
-  const excluded = new Set(X8_HEROES);
 
   assert.ok(rankedCombos.length > 0);
   rankedCombos.forEach((combo) => {
@@ -83,11 +74,39 @@ test('every combo uses known hero names and no X8 hero', () => {
       combo.heroes.every((hero) => validHeroNames.has(hero)),
       `unknown hero name in ${combo.heroes.join('|')}`
     );
-    assert.ok(
-      combo.heroes.every((hero) => !excluded.has(hero)),
-      `X8 hero is out of scope for now: ${combo.heroes.join('|')}`
-    );
   });
+});
+
+test('X8 lanes form the tail block and never renumber the S0-X2 ranks', () => {
+  const firstX8 = rankedCombos.findIndex(usesX8Hero);
+  const lastShared = rankedCombos.findLastIndex((combo) => !usesX8Hero(combo));
+
+  assert.ok(firstX8 > 0, 'expected the recovered X8 lanes to be present');
+  assert.ok(
+    firstX8 > lastShared,
+    `an X8 lane sits above the S0-X2 list at index ${firstX8}, renumbering every rank after it`
+  );
+  assert.ok(
+    rankedCombos.slice(firstX8).every(usesX8Hero),
+    'the tail block mixes X8 lanes with S0-X2 lanes'
+  );
+});
+
+test('every X8 lane records its tier and source score, highest score first', () => {
+  const scores = rankedCombos.filter(usesX8Hero).map((combo) => {
+    const match = /X8 catch-up lane, ([SABC]) tier \(source score (\d+(?:\.\d+)?)\)\.$/.exec(
+      combo.note || ''
+    );
+    assert.ok(match, `X8 lane without a tier and score note: ${combo.heroes.join('|')}`);
+    return Number(match[2]);
+  });
+
+  assert.ok(scores.length > 0);
+  assert.deepEqual(
+    scores,
+    [...scores].sort((a, b) => b - a),
+    'X8 lanes must stay ordered by their source score'
+  );
 });
 
 test('no two entries share the same heroes and skin code', () => {

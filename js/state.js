@@ -7,7 +7,7 @@ import { seasonColors, TechseasonColors } from './constants.js';
 import { comboToolsText } from './i18n/combo-tools/index.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '16.5.5';
+export const APP_VERSION = '16.5.6';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};
@@ -52,8 +52,9 @@ export let activeTechSeasons = new Set(
 export let techSearchQuery = '';
 
 export const DEFAULT_HERO_FILTER_SEASONS = ['S0', 'S1'];
-// The generator opens with every season a live player can actually own. X8 is left off
-// because those heroes are out of scope for the combo database.
+// The generator opens with the seasons a standard-bracket player can own. X8 stays off
+// even though the combo database now carries X8 lanes: it is a catch-up bracket, so its
+// heroes and lanes are opted into from the season strip rather than opened for everyone.
 export const DEFAULT_GENERATOR_FILTER_SEASONS = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
 
 export let selectedSeasons = [...DEFAULT_HERO_FILTER_SEASONS];

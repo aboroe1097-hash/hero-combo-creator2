@@ -2,6 +2,12 @@
 // Every other locale in this folder carries the same keys and the same {tokens}.
 // Game data names (heroes, skills, buildings, structures) stay as the data has them.
 export default Object.freeze({
+  design: 'Design',
+  designDashboard: 'Dark Dashboard',
+  designMidnight: 'Midnight Briefing',
+  designReference: 'Compact Reference',
+  designPrintHint:
+    'For dark PDFs, enable Background graphics in the print dialog. Larger selections continue onto additional pages.',
   // Panel
   panelTitle: 'Build a PDF',
   panelIntro:

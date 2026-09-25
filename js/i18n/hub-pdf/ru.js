@@ -1,5 +1,11 @@
 // Russian copy for the hub PDFs tabs. Keys and {tokens} mirror ./en.js.
 export default Object.freeze({
+  design: 'Оформление',
+  designDashboard: 'Тёмная панель',
+  designMidnight: 'Ночной брифинг',
+  designReference: 'Компактный справочник',
+  designPrintHint:
+    'Для тёмных PDF включите печать фоновой графики. Большие подборки продолжаются на следующих страницах.',
   panelTitle: 'Создать PDF',
   panelIntro:
     'Выберите, что войдёт в документ, затем сохраните его в PDF через окно печати. Текст остаётся выделяемым и доступным для поиска.',

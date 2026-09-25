@@ -1,5 +1,11 @@
 // Korean copy for the hub PDFs tabs. Keys and {tokens} mirror ./en.js.
 export default Object.freeze({
+  design: '디자인',
+  designDashboard: '다크 대시보드',
+  designMidnight: '미드나이트 브리핑',
+  designReference: '간결한 참고 자료',
+  designPrintHint:
+    '어두운 PDF를 저장하려면 인쇄 대화상자에서 배경 그래픽을 켜세요. 선택한 내용이 많으면 다음 페이지로 이어집니다.',
   panelTitle: 'PDF 만들기',
   panelIntro:
     '문서에 넣을 내용을 고른 뒤 인쇄 창에서 PDF로 저장하세요. 텍스트는 그대로 선택하고 검색할 수 있습니다.',
