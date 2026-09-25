@@ -2,44 +2,24 @@
 // Every other locale in this folder carries the same keys and the same {tokens}.
 // Game data names (heroes, skills, buildings, structures) stay as the data has them.
 export default Object.freeze({
-  design: 'Design',
-  designDashboard: 'Dark Dashboard',
-  designMidnight: 'Midnight Briefing',
-  designReference: 'Compact Reference',
-  designPrintHint:
-    'For dark PDFs, enable Background graphics in the print dialog. Larger selections continue onto additional pages.',
-  // Panel
   panelTitle: 'Build a PDF',
-  panelIntro:
-    'Choose what goes into the document, then save it as a PDF from the print dialog. The text stays selectable and searchable.',
-  contentLegend: 'Content',
-  settingsLegend: 'Document settings',
-  paper: 'Paper size',
-  paperA4: 'A4',
-  paperLetter: 'US Letter',
-  orientation: 'Orientation',
-  portrait: 'Portrait',
-  landscape: 'Landscape',
   detail: 'Detail level',
   detailSummary: 'Summary',
+  theme: 'Theme',
+  themeDark: 'Dark',
+  themeLight: 'Light',
   detailFull: 'Full',
-  includeSources: 'Include source notes',
   selectAll: 'Select all',
   clearAll: 'Clear',
   from: 'From',
   to: 'To',
-  savePdf: 'Save as PDF',
-  openDoc: 'Open document',
-  saveHint: 'In the print dialog, choose “Save as PDF” as the destination.',
+  downloadPdf: 'Download PDF',
+  downloadImage: 'Download image',
   preparing: 'Preparing the document…',
-  printOpened: 'Print dialog opened. Choose “Save as PDF” to keep a copy.',
-  docOpened: 'The document opened in a new tab.',
-  popupBlocked: 'The new tab was blocked. Allow pop-ups for this site or use Save as PDF.',
+  downloaded: 'Downloaded',
   buildFailed: 'The document could not be built. Refresh the page and try again.',
   emptySelection: 'Choose at least one thing to include.',
-  loadingData: 'Loading data…',
   quickTitle: 'Quick downloads',
-  quickIntro: 'Ready-made PDFs with fixed content, built with each release.',
   quickAll: 'All downloads',
   yes: 'Yes',
   no: 'No',
@@ -48,32 +28,18 @@ export default Object.freeze({
   shownOf: '{shown} of {total}',
   dataRevision: 'Data revision',
   observedOn: 'Observed',
-
-  // Document chrome
-  docGenerated: 'Generated',
-  docContents: 'Contents',
-  docSources: 'Sources and notes',
   docUnknown: 'Unknown',
   docNone: 'None',
   docTotal: 'Total',
-  docNoRows: 'No rows match these choices.',
   docPage: 'Page',
-  docOf: 'of',
-  docPrint: 'Print / Save as PDF',
-  docPrintHint: 'Use Print and choose “Save as PDF” to keep this document.',
-
-  // Shared troop labels
   troopAll: 'All troops',
   troopArcher: 'Archers',
   troopFootman: 'Footmen',
   troopCavalry: 'Cavalry',
   troopUniversal: 'Any troop',
   troopMixed: 'Mixed troops',
-
-  // Heroes & Combos
   heroesDocTitle: 'Heroes & Combos report',
-  heroesDocSubtitle:
-    'Hero roster, Combo Generator rankings and skins for the seasons, troop and access you chose.',
+  heroesDocSubtitle: 'Hero roster, Combo Generator rankings and skins for the seasons, troop and access you chose.',
   heroesSeasons: 'Seasons',
   heroesTroop: 'Troop',
   heroesAccess: 'Access',
@@ -89,8 +55,7 @@ export default Object.freeze({
   heroesSkinLanes: 'Count combos that require a skin',
   heroesMatchCount: '{n} heroes match these choices.',
   heroesTroopNote: 'Any-troop heroes are listed under every troop filter.',
-  heroesUnknownNote:
-    'Placement and copies come from the Hero Atlas. “Unknown” means the Atlas has no record for that hero yet.',
+  heroesUnknownNote: 'Placement and copies come from the Hero Atlas. “Unknown” means the Atlas has no record for that hero yet.',
   seasonHeading: 'Season {season}',
   secRoster: 'Roster summary',
   secHeroList: 'Hero list',
@@ -98,8 +63,7 @@ export default Object.freeze({
   secCombos: 'Top combos',
   secSkins: 'Skins',
   secSkinCosts: 'Skin star-up costs',
-  combosIntro:
-    'Ranks follow the Combo Generator ranking. The score is relative to the combos that qualify under these choices, so it changes when the choices change.',
+  combosIntro: 'Ranks follow the Combo Generator ranking. The score is relative to the combos that qualify under these choices, so it changes when the choices change.',
   skillsNote: 'Skill text is reproduced as the Hero Atlas records it.',
   skinTypeNote: 'Skin type values are season markers from the source, not tiers.',
   skinCostNote: 'Item quantities per step. A dash means the tier has no such step.',
@@ -142,11 +106,8 @@ export default Object.freeze({
   srcComboRankingNote: 'Community meta ranking with skin-lane rules, as used by the generator.',
   srcSkins: 'Skin catalogue',
   srcSkinsNote: 'Skin tiers and verified star-up item costs.',
-
-  // Research & Towers
   researchDocTitle: 'Research & Towers report',
-  researchDocSubtitle:
-    'Academy research medal costs and Unit Specialization tower costs for the season, trees, troop and columns you chose.',
+  researchDocSubtitle: 'Academy research medal costs and Unit Specialization tower costs for the season, trees, troop and columns you chose.',
   resIncludeResearch: 'Academy research',
   resIncludeTowers: 'Specialization towers',
   resSeason: 'Research season',
@@ -162,11 +123,9 @@ export default Object.freeze({
   secResearch: 'Academy research',
   secTowers: 'Specialization towers',
   secTowerNodes: 'Tower nodes',
-  researchTotalsNote:
-    'Totals are for every node at maximum level. A dash means the tree does not use that medal; “Unknown” means a cost ladder is missing.',
+  researchTotalsNote: 'Totals are for every node at maximum level. A dash means the tree does not use that medal; “Unknown” means a cost ladder is missing.',
   towersIntro: 'Each tower column holds four researches. Nodes are counted per research.',
-  towersMedalNote:
-    'Workbook medal costs are the community transcription, node by node and level by level. Planner totals come from the public planner corpus and can differ from the workbook. A * marks a workbook section that is still partial.',
+  towersMedalNote: 'Workbook medal costs are the community transcription, node by node and level by level. Planner totals come from the public planner corpus and can differ from the workbook. A * marks a workbook section that is still partial.',
   colTree: 'Tree',
   colNodes: 'Nodes',
   colNode: 'Node',
@@ -182,11 +141,8 @@ export default Object.freeze({
   colNodeTotal: 'Node total',
   srcResearch: 'Research tracker data',
   srcResearchNote: 'The tech database behind the Research tab, with its cost-type rules.',
-
-  // Class Development
   classDocTitle: 'Class Development roadmap',
-  classCaution:
-    'Community acceleration path, not an absolute best build. Adapt troop, resource, season and alliance branches to your account.',
+  classCaution: 'Community acceleration path, not an absolute best build. Adapt troop, resource, season and alliance branches to your account.',
   classChoose: 'Class',
   classAll: 'All classes',
   classStages: 'Stages',
@@ -217,11 +173,8 @@ export default Object.freeze({
   cardClass: 'Class',
   cardAlliance: 'Alliance',
   cardGeneral: 'General',
-
-  // Eden
   edenDocTitle: 'Eden reference',
-  edenDocSubtitle:
-    'Eden Operations Lab tables and map structures, filtered to the buildings, levels, groups and sectors you chose.',
+  edenDocSubtitle: 'Eden Operations Lab tables and map structures, filtered to the buildings, levels, groups and sectors you chose.',
   eden_buildings: 'Honor building costs',
   eden_specialty: 'Specialty Honor levels',
   eden_siege: 'Siege structures',
@@ -237,18 +190,12 @@ export default Object.freeze({
   sectorAll: 'All sectors',
   edenMapUnavailable: 'The Eden map data could not be loaded, so map structures are not available.',
   buildingPerLevel: 'Cost per level',
-  buildingRangeNote:
-    'Material cost to upgrade from level {from} to level {to}. Discounts are applied to the total and rounded up.',
-  buildingLevelNote:
-    'Material cost of the upgrade that reaches each level, with the discount “{discount}” applied and rounded up.',
+  buildingRangeNote: 'Material cost to upgrade from level {from} to level {to}. Discounts are applied to the total and rounded up.',
+  buildingLevelNote: 'Material cost of the upgrade that reaches each level, with the discount “{discount}” applied and rounded up.',
   honorBetween: 'Honor from level {from} to {to}',
   specialtySummaryNote: 'Summary lists every tenth level plus the range ends.',
-  specialtyNote:
-    'Unknown means the source chart does not publish that level. Cumulative figures are reproduced as supplied.',
+  specialtyNote: 'Unknown means the source chart does not publish that level. Cumulative figures are reproduced as supplied.',
   routeBreakpoints: 'Route breakpoints',
-  route_green: 'Green · economy',
-  route_blue: 'Blue · military',
-  route_red: 'Red · siege',
   siegeNote: 'Damage figures are the loyalty and durability removed by a successful siege hit.',
   blueLoyalty: 'Blue Loyalty specialty ranks',
   edenDataVersion: 'Eden Operations data version',

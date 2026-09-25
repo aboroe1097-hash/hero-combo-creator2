@@ -1,45 +1,23 @@
 // French copy for the hub PDFs tabs. Keys and {tokens} mirror ./en.js.
 export default Object.freeze({
-  design: 'Style',
-  designDashboard: 'Tableau de bord sombre',
-  designMidnight: 'Briefing de minuit',
-  designReference: 'Référence compacte',
-  designPrintHint:
-    'Pour les PDF sombres, activez les graphiques en arrière-plan dans la boîte de dialogue d’impression. Les grandes sélections continuent sur des pages supplémentaires.',
   panelTitle: 'Créer un PDF',
-  panelIntro:
-    'Choisissez le contenu du document, puis enregistrez-le en PDF depuis la boîte de dialogue d’impression. Le texte reste sélectionnable et consultable.',
-  contentLegend: 'Contenu',
-  settingsLegend: 'Paramètres du document',
-  paper: 'Format du papier',
-  paperA4: 'A4',
-  paperLetter: 'US Letter',
-  orientation: 'Orientation',
-  portrait: 'Portrait',
-  landscape: 'Paysage',
   detail: 'Niveau de détail',
   detailSummary: 'Résumé',
+  theme: 'Thème',
+  themeDark: 'Sombre',
+  themeLight: 'Clair',
   detailFull: 'Complet',
-  includeSources: 'Inclure les notes de source',
   selectAll: 'Tout sélectionner',
   clearAll: 'Effacer',
   from: 'De',
   to: 'À',
-  savePdf: 'Enregistrer en PDF',
-  openDoc: 'Ouvrir le document',
-  saveHint:
-    'Dans la boîte d’impression, choisissez « Enregistrer au format PDF » comme destination.',
+  downloadPdf: 'Télécharger le PDF',
+  downloadImage: 'Télécharger l’image',
   preparing: 'Préparation du document…',
-  printOpened:
-    'Boîte d’impression ouverte. Choisissez « Enregistrer au format PDF » pour garder une copie.',
-  docOpened: 'Le document s’est ouvert dans un nouvel onglet.',
-  popupBlocked:
-    'Le nouvel onglet a été bloqué. Autorisez les fenêtres pop-up pour ce site ou utilisez Enregistrer en PDF.',
+  downloaded: 'Téléchargé',
   buildFailed: 'Le document n’a pas pu être créé. Actualisez la page et réessayez.',
   emptySelection: 'Choisissez au moins un élément à inclure.',
-  loadingData: 'Chargement des données…',
   quickTitle: 'Téléchargements rapides',
-  quickIntro: 'PDF prêts à l’emploi au contenu fixe, générés à chaque version.',
   quickAll: 'Tous les téléchargements',
   yes: 'Oui',
   no: 'Non',
@@ -48,30 +26,18 @@ export default Object.freeze({
   shownOf: '{shown} sur {total}',
   dataRevision: 'Révision des données',
   observedOn: 'Relevé le',
-
-  docGenerated: 'Généré le',
-  docContents: 'Sommaire',
-  docSources: 'Sources et notes',
   docUnknown: 'Inconnu',
   docNone: 'Aucun',
   docTotal: 'Total',
-  docNoRows: 'Aucune ligne ne correspond à ces choix.',
   docPage: 'Page',
-  docOf: 'sur',
-  docPrint: 'Imprimer / Enregistrer en PDF',
-  docPrintHint:
-    'Utilisez Imprimer et choisissez « Enregistrer au format PDF » pour garder ce document.',
-
   troopAll: 'Toutes les troupes',
   troopArcher: 'Archers',
   troopFootman: 'Fantassins',
   troopCavalry: 'Cavalerie',
   troopUniversal: 'Toute troupe',
   troopMixed: 'Troupes mixtes',
-
   heroesDocTitle: 'Rapport Héros & Combos',
-  heroesDocSubtitle:
-    'Liste des héros, classements du générateur de combos et skins pour les saisons, la troupe et l’accès choisis.',
+  heroesDocSubtitle: 'Liste des héros, classements du générateur de combos et skins pour les saisons, la troupe et l’accès choisis.',
   heroesSeasons: 'Saisons',
   heroesTroop: 'Troupe',
   heroesAccess: 'Accès',
@@ -87,8 +53,7 @@ export default Object.freeze({
   heroesSkinLanes: 'Compter les combos qui exigent un skin',
   heroesMatchCount: '{n} héros correspondent à ces choix.',
   heroesTroopNote: 'Les héros polyvalents apparaissent avec chaque filtre de troupe.',
-  heroesUnknownNote:
-    'La position et les copies viennent de l’Atlas des héros. « Inconnu » signifie que l’Atlas n’a pas encore de fiche pour ce héros.',
+  heroesUnknownNote: 'La position et les copies viennent de l’Atlas des héros. « Inconnu » signifie que l’Atlas n’a pas encore de fiche pour ce héros.',
   seasonHeading: 'Saison {season}',
   secRoster: 'Résumé de la liste',
   secHeroList: 'Liste des héros',
@@ -96,12 +61,10 @@ export default Object.freeze({
   secCombos: 'Meilleurs combos',
   secSkins: 'Skins',
   secSkinCosts: 'Coûts d’étoiles des skins',
-  combosIntro:
-    'Les rangs suivent le classement du générateur de combos. Le score est relatif aux combos admissibles selon ces choix : il change quand les choix changent.',
+  combosIntro: 'Les rangs suivent le classement du générateur de combos. Le score est relatif aux combos admissibles selon ces choix : il change quand les choix changent.',
   skillsNote: 'Le texte des compétences est reproduit tel que l’Atlas des héros l’enregistre.',
   skinTypeNote: 'Les types de skin sont des marqueurs de saison de la source, pas des paliers.',
-  skinCostNote:
-    'Quantités d’objets par étape. Un tiret signifie que le palier n’a pas cette étape.',
+  skinCostNote: 'Quantités d’objets par étape. Un tiret signifie que le palier n’a pas cette étape.',
   skinMust: 'obligatoire',
   skinRecommended: 'recommandé',
   skinPending: 'Détails en attente',
@@ -138,14 +101,11 @@ export default Object.freeze({
   srcHeroRoster: 'Liste des héros et Atlas des héros',
   srcHeroRosterNote: 'Les mêmes données de héros que l’onglet Héros et le générateur de combos.',
   srcComboRanking: 'Classement du générateur de combos',
-  srcComboRankingNote:
-    'Classement méta de la communauté avec les règles de skins utilisées par le générateur.',
+  srcComboRankingNote: 'Classement méta de la communauté avec les règles de skins utilisées par le générateur.',
   srcSkins: 'Catalogue des skins',
   srcSkinsNote: 'Paliers de skins et coûts d’objets vérifiés pour les étoiles.',
-
   researchDocTitle: 'Rapport Recherche & Tours',
-  researchDocSubtitle:
-    'Coûts en médailles de la recherche d’académie et coûts des tours de spécialisation pour la saison, les arbres, la troupe et les colonnes choisis.',
+  researchDocSubtitle: 'Coûts en médailles de la recherche d’académie et coûts des tours de spécialisation pour la saison, les arbres, la troupe et les colonnes choisis.',
   resIncludeResearch: 'Recherche d’académie',
   resIncludeTowers: 'Tours de spécialisation',
   resSeason: 'Saison de recherche',
@@ -161,12 +121,9 @@ export default Object.freeze({
   secResearch: 'Recherche d’académie',
   secTowers: 'Tours de spécialisation',
   secTowerNodes: 'Nœuds des tours',
-  researchTotalsNote:
-    'Les totaux valent pour chaque nœud au niveau maximal. Un tiret signifie que l’arbre n’utilise pas cette médaille ; « Inconnu » signifie qu’une échelle de coûts manque.',
-  towersIntro:
-    'Chaque colonne de tour contient quatre recherches. Les nœuds sont comptés par recherche.',
-  towersMedalNote:
-    'Les coûts en médailles du classeur sont la transcription communautaire, nœud par nœud et niveau par niveau. Les totaux du planificateur proviennent du planificateur public et peuvent différer. Un * signale une section du classeur encore partielle.',
+  researchTotalsNote: 'Les totaux valent pour chaque nœud au niveau maximal. Un tiret signifie que l’arbre n’utilise pas cette médaille ; « Inconnu » signifie qu’une échelle de coûts manque.',
+  towersIntro: 'Chaque colonne de tour contient quatre recherches. Les nœuds sont comptés par recherche.',
+  towersMedalNote: 'Les coûts en médailles du classeur sont la transcription communautaire, nœud par nœud et niveau par niveau. Les totaux du planificateur proviennent du planificateur public et peuvent différer. Un * signale une section du classeur encore partielle.',
   colTree: 'Arbre',
   colNodes: 'Nœuds',
   colNode: 'Nœud',
@@ -182,10 +139,8 @@ export default Object.freeze({
   colNodeTotal: 'Total du nœud',
   srcResearch: 'Données du suivi de recherche',
   srcResearchNote: 'La base technologique de l’onglet Recherche, avec ses règles de type de coût.',
-
   classDocTitle: 'Feuille de route du développement de classe',
-  classCaution:
-    'Parcours d’accélération communautaire, pas le meilleur build absolu. Adaptez les branches troupes, ressources, saison et alliance à votre compte.',
+  classCaution: 'Parcours d’accélération communautaire, pas le meilleur build absolu. Adaptez les branches troupes, ressources, saison et alliance à votre compte.',
   classChoose: 'Classe',
   classAll: 'Toutes les classes',
   classStages: 'Étapes',
@@ -216,10 +171,8 @@ export default Object.freeze({
   cardClass: 'Classe',
   cardAlliance: 'Alliance',
   cardGeneral: 'Général',
-
   edenDocTitle: 'Référence Eden',
-  edenDocSubtitle:
-    'Tableaux de l’Eden Operations Lab et structures de la carte, filtrés selon les bâtiments, niveaux, groupes et secteurs choisis.',
+  edenDocSubtitle: 'Tableaux de l’Eden Operations Lab et structures de la carte, filtrés selon les bâtiments, niveaux, groupes et secteurs choisis.',
   eden_buildings: 'Coûts des bâtiments d’honneur',
   eden_specialty: 'Honneur par niveau de spécialité',
   eden_siege: 'Structures de siège',
@@ -233,23 +186,15 @@ export default Object.freeze({
   edenDataset: 'Jeu de données de la carte',
   edenSector: 'Secteur',
   sectorAll: 'Tous les secteurs',
-  edenMapUnavailable:
-    'Les données de la carte d’Eden n’ont pas pu être chargées : les structures de la carte ne sont pas disponibles.',
+  edenMapUnavailable: 'Les données de la carte d’Eden n’ont pas pu être chargées : les structures de la carte ne sont pas disponibles.',
   buildingPerLevel: 'Coût par niveau',
-  buildingRangeNote:
-    'Coût en matériaux pour passer du niveau {from} au niveau {to}. Les réductions s’appliquent au total, arrondi à l’unité supérieure.',
-  buildingLevelNote:
-    'Coût en matériaux de l’amélioration qui atteint chaque niveau, avec la réduction « {discount} », arrondi à l’unité supérieure.',
+  buildingRangeNote: 'Coût en matériaux pour passer du niveau {from} au niveau {to}. Les réductions s’appliquent au total, arrondi à l’unité supérieure.',
+  buildingLevelNote: 'Coût en matériaux de l’amélioration qui atteint chaque niveau, avec la réduction « {discount} », arrondi à l’unité supérieure.',
   honorBetween: 'Honneur du niveau {from} au niveau {to}',
   specialtySummaryNote: 'Le résumé liste un niveau sur dix ainsi que les bornes de la plage.',
-  specialtyNote:
-    'Inconnu signifie que le tableau source ne publie pas ce niveau. Les cumuls sont reproduits tels que fournis.',
+  specialtyNote: 'Inconnu signifie que le tableau source ne publie pas ce niveau. Les cumuls sont reproduits tels que fournis.',
   routeBreakpoints: 'Seuils des parcours',
-  route_green: 'Vert · économie',
-  route_blue: 'Bleu · militaire',
-  route_red: 'Rouge · siège',
-  siegeNote:
-    'Les dégâts indiquent la loyauté et la durabilité retirées par un coup de siège réussi.',
+  siegeNote: 'Les dégâts indiquent la loyauté et la durabilité retirées par un coup de siège réussi.',
   blueLoyalty: 'Rangs de la spécialité Loyauté bleue',
   edenDataVersion: 'Version des données Eden Operations',
   edenGapsTitle: 'Données communautaires',

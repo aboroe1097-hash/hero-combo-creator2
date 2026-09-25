@@ -2,6 +2,14 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.8 - 2026-09-25
+
+- Eden Operations Lab counters now sync across members and devices with shared Firestore-backed totals and access rules. Eden Pathing uses the confirmed rule of 40 tiles per pather, with the estimate presented alongside the occupied-tile count.
+
+## 16.5.7 - 2026-09-25
+
+- Community Hub PDFs are one simple screen: pick what to include, the detail level and a dark or light theme, then press Download PDF or Download image. Files download directly, with no print dialog, paper-size or orientation settings. Hero sheets are dense, with small portraits and four combos a row, so all seasons and troops at 10 combos per troop fit in 5 pages instead of 14.
+
 ## 16.5.6 - 2026-09-25
 
 - Heroes PDFs now offer three designs — Dark Dashboard, Midnight Briefing and Compact Reference — with landscape defaults, the VTS crest and wordmark in the header, real hero portraits in the top-combo lineups and beside every roster row, troop-coloured group headings, rank badges and a tighter layout that keeps the document to fewer pages. Troop groups with no qualifying combos are left out instead of printing as empty tables, and every value stays in the document as selectable, searchable text.
