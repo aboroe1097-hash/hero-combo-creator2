@@ -2798,12 +2798,9 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // The Combos ranking published live (see validCombosPlan). The Generator, the
-    // Hero Atlas and the counter tables read it on page load; visitors are signed
-    // in anonymously, so a signed-in read covers everyone, as with the
-    // Competition #12 schedule above. Only a superadmin publishes it.
+    // The published Combos ranking is public; only a superadmin can publish it.
     match /combos_plan/current {
-      allow get: if signedIn();
+      allow get: if true;
       allow list: if false;
       allow create, update: if isSuperAdmin() && validCombosPlan();
       allow delete: if false;

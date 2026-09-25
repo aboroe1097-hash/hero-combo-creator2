@@ -51,39 +51,39 @@ export function slotRank(order, slot) {
  * - upload: 'final' (today's final-score upload), 'reupload' (the same
  *   workspace as the growth re-upload) or 'none'.
  * - notice: an i18n key for the phase note under the form, or ''.
- * - growthBoard: whether the growth board mount point is visible.
+ * - growthBoard: the published board mount point stays visible in every phase.
  */
 export function getCompetitionPageState(phase, { hasSignup = false } = {}) {
   const readonly = hasSignup ? 'readonly' : 'hidden';
   switch (phase) {
     case 'upcoming':
-      return pageState('hidden', 'none', 'phaseNoticeUpcoming', false);
+      return pageState('hidden', 'none', 'phaseNoticeUpcoming', true);
     case 'registration':
-      return pageState('open', 'none', '', false);
+      return pageState('open', 'none', '', true);
     case 'finalCheck':
       return hasSignup
-        ? pageState('edit', 'none', 'phaseNowFinalCheck', false)
-        : pageState('hidden', 'none', 'phaseNoticeFinalCheckClosed', false);
+        ? pageState('edit', 'none', 'phaseNowFinalCheck', true)
+        : pageState('hidden', 'none', 'phaseNoticeFinalCheckClosed', true);
     case 'waiting':
       return pageState(
         readonly,
         'none',
         hasSignup ? 'phaseNoticeWaiting' : 'phaseNoticeNotRegistered',
-        false
+        true
       );
     case 'reupload':
       return hasSignup
-        ? pageState('readonly', 'reupload', 'phaseNowReupload', false)
-        : pageState('hidden', 'none', 'phaseNoticeNotRegistered', false);
+        ? pageState('readonly', 'reupload', 'phaseNowReupload', true)
+        : pageState('hidden', 'none', 'phaseNoticeNotRegistered', true);
     case 'resultsPending':
       return pageState(readonly, 'none', 'phaseNoticeResultsPending', true);
     case 'winners':
       return pageState(readonly, 'none', 'phaseNowWinners', true);
     case 'closed':
-      return pageState('hidden', 'none', 'phaseNowClosed', false);
+      return pageState('hidden', 'none', 'phaseNowClosed', true);
     default:
       // No schedule document: today's behaviour, registration then final upload.
-      return pageState('open', hasSignup ? 'final' : 'none', '', false);
+      return pageState('open', hasSignup ? 'final' : 'none', '', true);
   }
 }
 

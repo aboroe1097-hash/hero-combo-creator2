@@ -125,12 +125,15 @@ function friendlyError(error) {
     invalid_auth: 'Secure sign-in expired. Refresh and try again.',
     invalid_json: 'The secure service rejected the request format. Refresh and try again.',
     invalid_request: 'The secure service rejected the request. Refresh and try again.',
+    invalid_provider_response:
+      'Could not read that screenshot. Enter the numbers manually or try a clearer Power screenshot.',
     method_not_allowed: 'The secure service rejected the request method. Refresh and try again.',
     origin_denied:
       'This address is not allowed to use the secure service. Open the official site and try again.',
     rate_limited: 'Too many attempts. Wait a few minutes and try again.',
     request_too_large:
       'The screenshot is too large for the secure service. Try a smaller or cropped image.',
+    request_timeout: 'Reading the screenshot took too long. Try a smaller or clearer image.',
     service_unavailable:
       'The secure service is temporarily unavailable. Try again in a few minutes.',
     signup_changed: 'That signup name changed. Refresh the player list and select it again.',
@@ -215,6 +218,7 @@ export async function bootVtsScore(options = {}) {
   initializePreferences(i18n);
   const state = {
     client: null,
+    authUser: null,
     file: null,
     grant: null,
     players: [],
@@ -237,6 +241,7 @@ export async function bootVtsScore(options = {}) {
   const signupPanel = element('vtsScoreSignup');
   const signupSuccess = element('vtsScoreSignupSuccess');
   const signupForm = element('vtsScoreSignupForm');
+  const signupNameInput = signupForm?.querySelector('[data-boh-field="gameName"]');
   const signupButton = element('vtsScoreSignupSubmit');
   const scorePanel = element('vtsScoreWorkspace');
   const pinForm = element('vtsScorePinForm');
@@ -247,6 +252,10 @@ export async function bootVtsScore(options = {}) {
   const powerFields = element('vtsScorePowerFields');
   const playerInput = element('vtsScorePlayer');
   const playerResults = element('vtsScorePlayerResults');
+  let signupNameTouched = false;
+  signupNameInput?.addEventListener('input', () => {
+    signupNameTouched = true;
+  });
 
   function powerInput(field) {
     return powerFields?.querySelector(`[data-vts-power-field="${field}"]`);
@@ -529,15 +538,20 @@ export async function bootVtsScore(options = {}) {
     if (boardVisible) void mountGrowthBoard();
   }
 
-  // The published growth board (results pending / winners). Loaded on demand so
-  // the rest of the season never downloads it; a missing or unreadable board
-  // keeps the "appears once results are published" line.
+  // Keep the board mount point visible throughout the season. If the published
+  // board is not available yet, leave its pending message in place and retry
+  // when the competition reaches results.
   let growthBoard = null;
   async function mountGrowthBoard({ rerender = false } = {}) {
     const section = element('vtsScoreGrowthBoard');
     if (!section) return;
     try {
-      if (!growthBoard) {
+      const retryPublishedBoard =
+        growthBoard &&
+        !growthBoard.loading &&
+        !growthBoard.projection &&
+        ['resultsPending', 'winners'].includes(state.phase);
+      if (!growthBoard || retryPublishedBoard) {
         growthBoard = { loading: true };
         const board = await import('./competition-board.js');
         const projection = await withTimeout(
@@ -680,7 +694,27 @@ export async function bootVtsScore(options = {}) {
     }
     state.signup = existing;
     renderSignupState();
-    if (existing) state.signupSession.fillForm(signupPanel, existing);
+    if (existing) {
+      state.signupSession.fillForm(signupPanel, existing);
+    } else if (!signupNameInput?.value.trim() && !signupNameTouched) {
+      try {
+        const currentUser = (options.getCurrentUser || getCurrentUser)() || state.authUser;
+        if (currentUser?.isAnonymous === false) {
+          const loadProfile =
+            options.loadAccountProfile ||
+            (await import('./account-profile-service.js')).loadAccountProfile;
+          const profile = await loadProfile();
+          const gameName = [profile?.gameName, currentUser.displayName]
+            .find((value) => typeof value === 'string' && value.trim())
+            ?.trim();
+          if (!state.signup && !signupNameTouched && !signupNameInput?.value.trim() && gameName) {
+            signupNameInput.value = gameName;
+          }
+        }
+      } catch {
+        // Profile autofill is best-effort; it must never block a registration.
+      }
+    }
   }
 
   /** The season badge and the state line, both re-rendered on a language change. */
@@ -711,6 +745,7 @@ export async function bootVtsScore(options = {}) {
   if (!initialized?.configured) throw new Error('Firebase is not configured.');
   const initialUser = await (options.ensureAnonymousAuth || ensureAnonymousAuth)();
   if (!initialUser?.uid) throw new Error('Secure member sign-in is unavailable.');
+  state.authUser = initialUser;
   await loadSchedule();
   state.client = (options.createAccessClient || createAllStarBohAccessClient)({
     getUser: async () => {
@@ -785,11 +820,6 @@ export async function bootVtsScore(options = {}) {
     if (!state.signupFile) {
       setStatus(i18n.text('statusChooseScreenshot'), 'error');
       signupImage?.focus();
-      return;
-    }
-    if (!element('vtsScoreSignupOcrConsent')?.checked) {
-      setStatus(i18n.text('statusConfirmConsent'), 'error');
-      element('vtsScoreSignupOcrConsent')?.focus();
       return;
     }
     setBusy(signupReadButton, true, i18n.text('statusReading'));

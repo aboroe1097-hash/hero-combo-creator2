@@ -308,6 +308,8 @@ test('the VtsScore page carries the revived signup as its first member step', ()
     'commitment.availability',
     'commitment.vts1097Member',
     'commitment.contactNumber',
+    'commitment.joinReason',
+    'commitment.notes',
   ]) {
     assert.doesNotMatch(page, new RegExp(`data-boh-field="${retired.replace('.', '\\.')}"`));
   }
@@ -325,7 +327,8 @@ test('the VtsScore page carries the revived signup as its first member step', ()
   assert.ok(
     page.indexOf('id="vtsScoreSignupImage"') < page.indexOf('id="vtsScoreSignupTotalCastlePower"')
   );
-  assert.match(page, /id="vtsScoreSignupOcrConsent"/);
+  assert.doesNotMatch(page, /id="vtsScoreSignupOcrConsent"/);
+  assert.match(page, /data-vts-i18n="signupOcrPrivacy"/);
   assert.match(page, /id="vtsScoreSignupReadButton"/);
   assert.match(page, /id="vtsScoreSignupOcrConfirm"/);
   // The signup step precedes the score upload, and the workspace still needs
@@ -607,6 +610,8 @@ test('editing a registration keeps the retired answers it already stored', () =>
   delete slim.commitment.secondaryRole;
   delete slim.commitment.contactNumber;
   delete slim.commitment.vts1097Member;
+  delete slim.commitment.joinReason;
+  delete slim.commitment.notes;
   const merged = mergeRetiredBohSignupFields(slim, {
     ...stored,
     commitment: { ...stored.commitment, contactNumber: '+100', vts1097Member: false },

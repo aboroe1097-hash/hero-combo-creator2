@@ -62,7 +62,7 @@ test('VtsScore shows the live Competition #12 schedule instead of a fixed deadli
   ]) {
     assert.ok(page.includes(`id="${id}"`), `vtsscore.html must contain #${id}`);
   }
-  // The growth board mount point stays hidden until its phases.
+  // Static markup stays collapsed until the controller initializes it.
   assert.match(page, /<section id="vtsScoreGrowthBoard"[^>]*\bhidden\b/);
   // The upload consent and the growth-board consent are separate checkboxes.
   assert.match(page, /id="vtsScoreConsent"/);

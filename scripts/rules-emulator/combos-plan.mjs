@@ -59,7 +59,10 @@ await expectCase('anonymous visitor reads', true, async () => {
   const snap = await getDoc(doc(anonymous, PATH));
   if (!snap.exists() || snap.data().count !== entries.length) throw new Error('unexpected document');
 });
-await expectCase('signed-out read refused', false, () => getDoc(doc(signedOut, PATH)));
+await expectCase('signed-out visitor reads', true, async () => {
+  const snap = await getDoc(doc(signedOut, PATH));
+  if (!snap.exists() || snap.data().count !== entries.length) throw new Error('unexpected document');
+});
 await expectCase('extra key refused', false, () => setDoc(doc(superadmin, PATH), body({ rank: 1 })));
 await expectCase('count mismatch refused', false, () =>
   setDoc(doc(superadmin, PATH), body({ count: 3 }))
