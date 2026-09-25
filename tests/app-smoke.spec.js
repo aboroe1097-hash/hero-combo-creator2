@@ -1788,35 +1788,39 @@ test.describe('app smoke tabs', () => {
 
       // Inject one assistant turn with the production transcript structure
       // (js/ai-assistant.js createMessageElement + js/ai/renderer.js tables).
-      await page.evaluate(() => {
-        const transcript = document.getElementById('aiTranscript');
-        document.getElementById('aiWelcome')?.classList.add('hidden');
-        transcript.classList.remove('hidden');
-        transcript.innerHTML = `
-          <li class="ai-message ai-message--assistant" dir="auto">
-            <span class="ai-message-label">Velo</span>
-            <div class="ai-message-body">
-              <p>Formation snapshot for the tap-target probe.</p>
-              <div class="ai-table-wrap" dir="auto"><table><thead><tr><th>Hero</th><th>Role</th></tr></thead><tbody><tr><td>Arthur</td><td>Tank</td></tr><tr><td>Cleopatra</td><td>Support</td></tr></tbody></table></div>
-            </div>
-            <div class="ai-sources"><span class="ai-sources-label">Used app data</span><span class="ai-source-chip">Hero Atlas</span></div>
-            <div class="ai-message-toolbar"><button type="button" class="ai-message-copy">Copy answer</button></div>
-          </li>`;
-      });
-
-      const metrics = await page.evaluate(() => {
-        const copy = document.querySelector('.ai-message-copy');
-        const chip = document.querySelector('.ai-source-chip');
-        const wrap = document.querySelector('.ai-table-wrap');
-        return {
-          copyHeight: copy.getBoundingClientRect().height,
-          chipHeight: chip.getBoundingClientRect().height,
-          pageScrollWidth: document.scrollingElement.scrollWidth,
-          innerWidth: window.innerWidth,
-          wrapScrollWidth: wrap.scrollWidth,
-          wrapClientWidth: wrap.clientWidth,
-        };
-      });
+      // A late language refresh re-renders the transcript from its stored turns
+      // and drops this injected one, so inject and measure until both land.
+      let metrics;
+      await expect(async () => {
+        await page.evaluate(() => {
+          const transcript = document.getElementById('aiTranscript');
+          document.getElementById('aiWelcome')?.classList.add('hidden');
+          transcript.classList.remove('hidden');
+          transcript.innerHTML = `
+            <li class="ai-message ai-message--assistant" dir="auto">
+              <span class="ai-message-label">Velo</span>
+              <div class="ai-message-body">
+                <p>Formation snapshot for the tap-target probe.</p>
+                <div class="ai-table-wrap" dir="auto"><table><thead><tr><th>Hero</th><th>Role</th></tr></thead><tbody><tr><td>Arthur</td><td>Tank</td></tr><tr><td>Cleopatra</td><td>Support</td></tr></tbody></table></div>
+              </div>
+              <div class="ai-sources"><span class="ai-sources-label">Used app data</span><span class="ai-source-chip">Hero Atlas</span></div>
+              <div class="ai-message-toolbar"><button type="button" class="ai-message-copy">Copy answer</button></div>
+            </li>`;
+        });
+        metrics = await page.evaluate(() => {
+          const copy = document.querySelector('.ai-message-copy');
+          const chip = document.querySelector('.ai-source-chip');
+          const wrap = document.querySelector('.ai-table-wrap');
+          return {
+            copyHeight: copy.getBoundingClientRect().height,
+            chipHeight: chip.getBoundingClientRect().height,
+            pageScrollWidth: document.scrollingElement.scrollWidth,
+            innerWidth: window.innerWidth,
+            wrapScrollWidth: wrap.scrollWidth,
+            wrapClientWidth: wrap.clientWidth,
+          };
+        });
+      }).toPass({ timeout: 10000 });
       const at = `at ${viewport.width}px`;
       expect(metrics.copyHeight, `copy button height ${at}`).toBeGreaterThanOrEqual(44);
       expect(metrics.chipHeight, `source chip height ${at}`).toBeGreaterThanOrEqual(44);
