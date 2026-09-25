@@ -2,6 +2,10 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.7 - 2026-09-25
+
+- Community Hub PDF exports now download directly as PDF or image files, with dark and light themes and controls for content, detail, paper size and orientation. The dense page layouts keep the selected reference material readable and reduce unnecessary pages.
+
 ## 16.5.6 - 2026-09-25
 
 - Heroes PDFs now offer three designs — Dark Dashboard, Midnight Briefing and Compact Reference — with landscape defaults, the VTS crest and wordmark in the header, real hero portraits in the top-combo lineups and beside every roster row, troop-coloured group headings, rank badges and a tighter layout that keeps the document to fewer pages. Troop groups with no qualifying combos are left out instead of printing as empty tables, and every value stays in the document as selectable, searchable text.
