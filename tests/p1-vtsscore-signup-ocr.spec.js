@@ -78,7 +78,7 @@ test('the registration Power step reads a screenshot into the power fields', asy
     mimeType: 'image/png',
     buffer: PNG,
   });
-  await page.locator('#vtsScoreSignupOcrConsent').check();
+  await expect(page.locator('#vtsScoreSignupOcrConsent')).toHaveCount(0);
   await page.locator('#vtsScoreSignupReadButton').click();
 
   await expect(page.locator('#vtsScoreSignupTotalCastlePower')).toHaveValue('1112473195');
