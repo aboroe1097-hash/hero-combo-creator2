@@ -940,6 +940,74 @@ test('an unusable stats reply is retried once on the fallback model', async () =
   }
 });
 
+test('screenshot OCR tries DeepSeek first when its key is set, then falls back to DashScope', async () => {
+  const tokens = await signedTokens();
+  const deepseekEnv = baseEnv({
+    DEEPSEEK_API_KEY: ' deepseek-secret ',
+    DASHSCOPE_FALLBACK_MODELS: 'qwen-vl-max',
+  });
+  const originalWarn = console.warn;
+  const warned = [];
+  console.warn = (...args) => warned.push(args.join(' '));
+  try {
+    await withMockFetch(
+      () => Response.json(providerEnvelope()),
+      async (providerCalls) => {
+        const response = await worker.fetch(authorizedRequest(validBody(), tokens), deepseekEnv);
+        assert.equal(response.status, 200);
+        assert.equal(providerCalls.length, 1);
+        assert.equal(providerCalls[0].url, 'https://api.deepseek.com/chat/completions');
+        assert.equal(providerCalls[0].init.headers.Authorization, 'Bearer deepseek-secret');
+        const sent = JSON.parse(providerCalls[0].init.body);
+        assert.equal(sent.model, 'deepseek-flash');
+        assert.deepEqual(sent.thinking, { type: 'disabled' });
+        assert.deepEqual(sent.response_format, { type: 'json_object' });
+      }
+    );
+
+    await withMockFetch(
+      (url) =>
+        url.startsWith('https://api.deepseek.com/')
+          ? new Response('PRIVATE_DEEPSEEK_ERROR', { status: 400 })
+          : Response.json(providerEnvelope()),
+      async (providerCalls) => {
+        const response = await worker.fetch(authorizedRequest(validBody(), tokens), deepseekEnv);
+        const body = await response.json();
+        assert.equal(response.status, 200);
+        assert.equal(body.extracted.totalCastlePower, 123456789);
+        assert.deepEqual(
+          providerCalls.map((call) => [call.url, JSON.parse(call.init.body).model]),
+          [
+            ['https://api.deepseek.com/chat/completions', 'deepseek-flash'],
+            [PROVIDER_URL, 'server-owned-boh-model'],
+          ]
+        );
+        assert.equal(JSON.parse(providerCalls[1].init.body).thinking, undefined);
+        assert.equal(providerCalls[1].init.headers.Authorization, 'Bearer provider-secret');
+      }
+    );
+    assert.ok(warned.some((line) => /deepseek deepseek-flash failed .*HTTP 400/u.test(line)));
+    assert.equal(warned.join('\n').includes('PRIVATE_DEEPSEEK_ERROR'), false);
+
+    await withMockFetch(
+      () => Response.json(providerEnvelope()),
+      async (providerCalls) => {
+        const response = await worker.fetch(
+          authorizedRequest(validBody(), tokens),
+          baseEnv({ DEEPSEEK_API_KEY: 'deepseek-secret', BOH_DEEPSEEK_OCR: 'off' })
+        );
+        assert.equal(response.status, 200);
+        assert.deepEqual(
+          providerCalls.map((call) => call.url),
+          [PROVIDER_URL]
+        );
+      }
+    );
+  } finally {
+    console.warn = originalWarn;
+  }
+});
+
 test('suspicious single-digit extended powers are cleared for manual review', () => {
   const baseline = JSON.parse(providerEnvelope().choices[0].message.content);
   const normalized = normalizeBohStatsOcrProviderResponse(

@@ -10,6 +10,7 @@ import { authenticateFirebaseRequest } from './ai/firebase-jwt.js';
 //   DASHSCOPE_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
 //   DASHSCOPE_MODEL=qwen-vl-plus
 //   wrangler secret put DASHSCOPE_FALLBACK_API_KEY (optional second DashScope key)
+//   wrangler secret put DEEPSEEK_API_KEY (optional; screenshot OCR then tries deepseek-flash first)
 //   DASHSCOPE_FALLBACK_BASE_URL=<optional second compatible-mode endpoint>
 //   DASHSCOPE_FALLBACK_MODELS=qwen-vl-max,qwen-vl-plus-latest
 //   FIREBASE_APP_CHECK_PROJECT_NUMBER=123456789
@@ -269,6 +270,9 @@ function statusPayload(request, env) {
   const fallbackModels = parseCsvEnv(env.DASHSCOPE_FALLBACK_MODELS).slice(0, MAX_FALLBACK_MODELS);
   return {
     configured: Boolean(env.DASHSCOPE_API_KEY),
+    bohDeepseekConfigured: Boolean(
+      typeof env.DEEPSEEK_API_KEY === 'string' && env.DEEPSEEK_API_KEY.trim()
+    ),
     appCheckConfigured: Boolean(env.FIREBASE_APP_CHECK_PROJECT_NUMBER),
     fallbackConfigured: fallbackModels.length > 0 || Boolean(env.DASHSCOPE_FALLBACK_API_KEY),
     fallbackModelConfigured: fallbackModels.length > 0,
@@ -1631,9 +1635,19 @@ async function readResponseTextWithLimit(response, maximumBytes) {
   return new TextDecoder().decode(bytes);
 }
 
-// One retry on a different model when the first reply is unusable, but only
-// while both calls still fit inside the page's 90 s OCR wait.
-const BOH_OCR_RETRY_BUDGET_MS = 35_000;
+// Provider chain for screenshot OCR: DeepSeek first when its key is set, then
+// the DashScope primary, then one DashScope fallback model. Each step runs only
+// while it still fits inside the page's 90 s OCR wait.
+const DEEPSEEK_OCR_URL = 'https://api.deepseek.com/chat/completions';
+const DEFAULT_BOH_DEEPSEEK_MODEL = 'deepseek-flash';
+const DEFAULT_BOH_DEEPSEEK_TIMEOUT_MS = 30_000;
+const BOH_OCR_TOTAL_BUDGET_MS = 80_000;
+const BOH_OCR_MIN_ATTEMPT_MS = 10_000;
+const BOH_OCR_RETRYABLE_CODES = new Set([
+  'invalid_provider_response',
+  'boh_ocr_provider_unavailable',
+  'boh_ocr_timeout',
+]);
 
 export function bohStatsOcrRetryModel(env = {}, primaryModel = '') {
   return (
@@ -1643,7 +1657,55 @@ export function bohStatsOcrRetryModel(env = {}, primaryModel = '') {
   );
 }
 
-async function fetchBohOcrProviderEnvelope(endpoint, payload, env) {
+export function buildBohOcrProviderAttempts(env = {}, payload = {}) {
+  const upstreamTimeoutMs = boundedNumericEnv(
+    env,
+    'BOH_OCR_UPSTREAM_TIMEOUT_MS',
+    DEFAULT_BOH_OCR_UPSTREAM_TIMEOUT_MS,
+    5000,
+    90_000
+  );
+  const attempts = [];
+  const deepseekKey = typeof env.DEEPSEEK_API_KEY === 'string' ? env.DEEPSEEK_API_KEY.trim() : '';
+  const deepseekModel = String(env.BOH_DEEPSEEK_MODEL || DEFAULT_BOH_DEEPSEEK_MODEL).trim();
+  if (deepseekKey && env.BOH_DEEPSEEK_OCR !== 'off' && isSafeDashscopeModelName(deepseekModel)) {
+    attempts.push({
+      provider: 'deepseek',
+      endpoint: DEEPSEEK_OCR_URL,
+      apiKey: deepseekKey,
+      // Thinking is on by default for deepseek-flash; OCR needs the direct answer.
+      payload: { ...payload, model: deepseekModel, thinking: { type: 'disabled' } },
+      timeoutMs: boundedNumericEnv(
+        env,
+        'BOH_DEEPSEEK_TIMEOUT_MS',
+        DEFAULT_BOH_DEEPSEEK_TIMEOUT_MS,
+        5000,
+        60_000
+      ),
+    });
+  }
+  const dashscopeEndpoint = resolveDashscopeChatCompletionsUrl(env);
+  attempts.push({
+    provider: 'dashscope',
+    endpoint: dashscopeEndpoint,
+    apiKey: env.DASHSCOPE_API_KEY,
+    payload,
+    timeoutMs: upstreamTimeoutMs,
+  });
+  const retryModel = bohStatsOcrRetryModel(env, payload.model);
+  if (retryModel) {
+    attempts.push({
+      provider: 'dashscope',
+      endpoint: dashscopeEndpoint,
+      apiKey: env.DASHSCOPE_API_KEY,
+      payload: { ...payload, model: retryModel },
+      timeoutMs: upstreamTimeoutMs,
+    });
+  }
+  return attempts;
+}
+
+async function fetchBohOcrProviderEnvelope(attempt, env, timeoutMs) {
   const maximumProviderBytes = boundedNumericEnv(
     env,
     'BOH_OCR_MAX_PROVIDER_BYTES',
@@ -1651,24 +1713,17 @@ async function fetchBohOcrProviderEnvelope(endpoint, payload, env) {
     16 * 1024,
     1024 * 1024
   );
-  const timeoutMs = boundedNumericEnv(
-    env,
-    'BOH_OCR_UPSTREAM_TIMEOUT_MS',
-    DEFAULT_BOH_OCR_UPSTREAM_TIMEOUT_MS,
-    5000,
-    90_000
-  );
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   let response;
   try {
-    response = await fetch(endpoint, {
+    response = await fetch(attempt.endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${env.DASHSCOPE_API_KEY}`,
+        Authorization: `Bearer ${attempt.apiKey}`,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(attempt.payload),
       signal: controller.signal,
     });
   } catch (error) {
@@ -1681,7 +1736,13 @@ async function fetchBohOcrProviderEnvelope(endpoint, payload, env) {
   }
   if (!response.ok) {
     await response.body?.cancel?.().catch(() => {});
-    bohFail(502, 'boh_ocr_provider_unavailable', 'All-Star OCR is temporarily unavailable.');
+    const error = new BohStatsOcrRequestError(
+      502,
+      'boh_ocr_provider_unavailable',
+      'All-Star OCR is temporarily unavailable.'
+    );
+    error.providerStatus = response.status;
+    throw error;
   }
   try {
     return JSON.parse(await readResponseTextWithLimit(response, maximumProviderBytes));
@@ -1692,8 +1753,7 @@ async function fetchBohOcrProviderEnvelope(endpoint, payload, env) {
 }
 
 async function requestBohStatsOcrFromProvider(validated, env) {
-  const endpoint = resolveDashscopeChatCompletionsUrl(env);
-  if (!isAllowedDashscopeEndpoint(endpoint)) {
+  if (!isAllowedDashscopeEndpoint(resolveDashscopeChatCompletionsUrl(env))) {
     bohFail(503, 'boh_ocr_not_configured', 'All-Star OCR provider configuration is invalid.');
   }
   const isTroop = validated.screenshotType === BOH_TROOP_OCR_SCREENSHOT_TYPE;
@@ -1706,24 +1766,29 @@ async function requestBohStatsOcrFromProvider(validated, env) {
       ? normalizeBohTroopOcrProviderResponse(providerEnvelope, requestId)
       : normalizeBohStatsOcrProviderResponse(providerEnvelope, env, requestId);
   };
-  const startedAt = Date.now();
-  try {
-    return normalize(await fetchBohOcrProviderEnvelope(endpoint, payload, env));
-  } catch (error) {
-    const retryModel = bohStatsOcrRetryModel(env, payload.model);
-    if (
-      !(error instanceof BohStatsOcrRequestError) ||
-      error.code !== 'invalid_provider_response' ||
-      !retryModel ||
-      Date.now() - startedAt > BOH_OCR_RETRY_BUDGET_MS
-    ) {
-      throw error;
+  const deadline = Date.now() + BOH_OCR_TOTAL_BUDGET_MS;
+  const attempts = buildBohOcrProviderAttempts(env, payload);
+  let lastError = null;
+  for (const [index, attempt] of attempts.entries()) {
+    const remaining = deadline - Date.now();
+    if (index > 0 && remaining < BOH_OCR_MIN_ATTEMPT_MS) break;
+    try {
+      return normalize(
+        await fetchBohOcrProviderEnvelope(attempt, env, Math.min(attempt.timeoutMs, remaining))
+      );
+    } catch (error) {
+      if (!(error instanceof BohStatsOcrRequestError) || !BOH_OCR_RETRYABLE_CODES.has(error.code)) {
+        throw error;
+      }
+      lastError = error;
+      if (index < attempts.length - 1) {
+        console.warn(
+          `stats-ocr: ${attempt.provider} ${attempt.payload.model} failed (${error.code}${error.providerStatus ? ` HTTP ${error.providerStatus}` : ''}); trying the next model`
+        );
+      }
     }
-    console.warn('stats-ocr: retrying once on the fallback model');
-    return normalize(
-      await fetchBohOcrProviderEnvelope(endpoint, { ...payload, model: retryModel }, env)
-    );
   }
+  throw lastError;
 }
 
 async function handleBohStatsOcr(request, env) {

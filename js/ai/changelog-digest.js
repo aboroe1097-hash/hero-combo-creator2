@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.17";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.18";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.5.18",
+    "date": "2026-09-26",
+    "highlights": [
+      "Registration screenshot OCR now tries DeepSeek (`deepseek-flash`, the V4.1 Flash model that reads images, with thinking turned off) first when the OCR Worker has a `DEEPSEEK_API_KEY`. Qwen stays as the fallback: `qwen-vl-plus`, then `qwen-vl-max`. It moves to the next model when…"
+    ]
+  },
   {
     "version": "16.5.17",
     "date": "2026-09-26",
@@ -91,13 +98,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "The duty debug CSV has a \"Scored As\" column holding the exact name the weighted score credits for each row. When an account link carries the credit to its owner, Match Status reads \"linked\" and Scored As names the link type (alt/banner or secondary). \"Likely\" now means only a fu…",
       "The duty spelling \"q.Immortal\" (without the space) now counts for the same account as \"q. Immortal\", following the owner's earlier answer. Before, duty rows confirmed with that spelling scored to a separate account that no leaderboard row showed.",
       "Account links: every row in the Linked accounts list has an Edit button. It changes the account name, who runs it and the type in place, refuses duplicates and self-links, and saves and rescores the same way as adding a link."
-    ]
-  },
-  {
-    "version": "16.5.8",
-    "date": "2026-09-25",
-    "highlights": [
-      "Eden Operations Lab counters now sync across members and devices with shared Firestore-backed totals and access rules. Eden Pathing uses the confirmed rule of 40 tiles per pather, with the estimate presented alongside the occupied-tile count."
     ]
   }
 ].map((release) =>

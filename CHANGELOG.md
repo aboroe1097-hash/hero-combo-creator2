@@ -2,6 +2,10 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.18 - 2026-09-26
+
+- Registration screenshot OCR now tries DeepSeek (`deepseek-flash`, the V4.1 Flash model that reads images, with thinking turned off) first when the OCR Worker has a `DEEPSEEK_API_KEY`. Qwen stays as the fallback: `qwen-vl-plus`, then `qwen-vl-max`. It moves to the next model when one fails, times out or gives an unusable reply, and only while the next try still fits inside the page's 90 s wait. Without the key, or with `BOH_DEEPSEEK_OCR=off`, OCR works exactly as in 16.5.17. The same checks, blank-on-doubt values and review warnings apply whichever model answers. **Add the key with `npx wrangler secret put DEEPSEEK_API_KEY --name delicate-term-725f`, then redeploy the OCR Worker (`npm run worker:deploy`).**
+
 ## 16.5.17 - 2026-09-26
 
 - Registration screenshot OCR still failed for some screenshots because the model kept writing until it hit its length limit, so its reply was cut off mid-way. The OCR Worker now keeps every value the model finished before the cut (the rest stay blank, with a note to check every value), retries once on the fallback model when nothing usable came back, and asks the model for at most three short warnings and nothing outside the JSON. **Redeploy the OCR Worker (`npm run worker:deploy`) after this release.**
