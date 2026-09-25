@@ -156,12 +156,7 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   assert.match(sizeCheck, /Specialization Towers, Alliance View, Skin Atlas, and All-Star BoH/);
   assert.match(sizeCheck, /8117\.7 KiB/);
   assert.match(sizeCheck, /1312\.1 KiB/);
-  // 16.5.9 Combos admin tab: its module plus the shared js/combo-lanes.js helpers
-  // add one chunk on top of the combos-db chunk it reuses, and the tab now runs the
-  // whole shared interface (js/combos-planner-ui.js, js/combo-plan.js,
-  // css/combos-planner.css), so the ceiling moves to the measured 11698.5 KiB plus
-  // the usual CI admin-auth reserve.
-  assert.match(sizeCheck, /totalJsBytes: 11721 \* 1024/);
+  assert.match(sizeCheck, /totalJsBytes: 11744 \* 1024/);
   // 427 since 16.5.0 Phase 0: removing the unconsumed .u-* utilities from
   // atmosphere.css and four dead compatibility tokens from _tokens.css measured
   // 431,155 -> 428,135 bytes, so the ceiling drops by the verified reclaim.
@@ -174,9 +169,6 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   // 16.5.3 adds one measured 518-byte shared locale-pack timeout chunk.
   // 16.5.9: +4 measured chunks for the admin export model, the R5 bonus export
   // and the shared game-time parser; raised by the minimum.
-  // The Combos admin tab emits its module and its lazy stylesheet, and running the
-  // real interface there adds the planner stylesheet and the raw database copy
-  // (818 measured).
   assert.match(sizeCheck, /deployFileCount: 820/);
   assert.match(sizeCheck, /'profile\.html': \{ desktop: 25 \* 1024, mobile: 25 \* 1024 \}/);
   assert.match(sizeCheck, /'arcade\.html': \{ desktop: 463 \* 1024, mobile: 585 \* 1024 \}/);

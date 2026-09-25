@@ -183,15 +183,11 @@ const LIMITS = {
   // release 11614.1 KiB). Retain ~20 KiB again.
   // Both land in one 16.5.6 release (with the Heroes PDF designs, which sit in
   // the lazy hub-pdf chunk): measured 11637.3 KiB locally; retain ~20 KiB.
-  // The Combos admin tab (js/admin-combos.js plus the shared js/combo-lanes.js
-  // helpers and the lazy css/admin-combos.css) adds its own chunk on top of the
-  // existing combos-db chunk, which it reuses rather than duplicating: 11665.9
-  // KiB locally; retain ~22 KiB for CI's admin-auth injection.
-  // The same tab now runs the whole planner interface rather than a lookalike:
-  // js/combos-planner-ui.js (the mountable tool), js/combo-plan.js (the shared
-  // engine) and css/combos-planner.css, all in the lazy admin graph. Measured
-  // 11698.5 KiB locally; keep ~22 KiB for CI's admin-auth injection.
-  totalJsBytes: 11721 * 1024,
+  // The Combos admin tab runs the whole planner interface (js/admin-combos.js,
+  // js/combos-planner-ui.js, js/combo-plan.js, js/combo-lanes.js and their lazy
+  // stylesheets), all in the lazy admin graph: measured 11721.3 KiB on top of
+  // 16.5.12; retain ~22 KiB for CI's admin-auth injection.
+  totalJsBytes: 11744 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -402,9 +398,7 @@ const LIMITS = {
   // Vite emits admin-export-model-*.js and conduct-adjustment-export-*.js, and
   // the export model's game-time parser splits ocr-time-filter-*.js and
   // game-time-*.js out as shared chunks. No headroom is added.
-  // The Combos admin tab emits its module and its lazy stylesheet (816 files
-  // measured); keep two files of headroom.
-  // Running the real planner interface there adds its stylesheet chunk and the raw
+  // The Combos admin tab emits its module, its lazy stylesheets and the raw
   // js/combos-db.js copy the tab rebuilds (818 measured); keep two of headroom.
   deployFileCount: 820,
   routeCssBytes: {
@@ -503,7 +497,9 @@ const LIMITS = {
     // 125,788 bytes mobile, including the responsive mobile stylesheet.
     // 16.5.4 fun pass (tower tiers, modes, results screen): 33.5 KiB desktop
     // and 130.2 KiB mobile; retain under 1 KiB.
-    'eden-siege.html': { desktop: 34 * 1024, mobile: 131 * 1024 },
+    // 16.5.10 combat depth (feats panel, wave-omen chooser, phone build-picker
+    // fix): 37.1 KiB desktop and 133.8 KiB mobile; retain about 1 KiB.
+    'eden-siege.html': { desktop: 38 * 1024, mobile: 135 * 1024 },
   },
   // Measured from the same build, including the route entry and both initial
   // three.js / siege chunks and the two standalone scripts: 698,236 bytes.
@@ -511,7 +507,11 @@ const LIMITS = {
     // 16.5.2: the shared tool shell (footer link set, 13 locales) measures
     // 691.0 KiB; retain about 1 KiB.
     // 16.5.4 fun pass: 711.0 KiB; retain about 1 KiB.
-    'eden-siege.html': { desktop: 712 * 1024, mobile: 712 * 1024 },
+    // 16.5.9 rename + share card: 715.9 KiB; retain about 4 KiB so the R2
+    // combat pass can land before its own measured lift is recorded.
+    // 16.5.10 combat depth (roles, omens, aim, feats): 729.2 KiB; retain about
+    // 4 KiB for the R3 draft/reactions pass.
+    'eden-siege.html': { desktop: 738 * 1024, mobile: 738 * 1024 },
   },
 };
 
