@@ -1,0 +1,1314 @@
+/* css/combos-planner.css
+   The Combos planner interface (js/combos-planner-ui.js), scoped to its mount so it
+   can sit inside the admin dashboard or a standalone tool page without touching
+   anything else. Colours come from the site's shared tokens with local fallbacks,
+   light and dark alike, and it is imported lazily wherever a host mounts the tool.
+
+   Density: compact is the default (rows about 29px with 24px portraits, the queue
+   one line per lineup, paid/free and troop as colour with the words kept for
+   screen readers). The Comfortable switch adds the class .comfortable. */
+
+.combos-planner {
+  --cp-bg: var(--ff-void, #070b16);
+  --cp-panel: var(--ff-surface, #101827);
+  --cp-panel2: var(--ff-surface-raised, #162236);
+  --cp-ink: var(--ff-text, #eef4ff);
+  --cp-muted: var(--ff-text-dim, #9fb0cc);
+  --cp-line: var(--ff-border, rgba(159, 176, 204, 0.22));
+  --cp-x8: var(--accent-gold, #f5c451);
+  --cp-x8-ink: #1b1407;
+  --cp-x8-bg: rgba(245, 196, 81, 0.1);
+  --cp-x8-line: rgba(245, 196, 81, 0.38);
+  --cp-paid: var(--accent-violet, #a78bfa);
+  --cp-cav: var(--accent-cyan, #7dd3fc);
+  --cp-arc: var(--ff-mint, #34d399);
+  --cp-foot: var(--ff-rose, #fb7185);
+  --cp-focus: var(--accent-cyan, #7dd3fc);
+  --cp-target-bg: rgba(125, 211, 252, 0.12);
+  --cp-share-bg: rgba(125, 211, 252, 0.16);
+  --cp-trio-bg: rgba(251, 113, 133, 0.16);
+  --cp-current-bg: rgba(125, 211, 252, 0.2);
+  --cp-row-cav: rgba(125, 211, 252, 0.06);
+  --cp-row-arc: rgba(52, 211, 153, 0.06);
+  --cp-row-foot: rgba(251, 113, 133, 0.06);
+  --cp-row-mixed: rgba(159, 176, 204, 0.04);
+  --cp-shadow: var(--ff-shadow-low, 0 8px 22px rgba(0, 0, 0, 0.18));
+  --cp-scrim: rgba(3, 6, 14, 0.62);
+  --cp-row-h: 29px;
+  --cp-portrait: 24px;
+  color-scheme: dark;
+  box-sizing: border-box;
+  background: var(--cp-bg);
+  color: var(--cp-ink);
+  font:
+    14px/1.35 Sora,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  padding: 12px 16px 40px;
+}
+
+/* Light: inside a light site page (the admin tab follows the site's theme), or in
+   the local tool (.combos-page) when the system is light. */
+.combos-planner:is([data-theme='light'] *) {
+  --cp-bg: var(--ff-bg, #f5f8fa);
+  --cp-panel: var(--ff-surface, #ffffff);
+  --cp-panel2: var(--ff-surface-raised, #eef4f7);
+  --cp-ink: var(--ff-text, #101827);
+  --cp-muted: var(--ff-text-dim, #4b5c73);
+  --cp-line: var(--ff-border, rgba(32, 52, 71, 0.16));
+  --cp-x8: #8a6300;
+  --cp-x8-ink: #ffffff;
+  --cp-x8-bg: rgba(245, 196, 81, 0.16);
+  --cp-x8-line: rgba(138, 99, 0, 0.35);
+  --cp-paid: #6d4dd6;
+  --cp-cav: #0e7490;
+  --cp-arc: #0f7a55;
+  --cp-foot: #be123c;
+  --cp-focus: #0e7490;
+  --cp-target-bg: rgba(14, 116, 144, 0.08);
+  --cp-share-bg: rgba(14, 116, 144, 0.13);
+  --cp-trio-bg: rgba(190, 18, 60, 0.1);
+  --cp-current-bg: rgba(14, 116, 144, 0.16);
+  --cp-row-cav: rgba(14, 116, 144, 0.05);
+  --cp-row-arc: rgba(15, 122, 85, 0.05);
+  --cp-row-foot: rgba(190, 18, 60, 0.04);
+  --cp-row-mixed: rgba(32, 52, 71, 0.03);
+  --cp-shadow: 0 6px 18px rgba(16, 24, 39, 0.08);
+  --cp-scrim: rgba(16, 24, 39, 0.4);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: light) {
+  .combos-planner:is(.combos-page *):not(:is([data-theme] *)) {
+    --cp-bg: #f5f8fa;
+    --cp-panel: #ffffff;
+    --cp-panel2: #eef4f7;
+    --cp-ink: #101827;
+    --cp-muted: #4b5c73;
+    --cp-line: rgba(32, 52, 71, 0.16);
+    --cp-x8: #8a6300;
+    --cp-x8-ink: #ffffff;
+    --cp-x8-bg: rgba(245, 196, 81, 0.16);
+    --cp-x8-line: rgba(138, 99, 0, 0.35);
+    --cp-paid: #6d4dd6;
+    --cp-cav: #0e7490;
+    --cp-arc: #0f7a55;
+    --cp-foot: #be123c;
+    --cp-focus: #0e7490;
+    --cp-target-bg: rgba(14, 116, 144, 0.08);
+    --cp-share-bg: rgba(14, 116, 144, 0.13);
+    --cp-trio-bg: rgba(190, 18, 60, 0.1);
+    --cp-current-bg: rgba(14, 116, 144, 0.16);
+    --cp-row-cav: rgba(14, 116, 144, 0.05);
+    --cp-row-arc: rgba(15, 122, 85, 0.05);
+    --cp-row-foot: rgba(190, 18, 60, 0.04);
+    --cp-row-mixed: rgba(32, 52, 71, 0.03);
+    --cp-shadow: 0 6px 18px rgba(16, 24, 39, 0.08);
+    --cp-scrim: rgba(16, 24, 39, 0.4);
+    color-scheme: light;
+  }
+}
+
+.combos-planner *,
+.combos-planner *::before,
+.combos-planner *::after {
+  box-sizing: border-box;
+}
+.combos-planner.comfortable {
+  --cp-row-h: 44px;
+  --cp-portrait: 34px;
+  font-size: 14.5px;
+}
+.combos-planner [hidden] {
+  display: none !important;
+}
+.combos-planner .sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --- Header, toolbar and the sticky strip --------------------------------- */
+.combos-planner h1 {
+  font-size: 20px;
+  margin: 0;
+  white-space: nowrap;
+}
+.combos-planner h2 {
+  font-size: 13px;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.combos-planner .badge {
+  display: inline-block;
+  vertical-align: 3px;
+  padding: 1px 7px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  background: #f59e0b;
+  color: #0f172a;
+}
+.combos-planner .cphead {
+  display: grid;
+  gap: 6px;
+}
+.combos-planner .topbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+}
+.combos-planner .progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+  color: var(--cp-muted);
+}
+.combos-planner .progress b {
+  color: var(--cp-ink);
+  font-size: 16px;
+}
+.combos-planner .bar {
+  display: inline-block;
+  width: 72px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--cp-line);
+  overflow: hidden;
+}
+.combos-planner .bar i {
+  display: block;
+  height: 100%;
+  background: var(--cp-x8);
+}
+.combos-planner .stats {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.combos-planner .stat {
+  font-size: 12px;
+  color: var(--cp-muted);
+  border: 1px solid var(--cp-line);
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+.combos-planner .stat b {
+  color: var(--cp-ink);
+  font-variant-numeric: tabular-nums;
+}
+.combos-planner .stat.warn,
+.combos-planner .stat.warn b {
+  color: var(--cp-paid);
+}
+.combos-planner .toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-left: auto;
+}
+.combos-planner .howto {
+  font-size: 13px;
+  color: var(--cp-muted);
+}
+.combos-planner .howto[open] {
+  padding: 8px 12px 10px;
+  background: var(--cp-panel);
+  border: 1px solid var(--cp-line);
+  border-radius: 8px;
+}
+.combos-planner .howto ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 3px;
+}
+.combos-planner details summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.combos-planner .strip {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: grid;
+  gap: 6px;
+  padding-block: 6px;
+  background: var(--cp-bg);
+}
+.combos-planner .savebar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.combos-planner .savebar .dirty {
+  color: var(--cp-x8);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.combos-planner .status {
+  font-size: 13px;
+  color: var(--cp-muted);
+  flex: 1 1 260px;
+  min-height: 1.2em;
+}
+.combos-planner .banner,
+.combos-planner .draftbar {
+  border-radius: 8px;
+  padding: 6px 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+}
+.combos-planner .banner {
+  background: var(--cp-x8);
+  color: var(--cp-x8-ink);
+}
+.combos-planner .banner button {
+  background: var(--cp-x8-ink);
+  color: var(--cp-x8);
+  border-color: var(--cp-x8-ink);
+}
+.combos-planner .draftbar {
+  background: var(--cp-target-bg);
+  border: 1px solid var(--cp-focus);
+}
+.combos-planner .livebar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--cp-line);
+  background: var(--cp-panel);
+  font-size: 13px;
+}
+.combos-planner .livebar .livetext {
+  font-weight: 600;
+}
+.combos-planner .livebar .livenote {
+  color: var(--cp-x8);
+}
+.combos-planner .livebar .bannertool {
+  margin-left: auto;
+}
+.combos-planner .bannertool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+/* --- Controls ----------------------------------------------------------------- */
+.combos-planner input,
+.combos-planner select,
+.combos-planner button,
+.combos-planner textarea {
+  font: inherit;
+  color: inherit;
+}
+.combos-planner input[type='search'],
+.combos-planner input[type='text'],
+.combos-planner input[type='number'],
+.combos-planner select,
+.combos-planner textarea {
+  background: var(--cp-panel2);
+  border: 1px solid var(--cp-line);
+  border-radius: 6px;
+  padding: 4px 8px;
+  min-height: 32px;
+  width: 100%;
+  font-size: 13px;
+}
+.combos-planner textarea {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12.5px;
+  resize: vertical;
+}
+.combos-planner button {
+  background: var(--cp-panel2);
+  border: 1px solid var(--cp-line);
+  border-radius: 6px;
+  padding: 3px 10px;
+  min-height: 30px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.combos-planner button:hover:not(:disabled) {
+  border-color: var(--cp-muted);
+}
+.combos-planner button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.combos-planner button.primary {
+  background: var(--cp-x8);
+  border-color: var(--cp-x8);
+  color: var(--cp-x8-ink);
+  font-weight: 600;
+}
+.combos-planner button.danger {
+  color: var(--cp-foot);
+}
+.combos-planner button.on {
+  border-color: var(--cp-focus);
+  color: var(--cp-focus);
+}
+.combos-planner button.mini {
+  min-height: 22px;
+  padding: 0 6px;
+  font-size: 12px;
+  line-height: 20px;
+}
+.combos-planner .link {
+  background: none;
+  border: 0;
+  padding: 0;
+  min-height: 0;
+  color: var(--cp-focus);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.combos-planner :focus-visible {
+  outline: 2px solid var(--cp-focus);
+  outline-offset: 2px;
+}
+.combos-planner kbd {
+  font: inherit;
+  font-size: 11.5px;
+  padding: 0 4px;
+  border: 1px solid var(--cp-line);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--cp-panel2);
+  white-space: nowrap;
+}
+.combos-planner .seg {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border: 1px solid var(--cp-line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.combos-planner .seg button {
+  border: 0;
+  border-radius: 0;
+}
+.combos-planner .seg button[aria-pressed='true'] {
+  background: var(--cp-ink);
+  color: var(--cp-bg);
+}
+.combos-planner .keyswrap {
+  position: relative;
+}
+.combos-planner .keys {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  width: min(440px, 90vw);
+  padding: 10px 12px;
+  background: var(--cp-panel);
+  border: 1px solid var(--cp-line);
+  border-radius: 10px;
+  box-shadow: var(--cp-shadow);
+  font-size: 13px;
+}
+.combos-planner .keys table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.combos-planner .keys th {
+  text-align: left;
+  font-weight: 400;
+  padding: 3px 10px 3px 0;
+  white-space: nowrap;
+  vertical-align: top;
+}
+.combos-planner .keys td {
+  padding: 3px 0;
+  color: var(--cp-muted);
+}
+.combos-planner .keys p {
+  margin: 6px 0 0;
+  color: var(--cp-muted);
+}
+.combos-planner .hint {
+  font-size: 12.5px;
+  color: var(--cp-muted);
+  margin: 0;
+}
+.combos-planner .muted {
+  color: var(--cp-muted);
+}
+.combos-planner .empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--cp-muted);
+}
+
+/* --- Panels --------------------------------------------------------------------- */
+.combos-planner .grid {
+  display: grid;
+  grid-template-columns: minmax(0, clamp(380px, 32vw, 540px)) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  margin-top: 4px;
+}
+.combos-planner .panel {
+  background: var(--cp-panel);
+  border: 1px solid var(--cp-line);
+  border-radius: 10px;
+  box-shadow: var(--cp-shadow);
+  min-width: 0;
+}
+@media (min-width: 821px) {
+  .combos-planner .panel {
+    position: sticky;
+    top: calc(var(--strip-h, 60px) + 8px);
+    max-height: calc(100vh - var(--strip-h, 60px) - 20px);
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+  .combos-planner .panelhead {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+  }
+}
+.combos-planner .panelhead {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--cp-panel);
+  border-bottom: 1px solid var(--cp-line);
+  border-radius: 10px 10px 0 0;
+}
+.combos-planner .headrow,
+.combos-planner .countrow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.combos-planner .count {
+  font-size: 12px;
+  color: var(--cp-muted);
+  font-variant-numeric: tabular-nums;
+}
+.combos-planner .controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.combos-planner .controls > input[type='search'] {
+  flex: 1 1 140px;
+  width: auto;
+}
+.combos-planner .controls > select {
+  flex: 0 1 118px;
+  width: auto;
+}
+.combos-planner .gotobox {
+  display: flex;
+  gap: 4px;
+  flex: 0 1 130px;
+}
+.combos-planner .gotobox input {
+  min-width: 64px;
+}
+.combos-planner .checkline {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--cp-muted);
+  white-space: nowrap;
+}
+.combos-planner .checkline input {
+  width: auto;
+  min-height: 0;
+}
+.combos-planner .filterbox {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.combos-planner .batchbar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--cp-target-bg);
+  border: 1px solid var(--cp-focus);
+  font-weight: 600;
+}
+.combos-planner .warn {
+  margin: 0;
+  padding: 5px 8px;
+  font-size: 13px;
+  background: var(--cp-x8-bg);
+  border: 1px solid var(--cp-x8-line);
+  border-radius: 6px;
+}
+.combos-planner .warn button {
+  margin-left: 8px;
+}
+.combos-planner .legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--cp-muted);
+}
+.combos-planner .legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.combos-planner .legend .key i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.combos-planner .legend .paid i {
+  background: var(--cp-paid);
+}
+.combos-planner .legend .free i {
+  border: 1.5px solid var(--cp-muted);
+}
+.combos-planner .legend .x8key i {
+  border-radius: 2px;
+  background: var(--cp-x8);
+}
+.combos-planner .legend .share i {
+  border-radius: 2px;
+  background: var(--cp-share-bg);
+  outline: 1px solid var(--cp-focus);
+}
+
+/* --- Heroes and lineups ------------------------------------------------------------ */
+.combos-planner .lineup {
+  display: flex;
+  align-items: center;
+  gap: 2px 4px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.combos-planner .hero {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.combos-planner .hero .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.combos-planner .hero.isx8 .name {
+  color: var(--cp-x8);
+  font-weight: 600;
+}
+.combos-planner .portrait {
+  display: inline-block;
+  width: var(--cp-portrait);
+  height: var(--cp-portrait);
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--cp-panel2);
+  flex: none;
+}
+.combos-planner .hero.isx8 .portrait {
+  outline: 1.5px solid var(--cp-x8);
+}
+.combos-planner .hero .troop {
+  display: none;
+}
+.combos-planner.comfortable .hero .troop {
+  display: inline-flex;
+}
+.combos-planner .troopicon {
+  flex: none;
+}
+.combos-planner .troop.Cavalry {
+  color: var(--cp-cav);
+}
+.combos-planner .troop.Archers {
+  color: var(--cp-arc);
+}
+.combos-planner .troop.Footmen {
+  color: var(--cp-foot);
+}
+.combos-planner .troop.Mixed,
+.combos-planner .troop.All {
+  color: var(--cp-muted);
+}
+.combos-planner .sep {
+  color: var(--cp-muted);
+  opacity: 0.7;
+}
+.combos-planner .skin {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 4px;
+  color: var(--cp-focus);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.combos-planner .skintext {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.combos-planner.comfortable .skintext {
+  position: static;
+  width: auto;
+  height: auto;
+  clip-path: none;
+}
+/* Paid / free: a dot in compact rows, a word badge in comfortable ones. */
+.combos-planner .kind {
+  display: inline-block;
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.combos-planner .kind.paid {
+  background: var(--cp-paid);
+}
+.combos-planner .kind.free {
+  border: 1.5px solid var(--cp-muted);
+}
+.combos-planner .kindtext {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.combos-planner.comfortable .kind {
+  width: auto;
+  height: auto;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.combos-planner.comfortable .kind.paid {
+  color: var(--cp-panel);
+}
+.combos-planner.comfortable .kind.free {
+  color: var(--cp-muted);
+}
+.combos-planner.comfortable .kindtext {
+  position: static;
+  width: auto;
+  height: auto;
+  clip-path: none;
+}
+.combos-planner .chip {
+  font-size: 10.5px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 999px;
+  border: 1px solid var(--cp-line);
+  color: var(--cp-muted);
+  white-space: nowrap;
+}
+.combos-planner .chip.tier {
+  color: var(--cp-x8);
+  border-color: var(--cp-x8-line);
+  font-weight: 700;
+}
+.combos-planner .chip.new {
+  color: var(--cp-x8);
+}
+.combos-planner .chip.edited {
+  background: var(--cp-focus);
+  border-color: var(--cp-focus);
+  color: var(--cp-panel);
+}
+.combos-planner .chip.match2 {
+  color: var(--cp-focus);
+  border-color: var(--cp-focus);
+}
+.combos-planner .chip.duplicate {
+  color: var(--cp-foot);
+  border-color: var(--cp-foot);
+}
+
+/* --- The ranking ----------------------------------------------------------------- */
+.combos-planner .focusbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-height: 34px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--cp-panel2);
+  border: 1px solid var(--cp-line);
+  font-size: 13px;
+}
+.combos-planner .focusbar .who {
+  min-width: 0;
+  max-width: 100%;
+}
+.combos-planner .focusbar .where b {
+  color: var(--cp-x8);
+}
+.combos-planner .focusbar .typed {
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: var(--cp-x8);
+  color: var(--cp-x8-ink);
+}
+.combos-planner .rankjump {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.combos-planner .rankjump label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--cp-muted);
+}
+.combos-planner .rankjump input {
+  width: 72px;
+  min-height: 28px;
+}
+.combos-planner .list {
+  display: grid;
+  padding-bottom: 8px;
+}
+.combos-planner .list > *,
+.combos-planner .queue > * {
+  min-width: 0;
+}
+/* Rows off screen skip layout and paint, so a few hundred of them stay cheap. */
+.combos-planner .row,
+.combos-planner .qrow {
+  content-visibility: auto;
+  contain-intrinsic-size: auto var(--cp-row-h);
+}
+.combos-planner .row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-height: var(--cp-row-h);
+  padding: 2px 8px 2px 6px;
+  border-bottom: 1px solid var(--cp-line);
+  border-left: 3px solid var(--cp-line);
+}
+.combos-planner.comfortable .row {
+  padding-block: 5px;
+}
+.combos-planner .row.troop-Cavalry,
+.combos-planner .qrow.troop-Cavalry {
+  border-left-color: var(--cp-cav);
+}
+.combos-planner .row.troop-Archers,
+.combos-planner .qrow.troop-Archers {
+  border-left-color: var(--cp-arc);
+}
+.combos-planner .row.troop-Footmen,
+.combos-planner .qrow.troop-Footmen {
+  border-left-color: var(--cp-foot);
+}
+.combos-planner .row.troop-Mixed,
+.combos-planner .qrow.troop-Mixed {
+  border-left-color: var(--cp-muted);
+}
+.combos-planner .row.base.troop-Cavalry {
+  background: var(--cp-row-cav);
+}
+.combos-planner .row.base.troop-Archers {
+  background: var(--cp-row-arc);
+}
+.combos-planner .row.base.troop-Footmen {
+  background: var(--cp-row-foot);
+}
+.combos-planner .row.base.troop-Mixed {
+  background: var(--cp-row-mixed);
+}
+.combos-planner .rank {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--cp-muted);
+  text-align: right;
+}
+.combos-planner .row.base.paid .rank {
+  color: var(--cp-paid);
+}
+.combos-planner .row.x8 {
+  background: var(--cp-x8-bg);
+  box-shadow: inset 0 0 0 1px var(--cp-x8-line);
+  cursor: grab;
+}
+.combos-planner .row.x8 .rank {
+  color: var(--cp-x8);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.combos-planner .row.match2,
+.combos-planner .qrow.match2 {
+  background: var(--cp-share-bg);
+}
+.combos-planner .row.same-trio,
+.combos-planner .qrow.same-trio {
+  background: var(--cp-trio-bg);
+}
+.combos-planner .row.current,
+.combos-planner .row.centre {
+  background: var(--cp-current-bg);
+  box-shadow: inset 0 0 0 2px var(--cp-focus);
+}
+.combos-planner .row.edited {
+  box-shadow: inset 0 0 0 1px var(--cp-focus);
+}
+.combos-planner .row.holding,
+.combos-planner .qrow.holding {
+  outline: 2px dashed var(--cp-x8);
+  outline-offset: -2px;
+}
+.combos-planner .actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: flex-end;
+}
+.combos-planner .row.x8 .actions button {
+  opacity: 0.55;
+}
+.combos-planner .row.x8:hover .actions button,
+.combos-planner .row.x8.current .actions button,
+.combos-planner .row.x8 .actions button:focus-visible {
+  opacity: 1;
+}
+.combos-planner .iconbtn {
+  min-width: 30px;
+  padding: 0 6px;
+}
+.combos-planner .suggestmark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--cp-row-h);
+  padding: 2px 8px;
+  border: 2px dashed var(--cp-focus);
+  border-radius: 6px;
+  background: var(--cp-target-bg);
+  font-size: 12.5px;
+}
+.combos-planner .suggestmark .text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combos-planner .suggestmark .arrow {
+  color: var(--cp-focus);
+}
+.combos-planner .gap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 20px;
+  height: 20px;
+  margin: 1px 0;
+  padding: 0;
+  border: 1.5px dashed var(--cp-focus);
+  border-radius: 5px;
+  background: var(--cp-target-bg);
+  color: var(--cp-focus);
+  font-size: 11px;
+}
+.combos-planner .gap span {
+  opacity: 0;
+}
+.combos-planner .gap:hover span,
+.combos-planner .gap:focus-visible span,
+.combos-planner .gap.over span {
+  opacity: 1;
+}
+.combos-planner .gap.over,
+.combos-planner .gap:hover {
+  background: var(--cp-focus);
+  color: var(--cp-panel);
+}
+.combos-planner .more {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--cp-focus);
+  font-size: 12px;
+  text-decoration: underline;
+}
+
+/* --- The queue ---------------------------------------------------------------------- */
+.combos-planner .queue {
+  display: grid;
+  padding: 4px 0 8px;
+}
+.combos-planner .qhead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 28px;
+  padding: 3px 10px;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid var(--cp-line);
+  background: var(--cp-panel2);
+  text-align: left;
+  --cp-portrait: 20px;
+}
+.combos-planner .qhead .caret {
+  width: 12px;
+  color: var(--cp-muted);
+}
+.combos-planner .qhead .gcount {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--cp-muted);
+}
+.combos-planner .qhead .bar {
+  width: 56px;
+}
+.combos-planner .qrow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+  min-height: var(--cp-row-h);
+  padding: 2px 8px 2px 8px;
+  border-bottom: 1px solid var(--cp-line);
+  border-left: 3px solid var(--cp-line);
+  cursor: pointer;
+  user-select: none;
+}
+.combos-planner .qrow .pick {
+  display: none;
+}
+.combos-planner .qrow:hover {
+  background: var(--cp-target-bg);
+}
+.combos-planner .qrow.placed {
+  opacity: 0.72;
+}
+.combos-planner .qrow.current {
+  background: var(--cp-current-bg);
+  box-shadow: inset 0 0 0 2px var(--cp-focus);
+  opacity: 1;
+}
+.combos-planner .qrow.picked {
+  background: var(--cp-share-bg);
+  box-shadow: inset 4px 0 0 var(--cp-focus);
+}
+.combos-planner .qrow .meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--cp-muted);
+}
+.combos-planner .qrow .where {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.combos-planner .qrow .where.sugg {
+  color: var(--cp-focus);
+}
+.combos-planner .qrow .where.none {
+  opacity: 0.7;
+}
+.combos-planner .addbox {
+  padding: 8px 10px 10px;
+  border-top: 1px solid var(--cp-line);
+}
+.combos-planner .pasteform {
+  display: grid;
+  gap: 6px;
+  margin-top: 6px;
+}
+.combos-planner .pasteform > button {
+  justify-self: start;
+}
+.combos-planner .pastelist {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+.combos-planner .pastelist .ok {
+  color: var(--cp-arc);
+}
+.combos-planner .pastelist .bad {
+  color: var(--cp-muted);
+}
+.combos-planner .pastelist input {
+  display: inline-block;
+  width: 130px;
+  min-height: 26px;
+  border-color: var(--cp-foot);
+}
+.combos-planner .pasteresult {
+  display: grid;
+  gap: 6px;
+}
+.combos-planner .pasteresult > button {
+  justify-self: start;
+}
+
+/* --- Edit mode ---------------------------------------------------------------------- */
+.combos-planner .editrow {
+  padding: 6px 10px;
+  background: var(--cp-panel2);
+  border-bottom: 1px solid var(--cp-line);
+}
+.combos-planner .editfields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.combos-planner .editfields input {
+  flex: 1 1 120px;
+  width: auto;
+}
+.combos-planner .editfields input[name='skin'] {
+  flex: 0 1 90px;
+}
+.combos-planner .skinhint {
+  flex-basis: 100%;
+  font-size: 12px;
+}
+
+/* --- The save summary ------------------------------------------------------------------ */
+.combos-planner .dialogwrap {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: var(--cp-scrim);
+}
+.combos-planner .dialog {
+  width: min(960px, 100%);
+  max-height: min(80vh, 760px);
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--cp-panel);
+  color: var(--cp-ink);
+  border: 1px solid var(--cp-line);
+  border-radius: 12px;
+  box-shadow: var(--cp-shadow);
+}
+.combos-planner .dialog h2 {
+  font-size: 16px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.combos-planner .dialog p {
+  margin: 0;
+}
+.combos-planner .difflist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: auto;
+  border: 1px solid var(--cp-line);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.combos-planner .difflist li {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--cp-line);
+}
+.combos-planner .difflist code {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combos-planner .difflist .detail {
+  color: var(--cp-muted);
+  white-space: nowrap;
+}
+.combos-planner .difflist .mark {
+  font-weight: 700;
+  color: var(--cp-arc);
+}
+.combos-planner .difflist .removed .mark {
+  color: var(--cp-foot);
+}
+.combos-planner .difflist .moved .mark,
+.combos-planner .difflist .reordered .mark,
+.combos-planner .difflist .edited .mark,
+.combos-planner .difflist .unplaced .mark {
+  color: var(--cp-x8);
+}
+.combos-planner .dialogactions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.combos-planner .flash {
+  animation: cp-flash-row 1.2s ease-out;
+}
+@keyframes cp-flash-row {
+  0%,
+  60% {
+    box-shadow: 0 0 0 3px var(--cp-focus);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+/* Comfortable rows have room to wrap; compact queue rows keep one line and, in a
+   narrow queue, show only the X8 hero's portrait. */
+.combos-planner.comfortable .lineup {
+  flex-wrap: wrap;
+  white-space: normal;
+}
+.combos-planner.comfortable .hero .name {
+  overflow: visible;
+}
+.combos-planner .tray,
+.combos-planner .ranking {
+  container-type: inline-size;
+}
+@container (max-width: 470px) {
+  .combos-planner:not(.comfortable) .qrow .hero:not(.isx8) .portrait {
+    display: none;
+  }
+}
+@container (max-width: 760px) {
+  .combos-planner .legend {
+    display: none;
+  }
+}
+
+/* --- Narrow screens and touch ------------------------------------------------------------ */
+@media (max-width: 820px) {
+  .combos-planner {
+    padding-inline: 10px;
+  }
+  .combos-planner .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .combos-planner .panel {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+  .combos-planner .lineup {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+  .combos-planner .hero {
+    flex: none;
+  }
+  .combos-planner .toolbar,
+  .combos-planner .rankjump {
+    margin-left: 0;
+  }
+  .combos-planner .row {
+    grid-template-columns: 30px minmax(0, 1fr) auto;
+  }
+  .combos-planner .row.x8 .actions,
+  .combos-planner .qrow .meta {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .combos-planner .qrow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .combos-planner .suggestmark {
+    flex-wrap: wrap;
+  }
+  .combos-planner .suggestmark .text {
+    white-space: normal;
+  }
+}
+@media (max-width: 820px), (pointer: coarse) {
+  .combos-planner button,
+  .combos-planner button.mini,
+  .combos-planner input[type='search'],
+  .combos-planner input[type='text'],
+  .combos-planner input[type='number'],
+  .combos-planner select {
+    min-height: 44px;
+  }
+  .combos-planner button,
+  .combos-planner button.mini {
+    min-width: 44px;
+  }
+  .combos-planner .link,
+  .combos-planner .qhead,
+  .combos-planner .more {
+    min-height: 44px;
+  }
+  .combos-planner .gap {
+    height: 44px;
+  }
+  .combos-planner .row.x8 .actions button {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .combos-planner .flash {
+    animation: none;
+    outline: 2px solid var(--cp-focus);
+  }
+}

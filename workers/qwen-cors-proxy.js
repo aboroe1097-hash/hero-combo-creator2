@@ -1192,12 +1192,26 @@ function normalizeProviderDigits(value) {
   return normalized;
 }
 
-function normalizeProviderPower(value, maximum) {
+const BOH_STATS_OCR_UNREADABLE_WARNING =
+  'Some OCR values could not be read. Review the fields and enter any missing numbers.';
+
+function invalidProviderField(warnings, message) {
+  if (Array.isArray(warnings)) {
+    if (!warnings.includes(BOH_STATS_OCR_UNREADABLE_WARNING)) {
+      if (warnings.length < 20) warnings.push(BOH_STATS_OCR_UNREADABLE_WARNING);
+      else warnings[19] = BOH_STATS_OCR_UNREADABLE_WARNING;
+    }
+    return null;
+  }
+  bohFail(502, 'invalid_provider_response', message);
+}
+
+function normalizeProviderPower(value, maximum, warnings) {
   if (value === null || value === undefined || value === '') return null;
   let digits;
   if (typeof value === 'number') {
     if (!Number.isSafeInteger(value) || value < 0) {
-      bohFail(502, 'invalid_provider_response', 'OCR provider returned an invalid power value.');
+      return invalidProviderField(warnings, 'OCR provider returned an invalid power value.');
     }
     digits = String(value);
   } else if (typeof value === 'string') {
@@ -1211,18 +1225,18 @@ function normalizeProviderPower(value, maximum) {
       /^[0-9]{1,3}([.,\u066b\u066c'’\u00a0\u2007\u2009\u202f ])[0-9]{3}(?:\1[0-9]{3})*$/u;
     if (/^[0-9]+$/u.test(normalized)) digits = normalized;
     else if (groupedPattern.test(normalized)) digits = normalized.replace(/[^0-9]/gu, '');
-    else bohFail(502, 'invalid_provider_response', 'OCR provider returned an invalid power value.');
+    else return invalidProviderField(warnings, 'OCR provider returned an invalid power value.');
   } else {
-    bohFail(502, 'invalid_provider_response', 'OCR provider returned an invalid power value.');
+    return invalidProviderField(warnings, 'OCR provider returned an invalid power value.');
   }
   let parsed;
   try {
     parsed = BigInt(digits);
   } catch {
-    bohFail(502, 'invalid_provider_response', 'OCR provider returned an invalid power value.');
+    return invalidProviderField(warnings, 'OCR provider returned an invalid power value.');
   }
   if (parsed > BigInt(maximum) || parsed > BigInt(Number.MAX_SAFE_INTEGER)) {
-    bohFail(502, 'invalid_provider_response', 'OCR provider returned an out-of-range power value.');
+    return invalidProviderField(warnings, 'OCR provider returned an out-of-range power value.');
   }
   return Number(parsed);
 }
@@ -1238,10 +1252,10 @@ function hasProviderControlCharacters(value, allowLineWhitespace = false) {
   return false;
 }
 
-function normalizeProviderGameName(value) {
+function normalizeProviderGameName(value, warnings) {
   if (value === null || value === undefined || value === '') return null;
   if (typeof value !== 'string') {
-    bohFail(502, 'invalid_provider_response', 'OCR provider returned an invalid game name.');
+    return invalidProviderField(warnings, 'OCR provider returned an invalid game name.');
   }
   const normalized = value.normalize('NFKC').trim();
   if (
@@ -1249,22 +1263,22 @@ function normalizeProviderGameName(value) {
     Array.from(normalized).length > 80 ||
     hasProviderControlCharacters(normalized)
   ) {
-    bohFail(502, 'invalid_provider_response', 'OCR provider returned an invalid game name.');
+    return invalidProviderField(warnings, 'OCR provider returned an invalid game name.');
   }
   return normalized;
 }
 
-function normalizeProviderConfidenceValue(value) {
+function normalizeProviderConfidenceValue(value, warnings) {
   if (value === null || value === undefined || value === '') return null;
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1) {
-    bohFail(502, 'invalid_provider_response', 'OCR provider returned invalid confidence data.');
+    return invalidProviderField(warnings, 'OCR provider returned invalid confidence data.');
   }
   return value;
 }
 
-function normalizeProviderConfidence(value) {
+function normalizeProviderConfidence(value, warnings) {
   if (typeof value === 'number') {
-    const overall = normalizeProviderConfidenceValue(value);
+    const overall = normalizeProviderConfidenceValue(value, warnings);
     return Object.fromEntries([
       ['overall', overall],
       ...BOH_STATS_OCR_FIELDS.map((field) => [field, overall]),
@@ -1274,28 +1288,42 @@ function normalizeProviderConfidence(value) {
     bohFail(502, 'invalid_provider_response', 'OCR provider returned invalid confidence data.');
   }
   return Object.fromEntries([
-    ['overall', normalizeProviderConfidenceValue(value.overall)],
-    ...BOH_STATS_OCR_FIELDS.map((field) => [field, normalizeProviderConfidenceValue(value[field])]),
+    ['overall', normalizeProviderConfidenceValue(value.overall, warnings)],
+    ...BOH_STATS_OCR_FIELDS.map((field) => [
+      field,
+      normalizeProviderConfidenceValue(value[field], warnings),
+    ]),
   ]);
 }
 
-function normalizeProviderWarnings(value) {
+function normalizeProviderWarnings(value, { tolerateInvalid = false } = {}) {
   if (value === undefined || value === null) return [];
   if (!Array.isArray(value) || value.length > 20) {
+    if (tolerateInvalid) return [BOH_STATS_OCR_UNREADABLE_WARNING];
     bohFail(502, 'invalid_provider_response', 'OCR provider returned invalid warnings.');
   }
-  return value
-    .map((warning) => {
-      if (typeof warning !== 'string') {
-        bohFail(502, 'invalid_provider_response', 'OCR provider returned invalid warnings.');
-      }
-      const normalized = warning.normalize('NFKC').trim();
-      if (Array.from(normalized).length > 240 || hasProviderControlCharacters(normalized, true)) {
-        bohFail(502, 'invalid_provider_response', 'OCR provider returned invalid warnings.');
-      }
-      return normalized;
-    })
-    .filter(Boolean);
+  const normalized = [];
+  let invalid = false;
+  for (const warning of value) {
+    if (typeof warning !== 'string') {
+      invalid = true;
+      continue;
+    }
+    const item = warning.normalize('NFKC').trim();
+    if (Array.from(item).length > 240 || hasProviderControlCharacters(item, true)) {
+      invalid = true;
+      continue;
+    }
+    if (item) normalized.push(item);
+  }
+  if (invalid && !tolerateInvalid) {
+    bohFail(502, 'invalid_provider_response', 'OCR provider returned invalid warnings.');
+  }
+  if (invalid && !normalized.includes(BOH_STATS_OCR_UNREADABLE_WARNING)) {
+    if (normalized.length < 20) normalized.push(BOH_STATS_OCR_UNREADABLE_WARNING);
+    else normalized[19] = BOH_STATS_OCR_UNREADABLE_WARNING;
+  }
+  return normalized;
 }
 
 function providerMessageText(providerEnvelope) {
@@ -1342,15 +1370,15 @@ export function normalizeBohStatsOcrProviderResponse(providerEnvelope, env = {},
     1_000_000,
     Number.MAX_SAFE_INTEGER
   );
+  const warnings = normalizeProviderWarnings(providerPayload.warnings, { tolerateInvalid: true });
   const extracted = Object.fromEntries(
     BOH_STATS_POWER_FIELDS.map((field) => [
       field,
-      normalizeProviderPower(providerPayload.extracted[field], maximumPower),
+      normalizeProviderPower(providerPayload.extracted[field], maximumPower, warnings),
     ])
   );
-  extracted.gameName = normalizeProviderGameName(providerPayload.extracted.gameName);
-  const confidence = normalizeProviderConfidence(providerPayload.confidence);
-  const warnings = normalizeProviderWarnings(providerPayload.warnings);
+  extracted.gameName = normalizeProviderGameName(providerPayload.extracted.gameName, warnings);
+  const confidence = normalizeProviderConfidence(providerPayload.confidence, warnings);
   const suspiciousExtendedFields = ['unitSpecialtyPower', 'artifactPower', 'royalTechPower'].filter(
     (field) => extracted[field] === 1
   );

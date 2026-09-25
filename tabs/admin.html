@@ -812,6 +812,10 @@
               ><span data-i18n="adminVtsScoreTab">VtsScore</span>
             </button>
             <button class="dash-subtab-btn" data-subtab="throneBuffs"><span data-i18n="adminThroneTab">Throne Buffs</span></button>
+            <!-- Beta tool: the combo ranking that ships in js/combos-db.js, for
+                 auditing the live list. Placing and editing still happen in the
+                 local planner (npm run combos:plan) until a live editor ships. -->
+            <button class="dash-subtab-btn" data-subtab="combos"><span data-i18n="adminCombosTab">Combos</span><span class="tab-badge tab-badge-beta">BETA</span></button>
             <button class="dash-subtab-btn" data-subtab="accounts"><span data-i18n="adminAccountsTab">Accounts</span></button>
             <!-- Superadmin only. Hidden by default and revealed from the claim,
                  so an admin without the level never sees it; the callable and
@@ -2342,6 +2346,7 @@
         </div>
       </div>
       <div class="dash-subtab-panel hidden" id="dashSubtabThroneBuffs"><section id="dashThroneRoot"></section></div>
+      <div class="dash-subtab-panel hidden" id="dashSubtabCombos"><section id="dashCombosRoot"></section></div>
       <!-- Account links live on their own tab so linking is reachable from
            everywhere, not only from inside the three duty tabs. -->
       <div class="dash-subtab-panel hidden" id="dashSubtabAccounts">

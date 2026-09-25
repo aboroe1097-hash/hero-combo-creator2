@@ -2403,6 +2403,10 @@ if (typeof window !== 'undefined') {
   window.addEventListener('vts:language-change', (event) => {
     void refreshHeroAtlasLocale(event.detail?.lang || currentLanguage);
   });
+  // A ranking published live (js/combos-live.js) changes every hero's rank.
+  window.addEventListener('combos:updated', () => {
+    renderHeroesTab({ suppressLocaleRefresh: true });
+  });
 }
 
 export { renderHeroesTab, refreshHeroAtlasLocale, getSynergies, formatSkillText };

@@ -289,14 +289,14 @@ export function writeBohSignupFormValues(root, signup = {}) {
 }
 
 /* ------------------------------------------------------------------ *
- * Retired member-form questions (16.5.9)
+ * Retired member-form questions
  *
  * Competition #12's form no longer asks for T9 troop types, ready speed
  * heroes, level 50 heroes, preferred/second role, availability, VTS 1097
- * membership or a contact. firestore.rules (validAllStarBohSubmissionData)
- * and the vtsScore / bohSignupAdmin Functions still pin those keys, so the
- * document keeps them: a value an existing document already holds is kept on
- * edit (read-then-merge), and a new registration gets a rule-valid neutral
+ * membership, contact, join reason, or leadership notes. firestore.rules
+ * (validAllStarBohSubmissionData) and the vtsScore / bohSignupAdmin Functions
+ * pin those keys, so the document keeps them. An existing value is preserved
+ * on edit (read-then-merge), and a new registration gets a rule-valid neutral
  * placeholder. `commitment.secondaryRole` has no placeholder: it is kept when
  * stored and otherwise left to the model.
  * ------------------------------------------------------------------ */
@@ -312,6 +312,8 @@ export const BOH_SIGNUP_RETIRED_MEMBER_FIELDS = Object.freeze({
   // This is the VTS 1097 competition page: everyone registering is a member.
   'commitment.vts1097Member': true,
   'commitment.contactNumber': '',
+  'commitment.joinReason': '',
+  'commitment.notes': '',
 });
 
 /**

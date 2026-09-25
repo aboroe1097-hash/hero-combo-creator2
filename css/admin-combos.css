@@ -1,0 +1,9 @@
+/* css/admin-combos.css
+   Chrome for the Combos admin tab only. The tool itself is styled by
+   css/combos-planner.css, which the same lazy import loads, and which both hosts
+   of the planner share. */
+
+.admin-combos-tab {
+  display: grid;
+  gap: 12px;
+}

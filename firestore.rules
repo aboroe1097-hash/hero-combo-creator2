@@ -373,6 +373,48 @@ service cloud.firestore {
       && edenOperationsEntry(counts.get('stronghold:banner', {}));
     }
 
+    // One entry of the live Combos ranking: three hero names, an optional skin
+    // code of [123]{3} and an optional note, nothing else.
+    function validCombosPlanEntry(entry) {
+      return entry is map
+      && entry.keys().hasAll(['heroes'])
+      && entry.keys().hasOnly(['heroes', 'skin', 'note'])
+      && entry.heroes is list
+      && entry.heroes.size() == 3
+      && entry.heroes[0] is string && entry.heroes[0].size() > 0 && entry.heroes[0].size() <= 40
+      && entry.heroes[1] is string && entry.heroes[1].size() > 0 && entry.heroes[1].size() <= 40
+      && entry.heroes[2] is string && entry.heroes[2].size() > 0 && entry.heroes[2].size() <= 40
+      && (!('skin' in entry) || (entry.skin is string && entry.skin.matches('^[123]{3}$')))
+      && (!('note' in entry) || (entry.note is string && entry.note.size() <= 200));
+    }
+
+    // The ranking a superadmin publishes from the VTS Admin planner
+    // (js/admin-combos.js). Rules cannot loop over a list, so they pin the keys,
+    // the size and the count and check the first entry's shape; every client
+    // validates the whole list (js/combos-live.js) before ranking with it and
+    // keeps the shipped file otherwise. useShipped with no entries points the
+    // site back at the shipped file.
+    function validCombosPlan() {
+      let data = request.resource.data;
+      return data.keys().hasOnly([
+        'entries', 'count', 'shippedHash', 'updatedAt', 'updatedBy', 'useShipped'
+      ])
+      && data.keys().hasAll([
+        'entries', 'count', 'shippedHash', 'updatedAt', 'updatedBy', 'useShipped'
+      ])
+      && data.entries is list
+      && data.entries.size() <= 600
+      && data.count is int
+      && data.count == data.entries.size()
+      && data.shippedHash is string
+      && data.shippedHash.size() <= 64
+      && data.useShipped is bool
+      && (data.useShipped || data.entries.size() > 0)
+      && (data.entries.size() == 0 || validCombosPlanEntry(data.entries[0]))
+      && data.updatedAt == request.time
+      && data.updatedBy == request.auth.uid;
+    }
+
     function validDashboardData() {
       return request.resource.data.keys().hasOnly([
         'updatedAtMs', 'syncRevision', 'last_updated', 'total_attacks', 'attacks', 'players_summary',
@@ -2753,6 +2795,14 @@ service cloud.firestore {
         && request.resource.data.decisions.size() <= 200
         && request.resource.data.updatedAt == request.time
         && request.resource.data.updatedBy == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // The published Combos ranking is public; only a superadmin can publish it.
+    match /combos_plan/current {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if isSuperAdmin() && validCombosPlan();
       allow delete: if false;
     }
 

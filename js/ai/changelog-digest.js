@@ -1,10 +1,29 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.13";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.15";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.5.15",
+    "date": "2026-09-25",
+    "highlights": [
+      "Competition #12 registration no longer asks for the two long optional text answers or an OCR acknowledgment checkbox. Existing answers remain preserved when a member edits a saved registration; signed-in members can start with the game name saved on their account.",
+      "The Competition #12 growth board mount point remains visible throughout the season and checks again for a published board when results are ready. The member-controlled sharing checkbox remains off by default.",
+      "Stats OCR now leaves individually unreadable or out-of-range values blank with a review warning; malformed provider JSON or a missing extracted-data object still fails. Published Combos rankings can be read without signing in; only a superadmin can publish them."
+    ]
+  },
+  {
+    "version": "16.5.14",
+    "date": "2026-09-25",
+    "highlights": [
+      "VTS Admin has a Combos tab (Beta) running the Combos Planner: the full ranking with its filters, an overlap check, and every lineup editable (rename heroes or skin, reorder, remove). The same planner runs on a PC with `npm run combos:plan`.",
+      "Placing new X8 lineups is fast: each unplaced lineup gets a suggested slot with its reason (for example \"above #58 · shares Lawman + The Avalanche\"), learned from similar lineups and from the placements already made, and paid lineups keep their place above free ones. Keys: J/K t…",
+      "The planner shows about 35 compact rows at once, focuses the ranking around the lineup being placed, groups the queue by X8 hero with progress, places several lineups as one block, drafts every suggestion in one undoable step, keeps an automatic draft, accepts a pasted list of l…",
+      "A superadmin can publish the ranking live from VTS Admin: players get it on their next page load without a site update, the Combo Generator, Hero Atlas and counter tables follow it, and \"Use shipped list\" switches back. The site checks every published lineup and keeps the shippe…"
+    ]
+  },
   {
     "version": "16.5.13",
     "date": "2026-09-25",
@@ -83,30 +102,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "The Competition #12 schedule panel can fill a 2-week default. Pick a start date (the next game day by default) and press **Fill 2-week default**: registration runs days 1–2, the final check until the end of day 4, the growth re-upload on days 13–14 and the winners' display on da…",
       "The VTS Admin attack log's Daily and Weekly filters use the same UTC−2 game day. Between 22:00 and midnight game time the Daily filter used to jump to the next day and hide the current day's attacks, and the Weekly filter rolled over on Sunday at 22:00 instead of midnight.",
       "The schedule panel shows game time next to your own time: each row reads \"Game 2026-10-01 00:00 (UTC−2) · Your time: …\", and a live line shows the current game time and your time."
-    ]
-  },
-  {
-    "version": "16.5.5",
-    "date": "2026-09-24",
-    "highlights": [
-      "Eden Pathing now counts the tiles a route actually occupies instead of adding up the length of every leg, so a route that crosses itself or doubles back no longer reports the same ground twice. The panel shows the occupied tiles, how many were walked twice, and an estimated path…",
-      "Filing a complaint no longer asks a signed-in member to retype their name: the in-game name from their account is already in the field, and stays editable because the complaint may be about someone else. Filing anonymously still hides the whole identity block, so nothing is atta…",
-      "The Support Work reward quota now covers the guild-master reward instead of sitting under it: with \"The R5\" chosen and an R5 named, a quota of 6 rewards the R5 plus 5 others, where it used to reward the R5 plus 6 and show 7 rows. The Support Work table, the announced total and t…",
-      "Clicking a reward category on the Eden season view now takes you to its table. The scroll only happened on phones before, so on a laptop the card swapped the table in below the fold and looked like nothing had happened; it now scrolls whenever the table is not already on screen.…",
-      "Reward names on the Eden season view are clickable: the final Top list names the same players as every other table on the page and now opens their detail the same way. On a phone each name is a full-height tap target, and the downloaded announcement image stays without link unde…",
-      "The recent adjustments list in VTS Admin can now be filtered by which bonus or penalty an adjustment is: Banner help, Connected road, Extra effort, Merit - other, Blocked path, Toxicity, Ignored coordination, Penalty - other, and the two premium flags. Before this, a season of m…"
-    ]
-  },
-  {
-    "version": "16.5.4",
-    "date": "2026-09-24",
-    "highlights": [
-      "VtsScore is now **Competition #12**, a pre-season growth competition. Members sign up with their BoH time slots (+8, +12, +14, +20) and Epic Showdown time slots (+10, +13, +16, +19) in order of preference, all in game time, and can opt in to the public comparison. Each player is…",
-      "VTS Admin: superadmins set the competition's start, phase-one close, deadline, re-upload window and winners start/end in game time. A scheduled job opens and closes sign-ups and re-uploads at those instants.",
-      "Eden Hub gained **Eden Pathing**, a route planner on the Eden map with PNG export, and Eden Map routes can be played back step by step.",
-      "Heroes & Combos, Research & Towers, Class Development and Eden each have a **PDFs** tab that builds a printable document from your choices (season, troop, focus, paper size, level of detail), with numbered sections, repeated table headers and page numbers. Unknown values print a…",
-      "Eden Siege fun pass: five tower tiers, armoured, swift and shielded enemies, warlord boss waves, Velo's dash and ultimate, a training wave, endless mode and a Daily Siege with the same seed for everyone. Runs end on a results screen with stars and recent runs saved in the browse…",
-      "Motion: Specialization Towers draw the connectors between nodes, the research planner shows a cost curve, Arcade gives hit feedback, and combo PNGs carry a background generated from the combos."
     ]
   }
 ].map((release) =>

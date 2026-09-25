@@ -3,11 +3,13 @@
 // Local Combos Planner (npm run combos:plan). Serves tools/combos-planner on
 // 127.0.0.1 and writes js/combos-db.js directly when you press Save.
 //
-// The S0-X2 list is fixed: the planner never reorders it. X8 lanes (any lane
-// with at least one X8 hero) can be placed directly above an S0-X2 lane; the
-// ones left unplaced stay in the X8 catch-up block at the end of the array.
-// Every entry in rankedCombos is one line, so a save moves existing lines
-// verbatim and only writes new lines for lanes added in the planner.
+// The S0-X2 list is fixed by default: the planner reorders it only when the
+// page's edit mode sends a `baseOrder`, and edits a line only when it sends a
+// matching `baseEdits` entry. X8 lanes (any lane with at least one X8 hero) can
+// be placed directly above an S0-X2 lane; the ones left unplaced stay in the X8
+// catch-up block at the end of the array. Every entry in rankedCombos is one
+// line, so a save moves existing lines verbatim and only rewrites a line that an
+// edit changed or that an added lane introduces.
 //
 // tools/combos-planner/x8-queue.json lists new X8 lanes waiting to be placed
 // (for example from in-game screenshots). They show in the planner's list; a
@@ -17,22 +19,54 @@ import http from 'node:http';
 import { readFile, writeFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import {
+  buildComboSource,
+  buildView,
+  describeCombos,
+  editedEntryLine,
+  entryLine,
+  laneSlug,
+  parseComboSource,
+  readQueue,
+} from '../js/combo-plan.js';
+
+// The engine lives in js/combo-plan.js so the admin tab runs the same code; this
+// re-export keeps the planner's contract tests pointed at the server module.
+export {
+  buildComboSource,
+  buildView,
+  describeCombos,
+  editedEntryLine,
+  entryLine,
+  laneSlug,
+  parseComboSource,
+  readQueue,
+};
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const toolDir = path.join(rootDir, 'tools', 'combos-planner');
 const combosPath = path.join(rootDir, 'js', 'combos-db.js');
 const queuePath = path.join(toolDir, 'x8-queue.json');
+const queueJsPath = path.join(toolDir, 'x8-queue.js');
 const heroesPath = path.join(rootDir, 'js', 'heroes-data.js');
+
 const HOST = '127.0.0.1';
 const DEFAULT_PORT = 5396;
 const MAX_REQUEST_BYTES = 512 * 1024;
-const ARRAY_START = 'export const rankedCombos = [';
-const ENTRY_LINE = /^\s*\{ heroes: .*\},?\s*$/;
 
-const staticFiles = new Map([
+/** Exported so a test can check that every asset the page asks for is served. */
+export const staticFiles = new Map([
   ['/', { file: path.join(toolDir, 'index.html'), type: 'text/html; charset=utf-8' }],
-  ['/app.js', { file: path.join(toolDir, 'app.js'), type: 'text/javascript; charset=utf-8' }],
-  ['/styles.css', { file: path.join(toolDir, 'styles.css'), type: 'text/css; charset=utf-8' }],
+  ['/host.js', { file: path.join(toolDir, 'host.js'), type: 'text/javascript; charset=utf-8' }],
+  ['/shell.css', { file: path.join(toolDir, 'shell.css'), type: 'text/css; charset=utf-8' }],
+  // The interface, its styles and its engine live with the site so the admin tab
+  // runs exactly the same code against a different transport.
+  ['/combos-planner-ui.js', { file: path.join(rootDir, 'js', 'combos-planner-ui.js'), type: 'text/javascript; charset=utf-8' }],
+  ['/combo-lanes.js', { file: path.join(rootDir, 'js', 'combo-lanes.js'), type: 'text/javascript; charset=utf-8' }],
+  ['/combo-plan.js', { file: path.join(rootDir, 'js', 'combo-plan.js'), type: 'text/javascript; charset=utf-8' }],
+  ['/combo-workflow.js', { file: path.join(rootDir, 'js', 'combo-workflow.js'), type: 'text/javascript; charset=utf-8' }],
+  ['/hero-name-match.js', { file: path.join(rootDir, 'js', 'hero-name-match.js'), type: 'text/javascript; charset=utf-8' }],
+  ['/combos-planner.css', { file: path.join(rootDir, 'css', 'combos-planner.css'), type: 'text/css; charset=utf-8' }],
 ]);
 
 const imagesDir = path.join(rootDir, 'images');
@@ -58,183 +92,16 @@ async function importFresh(filePath) {
   return import(`${pathToFileURL(filePath).href}?mtime=${Math.floor(info.mtimeMs)}`);
 }
 
-/**
- * Split combos-db.js source into the text before the array, the array's lines,
- * and the text after it, pairing each entry line with its parsed combo.
- */
-export function parseComboSource(source, combos, isX8Lane) {
-  const lines = source.split('\n');
-  const start = lines.findIndex((line) => line.startsWith(ARRAY_START));
-  if (start < 0) throw new Error('rankedCombos array not found in combos-db.js');
-  const end = lines.findIndex((line, index) => index > start && line.startsWith('];'));
-  if (end < 0) throw new Error('rankedCombos array has no closing line');
-  const body = lines.slice(start + 1, end);
-  const entryLines = body.filter((line) => ENTRY_LINE.test(line));
-  if (entryLines.length !== combos.length) {
-    throw new Error(
-      `combos-db.js has ${combos.length} entries but ${entryLines.length} one-line entries; the planner needs one entry per line`
-    );
+/** Combos to rank and add: the hand-written list in tools/combos-planner/x8-queue.js. */
+async function readHandWritten() {
+  try {
+    const module = await importFresh(queueJsPath);
+    const list = Array.isArray(module.lanes) ? module.lanes : [];
+    return list.map((lane) => ({ ...lane, queuedFrom: 'x8-queue.js' }));
+  } catch (error) {
+    if (error.code === 'ENOENT' || error.code === 'ERR_MODULE_NOT_FOUND') return [];
+    throw new Error(`x8-queue.js could not be read: ${error.message}`);
   }
-  let cursor = 0;
-  const items = body.map((line) => {
-    if (!ENTRY_LINE.test(line)) return { kind: 'text', line };
-    const combo = combos[cursor++];
-    return { kind: isX8Lane(combo) ? 'x8' : 'base', line, combo };
-  });
-  return { head: lines.slice(0, start + 1), items, tail: lines.slice(end) };
-}
-
-/** The planner's view: the fixed S0-X2 list plus every X8 lane and where it sits. */
-export function describeCombos(parsed) {
-  const base = [];
-  const x8 = [];
-  const lastBase = parsed.items.map((item) => item.kind).lastIndexOf('base');
-  let pending = [];
-  parsed.items.forEach((item, index) => {
-    if (item.kind === 'base') {
-      const id = `b${base.length}`;
-      base.push({ id, heroes: item.combo.heroes, skin: item.combo.skin || '' });
-      pending.forEach((lane) => (lane.anchor = id));
-      pending = [];
-    } else if (item.kind === 'x8') {
-      const lane = {
-        id: `x${x8.length}`,
-        heroes: item.combo.heroes,
-        skin: item.combo.skin || '',
-        note: item.combo.note || '',
-        anchor: '',
-      };
-      x8.push(lane);
-      if (index < lastBase) pending.push(lane);
-    }
-  });
-  return { base, x8 };
-}
-
-function quoteName(name) {
-  return name.includes("'") ? JSON.stringify(name) : `'${name}'`;
-}
-
-export function entryLine({ heroes, skin }) {
-  return `  { heroes: [${heroes.map(quoteName).join(', ')}]${skin ? `, skin: '${skin}'` : ''} },`;
-}
-
-/**
- * Rebuild combos-db.js from a plan: `placements` maps an X8 lane id to the base
- * id it sits directly above (in `order`), `added` holds new lanes. Unplaced
- * lanes go to the tail block in their existing order, new ones after them.
- */
-export function buildComboSource(parsed, plan, { heroNames, isX8Lane }) {
-  const view = describeCombos(parsed);
-  const baseIds = new Set(view.base.map((b) => b.id));
-  const lanes = new Map(view.x8.map((lane) => [lane.id, lane]));
-  const added = Array.isArray(plan.added) ? plan.added : [];
-  const keyOf = (combo) => `${combo.heroes.join('|')}#${combo.skin || ''}`;
-  const keys = new Set([...view.base, ...view.x8].map(keyOf));
-  for (const lane of added) {
-    if (!/^n-[a-z0-9_-]{1,200}$/.test(String(lane.id))) throw new Error('bad id for an added lane');
-    if (!Array.isArray(lane.heroes) || lane.heroes.length !== 3)
-      throw new Error('a lane needs three heroes');
-    if (new Set(lane.heroes).size !== 3) throw new Error('a lane needs three different heroes');
-    for (const name of lane.heroes)
-      if (!heroNames.has(name)) throw new Error(`unknown hero: ${name}`);
-    if (lane.skin && !/^[123]{3}$/.test(lane.skin))
-      throw new Error('skin code must be three digits of 1-3');
-    if (!isX8Lane(lane)) throw new Error(`${lane.heroes.join(' / ')} has no X8 hero`);
-    if (keys.has(keyOf(lane)))
-      throw new Error(`${lane.heroes.join(' / ')} is already in the database`);
-    keys.add(keyOf(lane));
-    lanes.set(lane.id, { ...lane, added: true });
-  }
-  const placedAbove = new Map();
-  const order = Array.isArray(plan.order) ? plan.order : [];
-  const seen = new Set();
-  for (const { id, anchor } of order) {
-    if (!lanes.has(id)) throw new Error(`unknown lane ${id}`);
-    if (seen.has(id)) throw new Error(`lane ${id} is placed twice`);
-    seen.add(id);
-    if (!anchor) continue;
-    if (!baseIds.has(anchor)) throw new Error(`unknown anchor ${anchor}`);
-    if (!placedAbove.has(anchor)) placedAbove.set(anchor, []);
-    placedAbove.get(anchor).push(id);
-  }
-  const lineOf = (id) => {
-    const lane = lanes.get(id);
-    if (lane.added) return entryLine(lane);
-    return parsed.items.find((item) => item.kind === 'x8' && item.combo.heroes === lane.heroes)
-      .line;
-  };
-  const placedIds = new Set([...placedAbove.values()].flat());
-  // Unplaced new lanes stay in the queue file; only placed ones enter the database.
-  const tailLanes = view.x8.map((lane) => lane.id).filter((id) => !placedIds.has(id));
-  const out = [];
-  let baseCount = 0;
-  let textRun = [];
-  const lastBase = parsed.items.map((item) => item.kind).lastIndexOf('base');
-  parsed.items.forEach((item, index) => {
-    if (item.kind === 'text') {
-      textRun.push(item.line);
-      return;
-    }
-    if (item.kind === 'base') {
-      const id = `b${baseCount++}`;
-      for (const laneId of placedAbove.get(id) || []) out.push(lineOf(laneId));
-      out.push(...textRun, item.line);
-      textRun = [];
-      return;
-    }
-    // An X8 line: it is re-emitted from the plan, never where it used to be.
-    if (index > lastBase) {
-      if (tailLanes.length) out.push(...textRun);
-      textRun = [];
-    } else {
-      textRun = textRun.filter((line) => line.trim() !== '');
-    }
-  });
-  if (!parsed.items.slice(lastBase + 1).some((item) => item.kind === 'x8') && tailLanes.length) {
-    out.push('', '  // --- X8 CATCH-UP BRACKET ---', '');
-  }
-  for (const id of tailLanes) out.push(lineOf(id));
-  out.push(...textRun);
-  return [...parsed.head, ...out, ...parsed.tail].join('\n');
-}
-
-export function laneSlug({ heroes, skin }) {
-  const names = heroes.map((n) =>
-    n
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '')
-  );
-  return `n-${names.join('_')}${skin ? `-${skin}` : ''}`;
-}
-
-/** Queue entries that are valid and not yet in the database, plus the reasons others were skipped. */
-export function readQueue(json, { heroNames, isX8Lane, existingKeys }) {
-  const lanes = [];
-  const skipped = [];
-  const seen = new Set(existingKeys);
-  for (const entry of Array.isArray(json?.lanes) ? json.lanes : []) {
-    const heroes = Array.isArray(entry?.heroes) ? entry.heroes.map(String) : [];
-    const skin = entry?.skin ? String(entry.skin) : '';
-    const label = heroes.join(' / ') || '(empty)';
-    const key = `${heroes.join('|')}#${skin}`;
-    if (heroes.length !== 3 || heroes.some((n) => !heroNames.has(n)))
-      skipped.push(`${label}: unknown hero name`);
-    else if (skin && !/^[123]{3}$/.test(skin)) skipped.push(`${label}: bad skin code`);
-    else if (!isX8Lane({ heroes })) skipped.push(`${label}: no X8 hero`);
-    else if (seen.has(key)) skipped.push(`${label}: already in the database or listed twice`);
-    else {
-      seen.add(key);
-      lanes.push({
-        id: laneSlug({ heroes, skin }),
-        heroes,
-        skin,
-        source: entry.source ? String(entry.source) : '',
-      });
-    }
-  }
-  return { lanes, skipped };
 }
 
 async function loadAll() {
@@ -243,17 +110,6 @@ async function loadAll() {
     importFresh(combosPath),
     importFresh(heroesPath),
   ]);
-  const heroes = {};
-  for (const hero of heroesModule.allHeroesData) {
-    heroes[hero.name] = {
-      s: hero.season,
-      t: hero.Type,
-      p: hero.State === 'Paid' ? 1 : 0,
-      i: portraitUrl(hero.imageUrl),
-    };
-  }
-  const isX8Lane = (combo) => combo.heroes.some((name) => heroes[name]?.s === 'X8');
-  const parsed = parseComboSource(source, combosModule.rankedCombos, isX8Lane);
   let queueJson = { lanes: [] };
   try {
     queueJson = JSON.parse(await readFile(queuePath, 'utf8'));
@@ -261,15 +117,18 @@ async function loadAll() {
     if (error.code !== 'ENOENT')
       throw new Error(`x8-queue.json is not valid JSON: ${error.message}`);
   }
-  const existingKeys = combosModule.rankedCombos.map(
-    (c) => `${c.heroes.join('|')}#${c.skin || ''}`
-  );
-  const queue = readQueue(queueJson, {
-    heroNames: new Set(Object.keys(heroes)),
-    isX8Lane,
-    existingKeys,
+  const view = buildView({
+    source,
+    combos: combosModule.rankedCombos,
+    heroTable: heroesModule.allHeroesData,
+    // Hand-written lineups first, then the ones the Add form has kept.
+    queueLanes: [
+      ...(await readHandWritten()),
+      ...(Array.isArray(queueJson.lanes) ? queueJson.lanes : []),
+    ],
+    portraitUrl,
   });
-  return { heroes, isX8Lane, parsed, queue, queueJson };
+  return { ...view, queueJson };
 }
 
 async function writeQueue(queueJson, lanes) {
@@ -284,15 +143,7 @@ async function writeQueue(queueJson, lanes) {
   await writeFile(queuePath, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
 }
 
-function viewOf({ heroes, parsed, queue }) {
-  const view = describeCombos(parsed);
-  return {
-    heroes,
-    base: view.base,
-    x8: [...view.x8, ...queue.lanes.map((l) => ({ ...l, anchor: '', queued: true }))],
-    skipped: queue.skipped,
-  };
-}
+const viewOf = ({ heroes, base, x8, skipped }) => ({ heroes, base, x8, skipped });
 
 async function readBody(req) {
   let size = 0;
@@ -305,8 +156,50 @@ async function readBody(req) {
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 
+// Assets are served with a stamp from their own mtimes: a browser that reuses the
+// cached module would otherwise keep running the previous planner after an edit.
+async function assetStamp() {
+  const files = [
+    path.join(toolDir, 'index.html'),
+    path.join(toolDir, 'host.js'),
+    path.join(toolDir, 'shell.css'),
+    path.join(rootDir, 'css', 'combos-planner.css'),
+    path.join(rootDir, 'js', 'combos-planner-ui.js'),
+    path.join(rootDir, 'js', 'combo-lanes.js'),
+    path.join(rootDir, 'js', 'combo-plan.js'),
+    path.join(rootDir, 'js', 'combo-workflow.js'),
+    path.join(rootDir, 'js', 'hero-name-match.js'),
+  ];
+  const times = await Promise.all(
+    files.map((file) =>
+      stat(file).then(
+        (info) => info.mtimeMs,
+        () => 0
+      )
+    )
+  );
+  return String(Math.round(Math.max(...times)));
+}
+
+async function stamped(pathname, body) {
+  const stamp = await assetStamp();
+  if (pathname === '/') return body.replaceAll('__STAMP__', stamp);
+  // Every module import gets the stamp, so an edited interface is never served
+  // from the browser's cache; the earlier single-import rewrite missed one file.
+  if (pathname.endsWith('.js'))
+    return body.replace(/from '([^']+\.js)'/g, (_match, spec) => `from '${spec}?${stamp}'`);
+  return body;
+}
+
 function send(res, status, body, type = 'application/json; charset=utf-8') {
-  res.writeHead(status, { 'content-type': type, 'cache-control': 'no-store' });
+  res.writeHead(status, {
+    'content-type': type,
+    // Browsers happily reuse a cached module or page across a reload, which would
+    // hide an edited planner, so every response forbids caching.
+    'cache-control': 'no-store, no-cache, must-revalidate, max-age=0',
+    pragma: 'no-cache',
+    expires: '0',
+  });
   res.end(typeof body === 'string' ? body : JSON.stringify(body));
 }
 
@@ -314,7 +207,7 @@ async function handle(req, res) {
   const url = new URL(req.url, `http://${HOST}`);
   if (req.method === 'GET' && staticFiles.has(url.pathname)) {
     const { file, type } = staticFiles.get(url.pathname);
-    return send(res, 200, await readFile(file, 'utf8'), type);
+    return send(res, 200, await stamped(url.pathname, await readFile(file, 'utf8')), type);
   }
   if (req.method === 'GET' && url.pathname.startsWith('/images/')) {
     const file = path.resolve(rootDir, `.${decodeURIComponent(url.pathname)}`);

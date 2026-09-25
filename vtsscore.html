@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="vts-app-version" content="16.5.13" />
+    <meta name="vts-app-version" content="16.5.15" />
     <meta
       name="description"
       content="VTS 1097 Competition #12: register your BoH and Epic Showdown active times, upload your data, and re-upload later to measure your growth."
@@ -11,10 +11,10 @@
     <meta id="themeColorMeta" name="theme-color" content="#08111f" />
     <title>VtsScore · Competition #12</title>
     <link rel="icon" href="images/logo.png" />
-    <link rel="stylesheet" href="css/_tokens.css?v=20260925_171837" />
-    <link rel="stylesheet" href="css/vts-score.css?v=20260925_171837" />
-    <link rel="stylesheet" href="css/account-chip.css?v=20260925_171837" />
-    <script src="js/theme-prepaint.js?v=20260925_171837"></script>
+    <link rel="stylesheet" href="css/_tokens.css?v=20260925_194241" />
+    <link rel="stylesheet" href="css/vts-score.css?v=20260925_194241" />
+    <link rel="stylesheet" href="css/account-chip.css?v=20260925_194241" />
+    <script src="js/theme-prepaint.js?v=20260925_194241"></script>
   </head>
   <body>
     <main id="vtsScoreApp" class="vts-score-shell">
@@ -170,13 +170,10 @@
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
                 />
-                <label class="vts-score-consent" for="vtsScoreSignupOcrConsent">
-                  <input id="vtsScoreSignupOcrConsent" type="checkbox" />
-                  <span data-vts-i18n="consent">
-                    I understand the image is sent to the secured OCR service to read visible
-                    numbers. The image itself is not saved.
-                  </span>
-                </label>
+                <p class="vts-score-field-hint" data-vts-i18n="signupOcrPrivacy">
+                  Your image is sent to the secure OCR service to read the visible numbers. The
+                  image itself is not saved.
+                </p>
                 <button
                   id="vtsScoreSignupReadButton"
                   class="vts-score-secondary"
@@ -361,24 +358,6 @@
               <p class="vts-score-field-hint" data-vts-i18n="slotHelp">
                 Tap in order of preference; tap again to remove.
               </p>
-              <label class="vts-score-signup-block" for="vtsScoreSignupJoinReason">
-                <span data-vts-i18n="signupJoinReason">Why you want to join (optional)</span>
-                <textarea
-                  id="vtsScoreSignupJoinReason"
-                  rows="3"
-                  maxlength="1000"
-                  data-boh-field="commitment.joinReason"
-                ></textarea>
-              </label>
-              <label class="vts-score-signup-block" for="vtsScoreSignupNotes">
-                <span data-vts-i18n="signupNotes">Anything leadership should know (optional)</span>
-                <textarea
-                  id="vtsScoreSignupNotes"
-                  rows="3"
-                  maxlength="2000"
-                  data-boh-field="commitment.notes"
-                ></textarea>
-              </label>
             </div>
           </div>
 
@@ -540,8 +519,8 @@
         </section>
       </section>
 
-      <!-- Growth board mount point, visible in the results-pending and winners
-           phases. Its content is rendered by the growth board module. -->
+      <!-- Growth board mount point, visible throughout the competition. Its
+           content is rendered by the growth board module when published. -->
       <section id="vtsScoreGrowthBoard" class="vts-score-card vts-score-growth-board" hidden>
         <p class="vts-score-kicker" data-vts-i18n="growthBoardKicker">GROWTH BOARD</p>
         <p data-vts-i18n="growthBoardPending">
@@ -549,7 +528,7 @@
         </p>
       </section>
     </main>
-    <script type="module" src="js/vts-score.js?v=20260925_171837"></script>
+    <script type="module" src="js/vts-score.js?v=20260925_194241"></script>
       <script type="module" src="js/account-chip-bootstrap.js"></script>
   </body>
 </html>

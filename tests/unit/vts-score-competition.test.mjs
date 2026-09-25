@@ -54,36 +54,31 @@ test('phase → page state follows the Competition #12 windows', () => {
     return [state.signup, state.upload, state.notice, state.growthBoard];
   };
   // No schedule: today's flow, registration then the final-score upload.
-  assert.deepEqual(view('unconfigured', newcomer), ['open', 'none', '', false]);
-  assert.deepEqual(view('unconfigured', registered), ['open', 'final', '', false]);
-  assert.deepEqual(view('upcoming', registered), ['hidden', 'none', 'phaseNoticeUpcoming', false]);
-  assert.deepEqual(view('registration', newcomer), ['open', 'none', '', false]);
-  assert.deepEqual(view('registration', registered), ['open', 'none', '', false]);
-  assert.deepEqual(view('finalCheck', registered), ['edit', 'none', 'phaseNowFinalCheck', false]);
+  assert.deepEqual(view('unconfigured', newcomer), ['open', 'none', '', true]);
+  assert.deepEqual(view('unconfigured', registered), ['open', 'final', '', true]);
+  assert.deepEqual(view('upcoming', registered), ['hidden', 'none', 'phaseNoticeUpcoming', true]);
+  assert.deepEqual(view('registration', newcomer), ['open', 'none', '', true]);
+  assert.deepEqual(view('registration', registered), ['open', 'none', '', true]);
+  assert.deepEqual(view('finalCheck', registered), ['edit', 'none', 'phaseNowFinalCheck', true]);
   assert.deepEqual(view('finalCheck', newcomer), [
     'hidden',
     'none',
     'phaseNoticeFinalCheckClosed',
-    false,
+    true,
   ]);
-  assert.deepEqual(view('waiting', registered), ['readonly', 'none', 'phaseNoticeWaiting', false]);
-  assert.deepEqual(view('waiting', newcomer), [
-    'hidden',
-    'none',
-    'phaseNoticeNotRegistered',
-    false,
-  ]);
+  assert.deepEqual(view('waiting', registered), ['readonly', 'none', 'phaseNoticeWaiting', true]);
+  assert.deepEqual(view('waiting', newcomer), ['hidden', 'none', 'phaseNoticeNotRegistered', true]);
   assert.deepEqual(view('reupload', registered), [
     'readonly',
     'reupload',
     'phaseNowReupload',
-    false,
+    true,
   ]);
   assert.deepEqual(view('reupload', newcomer), [
     'hidden',
     'none',
     'phaseNoticeNotRegistered',
-    false,
+    true,
   ]);
   assert.deepEqual(view('resultsPending', registered), [
     'readonly',
@@ -92,7 +87,7 @@ test('phase → page state follows the Competition #12 windows', () => {
     true,
   ]);
   assert.deepEqual(view('winners', newcomer), ['hidden', 'none', 'phaseNowWinners', true]);
-  assert.deepEqual(view('closed', registered), ['hidden', 'none', 'phaseNowClosed', false]);
+  assert.deepEqual(view('closed', registered), ['hidden', 'none', 'phaseNowClosed', true]);
 });
 
 test('every phase has its name, "now" line and notice in the VtsScore catalogue', () => {

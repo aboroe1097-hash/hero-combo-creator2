@@ -636,6 +636,8 @@ export async function initStrifeTool() {
   if (!strifeLanguageListenerWired) {
     strifeLanguageListenerWired = true;
     window.addEventListener('edenLanguageUpdate', () => refreshStrifeLocale(currentLanguage));
+    // The counter picks rank combos by baseRankedCombos, which a live publish replaces.
+    window.addEventListener('combos:updated', () => scheduleStrifeRender());
   }
   await loadStrifeLocale(currentLanguage);
   renderStrifeTool();
