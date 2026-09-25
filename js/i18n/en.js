@@ -589,6 +589,7 @@ const en = {
   adminAccountLinksAdd: 'Link account',
   adminAccountLinksSuggested: 'Suggested banner accounts',
   adminAccountsTab: 'Accounts',
+  adminCombosTab: 'Combos',
   adminAccountLinksLinkAll: 'Link all {count}',
   adminAccountLinksLinkAllConfirm: 'Link all {count} suggested accounts?',
   adminAccountLinksShowingSome: 'Showing {shown} of {total} suggestions',

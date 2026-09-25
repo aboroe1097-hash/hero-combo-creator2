@@ -701,6 +701,7 @@ const it = {
   adminAccountLinksAdd: 'Collega account',
   adminAccountLinksSuggested: 'Account stendardo suggeriti',
   adminAccountsTab: 'Account',
+  adminCombosTab: 'Combo',
   adminAccountLinksLinkAll: 'Collega tutti ({count})',
   adminAccountLinksLinkAllConfirm: 'Collegare tutti i {count} account suggeriti?',
   adminAccountLinksShowingSome: 'Mostrati {shown} di {total} suggerimenti',

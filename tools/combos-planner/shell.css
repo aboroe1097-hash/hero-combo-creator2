@@ -1,0 +1,28 @@
+/* tools/combos-planner/shell.css
+   Page chrome for the local planner host only. The interface itself is styled by
+   css/combos-planner.css, which the admin tab loads as well; both follow the
+   system's light or dark setting here. */
+
+body {
+  margin: 0;
+  background: #070b16;
+  color: #eef4ff;
+  font:
+    14px/1.35 Sora,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+}
+
+@media (prefers-color-scheme: light) {
+  body {
+    background: #f5f8fa;
+    color: #101827;
+  }
+}
+
+.combos-page {
+  max-width: 1920px;
+  margin: 0 auto;
+}

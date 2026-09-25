@@ -1,10 +1,20 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.13";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.14";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.5.14",
+    "date": "2026-09-25",
+    "highlights": [
+      "VTS Admin has a Combos tab (Beta) running the Combos Planner: the full ranking with its filters, an overlap check, and every lineup editable (rename heroes or skin, reorder, remove). The same planner runs on a PC with `npm run combos:plan`.",
+      "Placing new X8 lineups is fast: each unplaced lineup gets a suggested slot with its reason (for example \"above #58 · shares Lawman + The Avalanche\"), learned from similar lineups and from the placements already made, and paid lineups keep their place above free ones. Keys: J/K t…",
+      "The planner shows about 35 compact rows at once, focuses the ranking around the lineup being placed, groups the queue by X8 hero with progress, places several lineups as one block, drafts every suggestion in one undoable step, keeps an automatic draft, accepts a pasted list of l…",
+      "A superadmin can publish the ranking live from VTS Admin: players get it on their next page load without a site update, the Combo Generator, Hero Atlas and counter tables follow it, and \"Use shipped list\" switches back. The site checks every published lineup and keeps the shippe…"
+    ]
+  },
   {
     "version": "16.5.13",
     "date": "2026-09-25",
@@ -95,18 +105,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Clicking a reward category on the Eden season view now takes you to its table. The scroll only happened on phones before, so on a laptop the card swapped the table in below the fold and looked like nothing had happened; it now scrolls whenever the table is not already on screen.…",
       "Reward names on the Eden season view are clickable: the final Top list names the same players as every other table on the page and now opens their detail the same way. On a phone each name is a full-height tap target, and the downloaded announcement image stays without link unde…",
       "The recent adjustments list in VTS Admin can now be filtered by which bonus or penalty an adjustment is: Banner help, Connected road, Extra effort, Merit - other, Blocked path, Toxicity, Ignored coordination, Penalty - other, and the two premium flags. Before this, a season of m…"
-    ]
-  },
-  {
-    "version": "16.5.4",
-    "date": "2026-09-24",
-    "highlights": [
-      "VtsScore is now **Competition #12**, a pre-season growth competition. Members sign up with their BoH time slots (+8, +12, +14, +20) and Epic Showdown time slots (+10, +13, +16, +19) in order of preference, all in game time, and can opt in to the public comparison. Each player is…",
-      "VTS Admin: superadmins set the competition's start, phase-one close, deadline, re-upload window and winners start/end in game time. A scheduled job opens and closes sign-ups and re-uploads at those instants.",
-      "Eden Hub gained **Eden Pathing**, a route planner on the Eden map with PNG export, and Eden Map routes can be played back step by step.",
-      "Heroes & Combos, Research & Towers, Class Development and Eden each have a **PDFs** tab that builds a printable document from your choices (season, troop, focus, paper size, level of detail), with numbered sections, repeated table headers and page numbers. Unknown values print a…",
-      "Eden Siege fun pass: five tower tiers, armoured, swift and shielded enemies, warlord boss waves, Velo's dash and ultimate, a training wave, endless mode and a Daily Siege with the same seed for everyone. Runs end on a results screen with stars and recent runs saved in the browse…",
-      "Motion: Specialization Towers draw the connectors between nodes, the research planner shows a cost curve, Arcade gives hit feedback, and combo PNGs carry a background generated from the combos."
     ]
   }
 ].map((release) =>

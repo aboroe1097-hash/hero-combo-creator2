@@ -385,6 +385,21 @@ export function filterCombosForSkinMode(combos, skinMode, ownsSkin) {
 
 export const baseRankedCombos = filterCombosForSkinMode(rankedCombos, false);
 
+// The list exactly as this file ships it. js/combos-live.js may swap a ranking the
+// admin published into rankedCombos and baseRankedCombos in place, so every
+// consumer that reads those arrays sees it; this copy is what it restores.
+export const shippedRankedCombos = Object.freeze(rankedCombos.slice());
+
+/** Replace the live ranking in place (and the normal-mode list derived from it). */
+export function replaceRankedCombos(combos) {
+  rankedCombos.splice(0, rankedCombos.length, ...combos);
+  baseRankedCombos.splice(
+    0,
+    baseRankedCombos.length,
+    ...filterCombosForSkinMode(rankedCombos, false)
+  );
+}
+
 export function selectNonOverlappingCombos(combos, ownedHeroes, limit = 5) {
   const ownedSet = ownedHeroes instanceof Set ? ownedHeroes : new Set(ownedHeroes);
   const usedHeroes = new Set();

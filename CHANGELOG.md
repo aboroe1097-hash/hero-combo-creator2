@@ -2,6 +2,13 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.14 - 2026-09-25
+
+- VTS Admin has a Combos tab (Beta) running the Combos Planner: the full ranking with its filters, an overlap check, and every lineup editable (rename heroes or skin, reorder, remove). The same planner runs on a PC with `npm run combos:plan`.
+- Placing new X8 lineups is fast: each unplaced lineup gets a suggested slot with its reason (for example "above #58 · shares Lawman + The Avalanche"), learned from similar lineups and from the placements already made, and paid lineups keep their place above free ones. Keys: J/K to move through the queue, Enter to accept, arrows to nudge (Shift for ten rows), a rank number to place above it, U to unplace, Z to undo, Ctrl+S to save.
+- The planner shows about 35 compact rows at once, focuses the ranking around the lineup being placed, groups the queue by X8 hero with progress, places several lineups as one block, drafts every suggestion in one undoable step, keeps an automatic draft, accepts a pasted list of lineups, and shows exactly which lines will change before saving. Hero portraits now load in the admin tab.
+- A superadmin can publish the ranking live from VTS Admin: players get it on their next page load without a site update, the Combo Generator, Hero Atlas and counter tables follow it, and "Use shipped list" switches back. The site checks every published lineup and keeps the shipped list if anything is wrong. **Deploy firestore.rules after this release**, or publishing is refused.
+
 ## 16.5.13 - 2026-09-25
 
 - Velo graduates to **Velo 1.0**. The chat header's "Beta 0.4" badge becomes a plain "Velo 1.0" version mark in every language — a version number needs no translation — and the internal b0.4 build number is retired from the assistant's own answers, the toolkit map, and the system prompt, so asking "what version is this?" gets 1.0 everywhere. **Action for the owner:** run `npm run worker:deploy` — the wording the AI uses about itself lives in the Cloudflare Worker's system prompt, and until that redeploy Velo still calls itself b0.4 in chat even though the site chrome says 1.0.

@@ -190,7 +190,10 @@ const LIMITS = {
   // first chunk grows by 4.7 KiB. Measured 11736.8 KiB locally (gh-pages 16.5.13
   // base 11679.4 KiB); the cap moves by that growth and keeps ~20 KiB for CI's
   // admin-auth injection.
-  totalJsBytes: 11760 * 1024,
+  // 16.5.14 Combos planner in VTS Admin (the shared interface, the placement
+  // workflow engine, hero-name matching and the live-publish loader): measured
+  // 11822.5 KiB on top of 16.5.13; retain ~22 KiB for CI's admin-auth injection.
+  totalJsBytes: 11845 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -406,7 +409,9 @@ const LIMITS = {
   // Competition #12 data modules, so each becomes a chunk shared with its
   // feature instead of being inlined there, and the Velo copy pack, deadline
   // line and competition status load as chunks of their own. No headroom.
-  deployFileCount: 826,
+  // 16.5.14 Combos planner chunks and the live-publish loader: 831 measured; keep
+  // two of headroom.
+  deployFileCount: 833,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive

@@ -24,6 +24,10 @@ node scripts/firestore-rules-status.mjs
 
 The deploy is done only when `firestore-rules-status` prints `LIVE MATCHES THIS CHECKOUT`. The CLI's own success or failure message is not proof either way, as the incident below shows.
 
+### Rules paths that need a deploy before their feature works
+
+- `combos_plan/current` — the live Combos ranking (see [Combos Planner](combos-planner.md#publishing-live)). Until the rules that add it are live, **Publish live** in VTS Admin → Combos fails with `permission-denied` and every visitor keeps the shipped `js/combos-db.js`; nothing else breaks. After the deploy, a superadmin publish should show "Live: published … by you (N lineups)" in the tab. Check the rules behaviour locally with `npm run rules:emulator:combos` (Firestore emulator, needs Java).
+
 ### If the deploy fails with 503 or 409
 
 Nothing in the rules file causes these errors, so do not edit or shrink it. A compile error comes back as a 400 that names a line, and a permission problem comes back as a 403; both stop the loop below. Otherwise it retries until the status script reports a match. The first attempt runs the full CLI deploy. Later attempts only re-point the release with `firestore-rules-release.mjs`, and upload again with the CLI only when no uploaded ruleset matches the checkout (exit code 3). Paste it into Windows PowerShell 5 as one block:

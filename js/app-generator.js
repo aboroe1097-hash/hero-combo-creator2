@@ -47,12 +47,17 @@ import {
 import { callUi } from './ui-bridge.js';
 import { comboSkinTypeText, comboToolsText } from './i18n/combo-tools/index.js';
 import { formatLocaleNumber } from './locale-format.js';
+// The live ranking a superadmin can publish from VTS Admin (js/combos-live.js).
+import './combos-live-boot.js';
 
 export { lastGeneratedCombos };
 
 let generatorSkinOwnership = null;
 let generatorSelectionRestored = false;
 let lastGeneratorRunMeta = null;
+// Which run produced the results on screen, so a ranking published live can
+// refresh a "best combos" answer in place (a random draw is left alone).
+let lastGeneratorMode = null;
 
 const GENERATOR_IDLE_LABEL_KEYS = Object.freeze({
   generateCombosBtn: 'generatorGenerateBtn',
@@ -726,6 +731,7 @@ function runGenerator(min, messageKey, fallback, select) {
 }
 
 export function generateBestCombos() {
+  lastGeneratorMode = 'best';
   runGenerator(
     GENERATOR_MIN_HEROES,
     'generatorMinHeroesMessage',
@@ -735,10 +741,12 @@ export function generateBestCombos() {
 }
 
 export function generateRandomCombos() {
+  lastGeneratorMode = 'random';
   runGenerator(3, 'messagePleaseDrag3Heroes', 'Select at least 3 heroes!', selectRandomCombos);
 }
 
 export function restoreSharedGeneratorResults(combos) {
+  lastGeneratorMode = 'shared';
   const restored = Array.isArray(combos) ? combos : [];
   lastGeneratedCombos.length = 0;
   lastGeneratedCombos.push(...restored);
@@ -751,6 +759,34 @@ export function restoreSharedGeneratorResults(combos) {
   renderGeneratorResults(restored, { countMessage });
   updateGeneratorRunStatus(countMessage);
   downloadGeneratorBtn?.classList.toggle('hidden', restored.length === 0);
+}
+
+/**
+ * The live ranking changed (js/combos-live.js): rank the same selection again so
+ * best-combo results on screen follow the new order, without moving focus or
+ * scrolling. Random draws and shared links stay as they are.
+ */
+export function refreshGeneratorForRankingChange() {
+  if (lastGeneratorMode !== 'best' || !resultsEl || !lastGeneratorRunMeta) return false;
+  const selected = [...generatorSelectedHeroes];
+  if (selected.length < GENERATOR_MIN_HEROES) return false;
+  const combos = selectNonOverlappingCombos(getSourceCombos(), selected, GENERATOR_MAX_COMBOS);
+  lastGeneratedCombos.length = 0;
+  lastGeneratedCombos.push(...combos);
+  const t = translations[currentLanguage] || translations.en;
+  const countMessage = formatResultCount(combos.length);
+  renderGeneratorResults(combos, {
+    durationMs: lastGeneratorRunMeta.durationMs,
+    emptyMessage: t.generatorNoCombosAvailable || 'No ranked combos found.',
+    countMessage,
+  });
+  updateGeneratorRunStatus(countMessage);
+  downloadGeneratorBtn?.classList.toggle('hidden', combos.length === 0);
+  return true;
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('combos:updated', () => refreshGeneratorForRankingChange());
 }
 
 export function refreshGeneratorLocalization() {
