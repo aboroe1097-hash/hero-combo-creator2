@@ -850,6 +850,7 @@ function renderDashboardSubtab(name = activeDashboardSubtabName()) {
   if (name === 'bohSignups') renderBohSignupsPanel();
   if (name === 'vtsScore') renderVtsScorePanel();
   if (name === 'throneBuffs') void ensureThroneBuffsMounted();
+  if (name === 'combos') void ensureCombosMounted();
   if (name === 'userRoles') void ensureUserRolesMounted();
   if (name === 'complaints') void ensureComplaintsMounted();
   if (name === 'seasonLifecycle') void refreshEdenSeasonLifecyclePanel();
@@ -1127,6 +1128,40 @@ function saveThroneBuffsHistory(record) {
     localStorage.setItem(THRONE_BUFFS_HISTORY_LOCAL_KEY, JSON.stringify(history));
   } catch (error) {
     console.warn('THRONE BUFFS HISTORY SAVE ERROR:', error);
+  }
+}
+
+let combosModulePromise = null;
+
+/**
+ * Mounts the Combos tab on first visit. The tab reads the shipped ranking, so it
+ * needs nothing from Firestore and can load the moment it is opened.
+ */
+async function ensureCombosMounted() {
+  if (!combosModulePromise) {
+    combosModulePromise = Promise.all([
+      import('./admin-combos.js'),
+      import('../css/admin-combos.css'),
+    ])
+      .then(([module]) => module)
+      .catch((error) => {
+        combosModulePromise = null;
+        void recoverFromStaleAssetGraph(error);
+        throw error;
+      });
+  }
+  try {
+    const module = await combosModulePromise;
+    const mount = $id('dashCombosRoot');
+    if (mount) module.renderCombos(mount);
+  } catch (error) {
+    console.error('COMBOS TAB LOAD ERROR:', error);
+    const mount = $id('dashCombosRoot');
+    if (mount) {
+      mount.innerHTML = `<div class="dash-empty" role="alert">${esc(
+        'Could not load the combo list. Reload the page and try again.'
+      )}</div>`;
+    }
   }
 }
 

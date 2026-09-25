@@ -11,8 +11,10 @@ import {
   selectLanes,
   tierOf,
   TRAY_DEFAULTS,
+  troopIcon,
   troopOf as troopOfHeroes,
-} from '/lanes.js';
+  TROOP_LABEL,
+} from '/combo-lanes.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) =>
@@ -31,30 +33,6 @@ const slug = (heroes, skin) =>
     )
     .join('_') +
   (skin ? '-' + skin : '');
-
-// Mini troop logos, drawn here so the planner needs no downloads and matches the
-// site's own colour language: horseshoe, bow, shield, half-filled disc.
-const TROOP_ICONS = {
-  Cavalry: '<path d="M7 20v-5a5 5 0 0 1 10 0v5"/><path d="M5 20h4M15 20h4"/>',
-  Archers: '<path d="M7 3c5 3.5 5 14.5 0 18"/><path d="M4 12h13"/><path d="M17 12l-3.5-3.5M17 12l-3.5 3.5"/>',
-  Footmen: '<path d="M12 3.5l7 3v5.5c0 3.8-2.9 6.3-7 8.5-4.1-2.2-7-4.7-7-8.5V6.5z"/>',
-  Mixed: '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/>',
-  All: '<circle cx="12" cy="12" r="8.5"/><path d="M9 12h6M12 9v6"/>',
-};
-const TROOP_LABEL = { Cavalry: 'Cavalry', Archers: 'Archers', Footmen: 'Footmen', Mixed: 'Mixed troops', All: 'Any troop' };
-
-function troopIcon(troop, size = 17) {
-  const body = TROOP_ICONS[troop] || TROOP_ICONS.All;
-  return (
-    '<svg class="troopicon" viewBox="0 0 24 24" width="' +
-    size +
-    '" height="' +
-    size +
-    '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
-    body +
-    '</svg>'
-  );
-}
 
 let H = {};
 let BASE = [];

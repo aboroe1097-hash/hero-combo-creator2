@@ -183,7 +183,11 @@ const LIMITS = {
   // release 11614.1 KiB). Retain ~20 KiB again.
   // Both land in one 16.5.6 release (with the Heroes PDF designs, which sit in
   // the lazy hub-pdf chunk): measured 11637.3 KiB locally; retain ~20 KiB.
-  totalJsBytes: 11658 * 1024,
+  // The Combos admin tab (js/admin-combos.js plus the shared js/combo-lanes.js
+  // helpers and the lazy css/admin-combos.css) adds its own chunk on top of the
+  // existing combos-db chunk, which it reuses rather than duplicating: 11665.9
+  // KiB locally; retain ~22 KiB for CI's admin-auth injection.
+  totalJsBytes: 11688 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -394,7 +398,9 @@ const LIMITS = {
   // Vite emits admin-export-model-*.js and conduct-adjustment-export-*.js, and
   // the export model's game-time parser splits ocr-time-filter-*.js and
   // game-time-*.js out as shared chunks. No headroom is added.
-  deployFileCount: 814,
+  // The Combos admin tab emits its module and its lazy stylesheet (816 files
+  // measured); keep two files of headroom.
+  deployFileCount: 818,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive

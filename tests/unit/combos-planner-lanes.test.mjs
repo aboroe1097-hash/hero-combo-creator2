@@ -16,7 +16,7 @@ import {
   tierRank,
   troopOf,
   TRAY_DEFAULTS,
-} from '../../tools/combos-planner/lanes.js';
+} from '../../js/combo-lanes.js';
 
 // A tiny hero table keeps the filter and sort expectations readable.
 const H = {

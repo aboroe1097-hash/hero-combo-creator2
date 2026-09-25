@@ -1,0 +1,267 @@
+/* css/admin-combos.css
+   Styles for the Combos admin tab (js/admin-combos.js). Loaded lazily with the tab
+   module so nothing here costs the eager admin stylesheet, and written against the
+   shared tokens so the light theme follows for free. */
+
+.admin-combos {
+  display: grid;
+  gap: 12px;
+}
+.ac-head {
+  display: grid;
+  gap: 8px;
+}
+.ac-title {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+  font-family: var(--ff-font-ui);
+  font-size: 20px;
+  letter-spacing: 0.01em;
+}
+.ac-tag {
+  padding: 2px 8px;
+  border: 1px solid #fbbf24;
+  border-radius: 9999px;
+  background: #f59e0b;
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.ac-copy {
+  margin: 0;
+  max-width: 96ch;
+  color: var(--ff-text-dim);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ac-copy code {
+  padding: 0 4px;
+  border: 1px solid var(--ff-border-subtle);
+  border-radius: 6px;
+  background: var(--ff-control);
+  font-family: var(--ff-font-mono);
+  font-size: 12px;
+}
+.ac-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ac-stat {
+  padding: 6px 10px;
+  border: 1px solid var(--ff-border);
+  border-radius: 10px;
+  background: var(--ff-control);
+  color: var(--ff-text-supporting);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.ac-stat b {
+  margin-right: 5px;
+  color: var(--ff-text);
+  font-family: var(--ff-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.ac-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ac-input {
+  flex: 1 1 150px;
+  min-height: 34px;
+  min-width: 0;
+}
+.ac-btn {
+  min-height: 34px;
+  white-space: nowrap;
+}
+.ac-summary,
+.ac-note {
+  margin: 0;
+  color: var(--ff-text-dim);
+  font-size: 12.5px;
+}
+.ac-lists {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.ac-panel {
+  padding: 10px;
+  border: 1px solid var(--ff-border);
+  border-radius: 14px;
+  background: var(--ff-panel);
+}
+.ac-panel h3 {
+  margin: 0 0 8px;
+  color: var(--ff-text-dim);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.ac-list {
+  display: grid;
+  gap: 2px;
+  max-height: 58vh;
+  overflow: auto;
+}
+.ac-row {
+  display: grid;
+  grid-template-columns: 66px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  border: 0;
+  border-left: 4px solid var(--ff-border);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.ac-row.base:hover {
+  background: var(--ff-surface-hover);
+}
+.ac-row.new {
+  cursor: pointer;
+  border-top: 1px solid var(--ff-border-subtle);
+  border-right: 1px solid var(--ff-border-subtle);
+  border-bottom: 1px solid var(--ff-border-subtle);
+}
+.ac-row.new:hover {
+  background: var(--ff-surface-hover);
+}
+.ac-row.troop-Cavalry {
+  border-left-color: var(--accent-cyan);
+}
+.ac-row.troop-Archers {
+  border-left-color: var(--ff-mint);
+}
+.ac-row.troop-Footmen {
+  border-left-color: var(--ff-rose);
+}
+.ac-rank {
+  color: var(--ff-text-tertiary);
+  font-family: var(--ff-font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ac-lineup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  align-items: center;
+  min-width: 0;
+}
+.ac-hero {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  white-space: nowrap;
+}
+.ac-hero.is-new {
+  color: var(--accent-gold);
+  font-weight: 600;
+}
+.ac-troop.Cavalry {
+  color: var(--accent-cyan);
+}
+.ac-troop.Archers {
+  color: var(--ff-mint);
+}
+.ac-troop.Footmen {
+  color: var(--ff-rose);
+}
+.ac-troop.Mixed,
+.ac-troop.All {
+  color: var(--ff-text-tertiary);
+}
+.ac-sep {
+  color: var(--ff-text-tertiary);
+}
+.ac-chip {
+  padding: 2px 6px;
+  border: 1px solid var(--ff-border);
+  border-radius: 999px;
+  color: var(--ff-text-dim);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.ac-chip.tier {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+.ac-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  justify-content: flex-end;
+}
+.ac-badge {
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ac-badge.paid {
+  background: var(--accent-violet);
+  color: #0f172a;
+}
+.ac-badge.free {
+  border: 1px solid var(--ff-border);
+  color: var(--ff-text-dim);
+}
+.ac-badge.match {
+  background: var(--accent-cyan);
+  color: #0f172a;
+}
+.ac-badge.same {
+  background: var(--ff-rose);
+  color: #0f172a;
+}
+.ac-row.match1 {
+  box-shadow: inset 3px 0 0 var(--ff-border-strong);
+}
+.ac-row.match2 {
+  box-shadow: inset 3px 0 0 var(--accent-cyan);
+}
+.ac-row.same-trio {
+  box-shadow: inset 3px 0 0 var(--ff-rose);
+}
+.ac-row.selected {
+  outline: 2px dashed var(--accent-gold);
+  outline-offset: -2px;
+}
+.ac-empty {
+  margin: 0;
+  padding: 14px;
+  color: var(--ff-text-dim);
+  font-size: 13px;
+  text-align: center;
+}
+.ac-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+@media (max-width: 720px) {
+  .ac-lists {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ac-list {
+    max-height: none;
+  }
+}

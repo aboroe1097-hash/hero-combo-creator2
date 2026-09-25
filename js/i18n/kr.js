@@ -227,6 +227,7 @@ const kr = {
   adminAccountLinksAdd: '계정 연결',
   adminAccountLinksSuggested: '추천 배너 계정',
   adminAccountsTab: '계정',
+  adminCombosTab: '콤보',
   adminAccountLinksLinkAll: '모두 연결 ({count})',
   adminAccountLinksLinkAllConfirm: '제안된 계정 {count}개를 모두 연결할까요?',
   adminAccountLinksShowingSome: '제안 {total}개 중 {shown}개 표시',

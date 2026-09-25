@@ -1,8 +1,9 @@
-// tools/combos-planner/lanes.js
+// js/combo-lanes.js
 //
-// Pure helpers for the local Combos Planner: troop, paid and tier facts, the
-// tray and ranking filters, and the tray sort orders. The planner page and the
-// unit tests both import this file, so it stays free of DOM and network access.
+// Pure helpers shared by the local Combos Planner (tools/combos-planner) and the
+// Combos admin tab (js/admin-combos.js): troop, paid and tier facts, the filters
+// and the sort orders. Both callers and the unit tests import this file, so it
+// stays free of DOM, i18n and network access.
 
 export const TROOPS = ['Cavalry', 'Archers', 'Footmen', 'Mixed'];
 export const TIERS = ['S', 'A', 'B', 'C'];
@@ -11,6 +12,39 @@ export const TRAY_SORTS = ['new', 'score', 'tier', 'name', 'position'];
 export const NO_TIER = TIERS.length;
 /** Every tray control at its neutral value. `mode` is the To place / Placed / All switch. */
 export const TRAY_DEFAULTS = { mode: 'unplaced', q: '', troop: '', cost: '', tier: '', sort: 'new' };
+
+// Mini troop logos, drawn here so no surface downloads an icon or takes on someone
+// else's licence: horseshoe, bow, shield, and a half-filled disc.
+const TROOP_ICONS = {
+  Cavalry: '<path d="M7 20v-5a5 5 0 0 1 10 0v5"/><path d="M5 20h4M15 20h4"/>',
+  Archers:
+    '<path d="M7 3c5 3.5 5 14.5 0 18"/><path d="M4 12h13"/><path d="M17 12l-3.5-3.5M17 12l-3.5 3.5"/>',
+  Footmen: '<path d="M12 3.5l7 3v5.5c0 3.8-2.9 6.3-7 8.5-4.1-2.2-7-4.7-7-8.5V6.5z"/>',
+  Mixed:
+    '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/>',
+  All: '<circle cx="12" cy="12" r="8.5"/><path d="M9 12h6M12 9v6"/>',
+};
+export const TROOP_LABEL = {
+  Cavalry: 'Cavalry',
+  Archers: 'Archers',
+  Footmen: 'Footmen',
+  Mixed: 'Mixed troops',
+  All: 'Any troop',
+};
+
+/** Inline SVG markup for a troop type, coloured by the caller through currentColor. */
+export function troopIcon(troop, size = 17) {
+  const body = TROOP_ICONS[troop] || TROOP_ICONS.All;
+  return (
+    '<svg class="troopicon" viewBox="0 0 24 24" width="' +
+    size +
+    '" height="' +
+    size +
+    '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+    body +
+    '</svg>'
+  );
+}
 
 /** Cavalry / Archers / Footmen when the three heroes agree, Mixed when they do not. */
 export function troopOf(heroes, H) {

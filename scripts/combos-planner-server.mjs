@@ -36,7 +36,8 @@ const ENTRY_LINE = /^\s*\{ heroes: .*\},?\s*$/;
 export const staticFiles = new Map([
   ['/', { file: path.join(toolDir, 'index.html'), type: 'text/html; charset=utf-8' }],
   ['/app.js', { file: path.join(toolDir, 'app.js'), type: 'text/javascript; charset=utf-8' }],
-  ['/lanes.js', { file: path.join(toolDir, 'lanes.js'), type: 'text/javascript; charset=utf-8' }],
+  // The filter and sort helpers live with the site so the admin tab shares them.
+  ['/combo-lanes.js', { file: path.join(rootDir, 'js', 'combo-lanes.js'), type: 'text/javascript; charset=utf-8' }],
   ['/styles.css', { file: path.join(toolDir, 'styles.css'), type: 'text/css; charset=utf-8' }],
 ]);
 
@@ -430,11 +431,11 @@ async function readBody(req) {
 // Assets are served with a stamp from their own mtimes: a browser that reuses the
 // cached module would otherwise keep running the previous planner after an edit.
 async function assetStamp() {
-  const files = ['index.html', 'app.js', 'lanes.js', 'styles.css'].map((name) =>
+  const files = ['index.html', 'app.js', 'styles.css'].map((name) =>
     path.join(toolDir, name)
   );
   const times = await Promise.all(
-    files.map((file) =>
+    [...files, path.join(rootDir, 'js', 'combo-lanes.js')].map((file) =>
       stat(file).then(
         (info) => info.mtimeMs,
         () => 0
