@@ -62,3 +62,29 @@ test('the planner interface stays scoped to its mount so the dashboard is untouc
     if (/^[a-zA-Z.#*:[]/.test(line) && !line.startsWith('.combos-planner'))
       assert.fail(`unscoped rule in css/combos-planner.css: ${line.slice(0, 60)}`);
 });
+
+test('every hero portrait the planner shows resolves on the admin page and passes its CSP', async () => {
+  const { allHeroesData, HERO_PORTRAIT_FALLBACK } = await import('../../js/heroes-data.js');
+  const { access } = await import('node:fs/promises');
+  const html = await read('admin.html');
+  const csp = /http-equiv="Content-Security-Policy"\s+content="([^"]+)"/.exec(html)[1];
+  const imgSrc = /img-src ([^;]+)/.exec(csp)[1].split(/\s+/);
+  const hosts = new Set();
+  for (const hero of allHeroesData) {
+    const url = hero.imageUrl;
+    if (/^https:\/\//.test(url)) {
+      const origin = new URL(url).origin;
+      hosts.add(origin);
+      assert.ok(imgSrc.includes(origin), `${hero.name}: ${origin} is not in admin.html img-src`);
+    } else {
+      // Relative to admin.html, which sits at the site root next to images/.
+      assert.match(url, /^images\/heroes\/[\w./-]+(\?v=\w+)?$/, `${hero.name}: ${url}`);
+      await access(new URL(url.split('?')[0], root));
+    }
+  }
+  assert.deepEqual([...hosts].sort(), ['https://i.ibb.co', 'https://static.wixstatic.com']);
+  await access(new URL(HERO_PORTRAIT_FALLBACK, root));
+  // The planner falls back to that same relative placeholder in the admin tab.
+  const host = await read('js/admin-combos.js');
+  assert.match(host, /portraitFallback: HERO_PORTRAIT_FALLBACK,/);
+});

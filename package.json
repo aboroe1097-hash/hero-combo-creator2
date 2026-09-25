@@ -42,6 +42,7 @@
     "worker:tail": "npx wrangler tail delicate-term-725f",
     "velo:lab": "node scripts/velo-lab-server.mjs",
     "combos:plan": "node scripts/combos-planner-server.mjs",
+    "combos:test": "playwright test --config=playwright.combos.config.js --reporter=line",
     "velo:changelog": "node scripts/build-changelog-digest.mjs",
     "check:fast": "npm run version:check && npm run lint && npm run format:check && npm run test:unit && npm run i18n:check",
     "check:full": "npm run check",

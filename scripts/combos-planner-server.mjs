@@ -64,6 +64,8 @@ export const staticFiles = new Map([
   ['/combos-planner-ui.js', { file: path.join(rootDir, 'js', 'combos-planner-ui.js'), type: 'text/javascript; charset=utf-8' }],
   ['/combo-lanes.js', { file: path.join(rootDir, 'js', 'combo-lanes.js'), type: 'text/javascript; charset=utf-8' }],
   ['/combo-plan.js', { file: path.join(rootDir, 'js', 'combo-plan.js'), type: 'text/javascript; charset=utf-8' }],
+  ['/combo-workflow.js', { file: path.join(rootDir, 'js', 'combo-workflow.js'), type: 'text/javascript; charset=utf-8' }],
+  ['/hero-name-match.js', { file: path.join(rootDir, 'js', 'hero-name-match.js'), type: 'text/javascript; charset=utf-8' }],
   ['/combos-planner.css', { file: path.join(rootDir, 'css', 'combos-planner.css'), type: 'text/css; charset=utf-8' }],
 ]);
 
@@ -165,6 +167,8 @@ async function assetStamp() {
     path.join(rootDir, 'js', 'combos-planner-ui.js'),
     path.join(rootDir, 'js', 'combo-lanes.js'),
     path.join(rootDir, 'js', 'combo-plan.js'),
+    path.join(rootDir, 'js', 'combo-workflow.js'),
+    path.join(rootDir, 'js', 'hero-name-match.js'),
   ];
   const times = await Promise.all(
     files.map((file) =>

@@ -11,7 +11,7 @@
 // in the tab that were not placed stay in a local draft, the way the local tool
 // keeps them in x8-queue.json.
 
-import { allHeroesData } from './heroes-data.js';
+import { allHeroesData, HERO_PORTRAIT_FALLBACK } from './heroes-data.js';
 import { rankedCombos } from './combos-db.js';
 import { buildComboSource, buildView } from './combo-plan.js';
 import { mountCombosPlanner } from './combos-planner-ui.js';
@@ -22,10 +22,10 @@ const DRAFT_KEY = 'vts_combos_draft_v1';
 const HOW_TO = `
   <ul>
     <li>This is the same tool as the local planner (<code>npm run combos:plan</code>), pointed at the list that ships in <code>js/combos-db.js</code>.</li>
-    <li>Drag a lineup onto a gap, or press <b>Place</b> and then <b>Place here</b>; while placing, the banner and the rows name the lineups that already share heroes with yours.</li>
+    <li><kbd>J</kbd> / <kbd>K</kbd> walk the queue, <kbd>Enter</kbd> accepts the suggested slot, <kbd>↑</kbd>/<kbd>↓</kbd> adjusts it, digits then <kbd>Enter</kbd> place above a rank, <kbd>Z</kbd> undoes. <b>Keys</b> lists them all; <b>Auto-draft all</b> places everything at its suggestion in one undoable step.</li>
     <li><b>Edit mode</b> renames a lineup's heroes or skin code, reorders a current lineup, and takes one out with a two-step ✕.</li>
-    <li><b>Save</b> rebuilds <code>js/combos-db.js</code> and downloads it. Players keep the current list until that file is committed, which is the step that publishes a change.</li>
-    <li>Lineups you add but do not place stay in this browser as a draft, and are listed again next time you open the tab.</li>
+    <li><b>Save</b> (<kbd>Ctrl</kbd>+<kbd>S</kbd>) lists the changed lines, then rebuilds <code>js/combos-db.js</code> and downloads it. Players keep the current list until that file is committed, which is the step that publishes a change.</li>
+    <li>Unsaved work is kept as a draft in this browser and offered back when you return. Lineups you paste but do not place stay in the queue after Save.</li>
     <li><b>Skin code</b> is one digit per hero in Front / Middle / Back order: <b>3</b> you must own that hero's skin, <b>2</b> the skin is recommended, <b>1</b> it is optional.</li>
   </ul>`;
 
@@ -114,6 +114,8 @@ export function renderCombos(mount) {
     saveLabel: 'Rebuild combos-db.js',
     guardUnload: false,
     storagePrefix: 'vtsCombosAdmin',
+    // Relative to admin.html, so it resolves wherever the site is served from.
+    portraitFallback: HERO_PORTRAIT_FALLBACK,
     idleHint: 'Showing the list that ships in js/combos-db.js.',
     loadedHint: 'Showing the list that ships in js/combos-db.js.',
     dirtyHint: 'Not saved yet. Press Save to rebuild js/combos-db.js.',

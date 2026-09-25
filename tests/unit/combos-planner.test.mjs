@@ -382,6 +382,8 @@ test('every asset the planner page asks for is served by the planner server', as
     'js/combos-planner-ui.js',
     'js/combo-lanes.js',
     'js/combo-plan.js',
+    'js/combo-workflow.js',
+    'js/hero-name-match.js',
   ]) {
     const source = await read(name);
     for (const [, spec] of source.matchAll(/from '([^']+\.js)'/g)) {

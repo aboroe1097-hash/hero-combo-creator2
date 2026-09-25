@@ -41,7 +41,10 @@ export function parseComboSource(source, combos, isX8Lane) {
   return { head: lines.slice(0, start + 1), items, tail: lines.slice(end) };
 }
 
-/** The planner's view: the fixed S0-X2 list plus every X8 lane and where it sits. */
+/**
+ * The planner's view: the fixed S0-X2 list plus every X8 lane and where it sits.
+ * Each entry keeps its source `line`, so the save summary can quote the file.
+ */
 export function describeCombos(parsed) {
   const base = [];
   const x8 = [];
@@ -50,7 +53,7 @@ export function describeCombos(parsed) {
   parsed.items.forEach((item, index) => {
     if (item.kind === 'base') {
       const id = `b${base.length}`;
-      base.push({ id, heroes: item.combo.heroes, skin: item.combo.skin || '' });
+      base.push({ id, heroes: item.combo.heroes, skin: item.combo.skin || '', line: item.line });
       pending.forEach((lane) => (lane.anchor = id));
       pending = [];
     } else if (item.kind === 'x8') {
@@ -60,6 +63,7 @@ export function describeCombos(parsed) {
         skin: item.combo.skin || '',
         note: item.combo.note || '',
         anchor: '',
+        line: item.line,
       };
       x8.push(lane);
       if (index < lastBase) pending.push(lane);

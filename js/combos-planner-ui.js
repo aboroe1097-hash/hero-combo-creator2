@@ -1,11 +1,16 @@
 // js/combos-planner-ui.js
 //
 // The Combos planner interface, mountable on any page. Two hosts run this same
-// module: the local tool (tools/combos-planner/app.js, which saves through its
+// module: the local tool (tools/combos-planner/host.js, which saves through its
 // loopback server) and the VTS Admin tab (js/admin-combos.js, which rebuilds
 // js/combos-db.js in the browser for review). Everything it needs from a host
 // arrives through the adapter, and every element it touches lives under the mount
 // element, so it never reaches outside itself.
+//
+// The work is keyboard-first: J/K walk the queue, Enter accepts the suggested
+// slot, arrows nudge, digits + Enter place above a rank, Z undoes, Ctrl+S shows
+// what Save will change. The logic behind it — rows, suggestions, auto-draft,
+// history, paste import and the save summary — is the pure js/combo-workflow.js.
 //
 // adapter:
 //   load()            -> Promise<view>   the planner view (heroes/base/x8/skipped)
@@ -14,14 +19,16 @@
 //   idleHint          status line with nothing pending
 //   loadedHint        status line after a load
 //   dirtyHint         status line with unsaved changes
-//   addedHint         message after adding a lineup
+//   addedHint         message after adding lineups
 //   savedHint         status line after a save
 //   loadingHint       status line while loading
 //   loadError(error)  status line when loading fails
+//   removeHint        status line while a removal waits for its confirmation
 //   howToSummary      title of the help block
 //   howToHtml         body of the help block
-//   storagePrefix     localStorage prefix for the view preferences
+//   storagePrefix     localStorage prefix for the view preferences and the draft
 //   guardUnload       ask before leaving with unsaved changes
+//   portraitFallback  image shown when a portrait fails (relative to the page)
 //
 // Returns { destroy() } so a host can unmount the tool.
 
@@ -38,33 +45,102 @@ import {
   troopOf as troopOfHeroes,
   TROOP_LABEL,
 } from './combo-lanes.js';
+import { laneSlug } from './combo-plan.js';
+import { createHeroMatcher } from './hero-name-match.js';
+import {
+  autoDraft,
+  createHistory,
+  createSuggester,
+  gapAboveRank,
+  gapLabel,
+  groupByX8,
+  mergeRows,
+  moveGap,
+  parsePastedLineups,
+  placeBlock,
+  planFromState,
+  summarizePlan,
+  viewSignature,
+} from './combo-workflow.js';
 
 const ID_PREFIX = 'cp-';
+/** Rows shown on each side of the selected lineup in the focus view. */
+const FOCUS_RADIUS = 15;
+
+// A small brush: the skin-code mark on a lineup, explained by its tooltip.
+const SKIN_ICON =
+  '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18.4 3.6a2 2 0 0 1 2.8 2.8L12 15.6 8.4 12z"/><path d="M8 13.5c-2.2 0-3.6 1.5-3.6 3.4 0 1.5-.8 2.3-1.9 2.6 1 .9 2.6 1.4 4.2 1.4 2.9 0 4.8-1.9 4.8-4.3z"/></svg>';
+
+const KEYS_HTML = `
+  <table>
+    <tr><th><kbd>J</kbd> / <kbd>K</kbd></th><td>Next / previous lineup in the queue</td></tr>
+    <tr><th><kbd>Enter</kbd></th><td>Accept the suggested slot (or place the selection as a block)</td></tr>
+    <tr><th><kbd>5</kbd><kbd>8</kbd> <kbd>Enter</kbd></th><td>Place above rank #58</td></tr>
+    <tr><th><kbd>↑</kbd> / <kbd>↓</kbd></th><td>Move the selected placed lineup one row</td></tr>
+    <tr><th><kbd>Shift</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd></th><td>Move it ten rows</td></tr>
+    <tr><th><kbd>U</kbd></th><td>Unplace it</td></tr>
+    <tr><th><kbd>Z</kbd> / <kbd>Shift</kbd>+<kbd>Z</kbd></th><td>Undo / redo (also <kbd>Ctrl</kbd>+<kbd>Z</kbd>, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd>)</td></tr>
+    <tr><th><kbd>Ctrl</kbd>+<kbd>S</kbd></th><td>Review the changes, then save</td></tr>
+    <tr><th><kbd>/</kbd></th><td>Search the queue</td></tr>
+    <tr><th><kbd>Esc</kbd></th><td>Cancel: typed rank, placing, selection, dialog</td></tr>
+    <tr><th>Shift / Ctrl-click</th><td>Select several queued lineups, then Enter or a gap places them together</td></tr>
+  </table>
+  <p>Keys do nothing while you type in a field.</p>`;
 
 const TEMPLATE = `<div class="combos-planner">
-  <header>
+  <header class="cphead">
     <div class="topbar">
       <h1>Combos Planner <span class="badge beta">Beta</span></h1>
+      <div class="progress" id="cp-progress"></div>
       <div class="stats" id="cp-stats"></div>
+      <div class="toolbar">
+        <button type="button" id="cp-autoDraft" title="Place every unplaced lineup at its suggestion, as one step you can undo">Auto-draft all</button>
+        <button type="button" id="cp-undo" aria-keyshortcuts="Z Control+Z" title="Undo (Z)" disabled>Undo</button>
+        <button type="button" id="cp-redo" aria-keyshortcuts="Shift+Z Control+Shift+Z" title="Redo (Shift+Z)" disabled>Redo</button>
+        <div class="seg" role="group" aria-label="Row density">
+          <button type="button" data-density="compact" aria-pressed="true">Compact</button>
+          <button type="button" data-density="comfortable" aria-pressed="false">Comfortable</button>
+        </div>
+        <div class="keyswrap">
+          <button type="button" id="cp-keysBtn" aria-expanded="false" aria-controls="cp-keys" aria-keyshortcuts="?">Keys</button>
+          <div class="keys" id="cp-keys" role="dialog" aria-label="Keyboard shortcuts" hidden>${KEYS_HTML}</div>
+        </div>
+      </div>
     </div>
     <details class="howto"><summary id="cp-howtoSummary"></summary><div id="cp-howtoBody"></div></details>
   </header>
 
   <div class="strip" id="cp-strip">
+    <div class="draftbar" id="cp-draftBar" hidden>
+      <span id="cp-draftText"></span>
+      <span class="bannertool">
+        <button type="button" class="primary" id="cp-draftRestore">Restore draft</button>
+        <button type="button" id="cp-draftDiscard">Discard</button>
+      </span>
+    </div>
     <div class="banner" id="cp-banner" hidden>
       <span id="cp-bannerText"></span>
       <span class="bannertool">
-        <button type="button" id="cp-showAllRows" hidden>Show every row</button>
-        <label class="rankjump">Place above #<input type="number" id="cp-placeRank" min="1" inputmode="numeric"></label>
-        <button type="button" class="primary" id="cp-placeRankGo">Go</button>
         <button type="button" id="cp-cancelPlace">Cancel</button>
       </span>
     </div>
     <div class="savebar">
-      <button type="button" class="primary" id="cp-saveBtn" disabled>Save</button>
+      <button type="button" class="primary" id="cp-saveBtn" aria-keyshortcuts="Control+S" disabled>Save</button>
       <button type="button" id="cp-revertBtn" disabled>Discard changes</button>
       <span id="cp-dirty" class="dirty" hidden>Unsaved changes</span>
       <span class="status" id="cp-status" role="status" aria-live="polite">Loading…</span>
+    </div>
+  </div>
+
+  <div class="dialogwrap" id="cp-summary" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="cp-summaryTitle" aria-describedby="cp-summaryText">
+      <h2 id="cp-summaryTitle">Save these changes?</h2>
+      <p id="cp-summaryText"></p>
+      <ol class="difflist" id="cp-summaryLines"></ol>
+      <div class="dialogactions">
+        <button type="button" class="primary" id="cp-summarySave">Save</button>
+        <button type="button" id="cp-summaryCancel">Keep editing</button>
+      </div>
     </div>
   </div>
 
@@ -72,7 +148,7 @@ const TEMPLATE = `<div class="combos-planner">
     <aside class="panel tray" aria-labelledby="cp-trayTitle">
       <div class="panelhead">
         <div class="headrow">
-          <h2 id="cp-trayTitle">New lineups</h2>
+          <h2 id="cp-trayTitle">Queue</h2>
           <div class="seg" role="group" aria-label="Show">
             <button type="button" data-tray="unplaced" aria-pressed="true">To place</button>
             <button type="button" data-tray="placed" aria-pressed="false">Placed</button>
@@ -80,13 +156,13 @@ const TEMPLATE = `<div class="combos-planner">
           </div>
         </div>
         <div class="controls">
-          <input type="search" id="cp-traySearch" placeholder="Search hero" aria-label="Search X8 lineups by hero">
+          <input type="search" id="cp-traySearch" placeholder="Search hero  ( / )" aria-label="Search X8 lineups by hero">
+          <select id="cp-trayTroop" aria-label="Troop of the queued lineups">
+            <option value="">All troops</option><option value="Cavalry">Cavalry</option><option value="Archers">Archers</option><option value="Footmen">Footmen</option><option value="Mixed">Mixed</option>
+          </select>
           <button type="button" id="cp-trayFilterToggle" aria-expanded="false" aria-controls="cp-trayFilterBox">Filters</button>
         </div>
         <div class="filterbox" id="cp-trayFilterBox" hidden>
-          <select id="cp-trayTroop" aria-label="X8 troop">
-            <option value="">All troops</option><option value="Cavalry">Cavalry</option><option value="Archers">Archers</option><option value="Footmen">Footmen</option><option value="Mixed">Mixed</option>
-          </select>
           <select id="cp-trayCost" aria-label="X8 paid or free">
             <option value="">Paid and free</option><option value="free">Free heroes only</option><option value="paid">Has a paid hero</option>
           </select>
@@ -98,30 +174,33 @@ const TEMPLATE = `<div class="combos-planner">
           </select>
         </div>
         <div class="countrow">
-          <span class="count" id="cp-trayCount" aria-live="polite"></span>
+          <span class="count" id="cp-trayCount"></span>
           <button type="button" class="link" id="cp-trayClear" hidden>Clear filters</button>
         </div>
+        <div class="batchbar" id="cp-batchBar" hidden>
+          <span id="cp-batchText"></span>
+          <button type="button" class="primary" id="cp-batchPlace">Place as a block…</button>
+          <button type="button" id="cp-batchClear">Clear</button>
+        </div>
       </div>
-      <div class="cards" id="cp-cards"></div>
-      <details class="addbox">
-        <summary>Add a lineup</summary>
-        <form class="addform" id="cp-addForm" novalidate>
-          <input type="text" id="cp-addFront" list="cp-heroNames" placeholder="Front" aria-label="Front hero" autocomplete="off">
-          <input type="text" id="cp-addMiddle" list="cp-heroNames" placeholder="Middle" aria-label="Middle hero" autocomplete="off">
-          <input type="text" id="cp-addBack" list="cp-heroNames" placeholder="Back" aria-label="Back hero" autocomplete="off">
-          <input type="text" id="cp-addSkin" placeholder="Skin code, e.g. 222 (optional)" aria-label="Skin code" inputmode="numeric" maxlength="3">
-          <button type="submit" class="primary">Add to lineups</button>
-          <p class="hint">Skin code is one digit per hero in Front / Middle / Back order: <b>3</b> must own the skin, <b>2</b> recommended, <b>1</b> optional.</p>
-          <p class="hint" id="cp-addMsg"></p>
-        </form>
+      <div class="queue" id="cp-cards"></div>
+      <details class="addbox" id="cp-pasteBox">
+        <summary>Paste lineups</summary>
+        <div class="pasteform">
+          <textarea id="cp-pasteText" rows="5" spellcheck="false" aria-label="Lineups to add, one per line" placeholder="Lawman / Bjorn / The Avalanche&#10;Lawman, Bjorn, Avalanche 222"></textarea>
+          <p class="hint">One lineup per line, Front / Middle / Back, separated by <b>/</b>, <b>,</b> or <b>-</b>. A trailing three-digit skin code (<b>3</b> must own, <b>2</b> recommended, <b>1</b> optional) is read too. Names are matched without case, "The", or small typos.</p>
+          <button type="button" id="cp-pasteRead">Check the lines</button>
+          <div class="pasteresult" id="cp-pasteResult" aria-live="polite"></div>
+        </div>
       </details>
     </aside>
     <main class="panel ranking" aria-labelledby="cp-listTitle">
       <div class="panelhead">
         <div class="headrow">
           <h2 id="cp-listTitle">Ranking</h2>
-          <span class="count" id="cp-listCount" aria-live="polite"></span>
+          <span class="count" id="cp-listCount"></span>
         </div>
+        <div class="focusbar" id="cp-focusBar"></div>
         <div class="controls">
           <input type="search" id="cp-listSearch" placeholder="Filter by hero" aria-label="Filter the ranking by hero">
           <select id="cp-troop" aria-label="Troop">
@@ -137,20 +216,18 @@ const TEMPLATE = `<div class="combos-planner">
             <input type="number" id="cp-gotoRank" min="1" inputmode="numeric" placeholder="Rank #" aria-label="Go to rank number">
             <button type="submit">Go</button>
           </form>
-          <label class="checkline"><input type="checkbox" id="cp-compactRows"> Compact</label>
+          <label class="checkline" title="Show the whole ranking instead of the rows around the selected lineup"><input type="checkbox" id="cp-showAll"> All rows</label>
           <label class="checkline" title="Change, reorder or remove lineups"><input type="checkbox" id="cp-editBase"> Edit mode</label>
         </div>
         <p class="warn" id="cp-editNote" hidden><b>Edit mode</b> — <b>Edit</b> changes a lineup's heroes or skin code, <b>▲▼</b> reorders an S0–X2 lineup, <b>✕</b> takes one out (press it twice). <button type="button" class="primary" id="cp-editDone">Done editing</button></p>
         <div class="legend" aria-label="Colour key" id="cp-legend">
           <span data-troop="Cavalry">Cavalry</span><span data-troop="Archers">Archers</span><span data-troop="Footmen">Footmen</span><span data-troop="Mixed">Mixed</span>
-          <span class="kind paid">Paid</span><span class="kind free">Free</span><span class="kind x8key">New lineup</span><span class="kind edited">edited</span>
-          <span class="legendgroup" id="cp-matchLegend" hidden><span class="kind match1">1 same</span><span class="kind match2">2 same</span><span class="kind duplicate">same trio</span><span>shares heroes with the lineup you are placing</span></span>
+          <span class="key paid"><i></i>Paid</span><span class="key free"><i></i>Free</span><span class="key x8key"><i></i>New lineup</span><span class="key skin">${SKIN_ICON}Skin code</span><span class="key share"><i></i>Shares 2+ heroes</span>
         </div>
       </div>
       <div class="list" id="cp-list"></div>
     </main>
   </div>
-</div>
   <datalist id="cp-heroNames"></datalist>
 </div>`;
 
@@ -160,147 +237,72 @@ export function mountCombosPlanner(root, adapter = {}) {
   const saveLabel = adapter.saveLabel || 'Save';
   const idleHint = adapter.idleHint || 'Nothing pending.';
   const loadingHint = adapter.loadingHint || 'Loading the combo database…';
+  const portraitFallback = adapter.portraitFallback || 'images/heroes/portrait-unavailable.svg';
   root.innerHTML = TEMPLATE;
   const $ = (id) => root.querySelector('#' + ID_PREFIX + id);
+  const shell = root.querySelector('.combos-planner');
   const esc = (s) =>
     String(s).replace(
       /[&<>"']/g,
       (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
     );
-  const slug = (heroes, skin) =>
-    'n-' +
-    heroes
-      .map((n) =>
-        n
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-|-$/g, '')
-      )
-      .join('_') +
-    (skin ? '-' + skin : '');
+  const store = {
+    get(key) {
+      try {
+        return localStorage.getItem(prefs + key);
+      } catch {
+        return null;
+      }
+    },
+    set(key, value) {
+      try {
+        if (value == null) localStorage.removeItem(prefs + key);
+        else localStorage.setItem(prefs + key, value);
+      } catch {
+        /* private mode or a full quota: the setting lives for this page only */
+      }
+    },
+  };
 
+  // --- State -----------------------------------------------------------------
+  let view = null; // the loaded view, for the save summary and the draft check
   let H = {};
   let BASE = [];
   let lanes = new Map();
   let baseOrder = [];
   let edits = new Map();
   let removed = new Set();
-  let holding = null;
+  let holding = null; // ids being placed with the mouse (a gap click drops them)
   let editing = null;
   let pendingRemove = null;
   let editMode = false;
   let trayMode = 'unplaced';
   let dirty = false;
+  let current = null; // the selected lineup
+  let picked = new Set(); // multi-selection in the queue
+  let pickFrom = null; // where a Shift-click range starts
+  let queueIndex = 0; // where the selection was in the queue, for J/K after it leaves
+  let digits = '';
+  let showAll = false;
+  let viewCenter = null; // a rank the ranking is centred on after "Go to rank"
+  let collapsed = new Set();
+  let loadedKey = '';
+  let pendingDraft = null;
+  const history = createHistory(300);
+  let cache = null;
 
-  const allLanes = () => [...lanes.values()].filter((l) => !removed.has(l.id));
   const troopOf = (heroes) => troopOfHeroes(heroes, H);
   const hasPaid = (heroes) => heroIsPaid(heroes, H);
   const isX8Hero = (n) => H[n] && H[n].s === 'X8';
-  const rowClass = (heroes) => ' troop-' + troopOf(heroes) + (hasPaid(heroes) ? ' paid' : ' free');
-  const kindBadge = (heroes) =>
-    hasPaid(heroes)
-      ? '<span class="kind paid" title="Uses at least one paid hero">Paid</span>'
-      : '<span class="kind free" title="Free heroes only">Free</span>';
   const keyOf = (c) => c.heroes.join('|') + '#' + (c.skin || '');
-
-  const trayFilters = () => ({
-    mode: trayMode,
-    q: $('traySearch').value,
-    troop: $('trayTroop').value,
-    cost: $('trayCost').value,
-    tier: $('trayTier').value,
-    sort: $('traySort').value,
-  });
-  const rankFilters = () => ({
-    hero: $('listSearch').value,
-    troop: $('troop').value,
-    cost: $('cost').value,
-    near: $('near').value === 'near',
-  });
-  const rankFiltered = () => {
-    const f = rankFilters();
-    return !!(f.hero || f.troop || f.cost || f.near);
-  };
-
-  function applyView(data) {
-    H = data.heroes;
-    BASE = data.base;
-    baseOrder = BASE.map((b) => b.id);
-    edits = new Map();
-    removed = new Set();
-    editing = null;
-    pendingRemove = null;
-    lanes = new Map();
-    const slots = new Map();
-    for (const l of data.x8) {
-      const n = (slots.get(l.anchor) || 0) + 1;
-      slots.set(l.anchor, n);
-      lanes.set(l.id, { ...l, ...tierOf(l.note), slot: n, added: !!l.queued });
-    }
-    $('heroNames').innerHTML = Object.keys(H)
-      .sort()
-      .map((n) => '<option value="' + esc(n) + '"></option>')
-      .join('');
-    $('placeRank').max = String(BASE.length);
-    $('gotoRank').max = String(BASE.length);
-    setDirty(false);
-    render();
-    if (data.skipped && data.skipped.length) {
-      setStatus('Skipped in the queue files: ' + data.skipped.join('; '));
-      return true;
-    }
-    return false;
-  }
-
-  function setDirty(value) {
-    dirty = value;
-    $('dirty').hidden = !value;
-    $('saveBtn').disabled = !value;
-    $('revertBtn').disabled = !value;
-  }
-  function setStatus(msg) {
-    $('status').textContent = msg;
-  }
-  const touch = () => {
-    setDirty(true);
-    setStatus(adapter.dirtyHint || 'Not saved yet. Press Save to apply it.');
-  };
-
-  // The panels stay put while the page scrolls, so keep them clear of the sticky
-  // save bar and the placing banner by measuring that strip.
-  function measureStrip() {
-    root.style.setProperty('--strip-h', $('strip').offsetHeight + 'px');
-  }
-
-  // Re-rendering replaces the scrolled list, so put the scroll position back.
-  function keepScroll(el, write) {
-    const top = el.scrollTop;
-    write();
-    el.scrollTop = top;
-  }
-
-  function flash(el) {
-    if (!el) return;
-    el.classList.remove('flash');
-    void el.offsetWidth;
-    el.classList.add('flash');
-    setTimeout(() => el.classList.remove('flash'), 1500);
-  }
-  function revealRow(selector, block = 'center') {
-    requestAnimationFrame(() => {
-      const el = root.querySelector(selector);
-      if (!el) return;
-      el.scrollIntoView({ block, behavior: 'smooth' });
-      el.focus({ preventScroll: true });
-      flash(el);
-    });
-  }
+  const label = (heroes) => heroes.join(' / ');
 
   /** A lineup with any pending edit applied, so every view shows what will be saved. */
   function laneFor(l) {
     const edit = edits.get(l.id);
     return edit ? { ...l, heroes: edit.heroes, skin: edit.skin, edited: true } : l;
   }
+  const allLanes = () => [...lanes.values()].filter((l) => !removed.has(l.id));
   const laneViews = () => allLanes().map(laneFor);
 
   /** The S0-X2 list in the planned order, with removals and edits applied. */
@@ -321,116 +323,1116 @@ export function mountCombosPlanner(root, adapter = {}) {
       });
   }
 
-  function merged(excludeId) {
-    const by = new Map();
-    for (const l of laneViews()) {
-      if (!l.anchor || l.id === excludeId) continue;
-      if (!by.has(l.anchor)) by.set(l.anchor, []);
-      by.get(l.anchor).push(l);
-    }
-    for (const arr of by.values()) arr.sort((x, y) => x.slot - y.slot);
-    const out = [];
-    for (const b of baseView()) {
-      for (const l of by.get(b.id) || []) out.push({ type: 'x8', lane: l, above: b.rank });
-      out.push({ type: 'base', b, rank: b.rank });
-    }
-    return out;
+  // Everything derived from the state is computed once per change, not per key.
+  function derived() {
+    if (cache) return cache;
+    const bases = baseView();
+    const lv = laneViews();
+    const rows = mergeRows(bases, lv);
+    const index = new Map(rows.map((r, i) => [r.id, i]));
+    const suggester = createSuggester({ heroes: H, rows });
+    const suggestions = new Map();
+    for (const l of lv) if (!l.anchor) suggestions.set(l.id, suggester.suggest(l));
+    cache = { bases, lanes: lv, rows, index, suggestions, byId: new Map(lv.map((l) => [l.id, l])) };
+    return cache;
+  }
+  const invalidate = () => (cache = null);
+
+  /** The suggestion for any lineup: queued ones from the cache, placed ones without themselves. */
+  function suggestionFor(id) {
+    const d = derived();
+    if (d.suggestions.has(id)) return d.suggestions.get(id);
+    const lane = d.byId.get(id);
+    if (!lane) return null;
+    const rows = d.rows.filter((r) => r.id !== id);
+    return createSuggester({ heroes: H, rows }).suggest(lane);
   }
 
-  /** Lane id -> the rank it sits above, for the tray's "above #N" labels. */
-  function aboveMap() {
-    return new Map(
-      merged()
-        .filter((e) => e.type === 'x8')
-        .map((e) => [e.lane.id, e.above])
+  // --- Snapshots, history, draft ----------------------------------------------
+  function snapshot() {
+    return {
+      lanes: [...lanes.values()].map((l) => ({ ...l })),
+      baseOrder: [...baseOrder],
+      edits: [...edits.entries()].map(([id, e]) => [id, { heroes: [...e.heroes], skin: e.skin }]),
+      removed: [...removed],
+    };
+  }
+  function restore(state) {
+    lanes = new Map(state.lanes.map((l) => [l.id, { ...l }]));
+    baseOrder = [...state.baseOrder];
+    edits = new Map(state.edits.map(([id, e]) => [id, { heroes: [...e.heroes], skin: e.skin }]));
+    removed = new Set(state.removed);
+    if (current && !lanes.has(current) && !baseOrder.includes(current)) current = null;
+    picked = new Set([...picked].filter((id) => lanes.has(id)));
+    editing = null;
+    pendingRemove = null;
+  }
+  const stateKey = () => JSON.stringify(snapshot());
+
+  /** Record the state before a change, so Z can bring it back. */
+  const remember = () => history.push(snapshot());
+
+  let draftTimer = 0;
+  function scheduleDraft() {
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(writeDraft, 300);
+  }
+  function writeDraft() {
+    if (!view) return;
+    if (!dirty) return store.set('Draft', null);
+    store.set(
+      'Draft',
+      JSON.stringify({ v: 1, sig: viewSignature(view), at: Date.now(), state: snapshot() })
+    );
+  }
+  function readDraft() {
+    try {
+      const draft = JSON.parse(store.get('Draft') || 'null');
+      if (!draft || draft.v !== 1 || !draft.state || !Array.isArray(draft.state.lanes)) return null;
+      return draft;
+    } catch {
+      return null;
+    }
+  }
+
+  /** After any change: recompute, mark dirty, redraw, keep the draft, announce. */
+  function changed(message) {
+    invalidate();
+    setDirty(stateKey() !== loadedKey);
+    render();
+    scheduleDraft();
+    if (message) setStatus(message);
+    else if (dirty) setStatus(adapter.dirtyHint || 'Not saved yet. Press Save to apply it.');
+  }
+
+  function undo() {
+    const state = history.undo(snapshot());
+    if (!state) return setStatus('Nothing to undo.');
+    restore(state);
+    changed('Undone. Shift+Z redoes it.');
+  }
+  function redo() {
+    const state = history.redo(snapshot());
+    if (!state) return setStatus('Nothing to redo.');
+    restore(state);
+    changed('Redone.');
+  }
+
+  // --- Loading ------------------------------------------------------------------
+  function applyView(data) {
+    view = data;
+    H = data.heroes;
+    BASE = data.base;
+    baseOrder = BASE.map((b) => b.id);
+    edits = new Map();
+    removed = new Set();
+    editing = null;
+    pendingRemove = null;
+    holding = null;
+    picked = new Set();
+    digits = '';
+    lanes = new Map();
+    const slots = new Map();
+    for (const l of data.x8) {
+      const n = (slots.get(l.anchor) || 0) + 1;
+      slots.set(l.anchor, n);
+      lanes.set(l.id, { ...l, ...tierOf(l.note), slot: n, added: !!l.queued });
+    }
+    $('heroNames').innerHTML = Object.keys(H)
+      .sort()
+      .map((n) => '<option value="' + esc(n) + '"></option>')
+      .join('');
+    $('gotoRank').max = String(BASE.length);
+    history.clear();
+    loadedKey = stateKey();
+    invalidate();
+    setDirty(false);
+    if (!current || !lanes.has(current)) current = firstQueued();
+    render();
+    if (current) focusRanking();
+    if (data.skipped && data.skipped.length) {
+      setStatus('Skipped in the queue files: ' + data.skipped.join('; '));
+      return true;
+    }
+    return false;
+  }
+
+  function offerDraft() {
+    const draft = readDraft();
+    pendingDraft = null;
+    $('draftBar').hidden = true;
+    if (!draft || !view) return;
+    if (draft.sig !== viewSignature(view)) {
+      store.set('Draft', null);
+      setStatus('An older draft was for a different combos-db.js, so it was set aside.');
+      return;
+    }
+    if (JSON.stringify(draft.state) === loadedKey) return store.set('Draft', null);
+    pendingDraft = draft;
+    let summary = '';
+    try {
+      const saved = snapshot();
+      restore(draft.state);
+      invalidate();
+      summary = summarizePlan(view, currentPlan()).text;
+      restore(saved);
+      invalidate();
+    } catch {
+      summary = 'unsaved changes';
+    }
+    const when = new Date(draft.at);
+    $('draftText').textContent =
+      'You have an unsaved draft from ' +
+      (isNaN(when) ? 'earlier' : when.toLocaleString()) +
+      ': ' +
+      summary +
+      '.';
+    $('draftBar').hidden = false;
+    measureStrip();
+  }
+  function restoreDraft() {
+    if (!pendingDraft) return;
+    remember();
+    restore(pendingDraft.state);
+    pendingDraft = null;
+    $('draftBar').hidden = true;
+    changed('Draft restored. Z undoes the restore.');
+    measureStrip();
+  }
+  function discardDraft() {
+    pendingDraft = null;
+    store.set('Draft', null);
+    $('draftBar').hidden = true;
+    setStatus('Draft discarded.');
+    measureStrip();
+  }
+
+  function setDirty(value) {
+    dirty = value;
+    $('dirty').hidden = !value;
+    $('saveBtn').disabled = !value;
+    $('revertBtn').disabled = !value;
+    $('undo').disabled = !history.canUndo;
+    $('redo').disabled = !history.canRedo;
+  }
+  function setStatus(msg) {
+    $('status').textContent = msg;
+  }
+
+  // The panels stay put while the page scrolls, so keep them clear of the sticky
+  // save bar and the banners by measuring that strip.
+  function measureStrip() {
+    shell.style.setProperty('--strip-h', $('strip').offsetHeight + 'px');
+  }
+
+  function flash(el) {
+    if (!el) return;
+    el.classList.remove('flash');
+    void el.offsetWidth;
+    el.classList.add('flash');
+    setTimeout(() => el.classList.remove('flash'), 1500);
+  }
+  /** Scroll a row into its panel's view without moving the page more than needed. */
+  function reveal(selector, { block = 'nearest', focus = false, blink = false } = {}) {
+    requestAnimationFrame(() => {
+      const el = root.querySelector(selector);
+      if (!el) return;
+      el.scrollIntoView({ block, behavior: 'auto' });
+      if (focus) el.focus({ preventScroll: true });
+      if (blink) flash(el);
+    });
+  }
+
+  // --- Placing ------------------------------------------------------------------
+  /** Apply a { id -> { anchor, slot } } placement map to every lineup it names. */
+  function applyPlacements(placements) {
+    for (const [id, where] of placements) {
+      const lane = lanes.get(id);
+      if (lane) lanes.set(id, { ...lane, anchor: where.anchor, slot: where.slot });
+    }
+  }
+  /**
+   * Place lineups as one contiguous block at a gap of the current rows (the
+   * lineups may already be in them): one undo step.
+   */
+  function placeIds(ids, gap, verb = 'Placed') {
+    const d = derived();
+    const block = ids.map((id) => d.byId.get(id)).filter(Boolean);
+    if (!block.length) return;
+    remember();
+    applyPlacements(placeBlock(d.rows, block, gap));
+    invalidate();
+    const what = block.length === 1 ? label(block[0].heroes) : block.length + ' lineups';
+    changed(verb + ' ' + what + ' ' + placedLabel(block[0].id) + '. Z undoes it.');
+    if (block.length === 1)
+      select(block[0].id, { keepQueue: true, blink: true, redrawQueue: false });
+    else focusRanking({ blink: true });
+  }
+  function placeAboveRank(value, ids = selectionIds()) {
+    if (!ids.length) return setStatus('Select a lineup first (J / K or click one).');
+    const rank = Number(value);
+    const total = derived().bases.length;
+    if (!Number.isInteger(rank) || rank < 1 || rank > total)
+      return setStatus('Pick a rank between 1 and ' + total + '.');
+    stopHolding(false);
+    placeIds(ids, gapAboveRank(derived().rows, rank));
+  }
+  function acceptSuggestion(ids = selectionIds()) {
+    if (!ids.length) return setStatus('Select a lineup first (J / K or click one).');
+    const s = suggestionFor(ids[0]);
+    if (!s || s.end)
+      return setStatus(
+        'No suggested slot for ' +
+          label(derived().byId.get(ids[0]).heroes) +
+          ' yet: type a rank and press Enter, or drag it.'
+      );
+    const lane = derived().byId.get(ids[0]);
+    if (ids.length === 1 && lane.anchor)
+      return setStatus('Already placed. ↑ / ↓ moves it, U unplaces it, digits + Enter moves it to a rank.');
+    // The suggestion names the row it goes above; find that row in the full list.
+    placeIds(ids, s.before ? derived().index.get(s.before) : derived().rows.length);
+  }
+  function moveCurrent(delta) {
+    const lane = current && derived().byId.get(current);
+    if (!lane) return false;
+    if (!lane.anchor) {
+      setStatus('That lineup is not placed yet: Enter accepts the suggestion.');
+      return true;
+    }
+    const d = derived();
+    const gap = moveGap(d.rows, lane.id, delta);
+    const from = d.index.get(lane.id);
+    if (gap === from || gap === from + 1) {
+      setStatus(delta < 0 ? 'Already at the top.' : 'Already directly above the last lineup.');
+      return true;
+    }
+    placeIds([lane.id], gap, 'Moved');
+    return true;
+  }
+  function unplace(id = current) {
+    const lane = id && lanes.get(id);
+    if (!lane || !lane.anchor) return setStatus('Select a placed lineup to unplace it.');
+    remember();
+    lanes.set(id, { ...lane, anchor: '', slot: 0 });
+    changed('Unplaced ' + label(laneFor(lane).heroes) + '; it waits at the end again. Z undoes it.');
+    focusRanking();
+  }
+  function autoDraftAll() {
+    const d = derived();
+    const queued = d.lanes.filter((l) => !l.anchor);
+    if (!queued.length) return setStatus('Every new lineup is placed already.');
+    const draft = autoDraft({ heroes: H, rows: d.rows, lanes: queued });
+    if (!draft.placed)
+      return setStatus('No lineup has a suggestion yet: place a few by hand first, then auto-draft.');
+    remember();
+    applyPlacements(draft.placements);
+    changed(
+      'Auto-drafted ' +
+        draft.placed +
+        ' lineup' +
+        (draft.placed === 1 ? '' : 's') +
+        (draft.left.length ? '; ' + draft.left.length + ' had no suggestion and still wait' : '') +
+        '. Fix the wrong ones, or Z undoes the whole draft.'
     );
   }
 
-  // Where a lane lands when dropped in the gap before list[j] (j === length: unplaced tail).
-  function placementAt(list, j) {
-    if (j >= list.length) return { anchor: '', slot: 0 };
-    const e = list[j];
-    const prev = list[j - 1];
-    if (e.type === 'base') {
-      const slot =
-        prev && prev.type === 'x8' && prev.lane.anchor === e.b.id ? prev.lane.slot + 1 : 1;
-      return { anchor: e.b.id, slot };
-    }
-    const slot =
-      prev && prev.type === 'x8' && prev.lane.anchor === e.lane.anchor
-        ? (prev.lane.slot + e.lane.slot) / 2
-        : e.lane.slot - 1;
-    return { anchor: e.lane.anchor, slot };
-  }
-
-  function update(id, patch) {
-    lanes.set(id, { ...lanes.get(id), ...patch });
-    touch();
+  // Mouse placing: pick a lineup (or the selection), then click a gap.
+  function startHolding(ids) {
+    holding = ids;
+    shell.classList.add('placing');
+    $('banner').hidden = false;
+    $('bannerText').innerHTML = bannerText(ids);
     render();
+    measureStrip();
+  }
+  function stopHolding(redraw = true) {
+    if (!holding) return;
+    holding = null;
+    shell.classList.remove('placing');
+    $('banner').hidden = true;
+    measureStrip();
+    if (redraw) render();
+  }
+  function bannerText(ids) {
+    const d = derived();
+    const lane = d.byId.get(ids[0]);
+    const what =
+      ids.length > 1 ? ids.length + ' lineups as one block' : '<b>' + esc(label(lane.heroes)) + '</b>';
+    return (
+      'Placing ' +
+      what +
+      ' — click a gap in the ranking, or type a rank and press Enter. <b>Esc</b> cancels.'
+    );
   }
 
-  function placeHolding(j) {
-    if (!holding) return;
-    const id = holding;
-    const p = placementAt(merged(id), j);
-    stopHolding();
-    update(id, p);
-    revealRow('[data-row="' + CSS.escape(id) + '"]');
+  // --- Selection ------------------------------------------------------------------
+  /** The queue as it is listed: groups in order, collapsed groups skipped. */
+  function queueOrder() {
+    return queueItems().flatMap((g) => (collapsed.has(g.hero) ? [] : g.items.map((l) => l.id)));
   }
-  /** Drop the held lane above a fixed rank number, without scrolling to the gap. */
-  function placeAboveRank(value) {
-    if (!holding) return;
-    const rank = Number(value);
-    if (!Number.isInteger(rank) || rank < 1 || rank > BASE.length) {
-      setStatus('Pick a rank between 1 and ' + BASE.length + '.');
+  /** The first queued lineup that has a suggestion, else the first queued one. */
+  function firstQueued() {
+    const d = derived();
+    const ids = queueOrder().filter((id) => !d.byId.get(id).anchor);
+    const ready = ids.find((id) => !d.suggestions.get(id).end);
+    return ready || ids[0] || queueOrder()[0] || null;
+  }
+  const selectionIds = () => {
+    if (picked.size > 1) return queueOrder().filter((id) => picked.has(id));
+    return current && lanes.has(current) ? [current] : [];
+  };
+  function select(id, { keepQueue = false, blink = false, redrawQueue = true } = {}) {
+    const before = current;
+    current = id;
+    viewCenter = null;
+    digits = '';
+    const order = queueOrder();
+    if (!keepQueue && order.includes(id)) queueIndex = order.indexOf(id);
+    if (redrawQueue) renderTray();
+    else markQueueCurrent(before, id);
+    reveal('#cp-cards [data-card="' + CSS.escape(id) + '"]');
+    focusRanking({ blink });
+  }
+  /** Move the queue's highlight without redrawing it (J / K on a long queue). */
+  function markQueueCurrent(before, id) {
+    for (const [key, add] of [
+      [before, false],
+      [id, true],
+    ]) {
+      const entry = key && queueEls.get('lane:' + key);
+      if (!entry) continue;
+      entry.el.classList.toggle('current', add);
+      entry.html = null; // no longer the cached markup
+    }
+  }
+  function step(delta) {
+    const order = queueOrder();
+    if (!order.length) return setStatus('The queue is empty in this view.');
+    let i = order.indexOf(current);
+    if (i < 0) i = delta > 0 ? queueIndex - 1 : queueIndex;
+    const next = Math.max(0, Math.min(order.length - 1, i + delta));
+    const redrawQueue = picked.size > 0;
+    picked = new Set();
+    select(order[next], { redrawQueue });
+    const lane = derived().byId.get(order[next]);
+    const s = suggestionFor(order[next]);
+    setStatus(
+      label(lane.heroes) +
+        (lane.anchor
+          ? ' — placed ' + placedLabel(lane.id)
+          : s && !s.end
+            ? ' — suggested ' + s.reason
+            : ' — no suggestion yet: type a rank and press Enter')
+    );
+  }
+  function placedLabel(id) {
+    const d = derived();
+    const i = d.index.get(id);
+    return i == null ? 'at the end' : gapLabel(d.rows, i);
+  }
+  /** Scroll the ranking so the selection (or its suggestion, or a rank) is in the middle. */
+  function focusRanking({ blink = false } = {}) {
+    refreshList();
+    const list = $('list');
+    const target = viewCenter
+      ? list.querySelector('.centre')
+      : list.querySelector('.row.current') || list.querySelector('.suggestmark');
+    if (!target) return;
+    requestAnimationFrame(() => {
+      const panel = list.closest('.panel');
+      const scroller = panel && panel.scrollHeight > panel.clientHeight ? panel : null;
+      if (scroller) {
+        const top =
+          target.getBoundingClientRect().top -
+          scroller.getBoundingClientRect().top +
+          scroller.scrollTop -
+          scroller.clientHeight / 2 +
+          target.offsetHeight / 2;
+        scroller.scrollTop = Math.max(0, top);
+      } else {
+        target.scrollIntoView({ block: 'nearest' });
+      }
+      if (blink) flash(target);
+    });
+  }
+
+  // --- Rendering: shared bits ---------------------------------------------------------
+  function portrait(n, size) {
+    const h = H[n] || {};
+    return h.i
+      ? '<img class="portrait" src="' +
+          esc(h.i) +
+          '" alt="" loading="lazy" decoding="async" width="' +
+          size +
+          '" height="' +
+          size +
+          '">'
+      : '<span class="portrait"></span>';
+  }
+  function heroHtml(n) {
+    const h = H[n] || {};
+    const troop = h.t || 'All';
+    return (
+      '<span class="hero' +
+      (h.s === 'X8' ? ' isx8' : '') +
+      '" title="' +
+      esc(n + ' — ' + (TROOP_LABEL[troop] || troop) + (h.p ? ', paid hero' : '')) +
+      '">' +
+      portrait(n, 24) +
+      '<span class="troop ' +
+      esc(troop) +
+      '">' +
+      troopIcon(troop, 13) +
+      '</span><span class="name">' +
+      esc(n) +
+      '</span></span>'
+    );
+  }
+  function skinHtml(skin) {
+    if (!skin) return '';
+    const words = { 3: 'must own', 2: 'recommended', 1: 'optional' };
+    const title =
+      'Skin code ' +
+      skin +
+      ': Front ' +
+      words[skin[0]] +
+      ', Middle ' +
+      words[skin[1]] +
+      ', Back ' +
+      words[skin[2]];
+    return (
+      '<span class="skin" title="' +
+      esc(title) +
+      '">' +
+      SKIN_ICON +
+      '<span class="skintext">skin ' +
+      esc(skin) +
+      '</span></span>'
+    );
+  }
+  function lineupHtml(heroes, skin) {
+    return (
+      '<span class="lineup">' +
+      heroes.map(heroHtml).join('<span class="sep" aria-hidden="true">/</span>') +
+      skinHtml(skin) +
+      '</span>'
+    );
+  }
+  /** Troop and paid/free as colour, with the same facts in words for screen readers. */
+  function factsHtml(heroes) {
+    const troop = troopOf(heroes);
+    const paid = hasPaid(heroes);
+    return (
+      '<span class="kind ' +
+      (paid ? 'paid' : 'free') +
+      '" title="' +
+      (paid ? 'Uses at least one paid hero' : 'Free heroes only') +
+      '"><span class="kindtext">' +
+      (paid ? 'Paid' : 'Free') +
+      '</span></span><span class="sr">, ' +
+      esc(TROOP_LABEL[troop] || troop) +
+      '</span>'
+    );
+  }
+  const rowClass = (heroes) => ' troop-' + troopOf(heroes) + (hasPaid(heroes) ? ' paid' : ' free');
+  function matchChip(match) {
+    if (!match || match.shared < 2) return '';
+    return match.sameTrio
+      ? '<span class="chip duplicate" title="The same three heroes">same trio</span>'
+      : '<span class="chip match2" title="Shares two heroes with the selected lineup">2 same</span>';
+  }
+  function matchClass(match) {
+    if (!match || match.shared < 2) return '';
+    return match.sameTrio ? ' same-trio' : ' match2';
+  }
+
+  // --- Rendering: the ranking ---------------------------------------------------------
+  const rankFilters = () => ({
+    hero: $('listSearch').value,
+    troop: $('troop').value,
+    cost: $('cost').value,
+    near: $('near').value === 'near',
+  });
+  const rankFiltered = () => {
+    const f = rankFilters();
+    return !!(f.hero || f.troop || f.cost || f.near);
+  };
+
+  function baseActions(b) {
+    if (!editMode) return '';
+    return (
+      '<button type="button" data-baseup="' +
+      esc(b.id) +
+      '" aria-label="Move this lineup up one rank">▲</button>' +
+      '<button type="button" data-basedown="' +
+      esc(b.id) +
+      '" aria-label="Move this lineup down one rank">▼</button>' +
+      '<button type="button" data-edit="' +
+      esc(b.id) +
+      '" aria-label="Edit this lineup">Edit</button>' +
+      '<button type="button" class="iconbtn danger" data-remove="' +
+      esc(b.id) +
+      '" title="Remove this lineup" aria-label="Remove this lineup">✕</button>'
+    );
+  }
+
+  function rowHtml(r, match) {
+    if (r.type === 'base') {
+      return (
+        '<div class="row base' +
+        rowClass(r.heroes) +
+        (r.edited ? ' edited' : '') +
+        (r.id === current ? ' current' : '') +
+        (pendingRemove === r.id ? ' confirming' : '') +
+        matchClass(match) +
+        (viewCenter === r.rank ? ' centre' : '') +
+        '" data-rank="' +
+        r.rank +
+        '" data-base="' +
+        esc(r.id) +
+        '"><span class="rank">' +
+        r.rank +
+        '</span>' +
+        lineupHtml(r.heroes, r.skin) +
+        '<span class="actions">' +
+        matchChip(match) +
+        (r.edited ? '<span class="chip edited" title="Changed, not saved yet">edited</span>' : '') +
+        factsHtml(r.heroes) +
+        baseActions(r) +
+        (pendingRemove === r.id
+          ? '<button type="button" class="danger" data-remove="' + esc(r.id) + '">Remove?</button>'
+          : '') +
+        '</span></div>'
+      );
+    }
+    return (
+      '<div class="row x8' +
+      rowClass(r.heroes) +
+      (r.id === current ? ' current' : '') +
+      (picked.has(r.id) ? ' picked' : '') +
+      (holding && holding.includes(r.id) ? ' holding' : '') +
+      (r.edited ? ' edited' : '') +
+      matchClass(match) +
+      '" draggable="true" data-row="' +
+      esc(r.id) +
+      '" aria-label="' +
+      esc(label(r.heroes)) +
+      ', new lineup above rank ' +
+      r.above +
+      '"><span class="rank" title="New lineup, above #' +
+      r.above +
+      '">X8</span>' +
+      lineupHtml(r.heroes, r.skin) +
+      '<span class="actions">' +
+      matchChip(match) +
+      factsHtml(r.heroes) +
+      '<button type="button" class="mini" data-up="' +
+      esc(r.id) +
+      '" aria-label="Move up one row" title="Move up (↑)">▲</button>' +
+      '<button type="button" class="mini" data-down="' +
+      esc(r.id) +
+      '" aria-label="Move down one row" title="Move down (↓)">▼</button>' +
+      '<button type="button" class="mini" data-unplace="' +
+      esc(r.id) +
+      '" title="Unplace (U)">Unplace</button></span></div>'
+    );
+  }
+
+  function renderList() {
+    captureEditing();
+    const d = derived();
+    const rows = d.rows;
+    const filters = rankFilters();
+    const near = filters.near ? nearMask(rows) : null;
+    const shown = [];
+    rows.forEach((r, i) => {
+      if (near && !near[i]) return;
+      if (!rankingMatches(r.heroes, filters, H)) return;
+      shown.push(i);
+    });
+    const sel = current ? d.byId.get(current) || d.bases.find((b) => b.id === current) : null;
+    const suggestion = sel && sel.type !== 'base' && !sel.anchor ? suggestionFor(sel.id) : null;
+    // The suggestion gap is counted in the rows without the lineup; it is not in
+    // the rows anyway when it is queued, so the indexes agree.
+    const suggestGap = suggestion && !suggestion.end && !holding ? suggestion.gap : -1;
+    // Centre of the focus view: the selected row, its suggestion, or a rank.
+    let centre = -1;
+    if (viewCenter) centre = gapAboveRank(rows, viewCenter);
+    else if (sel && d.index.has(sel.id)) centre = d.index.get(sel.id);
+    else if (suggestGap >= 0) centre = suggestGap;
+    let from = 0;
+    let to = shown.length;
+    const windowed = !showAll && centre >= 0;
+    if (windowed) {
+      let at = shown.findIndex((i) => i >= centre);
+      if (at < 0) at = shown.length - 1;
+      from = Math.max(0, at - FOCUS_RADIUS);
+      to = Math.min(shown.length, at + FOCUS_RADIUS + 1);
+    }
+    // Each part is [key, html]: rows keep their element across renders when their
+    // markup is unchanged, so a move re-creates a handful of rows, not hundreds.
+    const parts = [];
+    if (windowed && from > 0)
+      parts.push([
+        'more-above',
+        '<button type="button" class="more" data-showall>' +
+          from +
+          ' rows above hidden — show all rows</button>',
+      ]);
+    const heldIds = holding || [];
+    for (let k = from; k < to; k++) {
+      const i = shown[k];
+      const r = rows[i];
+      // A gap index counts the rows with the held lineups still in them, as placeBlock does.
+      if (holding && !heldIds.includes(r.id)) {
+        const where = esc(gapLabel(rows, i));
+        parts.push([
+          'gap:' + i,
+          '<button type="button" class="gap" data-gap="' +
+            i +
+            '" aria-label="Place ' +
+            where +
+            '"><span>Place ' +
+            where +
+            '</span></button>',
+        ]);
+      }
+      if (i === suggestGap) parts.push(['suggest', suggestMarkHtml(sel, suggestion)]);
+      const match = sel && r.id !== sel.id ? matchOf(r, sel) : null;
+      parts.push(['row:' + r.id, rowHtml(r, match)]);
+      if (editing && editing.id === r.id) parts.push(['edit:' + r.id, editorHtml(r)]);
+    }
+    if (holding && to === shown.length)
+      parts.push([
+        'gap:end',
+        '<button type="button" class="gap" data-gap="' +
+          rows.length +
+          '" aria-label="Leave it waiting at the end of the list"><span>Leave it waiting at the end</span></button>',
+      ]);
+    if (windowed && to < shown.length)
+      parts.push([
+        'more-below',
+        '<button type="button" class="more" data-showall>' +
+          (shown.length - to) +
+          ' rows below hidden — show all rows</button>',
+      ]);
+    if (!shown.length)
+      parts.push([
+        'empty',
+        '<div class="empty">No rows match these filters. ' +
+          '<button type="button" class="link" data-clearrank>Clear filters</button></div>',
+      ]);
+    listEls = reconcile($('list'), listEls, parts);
+    $('listCount').textContent =
+      (windowed ? 'Rows ' + (from + 1) + '–' + to + ' of ' : 'Showing ') +
+      shown.length +
+      (shown.length !== rows.length ? ' (filtered from ' + rows.length + ')' : ' rows');
+    $('showAll').checked = showAll;
+    $('editNote').hidden = !editMode;
+    drawn = { cache: d, filters: JSON.stringify(filters), windowed, holding, editing, editMode, pendingRemove };
+    renderFocusBar();
+  }
+
+  /**
+   * Bring a container's children in line with [key, html] parts, keeping every
+   * element whose markup did not change (and moving it if needed). Returns the new
+   * key -> { html, el } map for the next call.
+   */
+  function reconcile(container, previous, parts) {
+    const keys = new Set(parts.map(([key]) => key));
+    // Drop what is no longer listed first, so the walk below only meets moves.
+    for (const [key, entry] of previous)
+      if (!keys.has(key) && entry.el.parentNode === container) entry.el.remove();
+    const known = new Set([...previous.values()].map((entry) => entry.el));
+    for (const child of [...container.children]) if (!known.has(child)) child.remove();
+    const next = new Map();
+    const template = root.ownerDocument.createElement('template');
+    let cursor = container.firstElementChild;
+    for (const [key, html] of parts) {
+      let entry = previous.get(key);
+      if (!entry || entry.html !== html || next.has(key)) {
+        if (entry && entry.el.parentNode === container) {
+          if (entry.el === cursor) cursor = cursor.nextElementSibling;
+          entry.el.remove();
+        }
+        template.innerHTML = html;
+        entry = { html, el: template.content.firstElementChild };
+      }
+      next.set(key, entry);
+      if (entry.el === cursor) cursor = cursor.nextElementSibling;
+      else container.insertBefore(entry.el, cursor);
+    }
+    while (cursor) {
+      const after = cursor.nextElementSibling;
+      cursor.remove();
+      cursor = after;
+    }
+    return next;
+  }
+  let listEls = new Map();
+  let queueEls = new Map();
+
+  // What the list last drew. With every row shown, a new selection only changes a
+  // few classes, the shared-hero chips and the suggestion marker, so patch those
+  // instead of rebuilding a few hundred rows on every J / K.
+  let drawn = null;
+  function refreshList() {
+    const same =
+      drawn &&
+      !drawn.windowed &&
+      showAll &&
+      drawn.cache === derived() &&
+      drawn.filters === JSON.stringify(rankFilters()) &&
+      !holding &&
+      !editing &&
+      !drawn.holding &&
+      !drawn.editing &&
+      drawn.editMode === editMode &&
+      drawn.pendingRemove === pendingRemove;
+    if (same) patchSelection();
+    else renderList();
+  }
+  function patchSelection() {
+    const d = derived();
+    const list = $('list');
+    // A patched row no longer matches its cached markup: forget the markup so the
+    // next full render rebuilds it.
+    const touched = (el) => {
+      const key = 'row:' + (el.dataset.base || el.dataset.row);
+      const entry = listEls.get(key);
+      if (entry) entry.html = null;
+    };
+    list.querySelectorAll('.row.current, .row.match2, .row.same-trio').forEach((el) => {
+      el.classList.remove('current', 'match2', 'same-trio');
+      touched(el);
+    });
+    list.querySelectorAll('.chip.match2, .chip.duplicate, .suggestmark').forEach((el) => el.remove());
+    listEls.delete('suggest');
+    const elOf = (r) => {
+      const entry = listEls.get('row:' + r.id);
+      const el = entry && entry.el.isConnected ? entry.el : null;
+      if (el) touched(el);
+      return el;
+    };
+    const sel = current ? d.byId.get(current) : null;
+    if (sel) {
+      for (const r of d.rows) {
+        if (r.id === sel.id) continue;
+        const match = matchOf(r, sel);
+        if (match.shared < 2) continue;
+        const el = elOf(r);
+        if (!el) continue;
+        el.classList.add(match.sameTrio ? 'same-trio' : 'match2');
+        el.querySelector('.actions').insertAdjacentHTML('afterbegin', matchChip(match));
+      }
+      if (d.index.has(sel.id)) {
+        const own = elOf(d.rows[d.index.get(sel.id)]);
+        if (own) own.classList.add('current');
+      } else {
+        const s = suggestionFor(sel.id);
+        const target = s && !s.end ? elOf(d.rows[s.gap]) : null;
+        if (target) {
+          target.insertAdjacentHTML('beforebegin', suggestMarkHtml(sel, s));
+          listEls.set('suggest', { html: null, el: target.previousElementSibling });
+        }
+      }
+    }
+    renderFocusBar();
+  }
+
+  function suggestMarkHtml(sel, s) {
+    return (
+      '<div class="suggestmark" role="note">' +
+      '<span class="arrow" aria-hidden="true">➜</span><span class="text"><b>Suggested for ' +
+      esc(label(sel.heroes)) +
+      ':</b> ' +
+      esc(s.reason) +
+      '</span><button type="button" class="primary mini" data-accept="' +
+      esc(sel.id) +
+      '">Accept ⏎</button></div>'
+    );
+  }
+
+  function renderFocusBar() {
+    const d = derived();
+    const bar = $('focusBar');
+    const ids = selectionIds();
+    const lane = ids.length ? d.byId.get(ids[0]) : null;
+    const rankInput =
+      '<form class="rankjump" data-rankform><label>Place above #<input type="number" name="rank" min="1" inputmode="numeric" value="' +
+      esc(digits) +
+      '" aria-label="Place above rank number"></label><button type="submit">Go</button></form>';
+    if (!lane) {
+      bar.innerHTML =
+        '<span class="muted">Select a lineup in the queue — <kbd>J</kbd> / <kbd>K</kbd> or a click — to see where it fits.</span>';
       return;
     }
-    const list = merged(holding);
-    const j = list.findIndex((e) => e.type === 'base' && e.rank === rank);
-    if (j < 0) return setStatus('There is no row #' + rank + '.');
-    placeHolding(j);
-  }
-  function startHolding(id) {
-    holding = id;
-    root.classList.add('placing');
-    $('banner').hidden = false;
-    $('bannerText').innerHTML = bannerText(laneFor(lanes.get(id)));
-    $('placeRank').value = '';
-    render();
-  }
-  function stopHolding() {
-    holding = null;
-    root.classList.remove('placing');
-    $('banner').hidden = true;
-    render();
-  }
-  function moveBy(id, delta) {
-    const list = merged(id);
-    const k = merged().findIndex((e) => e.type === 'x8' && e.lane.id === id);
-    const j = Math.max(0, Math.min(list.length - 1, k + (delta < 0 ? -1 : 1)));
-    update(id, placementAt(list, j));
-    revealRow('[data-row="' + CSS.escape(id) + '"]', 'nearest');
-  }
-  /** Nudge one S0-X2 lineup up or down; its X8 lanes travel with it. */
-  function moveBase(id, delta) {
-    const i = baseOrder.indexOf(id);
-    const j = i + (delta < 0 ? -1 : 1);
-    if (i < 0 || j < 0 || j >= baseOrder.length) return;
-    [baseOrder[i], baseOrder[j]] = [baseOrder[j], baseOrder[i]];
-    touch();
-    render();
-    revealRow('[data-rank="' + (j + 1) + '"]', 'nearest');
-  }
-  /** Scroll the ranking to a fixed rank number, clearing filters that would hide it. */
-  function jumpToRank(value) {
-    const rank = Number(value);
-    if (!Number.isInteger(rank) || rank < 1 || rank > BASE.length) {
-      return setStatus('Rank must be a whole number between 1 and ' + BASE.length + '.');
+    const typed = digits
+      ? '<span class="typed" aria-live="polite">Place above <b>#' +
+        esc(digits) +
+        '</b> — press <kbd>Enter</kbd></span>'
+      : '';
+    if (ids.length > 1) {
+      bar.innerHTML =
+        '<b>' +
+        ids.length +
+        ' lineups selected</b> <span class="muted">Enter places them together at the first one\'s suggestion; digits + Enter above a rank; or</span> <button type="button" data-holdpicked>Pick a gap</button>' +
+        typed +
+        rankInput;
+      return;
     }
-    clearRankFilters();
-    revealRow('[data-rank="' + rank + '"]');
+    const s = lane.anchor ? null : suggestionFor(lane.id);
+    bar.innerHTML =
+      '<span class="who">' +
+      lineupHtml(lane.heroes, lane.skin) +
+      '</span>' +
+      (lane.anchor
+        ? '<span class="where">placed <b>' +
+          esc(placedLabel(lane.id)) +
+          '</b></span><button type="button" data-up="' +
+          esc(lane.id) +
+          '" title="↑">▲</button><button type="button" data-down="' +
+          esc(lane.id) +
+          '" title="↓">▼</button><button type="button" data-unplace="' +
+          esc(lane.id) +
+          '" title="U">Unplace</button>'
+        : s && !s.end
+          ? '<span class="where" title="' +
+            esc(s.reason) +
+            '">suggested <b>' +
+            esc(s.label) +
+            '</b></span><button type="button" class="primary" data-accept="' +
+            esc(lane.id) +
+            '">Accept ⏎</button>'
+          : '<span class="where" title="' +
+            esc(s ? s.reason : '') +
+            '">no suggestion: ' +
+            esc(s ? s.reason.replace(/^waits at the end · /, '') : '') +
+            ' — type a rank and press Enter</span>') +
+      '<button type="button" data-hold="' +
+      esc(lane.id) +
+      '" title="Then click a gap">Pick a gap</button>' +
+      typed +
+      rankInput;
   }
 
+  // --- Rendering: the queue -------------------------------------------------------------
+  const trayFilters = () => ({
+    mode: trayMode,
+    q: $('traySearch').value,
+    troop: $('trayTroop').value,
+    cost: $('trayCost').value,
+    tier: $('trayTier').value,
+    sort: $('traySort').value,
+  });
+  /** The queue's visible lineups, grouped by X8 hero, with each group's progress. */
+  function queueItems() {
+    const d = derived();
+    const filters = trayFilters();
+    const above = (id) => {
+      const i = d.index.get(id);
+      return i == null ? Infinity : d.rows[i].above;
+    };
+    const { items } = selectLanes(d.lanes, filters, H, above);
+    const visible = new Set(items.map((l) => l.id));
+    const order = new Map(items.map((l, i) => [l.id, i]));
+    return groupByX8(d.lanes, H)
+      .map((g) => ({
+        ...g,
+        items: g.lanes
+          .filter((l) => visible.has(l.id))
+          .sort((a, b) => order.get(a.id) - order.get(b.id)),
+      }))
+      .filter((g) => g.items.length);
+  }
+
+  function queueRowHtml(l, held) {
+    const d = derived();
+    const placed = !!l.anchor;
+    const s = placed ? null : d.suggestions.get(l.id);
+    const confirming = pendingRemove === l.id;
+    const match = held && held.id !== l.id ? matchOf(l, held) : null;
+    const where = placed
+      ? '<button type="button" class="link where" data-show="' +
+        esc(l.id) +
+        '" title="Show it in the ranking">' +
+        esc(placedLabel(l.id)) +
+        '</button>'
+      : s && !s.end
+        ? '<span class="where sugg" title="' + esc(s.reason) + '">→ ' + esc(s.label) + '</span>'
+        : '<span class="where none" title="' + esc(s ? s.reason : '') + '">no suggestion</span>';
+    return (
+      '<div class="qrow' +
+      rowClass(l.heroes) +
+      (placed ? ' placed' : '') +
+      (l.id === current ? ' current' : '') +
+      (picked.has(l.id) ? ' picked' : '') +
+      (holding && holding.includes(l.id) ? ' holding' : '') +
+      (l.edited ? ' edited' : '') +
+      matchClass(match) +
+      '" draggable="true" tabindex="-1" data-card="' +
+      esc(l.id) +
+      '" aria-label="' +
+      esc(label(l.heroes)) +
+      (placed ? ', placed ' + esc(placedLabel(l.id)) : '') +
+      '">' +
+      '<span class="pick" aria-hidden="true"></span>' +
+      lineupHtml(l.heroes, l.skin) +
+      '<span class="meta">' +
+      (l.tier
+        ? '<span class="chip tier" title="ROC Academy tier' +
+          (l.score != null ? ', source score ' + l.score : '') +
+          '">' +
+          esc(l.tier) +
+          '</span>'
+        : '') +
+      (l.added ? '<span class="chip new" title="Not in combos-db.js yet">new</span>' : '') +
+      (l.edited ? '<span class="chip edited" title="Changed, not saved yet">edited</span>' : '') +
+      factsHtml(l.heroes) +
+      where +
+      (placed
+        ? '<button type="button" class="mini" data-unplace="' + esc(l.id) + '" title="Unplace (U)">↩</button>'
+        : s && !s.end
+          ? '<button type="button" class="mini primary" data-accept="' +
+            esc(l.id) +
+            '" title="Accept the suggestion (Enter)" aria-label="Accept the suggestion">✓</button>'
+          : '') +
+      (editMode
+        ? '<button type="button" class="mini" data-edit="' +
+          esc(l.id) +
+          '" aria-label="Change this lineup\'s heroes or skin code">Edit</button>'
+        : '') +
+      (l.added
+        ? '<button type="button" class="mini" data-delete="' + esc(l.id) + '" aria-label="Delete this new lineup">✕</button>'
+        : confirming
+          ? '<button type="button" class="mini danger" data-remove="' + esc(l.id) + '">Remove?</button>'
+          : editMode
+            ? '<button type="button" class="mini danger" data-remove="' +
+              esc(l.id) +
+              '" title="Remove this lineup" aria-label="Remove this lineup">✕</button>'
+            : '') +
+      '</span></div>'
+    );
+  }
+
+  function renderTray() {
+    const d = derived();
+    const filters = trayFilters();
+    const held = holding && holding.length === 1 ? d.byId.get(holding[0]) : null;
+    const groups = queueItems();
+    const inView = d.lanes.filter((l) =>
+      trayMode === 'placed' ? l.anchor : trayMode === 'unplaced' ? !l.anchor : true
+    ).length;
+    const shown = groups.reduce((n, g) => n + g.items.length, 0);
+    const active = [filters.troop, filters.cost, filters.tier].filter(Boolean).length;
+    $('trayCount').textContent = inView
+      ? shown + ' of ' + inView + ' shown'
+      : trayMode === 'unplaced'
+        ? 'Every new lineup is placed'
+        : 'Nothing in this view';
+    $('trayClear').hidden = !isFiltered(filters);
+    const hidden = [filters.cost, filters.tier].filter(Boolean).length;
+    $('trayFilterToggle').textContent = hidden ? 'Filters · ' + hidden : 'Filters';
+    $('trayFilterToggle').classList.toggle('on', active > 0);
+    const parts = [];
+    for (const g of groups) {
+      const open = !collapsed.has(g.hero);
+      parts.push([
+        'group:' + g.hero,
+        '<button type="button" class="qhead" data-toggle="' +
+          esc(g.hero) +
+          '" aria-expanded="' +
+          open +
+          '"><span class="caret" aria-hidden="true">' +
+          (open ? '▾' : '▸') +
+          '</span>' +
+          portrait(g.hero, 20) +
+          '<b>' +
+          esc(g.hero) +
+          '</b><span class="gcount">' +
+          g.placed +
+          '/' +
+          g.total +
+          '</span><span class="bar" aria-hidden="true"><i style="width:' +
+          Math.round((100 * g.placed) / g.total) +
+          '%"></i></span></button>',
+      ]);
+      if (!open) continue;
+      for (const l of g.items) {
+        parts.push(['lane:' + l.id, queueRowHtml(l, held)]);
+        if (editing && editing.id === l.id) parts.push(['edit:' + l.id, editorHtml(l)]);
+      }
+    }
+    if (!groups.length)
+      parts.push([
+        'empty',
+        '<div class="empty">' +
+          (isFiltered(filters)
+            ? 'No X8 lineup matches these filters. <button type="button" class="link" data-cleartray>Clear filters</button>'
+            : trayMode === 'unplaced'
+              ? 'Every new lineup is placed.'
+              : 'Nothing here yet.') +
+          '</div>',
+      ]);
+    // The panel around the queue scrolls, not the queue itself, so nothing here
+    // reads a scroll position (a read would force a layout).
+    queueEls = reconcile($('cards'), queueEls, parts);
+    $('batchBar').hidden = picked.size < 2;
+    $('batchText').textContent = picked.size + ' selected';
+  }
+
+  function renderStats() {
+    const d = derived();
+    const placed = d.lanes.filter((l) => l.anchor).length;
+    const total = d.lanes.length;
+    const changedLines = edits.size + baseOrder.filter((id, i) => BASE[i] && id !== BASE[i].id).length;
+    $('progress').innerHTML =
+      '<b>' +
+      placed +
+      '/' +
+      total +
+      '</b> placed<span class="bar" aria-hidden="true"><i style="width:' +
+      (total ? Math.round((100 * placed) / total) : 0) +
+      '%"></i></span>';
+    $('stats').innerHTML =
+      '<span class="stat"><b>' +
+      d.bases.length +
+      '</b> current</span>' +
+      (changedLines ? '<span class="stat warn"><b>' + changedLines + '</b> lines edited</span>' : '') +
+      (removed.size ? '<span class="stat warn"><b>' + removed.size + '</b> to remove</span>' : '');
+    $('undo').disabled = !history.canUndo;
+    $('redo').disabled = !history.canRedo;
+    $('autoDraft').disabled = !d.lanes.some((l) => !l.anchor);
+  }
+
+  function render() {
+    renderStats();
+    renderTray();
+    renderList();
+  }
+
+  function clearTrayFilters() {
+    ['trayTroop', 'trayCost', 'trayTier'].forEach((id) => ($(id).value = ''));
+    $('traySearch').value = '';
+    $('traySort').value = TRAY_DEFAULTS.sort;
+    renderTray();
+  }
+  function clearRankFilters() {
+    $('listSearch').value = '';
+    $('troop').value = '';
+    $('cost').value = '';
+    $('near').value = 'all';
+    renderList();
+  }
+  function setTrayMode(mode) {
+    trayMode = mode;
+    root
+      .querySelectorAll('[data-tray]')
+      .forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tray === mode)));
+    renderTray();
+  }
+
+  // --- Editing and removing (edit mode) -------------------------------------------------------
   const findHero = (value) =>
     Object.keys(H).find(
       (n) =>
@@ -439,142 +1441,6 @@ export function mountCombosPlanner(root, adapter = {}) {
           .trim()
           .toLowerCase()
     );
-
-  const rowOf = (e) => (e.type === 'x8' ? e.lane : e.b);
-  /** Where a row sits, for the placing banner: "#12", or "the X8 lane above #12". */
-  const whereOf = (e) => (e.type === 'base' ? '#' + e.rank : 'the X8 lane above #' + e.above);
-
-  /** What the lineup being placed has in common with every other lineup. */
-  function matchList(held) {
-    return merged().map((e) => {
-      if (e.type === 'x8' && e.lane.id === held.id) return null;
-      return matchOf(rowOf(e), held);
-    });
-  }
-
-  /** The overlap mark on a row or card: the same trio, two shared heroes, or one. */
-  function matchChip(match) {
-    if (!match || !match.shared) return '';
-    if (match.sameTrio)
-      return '<span class="kind duplicate" title="This lineup already uses the same three heroes">same trio</span>';
-    return (
-      '<span class="kind match' +
-      match.shared +
-      '" title="Shares ' +
-      match.shared +
-      ' hero' +
-      (match.shared > 1 ? 'es' : '') +
-      ' with the lineup you are placing">' +
-      match.shared +
-      ' same</span>'
-    );
-  }
-  function matchClass(match) {
-    if (!match || !match.shared) return '';
-    return match.sameTrio ? ' same-trio' : ' match' + match.shared;
-  }
-
-  /** The placing banner names the closest existing lineups, so placement is informed. */
-  function bannerText(held) {
-    const rows = [];
-    merged().forEach((e) => {
-      if (e.type === 'x8' && e.lane.id === held.id) return;
-      rows.push({ match: matchOf(rowOf(e), held), where: whereOf(e) });
-    });
-    // Lineups still waiting in the tray are the likeliest duplicates, so count them too.
-    for (const l of laneViews()) {
-      if (l.id === held.id || l.anchor) continue;
-      rows.push({ match: matchOf(l, held), where: 'the end of the list' });
-    }
-    const trio = rows.filter((r) => r.match.sameTrio);
-    const duo = rows.filter((r) => r.match.shared === 2);
-    const one = rows.filter((r) => r.match.shared === 1);
-    const list = (kind) => {
-      const names = [...new Set(kind.map((r) => r.where))];
-      return names.slice(0, 5).join(', ') + (names.length > 5 ? '…' : '');
-    };
-    const parts = [
-      'Placing <b>' +
-        esc(held.heroes.join(' / ')) +
-        '</b> — tap a gap, or type a rank and press Go.',
-    ];
-    if (trio.length)
-      parts.push(
-        '<b>Same three heroes</b> as ' +
-          list(trio) +
-          (held.skin ? ' (your lineup is skin ' + esc(held.skin) + ')' : '') +
-          ', so check whether it is already covered.'
-      );
-    if (duo.length) parts.push('<b>' + duo.length + '</b> share two heroes: ' + list(duo) + '.');
-    if (one.length) parts.push(one.length + ' share one hero.');
-    if (!trio.length && !duo.length && !one.length)
-      parts.push('No other lineup shares a hero with this one.');
-    return parts.join(' ');
-  }
-
-  function heroHtml(n) {
-    const h = H[n] || {};
-    const troop = h.t || 'All';
-    return (
-      '<span class="hero' +
-      (h.s === 'X8' ? ' isx8' : '') +
-      '">' +
-      (h.i
-        ? '<img class="portrait" src="' +
-          esc(h.i) +
-          '" alt="" loading="lazy" width="32" height="32">'
-        : '') +
-      '<span class="troop ' +
-      esc(troop) +
-      '" title="' +
-      esc(TROOP_LABEL[troop] || troop) +
-      '">' +
-      troopIcon(troop) +
-      '</span>' +
-      esc(n) +
-      '</span>'
-    );
-  }
-  function lineupHtml(heroes, skin) {
-    return (
-      '<div class="lineup">' +
-      heroes.map(heroHtml).join('<span class="sep">/</span>') +
-      (skin
-        ? ' <span class="chip skin" title="Skin code: 3 must, 2 recommended, 1 optional">skin ' +
-          esc(skin) +
-          '</span>'
-        : '') +
-      '</div>'
-    );
-  }
-
-  /** Tray card heroes stack as a portrait with the name underneath. */
-  function heroBoxHtml(n) {
-    const h = H[n] || {};
-    const troop = h.t || 'All';
-    return (
-      '<span class="herobox' +
-      (h.s === 'X8' ? ' isx8' : '') +
-      '" title="' +
-      esc(n + ' — ' + (TROOP_LABEL[troop] || troop) + (h.p ? ', paid hero' : '')) +
-      '">' +
-      (h.i
-        ? '<img class="portrait" src="' +
-          esc(h.i) +
-          '" alt="" loading="lazy" width="46" height="46">'
-        : '<span class="portrait"></span>') +
-      '<span class="heroname">' +
-      esc(n) +
-      '</span>' +
-      '<span class="herofoot ' +
-      esc(troop) +
-      '">' +
-      troopIcon(troop, 16) +
-      '</span></span>'
-    );
-  }
-  const stackHtml = (heroes) =>
-    '<div class="lineup stack">' + heroes.map(heroBoxHtml).join('') + '</div>';
 
   /** Keep whatever has been typed into an open editor alive across re-renders. */
   function captureEditing() {
@@ -596,21 +1462,20 @@ export function mountCombosPlanner(root, adapter = {}) {
   function editorHtml(lane) {
     const value = (name, fallback) =>
       esc(editing && editing.id === lane.id && editing[name] != null ? editing[name] : fallback);
-    const field = (name, label, current) =>
+    const field = (name, text, currentValue) =>
       '<input type="text" name="' +
       name +
-      '" list="heroNames" value="' +
-      current +
+      '" list="cp-heroNames" value="' +
+      currentValue +
       '" placeholder="' +
-      label +
+      text +
       '" aria-label="' +
-      label +
+      text +
       ' hero" autocomplete="off">';
     return (
       '<form class="editrow" data-edit="' +
       esc(lane.id) +
       '">' +
-      '<div class="rank">edit</div>' +
       '<div class="editfields">' +
       field('front', 'Front', value('front', lane.heroes[0])) +
       field('middle', 'Middle', value('middle', lane.heroes[1])) +
@@ -625,287 +1490,10 @@ export function mountCombosPlanner(root, adapter = {}) {
     );
   }
 
-  function baseActions(b) {
-    if (!editMode) return '';
-    return (
-      '<button type="button" data-baseup="' +
-      esc(b.id) +
-      '" aria-label="Move this lineup up one rank">▲</button>' +
-      '<button type="button" data-basedown="' +
-      esc(b.id) +
-      '" aria-label="Move this lineup down one rank">▼</button>' +
-      '<button type="button" data-edit="' +
-      esc(b.id) +
-      '" aria-label="Edit this lineup">Edit</button>' +
-      '<button type="button" class="iconbtn danger" data-remove="' +
-      esc(b.id) +
-      '" title="Remove this lineup" aria-label="Remove this lineup">✕</button>'
-    );
-  }
-
-  function renderList() {
-    captureEditing();
-    const full = merged();
-    const held = holding ? laneFor(lanes.get(holding)) : null;
-    // While a lineup is being placed, every row says how many heroes it shares.
-    const marks = held ? matchList(held) : null;
-    const list = holding ? merged(holding) : full;
-    const indexIn = new Map(list.map((e, i) => [e.type === 'base' ? e.b.id : e.lane.id, i]));
-    const filters = rankFilters();
-    const vis = full.map((e) =>
-      rankingMatches(e.type === 'x8' ? e.lane.heroes : e.b.heroes, filters, H)
-    );
-    const near = filters.near ? nearMask(full) : null;
-    const parts = [];
-    let shown = 0;
-    full.forEach((e, i) => {
-      if (!vis[i] || (near && !near[i])) return;
-      shown++;
-      const key = e.type === 'base' ? e.b.id : e.lane.id;
-      if (holding && indexIn.has(key)) {
-        parts.push(
-          '<button type="button" class="gap" data-gap="' +
-            indexIn.get(key) +
-            '" aria-label="Place here"><span>Place here</span></button>'
-        );
-      }
-      if (e.type === 'base') {
-        const b = e.b;
-        const mark = marks ? marks[i] : null;
-        parts.push(
-          '<div class="row base' +
-            rowClass(b.heroes) +
-            (b.edited ? ' edited' : '') +
-            matchClass(mark) +
-            '" data-rank="' +
-            b.rank +
-            '" tabindex="0" aria-label="' +
-            esc(b.heroes.join(' / ')) +
-            ', rank ' +
-            b.rank +
-            '"><div class="rank">#' +
-            b.rank +
-            '</div>' +
-            lineupHtml(b.heroes, b.skin) +
-            '<div class="actions">' +
-            matchChip(mark) +
-            (b.edited
-              ? '<span class="kind edited" title="Changed, not saved yet">edited</span>'
-              : '') +
-            kindBadge(b.heroes) +
-            baseActions(b) +
-            '</div></div>'
-        );
-        if (editing && editing.id === b.id) parts.push(editorHtml(b));
-        return;
-      }
-      const l = e.lane;
-      parts.push(
-        '<div class="row x8' +
-          rowClass(l.heroes) +
-          (l.id === holding ? ' holding' : '') +
-          matchClass(marks ? marks[i] : null) +
-          '" draggable="true" tabindex="0" data-row="' +
-          esc(l.id) +
-          '" aria-label="' +
-          esc(l.heroes.join(' / ')) +
-          ', X8 lineup above rank ' +
-          e.above +
-          '"><div class="rank">X8<br><small>above #' +
-          e.above +
-          '</small></div>' +
-          lineupHtml(l.heroes, l.skin) +
-          '<div class="actions">' +
-          matchChip(marks ? marks[i] : null) +
-          kindBadge(l.heroes) +
-          '<button type="button" data-up="' +
-          esc(l.id) +
-          '" aria-label="Move up">▲</button>' +
-          '<button type="button" data-down="' +
-          esc(l.id) +
-          '" aria-label="Move down">▼</button>' +
-          '<button type="button" data-move="' +
-          esc(l.id) +
-          '">Move</button>' +
-          '<button type="button" data-unplace="' +
-          esc(l.id) +
-          '">Unplace</button></div></div>'
-      );
-    });
-    if (holding) {
-      parts.push(
-        '<button type="button" class="gap" data-gap="' +
-          list.length +
-          '" aria-label="Leave it waiting at the end of the list"><span>Leave it waiting at the end</span></button>'
-      );
-    }
-    const html = shown
-      ? parts.join('')
-      : '<div class="empty">No rows match these filters. ' +
-        '<button type="button" class="link" data-clearrank>Clear filters</button></div>';
-    keepScroll($('list'), () => {
-      $('list').innerHTML = html;
-    });
-    $('listCount').textContent = 'Showing ' + shown + ' of ' + full.length + ' rows';
-    $('showAllRows').hidden = !(holding && rankFiltered());
-    $('editNote').hidden = !editMode;
-    $('matchLegend').hidden = !holding;
-  }
-
-  function renderTray() {
-    const filters = trayFilters();
-    const above = aboveMap();
-    const held = holding ? laneFor(lanes.get(holding)) : null;
-    const { items, total } = selectLanes(laneViews(), filters, H, (id) => above.get(id));
-    const active = [filters.troop, filters.cost, filters.tier].filter(Boolean).length;
-    $('trayCount').textContent = total
-      ? items.length + ' of ' + total + ' shown'
-      : trayMode === 'unplaced'
-        ? 'Every new lineup is placed'
-        : 'Nothing in this view';
-    $('trayClear').hidden = !isFiltered(filters);
-    $('trayFilterToggle').textContent = active ? 'Filters · ' + active : 'Filters';
-    $('trayFilterToggle').classList.toggle('on', active > 0);
-    const html = items.length
-      ? items
-          .map(
-            (l) =>
-              cardHtml(l, above.get(l.id), held && l.id !== held.id ? matchOf(l, held) : null) +
-              (editing && editing.id === l.id ? editorHtml(l) : '')
-          )
-          .join('')
-      : '<div class="empty">' +
-        (isFiltered(filters)
-          ? 'No X8 lineup matches these filters. <button type="button" class="link" data-cleartray>Clear filters</button>'
-          : trayMode === 'unplaced'
-            ? 'Every new lineup is placed.'
-            : 'Nothing here yet.') +
-        '</div>';
-    keepScroll($('cards'), () => {
-      $('cards').innerHTML = html;
-    });
-  }
-
-  function cardHtml(l, aboveRank, match) {
-    const placed = !!l.anchor;
-    const confirming = pendingRemove === l.id;
-    const where = placed
-      ? '<button type="button" class="link" data-show="' +
-        esc(l.id) +
-        '" title="Scroll the list to this lineup">above #' +
-        aboveRank +
-        '</button>'
-      : '<span>' +
-        (l.queued
-          ? 'in ' + esc(l.queuedFrom || 'the queue')
-          : l.added
-            ? 'new, not saved'
-            : 'not placed yet') +
-        '</span>';
-    const removeButton = confirming
-      ? ''
-      : '<button type="button" class="iconbtn danger" data-remove="' +
-        esc(l.id) +
-        '" title="Remove this lineup" aria-label="Remove this lineup">✕</button>';
-    return (
-      '<div class="card' +
-      rowClass(l.heroes) +
-      (placed ? ' placed' : '') +
-      (l.id === holding ? ' holding' : '') +
-      (l.edited ? ' edited' : '') +
-      matchClass(match) +
-      '" draggable="true" tabindex="0" data-card="' +
-      esc(l.id) +
-      '" aria-label="' +
-      esc(l.heroes.join(' / ')) +
-      (placed ? ', placed above rank ' + aboveRank : '') +
-      '">' +
-      stackHtml(l.heroes) +
-      '<div class="meta">' +
-      (l.skin
-        ? '<span class="chip skin" title="Skin code: 3 must own the skin, 2 recommended, 1 optional">skin ' +
-          esc(l.skin) +
-          '</span>'
-        : '') +
-      (l.tier
-        ? '<span class="chip tier" title="ROC Academy tier and source score, used only to order this list">' +
-          esc(l.tier) +
-          (l.score != null ? ' · ' + l.score : '') +
-          '</span>'
-        : '') +
-      (l.edited ? '<span class="kind edited" title="Changed, not saved yet">edited</span>' : '') +
-      (l.added ? '<span class="chip">new</span>' : '') +
-      matchChip(match) +
-      where +
-      '<span class="spacer"></span>' +
-      (editMode
-        ? '<button type="button" data-edit="' +
-          esc(l.id) +
-          '" aria-label="Change this lineup\'s heroes or skin code">Edit</button>'
-        : '') +
-      '<button type="button" data-move="' +
-      esc(l.id) +
-      '">' +
-      (placed ? 'Move' : 'Place') +
-      '</button>' +
-      (placed ? '<button type="button" data-unplace="' + esc(l.id) + '">Unplace</button>' : '') +
-      (l.added ? '<button type="button" data-delete="' + esc(l.id) + '">Delete</button>' : '') +
-      (l.added ? '' : removeButton) +
-      (confirming
-        ? '<button type="button" class="danger" data-remove="' + esc(l.id) + '">Remove?</button>'
-        : '') +
-      '</div></div>'
-    );
-  }
-
-  function renderStats() {
-    const all = laneViews();
-    const placed = all.filter((l) => l.anchor).length;
-    const changed = edits.size + baseOrder.filter((id, i) => id !== BASE[i].id).length;
-    $('stats').innerHTML =
-      '<div class="stat"><b>' +
-      baseView().length +
-      '</b><span>Current lineups' +
-      (editMode ? ' (edit mode)' : '') +
-      '</span></div>' +
-      '<div class="stat"><b>' +
-      placed +
-      '</b><span>New placed</span></div>' +
-      '<div class="stat"><b>' +
-      (all.length - placed) +
-      '</b><span>New waiting at the end</span></div>' +
-      (changed
-        ? '<div class="stat warn"><b>' + changed + '</b><span>lines changed</span></div>'
-        : '') +
-      (removed.size
-        ? '<div class="stat warn"><b>' + removed.size + '</b><span>marked to remove</span></div>'
-        : '');
-  }
-
-  function render() {
-    renderStats();
-    renderTray();
-    renderList();
-    measureStrip();
-  }
-
-  function clearTrayFilters() {
-    ['trayTroop', 'trayCost', 'trayTier'].forEach((id) => ($(id).value = ''));
-    $('traySort').value = TRAY_DEFAULTS.sort;
-    renderTray();
-  }
-  function clearRankFilters() {
-    $('listSearch').value = '';
-    $('troop').value = '';
-    $('cost').value = '';
-    $('near').value = 'all';
-    renderList();
-  }
-
   /** Save the three heroes and the skin code typed into an open editor. */
   function applyEdit(form) {
     const id = form.dataset.edit;
-    const isBase = id.startsWith('b');
+    const isBase = !lanes.has(id);
     const current = isBase
       ? baseView().find((b) => b.id === id)
       : laneViews().find((l) => l.id === id);
@@ -939,13 +1527,9 @@ export function mountCombosPlanner(root, adapter = {}) {
       return fail('Another lineup already uses those three heroes and skin code.');
     editing = null;
     if (keyOf(current) === key) return render();
+    remember();
     edits.set(id, { heroes, skin });
-    touch();
-    render();
-    const selector = isBase
-      ? '[data-rank="' + current.rank + '"]'
-      : '[data-row="' + CSS.escape(id) + '"]';
-    revealRow(selector, 'nearest');
+    changed('Edited ' + label(heroes) + '. Z undoes it.');
   }
 
   /** Two-step removal: the ✕ on a lineup asks once, then takes it out of the file. */
@@ -957,39 +1541,234 @@ export function mountCombosPlanner(root, adapter = {}) {
     }
     pendingRemove = null;
     if (editing && editing.id === id) editing = null;
-    if (holding === id) stopHolding();
+    if (holding && holding.includes(id)) stopHolding(false);
+    remember();
     const lane = lanes.get(id);
     if (lane && lane.added) lanes.delete(id);
     else removed.add(id);
-    touch();
+    picked.delete(id);
+    changed('Marked for removal. Z undoes it.');
+  }
+  /** Nudge one S0-X2 lineup up or down; its X8 lanes travel with it. */
+  function moveBase(id, delta) {
+    const i = baseOrder.indexOf(id);
+    let j = i;
+    do j += delta < 0 ? -1 : 1;
+    while (j >= 0 && j < baseOrder.length && removed.has(baseOrder[j]));
+    if (i < 0 || j < 0 || j >= baseOrder.length) return;
+    remember();
+    [baseOrder[i], baseOrder[j]] = [baseOrder[j], baseOrder[i]];
+    changed('Reordered. Z undoes it.');
+  }
+  function setEditMode(on) {
+    editMode = on;
+    editing = null;
+    pendingRemove = null;
+    $('editBase').checked = on;
     render();
+    setStatus(
+      on
+        ? 'Edit mode: change a lineup with Edit, reorder an S0–X2 lineup with ▲▼, or take one out with ✕. Press Done editing to finish.'
+        : 'Edit mode off. Everything stays as it is until you press Save.'
+    );
   }
 
+  // --- Paste import -----------------------------------------------------------------------
+  let pasted = [];
+  function readPaste() {
+    pasted = parsePastedLineups($('pasteText').value, Object.keys(H));
+    renderPaste();
+  }
+  function renderPaste() {
+    const box = $('pasteResult');
+    if (!pasted.length) {
+      box.innerHTML = '<p class="hint">No lineups found in the text.</p>';
+      return;
+    }
+    const rows = pasted.map((p, i) => {
+      if (p.problem && p.problem.startsWith('needs'))
+        return '<li class="bad">' + esc(p.text) + ' — ' + esc(p.problem) + '</li>';
+      const cells = p.names.map((name, k) =>
+        p.heroes[k]
+          ? '<span class="ok">' + esc(p.heroes[k]) + '</span>'
+          : '<input type="text" list="cp-heroNames" data-fix="' +
+            i +
+            ':' +
+            k +
+            '" value="' +
+            esc(name) +
+            '" aria-label="Correct the hero name ' +
+            esc(name) +
+            '" placeholder="' +
+            esc((p.suggestions[k] || []).join(', ') || 'hero name') +
+            '">'
+      );
+      return (
+        '<li class="' +
+        (p.problem ? 'bad' : 'good') +
+        '">' +
+        cells.join(' / ') +
+        (p.skin ? ' <span class="chip">skin ' + esc(p.skin) + '</span>' : '') +
+        (p.fuzzy.length ? ' <span class="hint">(' + esc(p.fuzzy.join(', ')) + ')</span>' : '') +
+        (p.problem && p.problem !== 'unknown hero name' ? ' — ' + esc(p.problem) : '') +
+        '</li>'
+      );
+    });
+    const unmatched = pasted.reduce((n, p) => n + p.heroes.filter((h) => !h).length, 0);
+    box.innerHTML =
+      '<ol class="pastelist">' +
+      rows.join('') +
+      '</ol>' +
+      (unmatched
+        ? '<p class="hint">' +
+          unmatched +
+          ' name' +
+          (unmatched === 1 ? '' : 's') +
+          ' not recognised: correct them above, or leave those lines out.</p>'
+        : '') +
+      '<button type="button" class="primary" id="cp-pasteAdd">Add the matched lineups to the queue</button>';
+  }
+  function addPasted() {
+    const match = createHeroMatcher(Object.keys(H));
+    root.querySelectorAll('[data-fix]').forEach((input) => {
+      const [i, k] = input.dataset.fix.split(':').map(Number);
+      const found = match(input.value);
+      if (found.name && pasted[i]) pasted[i].heroes[k] = found.name;
+    });
+    const existing = new Set([...baseView(), ...laneViews()].map(keyOf));
+    const fresh = [];
+    const skipped = [];
+    for (const p of pasted) {
+      const lane = { heroes: p.heroes, skin: p.skin };
+      const why = p.heroes.some((h) => !h)
+        ? 'unknown hero'
+        : new Set(p.heroes).size < 3
+          ? 'the same hero twice'
+          : !p.heroes.some(isX8Hero)
+            ? 'no X8 hero'
+            : existing.has(keyOf(lane))
+              ? 'already listed'
+              : '';
+      if (why) {
+        skipped.push(p.text + ' (' + why + ')');
+        continue;
+      }
+      existing.add(keyOf(lane));
+      fresh.push(lane);
+    }
+    pasted = [];
+    $('pasteResult').innerHTML =
+      '<p class="hint">' +
+      (fresh.length
+        ? 'Added ' + fresh.length + ' lineup' + (fresh.length === 1 ? '' : 's') + ' to the queue.'
+        : 'Nothing added.') +
+      (skipped.length ? ' Skipped: ' + esc(skipped.join('; ')) + '.' : '') +
+      '</p>';
+    if (!fresh.length) return;
+    remember();
+    for (const lane of fresh) {
+      const id = laneSlug(lane);
+      edits.delete(id);
+      removed.delete(id);
+      lanes.set(id, {
+        id,
+        heroes: lane.heroes,
+        skin: lane.skin,
+        note: '',
+        tier: '',
+        score: null,
+        anchor: '',
+        slot: 0,
+        added: true,
+      });
+    }
+    $('pasteText').value = '';
+    trayMode = 'unplaced';
+    root
+      .querySelectorAll('[data-tray]')
+      .forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tray === 'unplaced')));
+    changed(
+      adapter.addedHint ||
+        'Added ' +
+          fresh.length +
+          ' lineup' +
+          (fresh.length === 1 ? '' : 's') +
+          ' to the queue. Place them, or Save to keep them for later.'
+    );
+    select(laneSlug(fresh[0]));
+  }
+
+  // --- Saving ---------------------------------------------------------------------------
+  function currentPlan() {
+    const d = derived();
+    return planFromState({
+      rows: d.rows,
+      lanes: [...lanes.values()],
+      baseOrder,
+      edits,
+      removed: [...removed],
+    });
+  }
+  let lastFocus = null;
+  function openSummary() {
+    if (!view) return;
+    const plan = currentPlan();
+    const summary = summarizePlan(view, plan);
+    const queuedOnly = !summary.lines.length && dirty;
+    if (!summary.lines.length && !queuedOnly) return setStatus('Nothing to save: no line of combos-db.js changes.');
+    $('summaryText').textContent =
+      summary.text +
+      (queuedOnly ? ' in combos-db.js; only the list of lineups waiting to be placed changes.' : '.') +
+      ' ' +
+      saveLabel +
+      ' writes the lines below.';
+    const kinds = {
+      placed: '+',
+      added: '+',
+      moved: '↕',
+      unplaced: '↩',
+      edited: '✎',
+      removed: '−',
+      reordered: '↕',
+    };
+    const shownLines = summary.lines.slice(0, 400);
+    $('summaryLines').innerHTML =
+      shownLines
+        .map(
+          (line) =>
+            '<li class="' +
+            line.kind +
+            '"><span class="mark" aria-hidden="true">' +
+            kinds[line.kind] +
+            '</span><span class="sr">' +
+            line.kind +
+            ': </span><code>' +
+            esc(line.text) +
+            '</code><span class="detail">' +
+            esc(line.detail) +
+            '</span></li>'
+        )
+        .join('') +
+      (summary.lines.length > shownLines.length
+        ? '<li>… and ' + (summary.lines.length - shownLines.length) + ' more</li>'
+        : '');
+    $('summarySave').textContent = saveLabel;
+    lastFocus = root.ownerDocument.activeElement;
+    $('summary').hidden = false;
+    $('summarySave').focus();
+  }
+  function closeSummary() {
+    $('summary').hidden = true;
+    if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+  }
   async function save() {
-    const order = [
-      ...merged()
-        .filter((e) => e.type === 'x8')
-        .map((e) => ({ id: e.lane.id, anchor: e.lane.anchor })),
-      ...allLanes()
-        .filter((l) => !l.anchor)
-        .map((l) => ({ id: l.id, anchor: '' })),
-    ];
-    const added = [...lanes.values()]
-      .filter((l) => l.added && !removed.has(l.id))
-      .map((l) => ({ id: l.id, heroes: laneFor(l).heroes, skin: laneFor(l).skin }));
-    const editList = [...edits.entries()]
-      .filter(([id]) => !(lanes.get(id) && lanes.get(id).added) && !removed.has(id))
-      .map(([id, edit]) => ({ id, heroes: edit.heroes, skin: edit.skin }));
+    closeSummary();
+    const plan = currentPlan();
     $('saveBtn').disabled = true;
     setStatus('Saving…');
     try {
-      const data = await adapter.save({
-        order,
-        added,
-        baseOrder,
-        edits: editList,
-        removed: [...removed],
-      });
+      const data = await adapter.save(plan);
+      store.set('Draft', null);
       if (data) applyView(data);
       setStatus(adapter.savedHint || 'Saved.');
     } catch (err) {
@@ -1001,8 +1780,9 @@ export function mountCombosPlanner(root, adapter = {}) {
   async function loadView() {
     setStatus(loadingHint);
     try {
-      applyView(await adapter.load());
-      setStatus(adapter.loadedHint || idleHint);
+      const skipped = applyView(await adapter.load());
+      if (!skipped) setStatus(adapter.loadedHint || idleHint);
+      offerDraft();
     } catch (error) {
       setStatus(
         adapter.loadError
@@ -1011,28 +1791,102 @@ export function mountCombosPlanner(root, adapter = {}) {
       );
     }
   }
+  async function revert() {
+    const before = snapshot();
+    store.set('Draft', null);
+    await loadView();
+    // Discard changes is one more step you can undo.
+    history.push(before);
+    setDirty(false);
+    setStatus('Changes discarded. Z brings them back.');
+  }
+
+  // --- Mouse ------------------------------------------------------------------------------
+  function clickQueueRow(ev, id) {
+    if (ev.shiftKey && pickFrom) {
+      const order = queueOrder();
+      const a = order.indexOf(pickFrom);
+      const b = order.indexOf(id);
+      if (a >= 0 && b >= 0) {
+        picked = new Set(order.slice(Math.min(a, b), Math.max(a, b) + 1));
+        current = id;
+        render();
+        return setStatus(picked.size + ' lineups selected. Enter places them as a block.');
+      }
+    }
+    if (ev.ctrlKey || ev.metaKey) {
+      if (!picked.size && current && current !== id) picked.add(current);
+      if (picked.has(id)) picked.delete(id);
+      else picked.add(id);
+      pickFrom = id;
+      current = id;
+      render();
+      return setStatus(picked.size + ' selected. Enter places them as a block.');
+    }
+    picked = new Set();
+    pickFrom = id;
+    select(id);
+  }
 
   root.addEventListener('click', (ev) => {
     const t = ev.target.closest('button');
-    if (!t) return;
+    if (!t) {
+      const card = ev.target.closest('[data-card]');
+      if (card) return clickQueueRow(ev, card.dataset.card);
+      const row = ev.target.closest('[data-row]');
+      if (row) {
+        const before = current;
+        current = row.dataset.row;
+        if (picked.size) {
+          picked = new Set();
+          renderTray();
+        } else markQueueCurrent(before, current);
+        return refreshList();
+      }
+      if (!ev.target.closest('.keyswrap')) closeKeys();
+      return;
+    }
     const d = t.dataset;
+    if (!t.closest('.keyswrap')) closeKeys();
     if (pendingRemove && d.remove !== pendingRemove) {
       pendingRemove = null;
       render();
     }
-    if (d.gap != null) return placeHolding(Number(d.gap));
-    if (d.move) return holding === d.move ? stopHolding() : startHolding(d.move);
-    if (d.up) return moveBy(d.up, -1);
-    if (d.down) return moveBy(d.down, 1);
-    if (d.unplace) return update(d.unplace, { anchor: '', slot: 0 });
+    if (d.gap != null) {
+      const ids = holding || [];
+      stopHolding(false);
+      return placeIds(ids, Number(d.gap));
+    }
+    if (d.accept) {
+      if (!selectionIds().includes(d.accept)) {
+        picked = new Set();
+        current = d.accept;
+      }
+      return acceptSuggestion();
+    }
+    if (d.hold) return holding ? stopHolding() : startHolding([d.hold]);
+    if (d.holdpicked != null) return startHolding(selectionIds());
+    if (d.up || d.down) {
+      current = d.up || d.down;
+      return moveCurrent(d.up ? -1 : 1);
+    }
+    if (d.unplace) return unplace(d.unplace);
     if (d.baseup) return moveBase(d.baseup, -1);
     if (d.basedown) return moveBase(d.basedown, 1);
     if (d.remove) return removeLane(d.remove);
+    if (d.toggle) {
+      if (collapsed.has(d.toggle)) collapsed.delete(d.toggle);
+      else collapsed.add(d.toggle);
+      return renderTray();
+    }
+    if (d.showall != null) {
+      showAll = true;
+      return focusRanking();
+    }
     if (d.edit) {
-      const isBase = d.edit.startsWith('b');
-      const lane = isBase
-        ? baseView().find((b) => b.id === d.edit)
-        : laneViews().find((l) => l.id === d.edit);
+      const lane = lanes.has(d.edit)
+        ? laneViews().find((l) => l.id === d.edit)
+        : baseView().find((b) => b.id === d.edit);
       editing = lane
         ? {
             id: lane.id,
@@ -1051,34 +1905,39 @@ export function mountCombosPlanner(root, adapter = {}) {
       }
       return;
     }
-    if (d.canceledit) {
+    if (d.canceledit != null) {
       editing = null;
       return render();
     }
     if (d.show) {
       clearRankFilters();
-      return revealRow('[data-row="' + CSS.escape(d.show) + '"]');
+      picked = new Set();
+      return select(d.show);
     }
-    if (d.cleartray) return clearTrayFilters();
-    if (d.clearrank) return clearRankFilters();
+    if (d.cleartray != null) return clearTrayFilters();
+    if (d.clearrank != null) return clearRankFilters();
     if (d.delete) {
+      remember();
       lanes.delete(d.delete);
-      touch();
-      return render();
+      picked.delete(d.delete);
+      if (current === d.delete) current = null;
+      return changed('Deleted that new lineup. Z undoes it.');
     }
-    if (d.tray) {
-      trayMode = d.tray;
-      document
-        .querySelectorAll('[data-tray]')
-        .forEach((b) => b.setAttribute('aria-pressed', String(b === t)));
-      renderTray();
-    }
+    if (d.tray) return setTrayMode(d.tray);
+    if (d.density) return setDensity(d.density);
+    if (t.id === 'cp-pasteAdd') return addPasted();
   });
   root.addEventListener('submit', (ev) => {
-    const form = ev.target.closest('form[data-edit]');
+    const form = ev.target.closest('form');
     if (!form) return;
-    ev.preventDefault();
-    applyEdit(form);
+    if (form.matches('form[data-edit]')) {
+      ev.preventDefault();
+      return applyEdit(form);
+    }
+    if (form.matches('form[data-rankform]')) {
+      ev.preventDefault();
+      return placeAboveRank(form.querySelector('[name="rank"]').value);
+    }
   });
   // A portrait that fails to load shows the site's placeholder instead of a broken image.
   root.addEventListener(
@@ -1091,97 +1950,219 @@ export function mountCombosPlanner(root, adapter = {}) {
         !img.dataset.fallback
       ) {
         img.dataset.fallback = '1';
-        img.src = '/images/heroes/portrait-unavailable.svg';
+        img.src = portraitFallback;
       }
     },
     true
   );
-  $('cancelPlace').addEventListener('click', stopHolding);
-  $('saveBtn').addEventListener('click', save);
-  $('revertBtn').addEventListener('click', () => void loadView());
-  $('trayClear').addEventListener('click', clearTrayFilters);
-  $('showAllRows').addEventListener('click', clearRankFilters);
-  $('trayFilterToggle').addEventListener('click', () => setFiltersOpen(!filtersOpen()));
-  $('placeRankGo').addEventListener('click', () => placeAboveRank($('placeRank').value));
-  $('placeRank').addEventListener('keydown', (ev) => {
-    if (ev.key === 'Enter') {
-      ev.preventDefault();
-      placeAboveRank($('placeRank').value);
-    }
+  $('cancelPlace').addEventListener('click', () => stopHolding());
+  $('saveBtn').addEventListener('click', openSummary);
+  $('summarySave').addEventListener('click', () => void save());
+  $('summaryCancel').addEventListener('click', closeSummary);
+  $('summary').addEventListener('click', (ev) => {
+    if (ev.target === $('summary')) closeSummary();
   });
+  $('revertBtn').addEventListener('click', () => void revert());
+  $('undo').addEventListener('click', undo);
+  $('redo').addEventListener('click', redo);
+  $('autoDraft').addEventListener('click', autoDraftAll);
+  $('draftRestore').addEventListener('click', restoreDraft);
+  $('draftDiscard').addEventListener('click', discardDraft);
+  $('batchPlace').addEventListener('click', () => startHolding(selectionIds()));
+  $('batchClear').addEventListener('click', () => {
+    picked = new Set();
+    render();
+  });
+  $('trayClear').addEventListener('click', clearTrayFilters);
+  $('trayFilterToggle').addEventListener('click', () => setFiltersOpen(!filtersOpen()));
+  $('pasteRead').addEventListener('click', readPaste);
   $('gotoForm').addEventListener('submit', (ev) => {
     ev.preventDefault();
-    jumpToRank($('gotoRank').value);
+    const rank = Number($('gotoRank').value);
+    if (!Number.isInteger(rank) || rank < 1 || rank > derived().bases.length)
+      return setStatus('Rank must be a whole number between 1 and ' + derived().bases.length + '.');
+    clearRankFilters();
+    viewCenter = rank;
+    focusRanking();
+    reveal('[data-rank="' + rank + '"]', { blink: true });
   });
-  $('compactRows').addEventListener('change', (ev) => setCompact(ev.target.checked));
+  $('showAll').addEventListener('change', (ev) => {
+    showAll = ev.target.checked;
+    focusRanking();
+  });
   $('editDone').addEventListener('click', () => setEditMode(false));
   $('editBase').addEventListener('change', (ev) => setEditMode(ev.target.checked));
-
-  function setEditMode(on) {
-    editMode = on;
-    editing = null;
-    pendingRemove = null;
-    $('editBase').checked = on;
-    render();
-    setStatus(
-      on
-        ? 'Edit mode: change a lineup with Edit, reorder an S0–X2 lineup with ▲▼, or take one out with ✕. Press Done editing to finish.'
-        : 'Edit mode off. Everything stays as it is until you press Save.'
-    );
-  }
-
   ['listSearch', 'troop', 'cost', 'near'].forEach((id) =>
     $(id).addEventListener('input', renderList)
   );
   ['traySearch', 'trayTroop', 'trayCost', 'trayTier', 'traySort'].forEach((id) =>
     $(id).addEventListener('input', renderTray)
   );
-  root.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Escape') {
-      if (holding) return stopHolding();
-      if (pendingRemove) {
-        pendingRemove = null;
-        return render();
+
+  // --- Keys -------------------------------------------------------------------------------
+  const keysOpen = () => !$('keys').hidden;
+  function toggleKeys(open = !keysOpen()) {
+    $('keys').hidden = !open;
+    $('keysBtn').setAttribute('aria-expanded', String(open));
+  }
+  const closeKeys = () => keysOpen() && toggleKeys(false);
+  $('keysBtn').addEventListener('click', () => toggleKeys());
+
+  const isTyping = (el) =>
+    el instanceof Element &&
+    (el.matches('input, textarea, select, [contenteditable=""], [contenteditable="true"]') ||
+      el.isContentEditable);
+  /**
+   * Shortcuts only act while the planner is on screen: the admin tab hides its
+   * panel with a class. A DOM check, so a key press never forces a layout.
+   */
+  const onScreen = () => root.isConnected && !root.closest('[hidden], .hidden');
+
+  function cancel() {
+    if (!$('summary').hidden) return closeSummary(), true;
+    if (keysOpen()) return toggleKeys(false), true;
+    if (digits) {
+      digits = '';
+      renderFocusBar();
+      return true;
+    }
+    if (holding) return stopHolding(), true;
+    if (pendingRemove) {
+      pendingRemove = null;
+      render();
+      return true;
+    }
+    if (editing) {
+      editing = null;
+      render();
+      return true;
+    }
+    if (picked.size) {
+      picked = new Set();
+      render();
+      return true;
+    }
+    return false;
+  }
+
+  function onKey(ev) {
+    if (!onScreen() || ev.defaultPrevented || ev.altKey) return;
+    const target = ev.target;
+    const inside = target instanceof Node && root.contains(target);
+    const onPage = target instanceof Element && (target.tagName === 'BODY' || target.tagName === 'HTML');
+    if (!inside && !onPage) return;
+    const mod = ev.ctrlKey || ev.metaKey;
+    const key = ev.key;
+    // Ctrl+S reviews and saves from anywhere in the planner, even a field.
+    if (mod && (key === 's' || key === 'S')) {
+      ev.preventDefault();
+      if (!$('summary').hidden) return void save();
+      return openSummary();
+    }
+    if (key === 'Escape') {
+      if (isTyping(target)) {
+        if (target instanceof HTMLInputElement && target.type === 'search' && target.value) {
+          target.value = '';
+          target.dispatchEvent(new Event('input'));
+          return;
+        }
+        if (editing || holding) {
+          cancel();
+          return;
+        }
+        target.blur();
+        return;
       }
-      if (editing) {
-        editing = null;
-        return render();
-      }
-      const t = ev.target;
-      if (t instanceof HTMLInputElement && t.type === 'search' && t.value) {
-        t.value = '';
-        t.dispatchEvent(new Event('input'));
-      }
+      if (cancel()) ev.preventDefault();
       return;
     }
-    if (ev.target instanceof HTMLInputElement || ev.target instanceof HTMLSelectElement) return;
-    const card = ev.target instanceof Element ? ev.target.closest('[data-card]') : null;
-    if (card && ev.target === card && !holding && (ev.key === 'Enter' || ev.key === ' ')) {
+    if (isTyping(target)) return;
+    if (!$('summary').hidden) return; // the dialog's own buttons take the keys
+    if (target instanceof HTMLButtonElement && (key === 'Enter' || key === ' ')) return;
+    if (mod && (key === 'z' || key === 'Z')) {
       ev.preventDefault();
-      return startHolding(card.dataset.card);
+      return ev.shiftKey ? redo() : undo();
     }
-    const row = ev.target instanceof Element ? ev.target.closest('[data-row]') : null;
-    if (row && ev.target === row && (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')) {
+    if (mod && (key === 'y' || key === 'Y')) {
       ev.preventDefault();
-      moveBy(row.dataset.row, ev.key === 'ArrowUp' ? -1 : 1);
+      return redo();
     }
-  });
+    if (mod) return;
+    if (key === '?') {
+      ev.preventDefault();
+      return toggleKeys();
+    }
+    if (key === '/') {
+      ev.preventDefault();
+      return $('traySearch').focus();
+    }
+    if (key === 'j' || key === 'J') {
+      ev.preventDefault();
+      return step(1);
+    }
+    if (key === 'k' || key === 'K') {
+      ev.preventDefault();
+      return step(-1);
+    }
+    if (key === 'z' || key === 'Z') {
+      ev.preventDefault();
+      return ev.shiftKey ? redo() : undo();
+    }
+    if (key === 'u' || key === 'U') {
+      ev.preventDefault();
+      return unplace();
+    }
+    if (/^[0-9]$/.test(key)) {
+      ev.preventDefault();
+      digits = (digits + key).replace(/^0+/, '').slice(0, 4);
+      renderFocusBar();
+      return setStatus(digits ? 'Place above #' + digits + ': press Enter.' : '');
+    }
+    if (key === 'Backspace' && digits) {
+      ev.preventDefault();
+      digits = digits.slice(0, -1);
+      return renderFocusBar();
+    }
+    if (key === 'Enter') {
+      ev.preventDefault();
+      if (digits) {
+        const value = digits;
+        digits = '';
+        return placeAboveRank(value, holding || selectionIds());
+      }
+      if (holding) return setStatus('Type a rank and press Enter, or click a gap.');
+      return acceptSuggestion();
+    }
+    if (key === 'ArrowUp' || key === 'ArrowDown') {
+      const lane = current && derived().byId.get(current);
+      if (!lane || !lane.anchor) return; // let the page scroll
+      ev.preventDefault();
+      return moveCurrent((key === 'ArrowUp' ? -1 : 1) * (ev.shiftKey ? 10 : 1));
+    }
+  }
+  const view_ = root.ownerDocument.defaultView || window;
+  view_.addEventListener('keydown', onKey);
+
   const onResize = () => measureStrip();
-  window.addEventListener('resize', onResize);
+  view_.addEventListener('resize', onResize);
   const guardUnload = adapter.guardUnload !== false;
   const onBeforeUnload = (event) => {
     if (dirty) event.preventDefault();
   };
-  if (guardUnload) window.addEventListener('beforeunload', onBeforeUnload);
+  if (guardUnload) view_.addEventListener('beforeunload', onBeforeUnload);
 
+  // --- Drag and drop -------------------------------------------------------------------------
   let dropped = false;
   root.addEventListener('dragstart', (ev) => {
     const src = ev.target.closest('[data-card],[data-row]');
     if (!src) return;
     dropped = false;
+    const id = src.dataset.card || src.dataset.row;
     ev.dataTransfer.effectAllowed = 'move';
-    ev.dataTransfer.setData('text/plain', src.dataset.card || src.dataset.row);
-    startHolding(src.dataset.card || src.dataset.row);
+    ev.dataTransfer.setData('text/plain', id);
+    const ids = picked.has(id) && picked.size > 1 ? selectionIds() : [id];
+    current = id;
+    startHolding(ids);
   });
   root.addEventListener('dragover', (ev) => {
     const g = ev.target.closest('.gap');
@@ -1199,108 +2180,51 @@ export function mountCombosPlanner(root, adapter = {}) {
     if (!g || !holding) return;
     ev.preventDefault();
     dropped = true;
-    placeHolding(Number(g.dataset.gap));
+    const ids = holding;
+    stopHolding(false);
+    placeIds(ids, Number(g.dataset.gap));
   });
   root.addEventListener('dragend', () => {
     if (!dropped && holding) stopHolding();
   });
 
-  $('addForm').addEventListener('submit', (ev) => {
-    ev.preventDefault();
-    const raw = [$('addFront').value, $('addMiddle').value, $('addBack').value];
-    const heroes = raw.map(findHero);
-    const msg = $('addMsg');
-    const bad = raw.filter((v, i) => !heroes[i]);
-    if (bad.length)
-      return (msg.textContent =
-        'Unknown hero: ' +
-        bad.map((v) => v || '(empty)').join(', ') +
-        '. Pick names from the list.');
-    if (new Set(heroes).size < 3)
-      return (msg.textContent = 'A lineup needs three different heroes.');
-    if (!heroes.some(isX8Hero))
-      return (msg.textContent =
-        'This lineup has no X8 hero. Use edit mode to change an S0–X2 lineup instead.');
-    const skin = $('addSkin').value.trim();
-    if (skin && !/^[123]{3}$/.test(skin))
-      return (msg.textContent = 'Skin code is three digits of 1, 2 or 3, e.g. 222.');
-    const key = heroes.join('|') + '#' + skin;
-    if ([...laneViews(), ...baseView()].some((l) => keyOf(l) === key && !removed.has(l.id)))
-      return (msg.textContent = 'That lineup is already in the database.');
-    const id = slug(heroes, skin);
-    edits.delete(id);
-    removed.delete(id);
-    lanes.set(id, {
-      id,
-      heroes,
-      skin,
-      note: '',
-      tier: '',
-      score: null,
-      anchor: '',
-      slot: 0,
-      added: true,
-    });
-    ['addFront', 'addMiddle', 'addBack', 'addSkin'].forEach((f) => ($(f).value = ''));
-    msg.textContent = adapter.addedHint || 'Added. Place it now, or Save to keep it for later.';
-    touch();
-    trayMode = 'unplaced';
-    document
-      .querySelectorAll('[data-tray]')
-      .forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tray === 'unplaced')));
-    render();
-  });
-
-  // Compact rows fit roughly twice as many lineups on screen; the filter panel and
-  // the compact toggle both remember their state.
-  function setCompact(on) {
-    root.classList.toggle('compact', on);
-    $('compactRows').checked = on;
-    try {
-      localStorage.setItem(prefs + 'Compact', on ? '1' : '0');
-    } catch (err) {
-      /* private mode: keep the setting for this page only */
-    }
-  }
-  function readCompact() {
-    try {
-      return localStorage.getItem(prefs + 'Compact') === '1';
-    } catch (err) {
-      return false;
-    }
+  // --- Preferences ---------------------------------------------------------------------------
+  // Compact rows are the default; Comfortable brings back the larger rows and text
+  // badges. Both hosts remember the choice under their own prefix.
+  function setDensity(mode) {
+    const comfortable = mode === 'comfortable';
+    shell.classList.toggle('comfortable', comfortable);
+    shell.classList.toggle('compact', !comfortable);
+    root
+      .querySelectorAll('[data-density]')
+      .forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.density === (comfortable ? 'comfortable' : 'compact'))));
+    store.set('Density', comfortable ? 'comfortable' : 'compact');
+    measureStrip();
   }
   const filtersOpen = () => !$('trayFilterBox').hidden;
   function setFiltersOpen(open) {
     $('trayFilterBox').hidden = !open;
     $('trayFilterToggle').setAttribute('aria-expanded', String(open));
-    try {
-      localStorage.setItem(prefs + 'Filters', open ? '1' : '0');
-    } catch (err) {
-      /* private mode */
-    }
-  }
-  function readFiltersOpen() {
-    try {
-      return localStorage.getItem(prefs + 'Filters') === '1';
-    } catch (err) {
-      return false;
-    }
+    store.set('Filters', open ? '1' : '0');
   }
 
   $('howtoSummary').textContent = adapter.howToSummary || 'How this works';
   $('howtoBody').innerHTML = adapter.howToHtml || '';
-  $('saveBtn').textContent = saveLabel;
-  setCompact(readCompact());
-  setFiltersOpen(readFiltersOpen());
+  $('saveBtn').textContent = saveLabel + ' (Ctrl+S)';
+  setDensity(store.get('Density') === 'comfortable' ? 'comfortable' : 'compact');
+  setFiltersOpen(store.get('Filters') === '1');
   // The key carries the same mini troop logos the rows use.
   root.querySelectorAll('#cp-legend [data-troop]').forEach((el) => {
-    el.insertAdjacentHTML('afterbegin', troopIcon(el.dataset.troop));
+    el.classList.add('troop', el.dataset.troop);
+    el.insertAdjacentHTML('afterbegin', troopIcon(el.dataset.troop, 14));
   });
   void loadView();
   return {
     destroy() {
-      window.removeEventListener('resize', onResize);
-      if (guardUnload) window.removeEventListener('beforeunload', onBeforeUnload);
+      clearTimeout(draftTimer);
+      view_.removeEventListener('keydown', onKey);
+      view_.removeEventListener('resize', onResize);
+      if (guardUnload) view_.removeEventListener('beforeunload', onBeforeUnload);
       root.innerHTML = '';
     },
   };

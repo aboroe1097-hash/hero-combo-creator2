@@ -4,6 +4,11 @@ import { pathToFileURL } from 'node:url';
 
 import { baseRankedCombos } from '../js/combos-db.js';
 import { allHeroesData } from '../js/heroes-data.js';
+import { DEFAULT_HERO_ALIASES, normalizeHeroKey } from '../js/hero-name-match.js';
+
+// The name keys and aliases live with the browser-side matcher the Combos planner's
+// paste import uses, so both read names the same way; re-exported for callers.
+export { DEFAULT_HERO_ALIASES, normalizeHeroKey };
 
 export const ROC_COMBO_SOURCE_URLS = {
   noskin: 'https://tools.riseofcastles.net/combos-data/combo_noskin.json',
@@ -14,67 +19,6 @@ export const ROC_COMBO_ATTRIBUTION =
   'Public combo candidate data is sourced from tools.riseofcastles.net/combos-data. Credit to the Rise of Castles Tools team/community for publishing and maintaining those datasets.';
 
 export const SUPPORTED_IMPORT_SEASONS = new Set(['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8']);
-
-export const DEFAULT_HERO_ALIASES = {
-  ARTHUR: 'King Arthur',
-  RAMSES: 'Ramses II',
-  STEED: 'Bleeding Steed',
-  ROZEN: 'Rozen Blade',
-  JADEEAGLE: 'Jade Eagle',
-  AVALANCHE: 'The Avalanche',
-  WARLORD: 'War Lord',
-  BRAVE: 'The Brave',
-  BEWULF: 'Beowulf',
-  BEOWULF: 'Beowulf',
-  RAGNAR: 'Ragnar',
-  REINFORCEDRAGNAR: 'Reinforced Ragnar',
-  REINFORCEDRANGER: 'Reinforced Ragnar',
-  RAGNARREINFORCED: 'Reinforced Ragnar',
-  RAGNARDEMONLORD: 'Ragnar',
-  RAGNARTHEDEMONLORD: 'Ragnar',
-  RAGNARTHEDEMONSLORD: 'Ragnar',
-  IMMORTALGUARDIAN: 'Immortal Guardian',
-  BLACKPRINCE: 'Black Prince',
-  SKYBREAKER: 'Sky Breaker',
-  WINDBREAKER: 'Wind-Walker',
-  WINDWALKER: 'Wind-Walker',
-  ALFATIH: 'Al Fatih',
-  NORTHRAGE: "North's Rage",
-  NORTHSRAGE: "North's Rage",
-  HEAVENSJUSTICE: "Heaven's Justice",
-  QUEENANNE: 'Queen Anne',
-  WILLIAMWALLACE: 'William Wallace',
-  WILLIAMTHECONQUEROR: 'William the Conqueror',
-  CHARLESTHEGREAT: 'Charles the Great',
-  CHARLES: 'Charles the Great',
-  EDWARDCONFESSOR: 'Edward the Confessor',
-  EDWARDTHECONFESSOR: 'Edward the Confessor',
-  CONSTANTINE: 'Constantine the Great',
-  CONSTANTINETHEGREAT: 'Constantine the Great',
-  DEMONSPEAR: 'Demon Spear',
-  PEACEBRINGER: 'Peace Bringer',
-  THEHEROINE: 'The Heroine',
-  HEROINECOURAGE: 'The Heroine',
-  THEBONELESS: 'The Boneless',
-  ARMYBREAKER: 'Army Breaker',
-  BLEEDINGSTEED: 'Bleeding Steed',
-  DESERTSTORM: 'Desert Storm',
-  SOARINGHAWK: 'Soaring Hawk',
-  DIVINEARROW: 'Divine Arrow',
-  SPECTRALREAPER: 'Spectral Reaper',
-  RAINFORESTRANGER: 'Rainforest Ranger',
-  SCARLETREAVER: 'Scarlet Reaver',
-  ASHENVERDICT: 'Ashen Verdict',
-  ASHEN: 'Ashen Verdict',
-  ISABELLA: 'Isabella I',
-  JADERAKSHASA: 'Jade',
-  MARY: 'Mary Tudor',
-  RAINFOREST: 'Rainforest Ranger',
-  ROKU: 'Rokuboshuten',
-  SOARING: 'Soaring Hawk',
-  WILLIAMCONQUEROR: 'William the Conqueror',
-  YUKIMURA: 'Yukimura Sanada',
-};
 
 const SOURCE_LABELS = {
   noskin: 'roc-combos-noskin',
@@ -90,15 +34,6 @@ function sortObjectByValue(object, limit = 25) {
 
 function incrementCounter(counter, key) {
   counter[key] = (counter[key] || 0) + 1;
-}
-
-export function normalizeHeroKey(value) {
-  return String(value || '')
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/&/g, 'AND')
-    .replace(/[^a-zA-Z0-9]/g, '')
-    .toUpperCase();
 }
 
 export function createHeroResolver(heroes = allHeroesData, aliases = DEFAULT_HERO_ALIASES) {

@@ -187,7 +187,10 @@ const LIMITS = {
   // js/combos-planner-ui.js, js/combo-plan.js, js/combo-lanes.js and their lazy
   // stylesheets), all in the lazy admin graph: measured 11721.3 KiB on top of
   // 16.5.12; retain ~22 KiB for CI's admin-auth injection.
-  totalJsBytes: 11744 * 1024,
+  // The planner's placement workflow (js/combo-workflow.js, js/hero-name-match.js
+  // and the keyboard-first interface) grows that lazy graph: measured 11749.7 KiB;
+  // retain ~22 KiB again.
+  totalJsBytes: 11772 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
