@@ -7,13 +7,26 @@
 // Save cannot change a deployed file from the browser, so it rebuilds
 // js/combos-db.js in place (exactly the text the local planner would write, because
 // both run js/combo-plan.js) and hands that file over for download and the
-// clipboard. Committing it is what publishes the change to players. Lineups added
-// in the tab that were not placed stay in a local draft, the way the local tool
-// keeps them in x8-queue.json.
+// clipboard. Committing it keeps the reviewed history. Lineups added in the tab
+// that were not placed stay in a local draft, the way the local tool keeps them in
+// x8-queue.json.
+//
+// A superadmin can also publish live: the ranking the plan builds goes to the
+// Firestore document combos_plan/current (js/combos-live.js), and the site ranks
+// with it from the next page load, with no commit. "Use shipped list" points the
+// site back at the file. The download stays, so the file can be committed later.
 
 import { allHeroesData, HERO_PORTRAIT_FALLBACK } from './heroes-data.js';
-import { rankedCombos } from './combos-db.js';
-import { buildComboSource, buildView } from './combo-plan.js';
+import { shippedRankedCombos } from './combos-db.js';
+import { buildComboPlanOutput, buildComboSource, buildView, planFromEntries } from './combo-plan.js';
+import {
+  buildCombosPlanDoc,
+  COMBOS_PLAN_DOC_PATH,
+  combosHash,
+  readCombosPlanDoc,
+  shippedCombosHash,
+  validateComboEntries,
+} from './combos-live.js';
 import { mountCombosPlanner } from './combos-planner-ui.js';
 
 const SOURCE_URL = 'js/combos-db.js';
@@ -76,7 +89,8 @@ export function renderCombos(mount) {
   function stateFor(source, draft) {
     const view = buildView({
       source,
-      combos: rankedCombos,
+      // The file as it ships, whatever the live ranking on this page is.
+      combos: shippedRankedCombos,
       heroTable: allHeroesData,
       queueLanes: draft,
     });
@@ -108,7 +122,107 @@ export function renderCombos(mount) {
     return state.view;
   }
 
+  // --- Live publishing -------------------------------------------------------------
+  async function firestoreContext() {
+    if (typeof window.getVtsAdminFirestoreContext !== 'function')
+      throw new Error('sign in to VTS Admin first');
+    return window.getVtsAdminFirestoreContext();
+  }
+  async function isSuperAdmin() {
+    try {
+      const { user } = await firestoreContext();
+      const token = await user?.getIdTokenResult?.();
+      return token?.claims?.superadmin === true;
+    } catch {
+      return false;
+    }
+  }
+  async function readLiveDoc() {
+    const { db, firestore } = await firestoreContext();
+    const snap = await firestore.getDoc(firestore.doc(db, COMBOS_PLAN_DOC_PATH));
+    return snap.exists() ? snap.data() : null;
+  }
+  async function writeLiveDoc(body) {
+    const { db, user, firestore } = await firestoreContext();
+    const uid = String(user?.uid || '');
+    if (!uid) throw new Error('sign in as a superadmin first');
+    await firestore.setDoc(firestore.doc(db, COMBOS_PLAN_DOC_PATH), {
+      ...body,
+      updatedAt: firestore.serverTimestamp(),
+      updatedBy: uid,
+    });
+    return uid;
+  }
+  const heroNamesOf = () => new Set(allHeroesData.map((hero) => hero.name));
+  async function publishedEntries() {
+    const decision = readCombosPlanDoc(await readLiveDoc(), heroNamesOf());
+    return decision.use === 'published' ? decision.entries : null;
+  }
+  const whenOf = (value) => {
+    const date = value && typeof value.toDate === 'function' ? value.toDate() : new Date(value);
+    return isNaN(date) ? 'at an unknown time' : date.toLocaleString();
+  };
+
+  const live = {
+    async status() {
+      const canPublish = await isSuperAdmin();
+      let doc;
+      try {
+        doc = await readLiveDoc();
+      } catch (error) {
+        return { text: 'Live: unknown (' + error.message + ')', differs: false, canPublish };
+      }
+      const decision = readCombosPlanDoc(doc, heroNamesOf());
+      if (decision.use !== 'published')
+        return {
+          text:
+            'Live: shipped file' +
+            (doc && !doc.useShipped ? ' (the published list was refused: ' + decision.reason + ')' : ''),
+          differs: false,
+          canPublish,
+        };
+      const me = (await firestoreContext().catch(() => ({})))?.user?.uid;
+      const who = doc.updatedBy === me ? 'you' : String(doc.updatedBy || 'unknown').slice(0, 8) + '…';
+      return {
+        text: `Live: published ${whenOf(doc.updatedAt)} by ${who} (${decision.entries.length} lineups)`,
+        differs: combosHash(decision.entries) !== shippedCombosHash(),
+        canPublish,
+      };
+    },
+    async publish(plan) {
+      if (!state) await load();
+      const { entries } = buildComboPlanOutput(state.view.parsed, plan, {
+        heroNames: state.heroNames,
+        isX8Lane: state.isX8Lane,
+      });
+      const checked = validateComboEntries(entries, heroNamesOf());
+      if (!checked.ok) throw new Error(checked.error);
+      await writeLiveDoc(buildCombosPlanDoc(checked.entries));
+      return `Published ${checked.entries.length} lineups live: players rank with them from their next page load. Download combos-db.js and commit it to keep the history.`;
+    },
+    async useShipped() {
+      await writeLiveDoc(buildCombosPlanDoc([], { useShipped: true }));
+      return 'The site uses the shipped js/combos-db.js again from the next page load.';
+    },
+    async download() {
+      if (!state) await load();
+      const entries = await publishedEntries();
+      if (!entries) return 'Nothing is published live.';
+      const plan = planFromEntries(state.view, entries, {
+        heroNames: state.heroNames,
+        isX8Lane: state.isX8Lane,
+      });
+      handOver(buildComboSource(state.view.parsed, plan, {
+        heroNames: state.heroNames,
+        isX8Lane: state.isX8Lane,
+      }));
+      return 'Downloaded combos-db.js for the published list. Commit it to make the file match.';
+    },
+    published: publishedEntries,
+  };
+
   mountCombosPlanner(mount, {
+    live,
     load,
     save,
     saveLabel: 'Rebuild combos-db.js',

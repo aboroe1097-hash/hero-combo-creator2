@@ -391,3 +391,44 @@ test('the save summary counts placed, moved, new, edited, removed and reordered 
   assert.equal(moved.text, '1 moved');
   assert.equal(moved.lines[0].detail, 'above #21 → above #31');
 });
+
+test('a published list rebuilds as the same plan and file, edits and removals included', async () => {
+  const { buildComboPlanOutput, planFromEntries } = await import('../../js/combo-plan.js');
+  const opts = { heroNames, isX8Lane: view.isX8Lane };
+  const state = stateOf(view);
+  const draft = autoDraft({ heroes: view.heroes, rows: state.rows, lanes: state.lanes });
+  for (const lane of state.lanes) Object.assign(lane, draft.placements.get(lane.id) || {});
+  state.lanes.push({
+    id: 'n-lawman_bjorn_the-brave-222',
+    heroes: ['Lawman', 'Bjorn', 'The Brave'],
+    skin: '222',
+    anchor: view.base[3].id,
+    slot: 9,
+    added: true,
+  });
+  state.baseOrder = [view.base[1].id, view.base[0].id, ...view.base.slice(2).map((b) => b.id)];
+  state.edits = new Map([[view.base[5].id, { heroes: view.base[5].heroes, skin: '111' }]]);
+  state.removed = [view.base[9].id];
+  state.rows = mergeRows(
+    state.baseOrder
+      .filter((id) => !state.removed.includes(id))
+      .map((id) => view.base.find((b) => b.id === id)),
+    state.lanes
+  );
+  const plan = planFromState(state);
+  const first = buildComboPlanOutput(view.parsed, plan, opts);
+  const again = planFromEntries(view, first.entries, opts);
+  assert.equal(buildComboPlanOutput(view.parsed, again, opts).source, first.source);
+  // The shipped list maps to the empty plan.
+  const none = planFromEntries(
+    view,
+    buildComboPlanOutput(view.parsed, planFromState(stateOf(view)), opts).entries,
+    opts
+  );
+  assert.deepEqual([none.edits, none.added, none.removed], [[], [], []]);
+  assert.ok(none.order.every((o) => o.anchor === ''));
+  // A list the file cannot hold is refused rather than approximated.
+  const foreign = [...first.entries];
+  foreign.push({ heroes: ['Lawman', 'The Brave', 'Theodora'] });
+  assert.throws(() => planFromEntries(view, foreign, opts), /cannot take|cannot be written/);
+});

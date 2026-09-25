@@ -53,7 +53,8 @@
     "preview": "vite preview",
     "siege:dev": "vite --open /eden-siege.html",
     "siege:test": "playwright test --config=playwright.siege.config.js --reporter=line",
-    "rules:emulator": "firebase emulators:exec --only firestore --project demo-comp12 \"node scripts/rules-emulator/competition12.mjs\""
+    "rules:emulator": "firebase emulators:exec --only firestore --project demo-comp12 \"node scripts/rules-emulator/competition12.mjs\"",
+    "rules:emulator:combos": "firebase emulators:exec --only firestore --project demo-combos \"node scripts/rules-emulator/combos-plan.mjs\""
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -137,9 +137,50 @@ allowed). `npm run combos:test` drives the local tool in a browser
 places, Z undoes, Ctrl+S shows the summary, digits and arrows, the draft prompt, and the
 paste import. It never confirms Save, so the database file is not written.
 
-## Not built yet
+## Publishing live
 
-Publishing without a deploy — a stored plan the site resolves at load — is a separate
-release: it needs a `firestore.rules` block deployed and touches the Generator, the Hero
-Atlas ranks, the counter tables and their tests. The adapter seam above is what makes it
-a small change instead of a rewrite.
+A superadmin can publish the ranking from VTS Admin → Combos without a commit:
+
+- **Publish live…** shows the same summary as Save (placed / moved / new / edited,
+  against the shipped file), then writes the full ordered list — S0–X2 and X8, exactly
+  what `combos-db.js` would hold — to the Firestore document `combos_plan/current`:
+  `{ entries: [{ heroes, skin?, note? }], count, shippedHash, updatedAt, updatedBy,
+  useShipped }` (about 21 KB for today's 292 lineups; the limit is 600 entries).
+- **Use shipped list…** writes `useShipped: true` with no entries; the site goes back to
+  the file.
+- The tab's status line says "Live: published … by … (N lineups)" or "Live: shipped
+  file". When the published list differs from the file it adds "Published list differs
+  from the file; download to commit", with **Download it** (rebuilds `combos-db.js` for
+  the published list through `planFromEntries` in `js/combo-plan.js`) and **Open it in
+  the planner** (loads it as the planner's state, one undo step). Save / download stays,
+  so git keeps the history.
+
+The site side is `js/combos-live.js`, started by `js/combos-live-boot.js` from the
+Generator module (never on the admin page):
+
+1. at import, the last valid published list cached in `localStorage`
+   (`vts_combos_live_v1`, only when it was built on the same shipped file) is applied;
+2. once the page has loaded and gone idle, it signs in anonymously, reads the document
+   and validates **every** entry with the planner's rules (known heroes, three different
+   heroes, `[123]{3}` skin codes, notes of at most 200 characters, no other keys, no
+   duplicate heroes + skin). A valid list replaces `rankedCombos` and `baseRankedCombos`
+   **in place** (`replaceRankedCombos` in `js/combos-db.js`), so every consumer — the
+   Generator, Hero Atlas ranks, hero tooltips, counter picks, hub PDFs and Velo's
+   tools — reads it; `useShipped`, a missing document or any invalid entry restores
+   `shippedRankedCombos`. A failed read keeps whatever is live.
+3. Each change dispatches `combos:updated` on `window`; the Generator re-ranks best-combo
+   results on screen, the Hero Atlas and the counter tool re-render.
+
+`firestore.rules` lets any signed-in visitor (the app signs visitors in anonymously, as
+for the Competition #12 schedule) `get` the document, only a superadmin create or
+update it (`validCombosPlan`: exact keys, at most 600 entries, `count ==
+entries.size()`, server `updatedAt`, own `updatedBy`, first entry's shape — rules
+cannot loop, so clients validate the rest), and nobody delete or list it. The rules
+need a deploy after merge; see [the runbook](firebase-deploy-runbook.md).
+
+Tests: `combos-live.test.mjs` (validation, `useShipped`, in-place replacement, the
+event, the cache), `combos-plan-rules.test.mjs` (the rules block), the emulator cases in
+`scripts/rules-emulator/combos-plan.mjs` (`npm run rules:emulator:combos`), and
+`tests/p1-combos-live.spec.js` (the Generator follows a stubbed published order; a bad
+entry keeps the shipped list; a superadmin publishes and goes back to the shipped list in
+the admin tab, against the dashboard's local test Firestore).

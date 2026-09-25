@@ -289,6 +289,26 @@
   background: var(--cp-target-bg);
   border: 1px solid var(--cp-focus);
 }
+.combos-planner .livebar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--cp-line);
+  background: var(--cp-panel);
+  font-size: 13px;
+}
+.combos-planner .livebar .livetext {
+  font-weight: 600;
+}
+.combos-planner .livebar .livenote {
+  color: var(--cp-x8);
+}
+.combos-planner .livebar .bannertool {
+  margin-left: auto;
+}
 .combos-planner .bannertool {
   display: flex;
   flex-wrap: wrap;

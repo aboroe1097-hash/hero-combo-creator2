@@ -140,7 +140,24 @@ export function readLaneEdits(plan, { baseIds, x8Ids, heroNames, isX8Lane }) {
  * id it sits directly above (in `order`), `added` holds new lanes. Unplaced
  * lanes go to the tail block in their existing order, new ones after them.
  */
-export function buildComboSource(parsed, plan, { heroNames, isX8Lane }) {
+export function buildComboSource(parsed, plan, options) {
+  return buildComboPlanOutput(parsed, plan, options).source;
+}
+
+/** The combo a written line stands for: { heroes, skin?, note? }, like rankedCombos holds. */
+function entryOf({ heroes, skin, note }) {
+  return {
+    heroes: [...heroes],
+    ...(skin ? { skin } : {}),
+    ...(note ? { note } : {}),
+  };
+}
+
+/**
+ * The same rebuild, returning the file text and the ordered list of entries that
+ * file's rankedCombos would hold: what the admin tab publishes live.
+ */
+export function buildComboPlanOutput(parsed, plan, { heroNames, isX8Lane }) {
   const view = describeCombos(parsed);
   const baseIds = new Set(view.base.map((b) => b.id));
   const lanes = new Map(view.x8.map((lane) => [lane.id, lane]));
@@ -206,14 +223,19 @@ export function buildComboSource(parsed, plan, { heroNames, isX8Lane }) {
     const lane = lanes.get(id);
     const line = lane.added ? entryLine(lane) : x8Lines[x8IndexOf.get(id)];
     const edit = edits.get(id);
-    return edit ? editedEntryLine(line, edit) : line;
+    const note = lane.added ? '' : lane.note;
+    return {
+      line: edit ? editedEntryLine(line, edit) : line,
+      entry: entryOf({ ...lane, ...(edit || {}), note }),
+    };
   };
   const placedIds = new Set([...placedAbove.values()].flat());
   // Unplaced new lanes stay in the queue file; only placed ones enter the database.
   const tailLanes = view.x8
     .map((lane) => lane.id)
     .filter((id) => !placedIds.has(id) && !removed.has(id));
-  const baseLines = parsed.items.filter((item) => item.kind === 'base').map((item) => item.line);
+  const baseItems = parsed.items.filter((item) => item.kind === 'base');
+  const baseLines = baseItems.map((item) => item.line);
   // Base lines are held as slot placeholders: a slot keeps its comment lines, and
   // the plan's order decides which S0-X2 lineup is written into each one.
   const out = [];
@@ -252,12 +274,23 @@ export function buildComboSource(parsed, plan, { heroNames, isX8Lane }) {
     const original = Number(String(id).slice(1));
     if (removed.has(id)) return null;
     const edit = edits.get(id);
-    return edit ? editedEntryLine(baseLines[original], edit) : baseLines[original];
+    const combo = baseItems[original].combo;
+    return {
+      line: edit ? editedEntryLine(baseLines[original], edit) : baseLines[original],
+      entry: entryOf({ ...combo, ...(edit || {}), note: combo.note || '' }),
+    };
   });
   const written = out
-    .map((line) => (typeof line === 'string' ? line : rendered[line.base]))
+    .map((line) => (typeof line === 'string' || line.line ? line : rendered[line.base]))
     .filter((line) => line !== null);
-  return [...parsed.head, ...written, ...parsed.tail].join('\n');
+  return {
+    source: [
+      ...parsed.head,
+      ...written.map((line) => (typeof line === 'string' ? line : line.line)),
+      ...parsed.tail,
+    ].join('\n'),
+    entries: written.filter((line) => typeof line !== 'string').map((line) => line.entry),
+  };
 }
 
 export function laneSlug({ heroes, skin }) {
@@ -338,4 +371,73 @@ export function buildView({
     x8: [...view.x8, ...queue.lanes.map((lane) => ({ ...lane, anchor: '', queued: true }))],
     skipped: [...queueSkipped, ...queue.skipped],
   };
+}
+
+/**
+ * The plan that rebuilds a given ranking (a list of { heroes, skin?, note? },
+ * such as a list published live) from the file the view describes: lines that
+ * match keep their place in the file, the rest pair up as edits of lines that
+ * are gone, and what is still left over is added (an X8 lineup) or removed.
+ * Throws when the list cannot be written as combos-db.js, so the caller never
+ * hands over a file that differs from the list.
+ */
+export function planFromEntries(view, entries, { heroNames, isX8Lane }) {
+  const keyOf = (c) => `${c.heroes.join('|')}#${c.skin || ''}`;
+  const fileX8 = view.x8.filter((lane) => !lane.queued);
+  const byKey = new Map();
+  for (const b of view.base) byKey.set(keyOf(b), { id: b.id, kind: 'base' });
+  for (const l of fileX8) byKey.set(keyOf(l), { id: l.id, kind: 'x8' });
+  const used = new Set();
+  const rows = entries.map((entry) => {
+    const found = byKey.get(keyOf(entry));
+    if (found && !used.has(found.id)) {
+      used.add(found.id);
+      return { entry, id: found.id, kind: found.kind };
+    }
+    return { entry, id: '', kind: isX8Lane(entry) ? 'x8' : 'base' };
+  });
+  const spare = {
+    base: view.base.filter((b) => !used.has(b.id)),
+    x8: fileX8.filter((l) => !used.has(l.id)),
+  };
+  const edits = [];
+  for (const row of rows) {
+    if (row.id) continue;
+    const line = spare[row.kind].shift();
+    if (!line) continue;
+    row.id = line.id;
+    edits.push({ id: line.id, heroes: [...row.entry.heroes], skin: row.entry.skin || '' });
+  }
+  const added = [];
+  for (const row of rows) {
+    if (row.id) continue;
+    if (row.kind === 'base')
+      throw new Error(`${row.entry.heroes.join(' / ')} is a new S0-X2 lineup the file cannot take`);
+    row.id = laneSlug(row.entry);
+    added.push({ id: row.id, heroes: [...row.entry.heroes], skin: row.entry.skin || '' });
+  }
+  const removed = [...spare.base, ...spare.x8].map((line) => line.id);
+  const order = [];
+  let pending = [];
+  for (const row of rows) {
+    if (row.kind === 'x8') {
+      pending.push(row.id);
+      continue;
+    }
+    for (const id of pending) order.push({ id, anchor: row.id });
+    pending = [];
+  }
+  for (const id of pending) order.push({ id, anchor: '' });
+  // A removed line keeps its slot in the file, so the comments around it stay put.
+  const baseOrder = rows.filter((r) => r.kind === 'base').map((r) => r.id);
+  for (const line of spare.base)
+    baseOrder.splice(Math.min(baseOrder.length, Number(line.id.slice(1))), 0, line.id);
+  const plan = { order, added, baseOrder, edits, removed };
+  const rebuilt = buildComboPlanOutput(view.parsed, plan, { heroNames, isX8Lane }).entries;
+  const same = (a, b) =>
+    a.length === b.length &&
+    a.every((c, i) => keyOf(c) === keyOf(b[i]) && (c.note || '') === (b[i].note || ''));
+  if (!same(rebuilt, entries))
+    throw new Error('that list cannot be written as combos-db.js without changing its order');
+  return plan;
 }

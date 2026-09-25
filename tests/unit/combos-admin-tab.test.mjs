@@ -36,7 +36,10 @@ test('the dashboard mounts the tab lazily with the planner stylesheet', async ()
 test('the admin host runs the planner interface the local tool runs', async () => {
   const host = await read('js/admin-combos.js');
   assert.match(host, /import \{ mountCombosPlanner \} from '\.\/combos-planner-ui\.js';/);
-  assert.match(host, /import \{ buildComboSource, buildView \} from '\.\/combo-plan\.js';/);
+  assert.match(
+    host,
+    /import \{ buildComboPlanOutput, buildComboSource, buildView, planFromEntries \} from '\.\/combo-plan\.js';/
+  );
   assert.match(host, /mountCombosPlanner\(mount, \{/);
   // Save rebuilds the file in the browser; the download is what ships it.
   assert.match(host, /saveLabel: 'Rebuild combos-db\.js'/);

@@ -190,7 +190,9 @@ const LIMITS = {
   // The planner's placement workflow (js/combo-workflow.js, js/hero-name-match.js
   // and the keyboard-first interface) grows that lazy graph: measured 11749.7 KiB;
   // retain ~22 KiB again.
-  totalJsBytes: 11772 * 1024,
+  // Live publishing adds js/combos-live.js (with its boot module in the app graph)
+  // and the admin tab's publish path: measured 11764.8 KiB; retain ~22 KiB.
+  totalJsBytes: 11787 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -403,7 +405,8 @@ const LIMITS = {
   // game-time-*.js out as shared chunks. No headroom is added.
   // The Combos admin tab emits its module, its lazy stylesheets and the raw
   // js/combos-db.js copy the tab rebuilds (818 measured); keep two of headroom.
-  deployFileCount: 820,
+  // Live publishing splits one more shared chunk (819 measured); keep two.
+  deployFileCount: 821,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive

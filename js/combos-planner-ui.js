@@ -29,6 +29,12 @@
 //   storagePrefix     localStorage prefix for the view preferences and the draft
 //   guardUnload       ask before leaving with unsaved changes
 //   portraitFallback  image shown when a portrait fails (relative to the page)
+//   live              optional live publishing (the admin host):
+//     status()        -> Promise<{ text, differs, canPublish }>
+//     publish(plan)   -> Promise<message>   write the ranking the plan builds
+//     useShipped()    -> Promise<message>   point the site back at the shipped file
+//     download()      -> Promise<message>   hand over combos-db.js for the published list
+//     published()     -> Promise<entries>   the published list, to open in the planner
 //
 // Returns { destroy() } so a host can unmount the tool.
 
@@ -45,7 +51,7 @@ import {
   troopOf as troopOfHeroes,
   TROOP_LABEL,
 } from './combo-lanes.js';
-import { laneSlug } from './combo-plan.js';
+import { laneSlug, planFromEntries } from './combo-plan.js';
 import { createHeroMatcher } from './hero-name-match.js';
 import {
   autoDraft,
@@ -122,6 +128,17 @@ const TEMPLATE = `<div class="combos-planner">
       <span id="cp-bannerText"></span>
       <span class="bannertool">
         <button type="button" id="cp-cancelPlace">Cancel</button>
+      </span>
+    </div>
+    <div class="livebar" id="cp-liveBar" hidden>
+      <span class="livetext" id="cp-liveText" role="status"></span>
+      <span class="livenote" id="cp-liveNote" hidden>Published list differs from the file; download to commit.
+        <button type="button" data-livedownload>Download it</button>
+        <button type="button" data-liveopen>Open it in the planner</button>
+      </span>
+      <span class="bannertool">
+        <button type="button" class="primary" id="cp-publishBtn" hidden>Publish live…</button>
+        <button type="button" id="cp-useShippedBtn" hidden>Use shipped list…</button>
       </span>
     </div>
     <div class="savebar">
@@ -1710,18 +1727,36 @@ export function mountCombosPlanner(root, adapter = {}) {
     });
   }
   let lastFocus = null;
-  function openSummary() {
+  // What the dialog confirms: 'save' (the host's Save), 'publish' (live) or
+  // 'shipped' (point the site back at the shipped file).
+  let dialogMode = 'save';
+  function openSummary(mode = 'save') {
     if (!view) return;
+    dialogMode = mode;
     const plan = currentPlan();
-    const summary = summarizePlan(view, plan);
+    const summary = mode === 'shipped' ? { text: '', lines: [] } : summarizePlan(view, plan);
     const queuedOnly = !summary.lines.length && dirty;
-    if (!summary.lines.length && !queuedOnly) return setStatus('Nothing to save: no line of combos-db.js changes.');
+    if (mode === 'save' && !summary.lines.length && !queuedOnly)
+      return setStatus('Nothing to save: no line of combos-db.js changes.');
+    $('summaryTitle').textContent =
+      mode === 'publish'
+        ? 'Publish this ranking live?'
+        : mode === 'shipped'
+          ? 'Go back to the shipped list?'
+          : 'Save these changes?';
     $('summaryText').textContent =
-      summary.text +
-      (queuedOnly ? ' in combos-db.js; only the list of lineups waiting to be placed changes.' : '.') +
-      ' ' +
-      saveLabel +
-      ' writes the lines below.';
+      mode === 'publish'
+        ? summary.text +
+          ' compared with the shipped combos-db.js. Players rank with it from their next page load, with no commit; the file stays as it is until you download and commit it.'
+        : mode === 'shipped'
+          ? 'Players will rank with js/combos-db.js as it ships, from their next page load. Your planner work here is not touched.'
+          : summary.text +
+            (queuedOnly
+              ? ' in combos-db.js; only the list of lineups waiting to be placed changes.'
+              : '.') +
+            ' ' +
+            saveLabel +
+            ' writes the lines below.';
     const kinds = {
       placed: '+',
       added: '+',
@@ -1752,7 +1787,8 @@ export function mountCombosPlanner(root, adapter = {}) {
       (summary.lines.length > shownLines.length
         ? '<li>… and ' + (summary.lines.length - shownLines.length) + ' more</li>'
         : '');
-    $('summarySave').textContent = saveLabel;
+    $('summarySave').textContent =
+      mode === 'publish' ? 'Publish live' : mode === 'shipped' ? 'Use shipped list' : saveLabel;
     lastFocus = root.ownerDocument.activeElement;
     $('summary').hidden = false;
     $('summarySave').focus();
@@ -1761,6 +1797,79 @@ export function mountCombosPlanner(root, adapter = {}) {
     $('summary').hidden = true;
     if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
   }
+  function confirmDialog() {
+    if (dialogMode === 'publish') return void runLive('publish');
+    if (dialogMode === 'shipped') return void runLive('useShipped');
+    return void save();
+  }
+
+  // --- Live publishing (hosts with adapter.live) --------------------------------------------
+  async function refreshLive() {
+    const live = adapter.live;
+    if (!live) return;
+    try {
+      const status = await live.status();
+      $('liveBar').hidden = false;
+      $('liveText').textContent = status.text;
+      $('liveNote').hidden = !status.differs;
+      $('publishBtn').hidden = !status.canPublish;
+      $('useShippedBtn').hidden = !status.canPublish;
+    } catch (error) {
+      $('liveBar').hidden = false;
+      $('liveText').textContent = 'Live list unknown: ' + error.message;
+    }
+    measureStrip();
+  }
+  async function runLive(action) {
+    closeSummary();
+    const busy = action === 'publish' ? 'Publishing…' : 'Pointing the site at the shipped list…';
+    setStatus(busy);
+    try {
+      const message =
+        action === 'publish' ? await adapter.live.publish(currentPlan()) : await adapter.live.useShipped();
+      setStatus(message);
+    } catch (error) {
+      setStatus((action === 'publish' ? 'Not published: ' : 'Not changed: ') + error.message);
+    }
+    await refreshLive();
+  }
+  async function openPublished() {
+    try {
+      const entries = await adapter.live.published();
+      if (!entries) return setStatus('Nothing is published live.');
+      const plan = planFromEntries(view, entries, {
+        heroNames: new Set(Object.keys(H)),
+        isX8Lane: (combo) => combo.heroes.some(isX8Hero),
+      });
+      remember();
+      baseOrder = [...plan.baseOrder];
+      edits = new Map(plan.edits.map((e) => [e.id, { heroes: e.heroes, skin: e.skin }]));
+      removed = new Set(plan.removed);
+      for (const [id, lane] of lanes) lanes.set(id, { ...lane, anchor: '', slot: 0 });
+      for (const lane of plan.added)
+        if (!lanes.has(lane.id))
+          lanes.set(lane.id, {
+            ...lane,
+            note: '',
+            tier: '',
+            score: null,
+            anchor: '',
+            slot: 0,
+            added: true,
+          });
+      const slots = new Map();
+      for (const { id, anchor } of plan.order) {
+        if (!anchor || !lanes.has(id)) continue;
+        const n = (slots.get(anchor) || 0) + 1;
+        slots.set(anchor, n);
+        lanes.set(id, { ...lanes.get(id), anchor, slot: n });
+      }
+      changed('Opened the published list in the planner. Z undoes it.');
+    } catch (error) {
+      setStatus('Could not open the published list: ' + error.message);
+    }
+  }
+
   async function save() {
     closeSummary();
     const plan = currentPlan();
@@ -1783,6 +1892,7 @@ export function mountCombosPlanner(root, adapter = {}) {
       const skipped = applyView(await adapter.load());
       if (!skipped) setStatus(adapter.loadedHint || idleHint);
       offerDraft();
+      void refreshLive();
     } catch (error) {
       setStatus(
         adapter.loadError
@@ -1926,6 +2036,12 @@ export function mountCombosPlanner(root, adapter = {}) {
     if (d.tray) return setTrayMode(d.tray);
     if (d.density) return setDensity(d.density);
     if (t.id === 'cp-pasteAdd') return addPasted();
+    if (d.livedownload != null)
+      return void adapter.live
+        .download()
+        .then(setStatus)
+        .catch((error) => setStatus('Could not download it: ' + error.message));
+    if (d.liveopen != null) return void openPublished();
   });
   root.addEventListener('submit', (ev) => {
     const form = ev.target.closest('form');
@@ -1956,8 +2072,10 @@ export function mountCombosPlanner(root, adapter = {}) {
     true
   );
   $('cancelPlace').addEventListener('click', () => stopHolding());
-  $('saveBtn').addEventListener('click', openSummary);
-  $('summarySave').addEventListener('click', () => void save());
+  $('saveBtn').addEventListener('click', () => openSummary('save'));
+  $('summarySave').addEventListener('click', confirmDialog);
+  $('publishBtn').addEventListener('click', () => openSummary('publish'));
+  $('useShippedBtn').addEventListener('click', () => openSummary('shipped'));
   $('summaryCancel').addEventListener('click', closeSummary);
   $('summary').addEventListener('click', (ev) => {
     if (ev.target === $('summary')) closeSummary();
@@ -2056,7 +2174,7 @@ export function mountCombosPlanner(root, adapter = {}) {
     // Ctrl+S reviews and saves from anywhere in the planner, even a field.
     if (mod && (key === 's' || key === 'S')) {
       ev.preventDefault();
-      if (!$('summary').hidden) return void save();
+      if (!$('summary').hidden) return confirmDialog();
       return openSummary();
     }
     if (key === 'Escape') {
