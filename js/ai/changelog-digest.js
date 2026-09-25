@@ -11,10 +11,10 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Competition #12 now uses the correct game time. Game time is UTC−2 (06:00 in Dubai is 00:00 game time, the same clock as the site header), but the competition schedule, the VTS Admin schedule panel and the member page's phase countdown were using UTC+2, so every competition time…",
       "The Competition #12 schedule panel can fill a 2-week default. Pick a start date (the next game day by default) and press **Fill 2-week default**: registration runs days 1–2, the final check until the end of day 4, the growth re-upload on days 13–14 and the winners' display on da…",
+      "The VTS Admin attack log's Daily and Weekly filters use the same UTC−2 game day. Between 22:00 and midnight game time the Daily filter used to jump to the next day and hide the current day's attacks, and the Weekly filter rolled over on Sunday at 22:00 instead of midnight.",
       "The schedule panel shows game time next to your own time: each row reads \"Game 2026-10-01 00:00 (UTC−2) · Your time: …\", and a live line shows the current game time and your time.",
       "The Artifact Power field on the Competition #12 registration form is marked \"(optional)\" like the other optional fields, and accepts the same range as the saved signup (up to 10^15). The OCR review rows keep the plain \"Artifact Power\" label.",
-      "An Eden Hub link with an unknown sub-tab (`#edenHub?subtab=…`) now tidies the address bar to `#edenHub`, matching the landing page it opens.",
-      "The VtsScore page requests its stylesheets and scripts with the same version stamp the offline cache stores. The build left a stale \".3.5\" suffix on those stamps, so the page missed the cache and always went to the network."
+      "An Eden Hub link with an unknown sub-tab (`#edenHub?subtab=…`) now tidies the address bar to `#edenHub`, matching the landing page it opens."
     ]
   },
   {

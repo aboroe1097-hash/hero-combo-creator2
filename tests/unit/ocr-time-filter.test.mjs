@@ -9,21 +9,35 @@ import {
   parseGameTimeDateMs,
 } from '../../js/ocr-time-filter.js';
 
-test('game time now is derived from UTC plus two hours only', () => {
-  const gtNow = getGameTimeNow(Date.UTC(2026, 5, 21, 22, 30));
-  assert.equal(formatGameTimeDatePrefix(gtNow), '22/06/2026');
+test('game time now is UTC minus two hours, matching the header clock', () => {
+  // 22:30Z is 20:30 game time on the same day; 02:30Z is 00:30 the next day.
+  assert.equal(
+    formatGameTimeDatePrefix(getGameTimeNow(Date.UTC(2026, 5, 21, 22, 30))),
+    '21/06/2026'
+  );
+  assert.equal(
+    formatGameTimeDatePrefix(getGameTimeNow(Date.UTC(2026, 5, 22, 1, 59))),
+    '21/06/2026'
+  );
+  assert.equal(formatGameTimeDatePrefix(getGameTimeNow(Date.UTC(2026, 5, 22, 2, 0))), '22/06/2026');
 });
 
-test('daily attack filter uses the UTC+2 game calendar day', () => {
+test('daily attack filter uses the UTC−2 game calendar day', () => {
   const attacks = [
     { game_time: '21/06/2026, Sunday, 23:55 GT', id: 'sunday' },
     { game_time: '22/06/2026, Monday, 00:05 GT', id: 'monday' },
   ];
 
-  const result = filterGameTimeAttacks(attacks, 'daily', Date.UTC(2026, 5, 21, 22, 30));
-
+  // 23:00 game time on Sunday is still Sunday's game day...
+  const sunday = filterGameTimeAttacks(attacks, 'daily', Date.UTC(2026, 5, 22, 1, 0));
   assert.deepEqual(
-    result.map((attack) => attack.id),
+    sunday.map((attack) => attack.id),
+    ['sunday']
+  );
+  // ...and 00:30 game time is Monday's.
+  const monday = filterGameTimeAttacks(attacks, 'daily', Date.UTC(2026, 5, 22, 2, 30));
+  assert.deepEqual(
+    monday.map((attack) => attack.id),
     ['monday']
   );
 });
