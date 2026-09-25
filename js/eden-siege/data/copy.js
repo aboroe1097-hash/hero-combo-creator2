@@ -1,11 +1,11 @@
-// English fallback and runtime helpers for Eden Siege.
+// English fallback and runtime helpers for Velo's Rampart.
 // Localized packs live in copy-locales.json and are loaded with the Siege route.
 
 import { fetchLocalePack } from '../../i18n/fetch-locale-pack.js';
 
 const EN = {
   game: {
-    title: 'Eden Siege',
+    title: "Velo's Rampart",
     kicker: 'Ice & Fire Arena · VTS 1097',
     tagline: 'Hold the line. Ice controls, Fire burns, and the wings remember every chain.',
   },
@@ -39,9 +39,9 @@ const EN = {
   modes: {
     label: 'Mode',
     arena: 'Arena',
-    campaign: 'Campaign',
-    endless: 'Endless',
-    daily: 'Daily Siege',
+    campaign: 'The Siege',
+    endless: 'Endless Siege',
+    daily: 'Daily War',
     campaignDesc: 'Ten waves, two warlords. Three stars for a stronghold that barely got scratched.',
     endlessDesc: 'The gates never close. Every fifth wave brings a warlord.',
     dailyDesc: 'One map, one seed, the same siege for every player today ({date}).',
@@ -101,8 +101,9 @@ const EN = {
     bossKills: 'Warlords',
     history: 'Recent runs',
     continueEndless: 'Keep going: Endless',
-    playDaily: 'Daily Siege',
-    campaignWon: 'Campaign cleared',
+    playDaily: 'Daily War',
+    campaignWon: 'The Siege cleared',
+    cardSaved: 'Card saved',
   },
   tips: [
     'Alternate Ice and Fire kills — the chain multiplier is where the score lives.',
@@ -120,7 +121,7 @@ const EN = {
     enemyRanger: 'Ranger',
     enemyCavalry: 'Cavalry',
     enemyDreadnought: 'Dreadnought',
-    enemyWarlord: 'Warlord',
+    enemyWarlord: 'Kharr the Warlord',
   },
   towers: {
     towerFrost: 'Frost Spire',
@@ -197,7 +198,7 @@ export async function loadCopy(locale, packsUrl, fetcher = globalThis.fetch, tim
   if (normalized === 'en' || !packsUrl || typeof fetcher !== 'function') return COPY.en;
   try {
     const response = await fetchLocalePack(packsUrl, fetcher, timeoutMs);
-    if (!response.ok) throw new Error('Eden Siege translations could not be loaded.');
+    if (!response.ok) throw new Error("Velo's Rampart translations could not be loaded.");
     return getCopy(normalized, await response.json());
   } catch {
     return COPY.en;

@@ -1,4 +1,4 @@
-// Eden Siege — browser contract.
+// Velo's Rampart — browser contract.
 //
 //   npx playwright test --config=playwright.siege.config.js --reporter=line
 //
@@ -126,7 +126,7 @@ async function beginRun(page) {
   await expect(page.locator('.siege-overlay')).toBeHidden();
 }
 
-test.describe('Eden Siege', () => {
+test.describe("Velo's Rampart", () => {
   test.skip(maintenanceEnabled, 'maintenance mode is enabled in this build');
 
   test('boots the engine, renders frames and plays wave one', async ({ page }, testInfo) => {

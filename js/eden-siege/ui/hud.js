@@ -420,6 +420,7 @@ export function createHud({ root, copy, heroName }) {
       }
       nodes.overlay.hidden = false;
       nodes.overlayTitle.textContent = config.title;
+      nodes.overlayTitle.classList.toggle('is-title', Boolean(config.big));
       nodes.overlayBody.textContent = config.body;
       nodes.overlayBadge.hidden = !config.badge;
       nodes.overlayBadge.textContent = config.badge || '';

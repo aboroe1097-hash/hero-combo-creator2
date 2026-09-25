@@ -29,7 +29,7 @@ function collectPlaceholders(value, prefix = '', output = {}) {
   return output;
 }
 
-test('every supported locale resolves complete Eden Siege copy with matching placeholders', () => {
+test("every supported locale resolves complete Velo's Rampart copy with matching placeholders", () => {
   assert.deepEqual(['en', ...Object.keys(PACKS)], LOCALES);
 
   for (const locale of LOCALES) {
@@ -55,7 +55,7 @@ test('every locale uses its own localized game title', () => {
   }
 });
 
-test('Eden Siege locale packs load on demand and fall back to English on failure', async () => {
+test("Velo's Rampart locale packs load on demand and fall back to English on failure", async () => {
   let requestedUrl;
   const copy = await loadCopy('es-MX', '/siege-copy.json', async (url) => {
     requestedUrl = url;

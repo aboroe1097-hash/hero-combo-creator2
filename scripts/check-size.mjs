@@ -494,7 +494,9 @@ const LIMITS = {
     // 16.5.2: the shared tool shell (footer link set, 13 locales) measures
     // 691.0 KiB; retain about 1 KiB.
     // 16.5.4 fun pass: 711.0 KiB; retain about 1 KiB.
-    'eden-siege.html': { desktop: 712 * 1024, mobile: 712 * 1024 },
+    // 16.5.9 rename + share card: 715.9 KiB; retain about 4 KiB so the R2
+    // combat pass can land before its own measured lift is recorded.
+    'eden-siege.html': { desktop: 720 * 1024, mobile: 720 * 1024 },
   },
 };
 

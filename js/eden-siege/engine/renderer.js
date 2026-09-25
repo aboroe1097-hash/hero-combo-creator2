@@ -1096,20 +1096,36 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
 
     syncTowers(state, dtMs);
 
-    // Camera: follows the player, never the other way round.
+    // Camera: follows the player, never the other way round. On the ready
+    // screen it becomes the title scene instead — a slow arc around the
+    // stronghold, or one static wide shot when motion is reduced.
     if (shakeMs > 0) {
       shakeMs -= dtMs;
       if (shakeMs <= 0) shakeAmount = 0;
     }
     const shakeX = shakeAmount * Math.sin(clockMs / 26) * Math.min(1, shakeMs / 160);
     const shakeZ = shakeAmount * Math.cos(clockMs / 31) * Math.min(1, shakeMs / 160);
-    const focusX = state.player.x;
-    const focusZ = state.player.z;
-    desired.set(focusX + shakeX, CAM.height, focusZ + CAM.back + shakeZ);
     const smoothing = 1 - Math.pow(0.0015, dtMs / 1000);
-    camera.position.lerp(desired, smoothing);
-    cameraTarget.set(focusX + shakeX * 0.5, CAM.lookY, focusZ + shakeZ * 0.5);
-    camera.lookAt(cameraTarget);
+    if (state.phase === 'ready') {
+      const midX = (state.core.x + state.player.x) / 2;
+      const midZ = (state.core.z + state.player.z) / 2;
+      const orbit = reducedMotion ? 0.85 : clockMs / 8500 + 0.85;
+      desired.set(
+        midX + Math.sin(orbit) * 13 + shakeX,
+        CAM.height + 3.5,
+        midZ + Math.cos(orbit) * 13 + shakeZ
+      );
+      camera.position.lerp(desired, reducedMotion ? smoothing : smoothing * 0.5);
+      cameraTarget.set(midX + shakeX * 0.5, CAM.lookY + 1, midZ + shakeZ * 0.5);
+      camera.lookAt(cameraTarget);
+    } else {
+      const focusX = state.player.x;
+      const focusZ = state.player.z;
+      desired.set(focusX + shakeX, CAM.height, focusZ + CAM.back + shakeZ);
+      camera.position.lerp(desired, smoothing);
+      cameraTarget.set(focusX + shakeX * 0.5, CAM.lookY, focusZ + shakeZ * 0.5);
+      camera.lookAt(cameraTarget);
+    }
 
     renderer.render(scene, camera);
   }

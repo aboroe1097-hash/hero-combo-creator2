@@ -1345,3 +1345,12 @@
     overflow-wrap: break-word;
   }
 }
+
+/* Title screen: the game name over the living scene. */
+.siege-overlay-card h2.is-title {
+  background: linear-gradient(115deg, #7fd8ff 0%, #ffffff 45%, #ff9a5c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: clamp(2rem, 7vw, 3rem);
+}

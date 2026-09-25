@@ -1,4 +1,4 @@
-// The Eden Siege simulation. Pure: no three.js, no DOM, no clock, no Math.random.
+// The Velo's Rampart simulation. Pure: no three.js, no DOM, no clock, no Math.random.
 //
 // Everything happens on a fixed 1/60 s step driven by world.step(). The only
 // entropy is the run seed, so {seed + input trace} reproduces a run exactly —

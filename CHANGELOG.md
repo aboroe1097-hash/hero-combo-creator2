@@ -2,6 +2,21 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.9 - 2026-09-25
+
+- The arcade's real-time game is now **Velo's Rampart** — renamed from Eden Siege everywhere it appears, in all 13 languages, so it no longer reads like one of the Eden tools beside Eden Hub and Eden Map. The address stays `eden-siege.html`, so old links keep working. The mode chips read The Siege, Endless Siege and Daily War, and the warlord boss has a name: Kharr.
+- The game's ready screen is a living title scene: a slow camera drift over the rampart while Velo waits, with the game title over it. Reduced-motion players get the same scene without the drift.
+- **Share run** now makes a share card image — score, stars, wave, seed and a drawn Velo emblem — offered to the phone's share sheet where available and downloaded as a PNG otherwise. The share line still goes to the clipboard.
+- The arcade's next releases are planned in `docs/plans/arcade-revival.md`: aim rework with touch assist, enemy roles and wave modifiers, the pick-1-of-3 draft with elemental reactions, hero lineups from the real combo data, ghost replays and share links, the Alliance Daily league with replay-verified scores, and Velo's post-run tips.
+
+## 16.5.8 - 2026-09-25
+
+- Eden Operations Lab counters now sync across members and devices with shared Firestore-backed totals and access rules. Eden Pathing uses the confirmed rule of 40 tiles per pather, with the estimate presented alongside the occupied-tile count.
+
+## 16.5.7 - 2026-09-25
+
+- Community Hub PDFs are one simple screen: pick what to include, the detail level and a dark or light theme, then press Download PDF or Download image. Files download directly, with no print dialog, paper-size or orientation settings. Hero sheets are dense, with small portraits and four combos a row, so all seasons and troops at 10 combos per troop fit in 5 pages instead of 14.
+
 ## 16.5.6 - 2026-09-25
 
 - Heroes PDFs now offer three designs — Dark Dashboard, Midnight Briefing and Compact Reference — with landscape defaults, the VTS crest and wordmark in the header, real hero portraits in the top-combo lineups and beside every roster row, troop-coloured group headings, rank badges and a tighter layout that keeps the document to fewer pages. Troop groups with no qualifying combos are left out instead of printing as empty tables, and every value stays in the document as selectable, searchable text.

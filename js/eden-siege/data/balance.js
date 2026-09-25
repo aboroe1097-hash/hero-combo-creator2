@@ -1,4 +1,4 @@
-// Balance tables for Eden Siege. Numbers only — no behaviour lives here, so a
+// Balance tables for Velo's Rampart. Numbers only — no behaviour lives here, so a
 // designer can retune the game without touching the simulation or the renderer.
 //
 // Units are "world units" (1 unit ~= 1 metre) and milliseconds.

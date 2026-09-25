@@ -18,6 +18,7 @@ import { STEP_MS, MAX_STEPS_PER_FRAME, TOWERS, TOWER_MAX_LEVEL } from './data/ba
 import { formatCopy } from './data/copy.js';
 import { dailySeed, dailySiegeFor } from './rng.js';
 import { createProgress, summarizeRun } from './progress.js';
+import { shareRun, shareTextFor } from './ui/share-card.js';
 
 const TUTORIAL_KEY = 'vts_siege_tutorial_v1';
 const STREAK_THRESHOLDS = [5, 10, 15, 25, 40];
@@ -244,9 +245,12 @@ export async function startSiege({
           ? formatCopy(copy.modes.dailyDesc, { date: today.stamp })
           : mode === 'endless'
             ? copy.modes.endlessDesc
-            : formatCopy(copy.phases.readyBody, { seconds });
+            : `${copy.game.tagline} ${formatCopy(copy.phases.readyBody, { seconds })}`;
       return {
-        title: mode === 'campaign' ? copy.phases.readyTitle : copy.modes[mode],
+        // The ready screen doubles as the title screen: the game's name over
+        // the living scene, with the mode described underneath.
+        title: copy.game.title,
+        big: true,
         body,
         stars: progress.stars(mapId, mode),
         chips: readyChips(),
@@ -354,16 +358,36 @@ export async function startSiege({
 
   async function share() {
     const state = world.state;
-    const modeLabel = copy.modes[mode] || '';
-    const stars = lastResult ? `${'★'.repeat(lastResult.stars)}${'☆'.repeat(3 - lastResult.stars)} ` : '';
-    const text = `${copy.game.title} — ${modeLabel} · ${world.map.nameKey ? copy.maps[world.map.nameKey] : ''} · ${stars}${Math.round(
-      state.score
-    ).toLocaleString('en-US')} · ${copy.hud.wave} ${state.stats.wavesCleared} · VTS 1097`;
+    const data = {
+      title: copy.game.title,
+      kicker: copy.game.kicker,
+      modeLabel: copy.modes[mode] || '',
+      mapLabel: world.map.nameKey ? copy.maps[world.map.nameKey] : '',
+      stars: lastResult ? lastResult.stars : undefined,
+      score: Math.round(state.score),
+      scoreLabel: copy.results.score,
+      waveLabel: copy.hud.wave,
+      wavesCleared: state.endless
+        ? String(state.stats.wavesCleared)
+        : `${state.stats.wavesCleared} / ${state.wavesTotal}`,
+      seed,
+      footer: 'VTS 1097 · roc-vts.com',
+    };
+    // The share line is a bonus; the card is the share.
     try {
-      await navigator.clipboard.writeText(text);
-      hud.toast(copy.results.copied);
+      await navigator.clipboard.writeText(shareTextFor(data));
     } catch {
-      hud.toast(text);
+      /* clipboard is optional */
+    }
+    try {
+      const outcome = await shareRun(data, {
+        canvasFactory: () => document.createElement('canvas'),
+        navigator,
+        document,
+      });
+      if (outcome === 'saved') hud.toast(copy.results.cardSaved);
+    } catch {
+      hud.toast(shareTextFor(data));
     }
   }
 

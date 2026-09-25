@@ -1,7 +1,7 @@
 {
   "es": {
     "game": {
-      "title": "Asedio de Eden",
+      "title": "El Baluarte de Velo",
       "kicker": "Arena Hielo y Fuego · VTS 1097",
       "tagline": "Aguanta la línea. El Hielo controla, el Fuego quema, y las alas recuerdan cada cadena."
     },
@@ -69,8 +69,9 @@
       "bossKills": "Señores",
       "history": "Partidas recientes",
       "continueEndless": "Seguir: sin fin",
-      "playDaily": "Asedio diario",
-      "campaignWon": "Campaña superada"
+      "playDaily": "Guerra diaria",
+      "campaignWon": "Asedio superado",
+      "cardSaved": "Carta guardada"
     },
     "maps": {
       "mapKeepName": "Muralla del Torreón",
@@ -88,7 +89,7 @@
       "enemyRanger": "Explorador",
       "enemyCavalry": "Caballería",
       "enemyDreadnought": "Acorazado",
-      "enemyWarlord": "Señor de la guerra"
+      "enemyWarlord": "Kharr el Señor de la guerra"
     },
     "towers": {
       "towerFrost": "Aguja de Escarcha",
@@ -136,9 +137,9 @@
     "modes": {
       "label": "Modo",
       "arena": "Arena",
-      "campaign": "Campaña",
-      "endless": "Sin fin",
-      "daily": "Asedio diario",
+      "campaign": "El Asedio",
+      "endless": "Asedio sin fin",
+      "daily": "Guerra diaria",
       "campaignDesc": "Diez oleadas, dos señores de la guerra. Tres estrellas si la fortaleza apenas sufre.",
       "endlessDesc": "Las puertas nunca se cierran. Cada quinta oleada trae un señor de la guerra.",
       "dailyDesc": "Un mapa, una semilla, el mismo asedio para todos hoy ({date})."
@@ -172,7 +173,7 @@
   },
   "pt": {
     "game": {
-      "title": "Cerco de Eden",
+      "title": "O Baluarte de Velo",
       "kicker": "Arena Gelo e Fogo · VTS 1097",
       "tagline": "Mantenha a linha. O Gelo controla, o Fogo queima, e as asas lembram cada corrente."
     },
@@ -240,8 +241,9 @@
       "bossKills": "Senhores da guerra",
       "history": "Partidas recentes",
       "continueEndless": "Continuar: Infinito",
-      "playDaily": "Cerco diário",
-      "campaignWon": "Campanha concluída"
+      "playDaily": "Guerra diária",
+      "campaignWon": "Cerco concluído",
+      "cardSaved": "Carta salva"
     },
     "maps": {
       "mapKeepName": "Muralha do Torreão",
@@ -259,7 +261,7 @@
       "enemyRanger": "Batedor",
       "enemyCavalry": "Cavalaria",
       "enemyDreadnought": "Encouraçado",
-      "enemyWarlord": "Senhor da guerra"
+      "enemyWarlord": "Kharr, o Senhor da guerra"
     },
     "towers": {
       "towerFrost": "Agulha de Gelo",
@@ -307,9 +309,9 @@
     "modes": {
       "label": "Modo",
       "arena": "Arena",
-      "campaign": "Campanha",
-      "endless": "Infinito",
-      "daily": "Cerco diário",
+      "campaign": "O Cerco",
+      "endless": "Cerco infinito",
+      "daily": "Guerra diária",
       "campaignDesc": "Dez ondas, dois senhores da guerra. Três estrelas para uma fortaleza quase sem arranhões.",
       "endlessDesc": "Os portões nunca fecham. A cada cinco ondas chega um senhor da guerra.",
       "dailyDesc": "Um mapa, uma semente, o mesmo cerco para todos os jogadores hoje ({date})."
@@ -343,7 +345,7 @@
   },
   "de": {
     "game": {
-      "title": "Belagerung von Eden",
+      "title": "Velos Bollwerk",
       "kicker": "Eis-und-Feuer-Arena · VTS 1097",
       "tagline": "Halt die Linie. Eis kontrolliert, Feuer brennt, und die Flügel erinnern sich an jede Kette."
     },
@@ -411,8 +413,9 @@
       "bossKills": "Kriegsherren",
       "history": "Letzte Läufe",
       "continueEndless": "Weiter: Endlos",
-      "playDaily": "Tägliche Belagerung",
-      "campaignWon": "Kampagne geschafft"
+      "playDaily": "Täglicher Krieg",
+      "campaignWon": "Belagerung geschafft",
+      "cardSaved": "Karte gespeichert"
     },
     "maps": {
       "mapKeepName": "Burgwall",
@@ -430,7 +433,7 @@
       "enemyRanger": "Späher",
       "enemyCavalry": "Kavallerie",
       "enemyDreadnought": "Schlachtschiff",
-      "enemyWarlord": "Kriegsherr"
+      "enemyWarlord": "Kharr der Kriegsherr"
     },
     "towers": {
       "towerFrost": "Frostspitze",
@@ -478,9 +481,9 @@
     "modes": {
       "label": "Modus",
       "arena": "Arena",
-      "campaign": "Kampagne",
-      "endless": "Endlos",
-      "daily": "Tägliche Belagerung",
+      "campaign": "Die Belagerung",
+      "endless": "Endlose Belagerung",
+      "daily": "Täglicher Krieg",
       "campaignDesc": "Zehn Wellen, zwei Kriegsherren. Drei Sterne für eine Festung, die kaum einen Kratzer abbekommt.",
       "endlessDesc": "Die Tore schließen sich nie. Jede fünfte Welle bringt einen Kriegsherrn.",
       "dailyDesc": "Eine Karte, ein Seed, dieselbe Belagerung für alle Spieler heute ({date})."
@@ -514,7 +517,7 @@
   },
   "fr": {
     "game": {
-      "title": "Siège d'Eden",
+      "title": "Le Rempart de Velo",
       "kicker": "Arène de Glace et de Feu · VTS 1097",
       "tagline": "Tenez la ligne. La Glace contrôle, le Feu brûle, et les ailes se souviennent de chaque chaîne."
     },
@@ -582,8 +585,9 @@
       "bossKills": "Seigneurs",
       "history": "Parties récentes",
       "continueEndless": "Continuer : sans fin",
-      "playDaily": "Siège du jour",
-      "campaignWon": "Campagne réussie"
+      "playDaily": "Guerre du jour",
+      "campaignWon": "Siège réussi",
+      "cardSaved": "Carte enregistrée"
     },
     "maps": {
       "mapKeepName": "Rempart du Donjon",
@@ -601,7 +605,7 @@
       "enemyRanger": "Éclaireur",
       "enemyCavalry": "Cavalerie",
       "enemyDreadnought": "Cuirassé",
-      "enemyWarlord": "Seigneur de guerre"
+      "enemyWarlord": "Kharr le Seigneur de guerre"
     },
     "towers": {
       "towerFrost": "Flèche de Givre",
@@ -649,9 +653,9 @@
     "modes": {
       "label": "Mode",
       "arena": "Arène",
-      "campaign": "Campagne",
-      "endless": "Sans fin",
-      "daily": "Siège du jour",
+      "campaign": "Le Siège",
+      "endless": "Siège sans fin",
+      "daily": "Guerre du jour",
       "campaignDesc": "Dix vagues, deux seigneurs de guerre. Trois étoiles pour une forteresse à peine égratignée.",
       "endlessDesc": "Les portes ne se ferment jamais. Toutes les cinq vagues, un seigneur de guerre arrive.",
       "dailyDesc": "Une carte, une graine, le même siège pour tous les joueurs aujourd'hui ({date})."
@@ -685,7 +689,7 @@
   },
   "hr": {
     "game": {
-      "title": "Opsada Edena",
+      "title": "Bedem Vela",
       "kicker": "Arena leda i vatre · VTS 1097",
       "tagline": "Drži liniju. Led kontrolira, vatra pali, a krila pamte svaki lanac."
     },
@@ -753,8 +757,9 @@
       "bossKills": "Vojskovođe",
       "history": "Nedavne igre",
       "continueEndless": "Nastavi: beskonačno",
-      "playDaily": "Dnevna opsada",
-      "campaignWon": "Kampanja završena"
+      "playDaily": "Dnevni rat",
+      "campaignWon": "Opsada završena",
+      "cardSaved": "Kartica spremljena"
     },
     "maps": {
       "mapKeepName": "Zid tvrđave",
@@ -772,7 +777,7 @@
       "enemyRanger": "Izviđač",
       "enemyCavalry": "Konjica",
       "enemyDreadnought": "Bojni brod",
-      "enemyWarlord": "Vojskovođa"
+      "enemyWarlord": "Kharr Vojskovođa"
     },
     "towers": {
       "towerFrost": "Ledeni toranj",
@@ -820,9 +825,9 @@
     "modes": {
       "label": "Način",
       "arena": "Arena",
-      "campaign": "Kampanja",
-      "endless": "Beskonačno",
-      "daily": "Dnevna opsada",
+      "campaign": "Opsada",
+      "endless": "Beskonačna opsada",
+      "daily": "Dnevni rat",
       "campaignDesc": "Deset valova, dva vojskovođe. Tri zvjezdice za tvrđavu koja je jedva ogrebena.",
       "endlessDesc": "Vrata se nikad ne zatvaraju. Svaki peti val dovodi vojskovođu.",
       "dailyDesc": "Jedna karta, jedan seed, ista opsada za sve igrače danas ({date})."
@@ -856,7 +861,7 @@
   },
   "tr": {
     "game": {
-      "title": "Eden Kuşatması",
+      "title": "Velo'nun Suru",
       "kicker": "Buz ve Ateş Arenası · VTS 1097",
       "tagline": "Hattı tut. Buz kontrol eder, Ateş yakar ve kanatlar her zinciri hatırlar."
     },
@@ -924,8 +929,9 @@
       "bossKills": "Savaş lordları",
       "history": "Son oyunlar",
       "continueEndless": "Devam et: Sonsuz",
-      "playDaily": "Günlük Kuşatma",
-      "campaignWon": "Sefer tamamlandı"
+      "playDaily": "Günlük Savaş",
+      "campaignWon": "Kuşatma tamamlandı",
+      "cardSaved": "Kart kaydedildi"
     },
     "maps": {
       "mapKeepName": "Kale Suru",
@@ -943,7 +949,7 @@
       "enemyRanger": "Avcı",
       "enemyCavalry": "Süvari",
       "enemyDreadnought": "Zırhlı",
-      "enemyWarlord": "Savaş Lordu"
+      "enemyWarlord": "Savaş Lordu Kharr"
     },
     "towers": {
       "towerFrost": "Buz Kulesi",
@@ -991,9 +997,9 @@
     "modes": {
       "label": "Mod",
       "arena": "Arena",
-      "campaign": "Sefer",
-      "endless": "Sonsuz",
-      "daily": "Günlük Kuşatma",
+      "campaign": "Kuşatma",
+      "endless": "Sonsuz Kuşatma",
+      "daily": "Günlük Savaş",
       "campaignDesc": "On dalga, iki savaş lordu. Kale neredeyse çiziksiz kalırsa üç yıldız.",
       "endlessDesc": "Kapılar hiç kapanmaz. Her beşinci dalgada bir savaş lordu gelir.",
       "dailyDesc": "Tek harita, tek tohum; bugün her oyuncu için aynı kuşatma ({date})."
@@ -1027,7 +1033,7 @@
   },
   "ru": {
     "game": {
-      "title": "Осада Эдема",
+      "title": "Бастион Вело",
       "kicker": "Арена Льда и Огня · VTS 1097",
       "tagline": "Держи линию. Лёд держит, Огонь жжёт, а крылья помнят каждую цепь."
     },
@@ -1095,8 +1101,9 @@
       "bossKills": "Военачальники",
       "history": "Последние забеги",
       "continueEndless": "Дальше: бесконечно",
-      "playDaily": "Осада дня",
-      "campaignWon": "Кампания пройдена"
+      "playDaily": "Война дня",
+      "campaignWon": "Осада пройдена",
+      "cardSaved": "Карта сохранена"
     },
     "maps": {
       "mapKeepName": "Стена цитадели",
@@ -1114,7 +1121,7 @@
       "enemyRanger": "Стрелок",
       "enemyCavalry": "Кавалерия",
       "enemyDreadnought": "Дредноут",
-      "enemyWarlord": "Военачальник"
+      "enemyWarlord": "Кхарр Воевода"
     },
     "towers": {
       "towerFrost": "Ледяной шпиль",
@@ -1162,9 +1169,9 @@
     "modes": {
       "label": "Режим",
       "arena": "Арена",
-      "campaign": "Кампания",
-      "endless": "Бесконечный",
-      "daily": "Осада дня",
+      "campaign": "Осада",
+      "endless": "Бесконечная осада",
+      "daily": "Война дня",
       "campaignDesc": "Десять волн, два военачальника. Три звезды — если крепость почти не пострадала.",
       "endlessDesc": "Ворота не закрываются. Каждая пятая волна ведёт военачальника.",
       "dailyDesc": "Одна карта, одно семя, одна осада для всех игроков сегодня ({date})."
@@ -1198,7 +1205,7 @@
   },
   "id": {
     "game": {
-      "title": "Pengepungan Eden",
+      "title": "Benteng Velo",
       "kicker": "Arena Es & Api · VTS 1097",
       "tagline": "Pertahankan garis. Es mengendalikan, Api membakar, dan sayap mengingat setiap rantai."
     },
@@ -1266,8 +1273,9 @@
       "bossKills": "Panglima",
       "history": "Permainan terakhir",
       "continueEndless": "Lanjut: tanpa akhir",
-      "playDaily": "Pengepungan Harian",
-      "campaignWon": "Kampanye selesai"
+      "playDaily": "Perang Harian",
+      "campaignWon": "Pengepungan selesai",
+      "cardSaved": "Kartu tersimpan"
     },
     "maps": {
       "mapKeepName": "Tembok Benteng",
@@ -1285,7 +1293,7 @@
       "enemyRanger": "Penembak",
       "enemyCavalry": "Kavaleri",
       "enemyDreadnought": "Kapal Perang",
-      "enemyWarlord": "Panglima"
+      "enemyWarlord": "Panglima Kharr"
     },
     "towers": {
       "towerFrost": "Menara Beku",
@@ -1333,9 +1341,9 @@
     "modes": {
       "label": "Mode",
       "arena": "Arena",
-      "campaign": "Kampanye",
-      "endless": "Tanpa akhir",
-      "daily": "Pengepungan Harian",
+      "campaign": "Pengepungan",
+      "endless": "Pengepungan Tanpa Akhir",
+      "daily": "Perang Harian",
       "campaignDesc": "Sepuluh gelombang, dua panglima. Tiga bintang untuk benteng yang nyaris tak tergores.",
       "endlessDesc": "Gerbang tak pernah tertutup. Setiap gelombang kelima membawa panglima.",
       "dailyDesc": "Satu peta, satu seed, pengepungan yang sama untuk semua pemain hari ini ({date})."
@@ -1369,7 +1377,7 @@
   },
   "zh": {
     "game": {
-      "title": "伊甸围城",
+      "title": "维洛壁垒",
       "kicker": "冰火竞技场 · VTS 1097",
       "tagline": "守住防线。冰控制，火灼烧，双翼会记住每一次连击。"
     },
@@ -1437,8 +1445,9 @@
       "bossKills": "督军",
       "history": "最近战绩",
       "continueEndless": "继续：无尽模式",
-      "playDaily": "每日攻城",
-      "campaignWon": "战役通关"
+      "playDaily": "每日之战",
+      "campaignWon": "攻城战通关",
+      "cardSaved": "卡牌已保存"
     },
     "maps": {
       "mapKeepName": "堡垒城墙",
@@ -1456,7 +1465,7 @@
       "enemyRanger": "游骑兵",
       "enemyCavalry": "骑兵",
       "enemyDreadnought": "无畏战舰",
-      "enemyWarlord": "督军"
+      "enemyWarlord": "督军卡尔"
     },
     "towers": {
       "towerFrost": "寒霜尖塔",
@@ -1504,9 +1513,9 @@
     "modes": {
       "label": "模式",
       "arena": "战场",
-      "campaign": "战役",
-      "endless": "无尽",
-      "daily": "每日攻城",
+      "campaign": "攻城战",
+      "endless": "无尽攻城",
+      "daily": "每日之战",
       "campaignDesc": "十波敌人、两名督军。要塞几乎无损即可获得三星。",
       "endlessDesc": "城门永不关闭。每第五波由督军率领。",
       "dailyDesc": "同一地图、同一种子，今天所有玩家面对同一场攻城（{date}）。"
@@ -1540,7 +1549,7 @@
   },
   "ar": {
     "game": {
-      "title": "حصار عدن",
+      "title": "حصن فيلو",
       "kicker": "ساحة الجليد والنار · VTS 1097",
       "tagline": "اثبت على الخط. الجليد يوقف، والنار تحرق، والأجنحة تتذكر كل سلسلة."
     },
@@ -1608,8 +1617,9 @@
       "bossKills": "أمراء الحرب",
       "history": "آخر الجولات",
       "continueEndless": "واصل: بلا نهاية",
-      "playDaily": "حصار اليوم",
-      "campaignWon": "اكتملت الحملة"
+      "playDaily": "حرب اليوم",
+      "campaignWon": "اكتمل الحصار",
+      "cardSaved": "تم حفظ البطاقة"
     },
     "maps": {
       "mapKeepName": "سور القلعة",
@@ -1627,7 +1637,7 @@
       "enemyRanger": "رامٍ",
       "enemyCavalry": "فرسان",
       "enemyDreadnought": "مدرّعة",
-      "enemyWarlord": "أمير الحرب"
+      "enemyWarlord": "أمير الحرب خار"
     },
     "towers": {
       "towerFrost": "برج الصقيع",
@@ -1675,9 +1685,9 @@
     "modes": {
       "label": "الوضع",
       "arena": "الساحة",
-      "campaign": "الحملة",
-      "endless": "بلا نهاية",
-      "daily": "حصار اليوم",
+      "campaign": "الحصار",
+      "endless": "حصار بلا نهاية",
+      "daily": "حرب اليوم",
       "campaignDesc": "عشر موجات وأميرا حرب. ثلاث نجوم إذا بقي الحصن شبه سليم.",
       "endlessDesc": "البوابات لا تُغلق. كل موجة خامسة يقودها أمير حرب.",
       "dailyDesc": "خريطة واحدة وبذرة واحدة والحصار نفسه لكل اللاعبين اليوم ({date})."
@@ -1711,7 +1721,7 @@
   },
   "kr": {
     "game": {
-      "title": "에덴 공성전",
+      "title": "벨로의 보루",
       "kicker": "얼음과 불의 투기장 · VTS 1097",
       "tagline": "전선을 지켜라. 얼음은 제어하고, 불은 태우며, 날개는 모든 연쇄를 기억한다."
     },
@@ -1779,8 +1789,9 @@
       "bossKills": "군주",
       "history": "최근 기록",
       "continueEndless": "계속: 무한 모드",
-      "playDaily": "일일 공성전",
-      "campaignWon": "캠페인 완료"
+      "playDaily": "일일 전쟁",
+      "campaignWon": "공성전 완료",
+      "cardSaved": "카드 저장됨"
     },
     "maps": {
       "mapKeepName": "성채 성벽",
@@ -1798,7 +1809,7 @@
       "enemyRanger": "레인저",
       "enemyCavalry": "기병",
       "enemyDreadnought": "드레드노트",
-      "enemyWarlord": "군주"
+      "enemyWarlord": "군주 카르"
     },
     "towers": {
       "towerFrost": "서리 첨탑",
@@ -1846,9 +1857,9 @@
     "modes": {
       "label": "모드",
       "arena": "전장",
-      "campaign": "캠페인",
-      "endless": "무한",
-      "daily": "일일 공성전",
+      "campaign": "공성전",
+      "endless": "무한 공성전",
+      "daily": "일일 전쟁",
       "campaignDesc": "웨이브 10개, 군주 둘. 요새가 거의 긁히지 않으면 별 세 개.",
       "endlessDesc": "성문은 닫히지 않습니다. 다섯 번째 웨이브마다 군주가 옵니다.",
       "dailyDesc": "맵 하나, 시드 하나, 오늘 모든 플레이어에게 같은 공성전 ({date})."
@@ -1882,7 +1893,7 @@
   },
   "it": {
     "game": {
-      "title": "Assedio di Eden",
+      "title": "Il Baluardo di Velo",
       "kicker": "Arena Ghiaccio e Fuoco · VTS 1097",
       "tagline": "Tieni la linea. Il Ghiaccio controlla, il Fuoco brucia e le ali ricordano ogni catena."
     },
@@ -1950,8 +1961,9 @@
       "bossKills": "Signori della guerra",
       "history": "Partite recenti",
       "continueEndless": "Continua: Infinito",
-      "playDaily": "Assedio del giorno",
-      "campaignWon": "Campagna completata"
+      "playDaily": "Guerra del giorno",
+      "campaignWon": "Assedio completato",
+      "cardSaved": "Carta salvata"
     },
     "maps": {
       "mapKeepName": "Mura del Torrione",
@@ -1969,7 +1981,7 @@
       "enemyRanger": "Esploratore",
       "enemyCavalry": "Cavalleria",
       "enemyDreadnought": "Corazzata",
-      "enemyWarlord": "Signore della guerra"
+      "enemyWarlord": "Kharr il Signore della guerra"
     },
     "towers": {
       "towerFrost": "Aguglia del Gelo",
@@ -2017,9 +2029,9 @@
     "modes": {
       "label": "Modalità",
       "arena": "Arena",
-      "campaign": "Campagna",
-      "endless": "Infinito",
-      "daily": "Assedio del giorno",
+      "campaign": "L'Assedio",
+      "endless": "Assedio infinito",
+      "daily": "Guerra del giorno",
       "campaignDesc": "Dieci ondate, due signori della guerra. Tre stelle per una fortezza appena scalfita.",
       "endlessDesc": "Le porte non si chiudono mai. Ogni quinta ondata arriva un signore della guerra.",
       "dailyDesc": "Una mappa, un seme, lo stesso assedio per tutti i giocatori oggi ({date})."

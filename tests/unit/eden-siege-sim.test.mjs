@@ -1,4 +1,4 @@
-// Eden Siege — simulation contract.
+// Velo's Rampart — simulation contract.
 //
 // The simulation is the part of the game that has to be *trustworthy*, because
 // daily seeds, ghost replays and (later) server-side score bounds all rest on
