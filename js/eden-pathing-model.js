@@ -17,10 +17,9 @@ export const PATHING_SHARE_VERSION = 1;
 // The share code is part of a URL; anything longer than a full plan could be
 // is rejected before it is decoded.
 export const PATHING_SHARE_MAX_LENGTH = 6000;
-// Pathers are assigned in blocks of this many tiles. This is an estimate on a
-// stated assumption, not a game constant: leadership assigns pathers by hand
-// today, so the figure is shown with the assumption beside it rather than
-// asserted as fact.
+// Pathers are assigned this many tiles each: the officers confirmed 40 as the
+// alliance's rule, so the sheets state it as one. A pather covers a started
+// block, so the count is the tiles divided by this and rounded up.
 export const DEFAULT_TILES_PER_PATHER = 40;
 
 const KIND_CODES = Object.freeze(['point', 'structure', 'pass']);
@@ -175,7 +174,7 @@ export function rasterizeStep(a, b) {
   return tiles;
 }
 
-/** How many pathers a tile count needs at the stated capacity. */
+/** How many pathers a tile count needs, one per started block of tiles. */
 export function estimatePathers(tiles, tilesPerPather = DEFAULT_TILES_PER_PATHER) {
   const capacity = Math.max(1, Math.round(Number(tilesPerPather) || DEFAULT_TILES_PER_PATHER));
   const count = Math.max(0, Math.round(Number(tiles) || 0));
@@ -396,13 +395,19 @@ function fromBase64Url(code) {
 }
 
 export function encodePlanShare(plan) {
-  const routes = (plan?.routes || []).slice(0, PATHING_MAX_ROUTES).map((route) => [
-    cleanName(route.name),
-    normalizeColor(route.color),
-    (route.stops || [])
-      .slice(0, PATHING_MAX_STOPS)
-      .map((stop) => [clampTile(stop.x), clampTile(stop.y), Math.max(0, KIND_CODES.indexOf(stop.kind))]),
-  ]);
+  const routes = (plan?.routes || [])
+    .slice(0, PATHING_MAX_ROUTES)
+    .map((route) => [
+      cleanName(route.name),
+      normalizeColor(route.color),
+      (route.stops || [])
+        .slice(0, PATHING_MAX_STOPS)
+        .map((stop) => [
+          clampTile(stop.x),
+          clampTile(stop.y),
+          Math.max(0, KIND_CODES.indexOf(stop.kind)),
+        ]),
+    ]);
   return toBase64Url(JSON.stringify([PATHING_SHARE_VERSION, cleanName(plan?.name), routes]));
 }
 

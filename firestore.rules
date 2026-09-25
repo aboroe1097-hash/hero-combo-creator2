@@ -320,6 +320,59 @@ service cloud.firestore {
       && request.resource.data.updatedBy == 'eden-map-planner';
     }
 
+    // Eden Operations Lab staffing counters. One entry per objective: the
+    // structure id, plus a ':banner' variant for its banner objective. The key
+    // list below mirrors EDEN_STRUCTURES in js/eden-operations-data.js, so a new
+    // structure needs this list updated and the rules deployed before its counts
+    // can be written. Both numbers are capped at 500, the cap the model clamps to,
+    // and the map is capped at 40 objectives.
+    function edenOperationsEntry(value) {
+      return value is map
+      && value.keys().hasOnly(['attackers', 'support'])
+      && (!('attackers' in value)
+        || (value.attackers is int && value.attackers >= 0 && value.attackers <= 500))
+      && (!('support' in value)
+        || (value.support is int && value.support >= 0 && value.support <= 500));
+    }
+
+    function validEdenOperationsCounts() {
+      let data = request.resource.data;
+      let counts = data.counts;
+      return data.keys().hasOnly(['counts', 'updatedAt', 'updatedBy'])
+      && data.updatedAt == request.time
+      && data.updatedBy is string
+      && data.updatedBy.size() <= 128
+      && counts is map
+      && counts.size() <= 40
+      && counts.keys().hasOnly(['gate-1', 'gate-1:banner', 'gate-2', 'gate-2:banner', 'gate-3', 'gate-3:banner', 'gate-4', 'gate-4:banner', 'gate-5', 'gate-5:banner', 'city-1', 'city-1:banner', 'city-2', 'city-2:banner', 'city-3', 'city-3:banner', 'capital-4', 'capital-4:banner', 'capital-5', 'capital-5:banner', 'capital-6', 'capital-6:banner', 'temple-7', 'temple-7:banner', 'stronghold', 'stronghold:banner'])
+      && edenOperationsEntry(counts.get('gate-1', {}))
+      && edenOperationsEntry(counts.get('gate-1:banner', {}))
+      && edenOperationsEntry(counts.get('gate-2', {}))
+      && edenOperationsEntry(counts.get('gate-2:banner', {}))
+      && edenOperationsEntry(counts.get('gate-3', {}))
+      && edenOperationsEntry(counts.get('gate-3:banner', {}))
+      && edenOperationsEntry(counts.get('gate-4', {}))
+      && edenOperationsEntry(counts.get('gate-4:banner', {}))
+      && edenOperationsEntry(counts.get('gate-5', {}))
+      && edenOperationsEntry(counts.get('gate-5:banner', {}))
+      && edenOperationsEntry(counts.get('city-1', {}))
+      && edenOperationsEntry(counts.get('city-1:banner', {}))
+      && edenOperationsEntry(counts.get('city-2', {}))
+      && edenOperationsEntry(counts.get('city-2:banner', {}))
+      && edenOperationsEntry(counts.get('city-3', {}))
+      && edenOperationsEntry(counts.get('city-3:banner', {}))
+      && edenOperationsEntry(counts.get('capital-4', {}))
+      && edenOperationsEntry(counts.get('capital-4:banner', {}))
+      && edenOperationsEntry(counts.get('capital-5', {}))
+      && edenOperationsEntry(counts.get('capital-5:banner', {}))
+      && edenOperationsEntry(counts.get('capital-6', {}))
+      && edenOperationsEntry(counts.get('capital-6:banner', {}))
+      && edenOperationsEntry(counts.get('temple-7', {}))
+      && edenOperationsEntry(counts.get('temple-7:banner', {}))
+      && edenOperationsEntry(counts.get('stronghold', {}))
+      && edenOperationsEntry(counts.get('stronghold:banner', {}));
+    }
+
     function validDashboardData() {
       return request.resource.data.keys().hasOnly([
         'updatedAtMs', 'syncRevision', 'last_updated', 'total_attacks', 'attacks', 'players_summary',
@@ -2642,6 +2695,16 @@ service cloud.firestore {
     match /eden_map/shared_intel {
       allow read: if signedIn();
       allow create, update: if isAdmin() && validSharedIntel();
+      allow delete: if false;
+    }
+
+    // Eden Operations Lab staffing counters: the alliance's shared assignment
+    // numbers, one entry per objective. Members are anonymous until they unlock,
+    // so any signed-in visitor reads them and an admin writes them, exactly like
+    // the Eden map's shared intel above.
+    match /eden_operations/current {
+      allow read: if signedIn();
+      allow create, update: if isAdmin() && validEdenOperationsCounts();
       allow delete: if false;
     }
 

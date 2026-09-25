@@ -125,6 +125,8 @@ export default Object.freeze({
   emptyTitle: 'Ninguna operación coincide',
   assigned: 'Apuntados',
   staffMissing: 'Faltan {count} jugadores',
+  countsReadOnly: 'Recuentos compartidos · cambiarlos requiere sesión de admin y conexión',
+  countSaveFailed: 'Los recuentos compartidos no se guardaron. Tu cambio se ha revertido.',
   'op.specialty-build.title': 'Build de especialidad',
   'op.material-budget.title': 'Presupuesto de materiales',
   'op.hold-tile.title': 'Casilla de nivel mayor',

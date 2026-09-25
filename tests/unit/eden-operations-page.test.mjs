@@ -109,3 +109,49 @@ test('every Eden locale carries the full Eden Operations copy with intact placeh
   assert.doesNotMatch(hub, /localizeOperationsButton/);
   assert.match(html, /data-eden-i18n="subTabOperations"/);
 });
+
+test('the staffing counters are shared through Firestore, not this device', () => {
+  const cloud = read('../../js/eden-operations-cloud.js');
+  const counters = read('../../js/eden-operations-counters.js');
+
+  // Reading is the alliance's: the live document is watched, the last snapshot is
+  // cached, and the plan's own localStorage value no longer drives the display.
+  assert.match(app, /from '\.\/eden-operations-cloud\.js'/);
+  assert.match(app, /readCachedSharedCounts\(\)/);
+  assert.match(app, /sharedCountsFor\(sharedCounts, currentObjectiveKey\(\)\)/);
+  assert.doesNotMatch(app, /staffingStatus\(siege, state\.siege\.assigned\)/);
+  assert.match(app, /writeCachedSharedCounts\(sharedCounts\)/);
+
+  // Writing is optimistic and debounced, and a refused write reverts and speaks.
+  assert.match(
+    app,
+    /applySharedDelta\(sharedCounts, currentObjectiveKey\(\), side, Number\(delta\)\)/
+  );
+  assert.match(app, /sharedCountsSaveTimer/);
+  assert.match(app, /\}, 600\);/);
+  assert.match(app, /sharedCounts = lastSyncedCounts/);
+  assert.match(app, /countSaveFailed/);
+
+  // Only the claim holder gets the buttons; the sync stops with the page.
+  assert.match(app, /canWriteSharedCounts/);
+  assert.match(app, /viewerCanWriteSharedCounts\(\)/);
+  assert.match(app, /stopSharedCountsSync/);
+  assert.match(counters, /data-ops-count/);
+  assert.match(counters, /countsReadOnly/);
+  assert.match(counters, /is-readonly/);
+
+  // The device still owns the checklist and the board preference.
+  assert.match(app, /readBoardOpen\(\)/);
+  assert.match(app, /writeEdenOperationsState\(state\)/);
+  assert.match(model, /EDEN_OPERATIONS_STORAGE_KEY/);
+
+  // Firebase stays behind the lazy SDK helper, and the write is merged so one
+  // objective never clears another.
+  assert.match(cloud, /import\('\.\/firebase-sdk\.js'\)/);
+  assert.match(cloud, /import\('\.\/firebase\.js'\)/);
+  assert.match(cloud, /\{ merge: true \}/);
+  assert.match(cloud, /serverTimestamp\(\)/);
+  assert.match(cloud, /EDEN_OPERATIONS_SHARED_PATH/);
+  assert.match(cloud, /updatedBy/);
+  assert.match(cloud, /let _unsubscribe = null/);
+});

@@ -102,7 +102,8 @@ export default {
     subTabPrevious: 'المواسم السابقة · {previousSeason}',
     subTabPathing: 'مسارات إيدن',
     subTabPathingDesc: 'خطّط مسارات البوابات من A إلى B مع نقاط عبور جبلية وصدّرها بصيغة PNG.',
-    pathingIntro: 'خطّط مسارات الزحف من A إلى B عبر البوابات والممرات الجبلية، ثم صدّر صورة PNG لفريقك.',
+    pathingIntro:
+      'خطّط مسارات الزحف من A إلى B عبر البوابات والممرات الجبلية، ثم صدّر صورة PNG لفريقك.',
     pathingPlan: 'الخطة',
     pathingPlanName: 'اسم الخطة',
     pathingDefaultPlan: 'خطة إيدن {n}',
@@ -140,9 +141,10 @@ export default {
     pathingLegTiles: '≈ {tiles} مربعًا',
     pathingLegTilesWalked: '≈ {tiles} مربعًا (المقطوع {walked})',
     pathingTotalTiles: 'الإجمالي ≈ {tiles} مربعًا',
-    pathingPathers: 'عدد pather المقدَّر: ≈ {count} (بافتراض {each} مربعًا لكل واحد)',
+    pathingPathers: 'pather: {count} ({each} مربعًا لكل pather)',
     pathingRepeatTiles: 'مربعات مقطوعة مرتين: {tiles}',
-    pathingBlocked: 'أحد المقاطع محجوب بتضاريس لا يمكن عبورها، لذا يظهر خط مستقيم. أضف ممرًا جبليًا للالتفاف حولها.',
+    pathingBlocked:
+      'أحد المقاطع محجوب بتضاريس لا يمكن عبورها، لذا يظهر خط مستقيم. أضف ممرًا جبليًا للالتفاف حولها.',
     pathingRouting: 'جارٍ حساب المسار…',
     pathingNeedTwo: 'أضف وجهة (B) لرسم المسار.',
     pathingStopAdded: 'أُضيفت {stop}.',
@@ -157,7 +159,8 @@ export default {
     pathingZoomIn: 'تكبير',
     pathingZoomOut: 'تصغير',
     pathingFit: 'ملاءمة الخريطة',
-    pathingMapLabel: 'خريطة مسارات إيدن. اسحب أو استخدم مفاتيح الأسهم للتحريك، واقرص أو مرّر العجلة أو اضغط + و− للتكبير، وانقر لوضع محطة.',
+    pathingMapLabel:
+      'خريطة مسارات إيدن. اسحب أو استخدم مفاتيح الأسهم للتحريك، واقرص أو مرّر العجلة أو اضغط + و− للتكبير، وانقر لوضع محطة.',
     pathingGate: 'بوابة',
     pathingImpassable: 'لا يمكن عبوره',
     pathingControls: 'عناصر التحكم في المسار',

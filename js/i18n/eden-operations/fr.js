@@ -125,6 +125,9 @@ export default Object.freeze({
   emptyTitle: 'Aucune opération ne correspond',
   assigned: 'Inscrits',
   staffMissing: 'Encore {count} joueurs nécessaires',
+  countsReadOnly: 'Compteurs partagés · les modifier demande une session admin et une connexion',
+  countSaveFailed:
+    'Les compteurs partagés n’ont pas été enregistrés. Ta modification a été annulée.',
   'op.specialty-build.title': 'Build de spécialité',
   'op.material-budget.title': 'Budget matériaux',
   'op.hold-tile.title': 'Palier de case supérieur',

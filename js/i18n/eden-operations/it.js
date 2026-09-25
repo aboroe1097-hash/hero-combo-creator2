@@ -124,6 +124,8 @@ export default Object.freeze({
   emptyTitle: 'Nessuna operazione trovata',
   assigned: 'Iscritti',
   staffMissing: 'Servono ancora {count} giocatori',
+  countsReadOnly: 'Conteggi condivisi · modificarli richiede un accesso admin e una connessione',
+  countSaveFailed: 'I conteggi condivisi non sono stati salvati. La modifica è stata annullata.',
   'op.specialty-build.title': 'Build di specializzazione',
   'op.material-budget.title': 'Budget materiali',
   'op.hold-tile.title': 'Casella di livello superiore',

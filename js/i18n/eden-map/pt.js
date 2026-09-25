@@ -103,7 +103,8 @@ export default {
     subTabPathing: 'Rotas do Eden',
     subTabPathingDesc:
       'Planeje rotas de portões de A a B com pontos de passagem nas montanhas e exporte um PNG.',
-    pathingIntro: 'Planeje rotas de marcha de A a B passando por portões e passagens de montanha e exporte um PNG para sua equipe.',
+    pathingIntro:
+      'Planeje rotas de marcha de A a B passando por portões e passagens de montanha e exporte um PNG para sua equipe.',
     pathingPlan: 'Plano',
     pathingPlanName: 'Nome do plano',
     pathingDefaultPlan: 'Plano do Eden {n}',
@@ -123,7 +124,8 @@ export default {
     pathingModeEnd: 'Destino (B)',
     pathingHintStart: 'Toque em uma estrutura ou terreno livre para definir o início (A).',
     pathingHintEnd: 'Toque onde a marcha termina (B).',
-    pathingHintWaypoint: 'Toque em um portão para passar por ele, ou em terreno livre para adicionar uma passagem de montanha.',
+    pathingHintWaypoint:
+      'Toque em um portão para passar por ele, ou em terreno livre para adicionar uma passagem de montanha.',
     pathingSearch: 'Buscar estrutura ou coordenadas',
     pathingSearchPh: 'Portão, cidade, capital ou 800:800',
     pathingNoResults: 'Nenhuma estrutura encontrada.',
@@ -141,9 +143,10 @@ export default {
     pathingLegTiles: '≈ {tiles} casas',
     pathingLegTilesWalked: '≈ {tiles} casas ({walked} percorridas)',
     pathingTotalTiles: 'Total ≈ {tiles} casas',
-    pathingPathers: 'Pathers estimados: ≈ {count} (supondo {each} casas cada)',
+    pathingPathers: 'Pathers: {count} ({each} casas cada)',
     pathingRepeatTiles: 'Casas percorridas duas vezes: {tiles}',
-    pathingBlocked: 'Um trecho está bloqueado por terreno intransponível, por isso aparece uma linha reta. Adicione uma passagem de montanha para contorná-lo.',
+    pathingBlocked:
+      'Um trecho está bloqueado por terreno intransponível, por isso aparece uma linha reta. Adicione uma passagem de montanha para contorná-lo.',
     pathingRouting: 'Calculando rota…',
     pathingNeedTwo: 'Adicione um destino (B) para desenhar a rota.',
     pathingStopAdded: '{stop} adicionado.',
@@ -158,11 +161,13 @@ export default {
     pathingZoomIn: 'Aproximar',
     pathingZoomOut: 'Afastar',
     pathingFit: 'Ajustar mapa',
-    pathingMapLabel: 'Mapa de rotas do Eden. Arraste ou use as setas para mover; faça pinça, use a roda ou pressione + e − para zoom; toque para colocar uma parada.',
+    pathingMapLabel:
+      'Mapa de rotas do Eden. Arraste ou use as setas para mover; faça pinça, use a roda ou pressione + e − para zoom; toque para colocar uma parada.',
     pathingGate: 'Portão',
     pathingImpassable: 'Intransponível',
     pathingControls: 'Controles da rota',
-    pathingStorageOff: 'Este navegador bloqueia o salvamento. Use “Compartilhar link” para manter o plano.',
+    pathingStorageOff:
+      'Este navegador bloqueia o salvamento. Use “Compartilhar link” para manter o plano.',
     routePlayback: 'Reprodução da rota',
     routePlay: 'Reproduzir',
     routePause: 'Pausar',

@@ -103,7 +103,8 @@ export default {
     subTabPathing: 'Jalur Eden',
     subTabPathingDesc:
       'Rencanakan rute gerbang A→B dengan titik jalan di pegunungan dan ekspor PNG.',
-    pathingIntro: 'Rencanakan rute pasukan dari A ke B melalui gerbang dan celah gunung, lalu ekspor PNG untuk timmu.',
+    pathingIntro:
+      'Rencanakan rute pasukan dari A ke B melalui gerbang dan celah gunung, lalu ekspor PNG untuk timmu.',
     pathingPlan: 'Rencana',
     pathingPlanName: 'Nama rencana',
     pathingDefaultPlan: 'Rencana Eden {n}',
@@ -123,7 +124,8 @@ export default {
     pathingModeEnd: 'Tujuan (B)',
     pathingHintStart: 'Ketuk bangunan atau lahan kosong untuk menetapkan awal (A).',
     pathingHintEnd: 'Ketuk tempat pasukan berakhir (B).',
-    pathingHintWaypoint: 'Ketuk gerbang untuk melewatinya, atau lahan kosong untuk menambah celah gunung.',
+    pathingHintWaypoint:
+      'Ketuk gerbang untuk melewatinya, atau lahan kosong untuk menambah celah gunung.',
     pathingSearch: 'Cari bangunan atau koordinat',
     pathingSearchPh: 'Gerbang, kota, ibu kota atau 800:800',
     pathingNoResults: 'Tidak ada bangunan yang cocok.',
@@ -141,9 +143,10 @@ export default {
     pathingLegTiles: '≈ {tiles} petak',
     pathingLegTilesWalked: '≈ {tiles} petak ({walked} dilalui)',
     pathingTotalTiles: 'Total ≈ {tiles} petak',
-    pathingPathers: 'Perkiraan pather: ≈ {count} (asumsi {each} petak per pather)',
+    pathingPathers: 'Pather: {count} ({each} petak per pather)',
     pathingRepeatTiles: 'Petak dilalui dua kali: {tiles}',
-    pathingBlocked: 'Satu bagian terhalang medan yang tak bisa dilewati, jadi garis lurus ditampilkan. Tambahkan celah gunung untuk memutarinya.',
+    pathingBlocked:
+      'Satu bagian terhalang medan yang tak bisa dilewati, jadi garis lurus ditampilkan. Tambahkan celah gunung untuk memutarinya.',
     pathingRouting: 'Menghitung rute…',
     pathingNeedTwo: 'Tambahkan tujuan (B) untuk menggambar rute.',
     pathingStopAdded: '{stop} ditambahkan.',
@@ -158,11 +161,13 @@ export default {
     pathingZoomIn: 'Perbesar',
     pathingZoomOut: 'Perkecil',
     pathingFit: 'Paskan peta',
-    pathingMapLabel: 'Peta rute Eden. Seret atau gunakan tombol panah untuk menggeser; cubit, gulir, atau tekan + dan − untuk zoom; ketuk untuk menaruh titik.',
+    pathingMapLabel:
+      'Peta rute Eden. Seret atau gunakan tombol panah untuk menggeser; cubit, gulir, atau tekan + dan − untuk zoom; ketuk untuk menaruh titik.',
     pathingGate: 'Gerbang',
     pathingImpassable: 'Tak bisa dilewati',
     pathingControls: 'Kontrol rute',
-    pathingStorageOff: 'Browser ini memblokir penyimpanan. Gunakan Bagikan tautan untuk menyimpan rencana.',
+    pathingStorageOff:
+      'Browser ini memblokir penyimpanan. Gunakan Bagikan tautan untuk menyimpan rencana.',
     routePlayback: 'Pemutaran rute',
     routePlay: 'Putar',
     routePause: 'Jeda',
