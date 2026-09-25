@@ -103,7 +103,8 @@ export default {
     subTabPathing: 'Rutas de Edén',
     subTabPathingDesc:
       'Planifica rutas de puertas de A a B con puntos de paso en montañas y exporta un PNG.',
-    pathingIntro: 'Planifica rutas de marcha de A a B a través de puertas y pasos de montaña, y exporta un PNG para tu equipo.',
+    pathingIntro:
+      'Planifica rutas de marcha de A a B a través de puertas y pasos de montaña, y exporta un PNG para tu equipo.',
     pathingPlan: 'Plan',
     pathingPlanName: 'Nombre del plan',
     pathingDefaultPlan: 'Plan de Edén {n}',
@@ -123,7 +124,8 @@ export default {
     pathingModeEnd: 'Destino (B)',
     pathingHintStart: 'Toca una estructura o terreno libre para fijar el inicio (A).',
     pathingHintEnd: 'Toca donde termina la marcha (B).',
-    pathingHintWaypoint: 'Toca una puerta para pasar por ella, o terreno libre para añadir un paso de montaña.',
+    pathingHintWaypoint:
+      'Toca una puerta para pasar por ella, o terreno libre para añadir un paso de montaña.',
     pathingSearch: 'Busca una estructura o coordenadas',
     pathingSearchPh: 'Puerta, ciudad, capital u 800:800',
     pathingNoResults: 'No hay estructuras que coincidan.',
@@ -141,9 +143,10 @@ export default {
     pathingLegTiles: '≈ {tiles} casillas',
     pathingLegTilesWalked: '≈ {tiles} casillas ({walked} recorridas)',
     pathingTotalTiles: 'Total ≈ {tiles} casillas',
-    pathingPathers: 'Pathers estimados: ≈ {count} (suponiendo {each} casillas cada uno)',
+    pathingPathers: 'Pathers: {count} ({each} casillas cada uno)',
     pathingRepeatTiles: 'Casillas recorridas dos veces: {tiles}',
-    pathingBlocked: 'Un tramo está bloqueado por terreno infranqueable, así que se muestra una línea recta. Añade un paso de montaña para rodearlo.',
+    pathingBlocked:
+      'Un tramo está bloqueado por terreno infranqueable, así que se muestra una línea recta. Añade un paso de montaña para rodearlo.',
     pathingRouting: 'Calculando ruta…',
     pathingNeedTwo: 'Añade un destino (B) para dibujar la ruta.',
     pathingStopAdded: '{stop} añadido.',
@@ -158,11 +161,13 @@ export default {
     pathingZoomIn: 'Acercar',
     pathingZoomOut: 'Alejar',
     pathingFit: 'Ajustar mapa',
-    pathingMapLabel: 'Mapa de rutas de Edén. Arrastra o usa las flechas para desplazarte; pellizca, usa la rueda o pulsa + y − para hacer zoom; toca para colocar una parada.',
+    pathingMapLabel:
+      'Mapa de rutas de Edén. Arrastra o usa las flechas para desplazarte; pellizca, usa la rueda o pulsa + y − para hacer zoom; toca para colocar una parada.',
     pathingGate: 'Puerta',
     pathingImpassable: 'Infranqueable',
     pathingControls: 'Controles de ruta',
-    pathingStorageOff: 'Este navegador bloquea el guardado. Usa «Compartir enlace» para conservar el plan.',
+    pathingStorageOff:
+      'Este navegador bloquea el guardado. Usa «Compartir enlace» para conservar el plan.',
     routePlayback: 'Reproducción de ruta',
     routePlay: 'Reproducir',
     routePause: 'Pausa',

@@ -63,6 +63,7 @@ import {
   showModal,
   closeModal,
   buildPlayerSummary,
+  canonicalAggregationName,
   animateAnalyticsCards,
   bindAdminTablePager,
   renderAdminTablePager,
@@ -224,6 +225,8 @@ import {
   DUTY_ACCOUNT_CLASSES,
   DUTY_ACTIVITIES,
   buildWeightedContributionRows,
+  dutyEntryAccountLink,
+  dutyEntryScoredNames,
   normalizeDutyPointWeights,
   normalizeContributionWeight,
   normalizeFormPointWeight,
@@ -237,7 +240,18 @@ import {
   REWARD_QUOTA_KEYS,
   normalizeRewardSettings,
 } from './eden-reward-settings.js';
-import { csvFooterLines, getExportBranding } from './export-branding.js';
+import { csvFooterCellLines, getExportBranding } from './export-branding.js';
+import {
+  ADMIN_EXPORT_COLUMNS,
+  buildAdminAllDataRows as buildAdminAllDataRowsFromData,
+  buildAttackDebugCsv,
+  buildDutyDebugCsv,
+  csvLine,
+  describeAdminExportCoverage,
+  roundWeightedCsvRow,
+  rowsToCsv,
+  withCsvFooter,
+} from './admin-export-model.js';
 import {
   compactPlayerIdentity,
   resolveCanonicalPlayerIdentity,
@@ -2378,7 +2392,12 @@ async function activateCurrentEdenX1VoteSeason() {
 
 async function loadEdenX1VoteAdminData() {
   renderEdenX1VoteAdmin();
-  await Promise.all([loadEdenX1VoteSettings(), loadEdenX1Votes(), loadEdenX1VoteHistory()]);
+  const [, votesLoaded] = await Promise.all([
+    loadEdenX1VoteSettings(),
+    loadEdenX1Votes(),
+    loadEdenX1VoteHistory(),
+  ]);
+  if (votesLoaded === true) state._edenVotesLoaded = true;
   renderEdenX1VoteAdmin();
 }
 
@@ -2936,6 +2955,39 @@ function renderConductAdjustments() {
     });
   });
   mountConductBulkSelect(list, conductPage.rows);
+}
+
+// PNG/CSV of the season's adjustments grouped by player, following the list's
+// category filter. The export module loads on first use.
+async function exportConductAdjustments(kind) {
+  try {
+    const module = await import('./conduct-adjustment-export.js');
+    const category = $id('dashConductCategoryFilter')?.value || '';
+    const model = module.buildConductExportModel(state.r5Adjustments, {
+      season: state.r5Season,
+      category,
+      categoryLabel: conductCategoryLabel,
+    });
+    if (!model.entryCount) {
+      setConductStatus(dashT('adminConductExportEmpty'), 'info');
+      return;
+    }
+    if (kind === 'csv') {
+      await module.downloadConductExportCsv(model);
+      return;
+    }
+    const light = document.documentElement?.dataset?.theme === 'light';
+    await module.downloadConductExportPng(model, {
+      title: dashT('adminConductTitle'),
+      seasonLabel: dashT('adminConductSeasonLabel', { season: state.r5Season }),
+      totalLabel: dashT('adminConductExportTotal'),
+      emptyLabel: dashT('adminConductExportEmpty'),
+      theme: light ? 'light' : 'dark',
+    });
+  } catch (err) {
+    console.error('Bonus team effort export failed:', err);
+    setConductStatus(err?.message || String(err || ''), 'error');
+  }
 }
 
 // One adjustment through the same delete path the row's own button uses.
@@ -3785,6 +3837,14 @@ function bindConductControls() {
   $id('dashConductCancelEditBtn')?.addEventListener('click', resetConductForm);
   $id('dashConductSearch')?.addEventListener('input', () => renderConductAdjustments());
   $id('dashConductCategoryFilter')?.addEventListener('change', () => renderConductAdjustments());
+  $id('dashConductExportPngBtn')?.addEventListener(
+    'click',
+    () => void exportConductAdjustments('png')
+  );
+  $id('dashConductExportCsvBtn')?.addEventListener(
+    'click',
+    () => void exportConductAdjustments('csv')
+  );
   const playerSearchButton = $id('dashConductPlayerSearchBtn');
   const playerSearchInput = $id('dashConductPlayerSearchInput');
   playerSearchButton?.addEventListener('click', () => {
@@ -7561,50 +7621,8 @@ const ADMIN_EXPORT_STORAGE_KEYS = [
   R5_ADJUSTMENT_SEASON_LOCAL_KEY,
 ];
 
-const ADMIN_EXPORT_COLUMNS = [
-  ['Dataset', 'dataset'],
-  ['Record ID', 'recordId'],
-  ['Date', 'date'],
-  ['Type', 'type'],
-  ['Player', 'player'],
-  ['Guild', 'guild'],
-  ['Rank', 'rank'],
-  ['Reward', 'reward'],
-  ['Metric', 'metric'],
-  ['Value', 'value'],
-  ['Structure', 'structure'],
-  ['Level', 'level'],
-  ['Target', 'target'],
-  ['Group', 'group'],
-  ['Time', 'time'],
-  ['Status', 'status'],
-  ['Note', 'note'],
-  ['Raw JSON', 'rawJson'],
-];
-
 function exportTimestampForFilename() {
   return new Date().toISOString().replace(/[:.]/g, '-');
-}
-
-function stringifyForExport(value) {
-  if (value === undefined || value === null) return '';
-  if (typeof value === 'string') return value;
-  try {
-    return JSON.stringify(value);
-  } catch (e) {
-    return String(value);
-  }
-}
-
-function csvCell(value) {
-  return `"${stringifyForExport(value).replace(/"/g, '""')}"`;
-}
-
-function rowsToCsv(columnDefs, rows) {
-  return [
-    columnDefs.map(([label]) => csvCell(label)).join(','),
-    ...rows.map((row) => columnDefs.map(([, key]) => csvCell(row[key])).join(',')),
-  ].join('\n');
 }
 
 function downloadJson(data, filename) {
@@ -8881,246 +8899,104 @@ function buildAdminDebugBundle() {
   };
 }
 
-function pushAdminExportRow(rows, dataset, values = {}) {
-  rows.push({
-    dataset,
-    recordId: values.recordId || '',
-    date: values.date || '',
-    type: values.type || '',
-    player: values.player || '',
-    guild: values.guild || '',
-    rank: values.rank ?? '',
-    reward: values.reward || '',
-    metric: values.metric || '',
-    value: values.value ?? '',
-    structure: values.structure || '',
-    level: values.level || '',
-    target: values.target || '',
-    group: values.group || '',
-    time: values.time || '',
-    status: values.status || '',
-    note: values.note || '',
-    rawJson: values.rawJson === undefined ? '' : stringifyForExport(values.rawJson),
-  });
-}
-
 function buildWeightedContributionCsvRows() {
   const model = buildWeightedContributionExportModel();
-  return (model.rows || []).map((row) => ({
-    player: row.playerName,
-    currentRank: row.currentRank ? `#${row.currentRank}` : '',
-    currentReward: contributionRewardExportLabel(row.currentReward),
-    contributionScore: row.contributionScore,
-    demolition: row.totalDemolition,
-    demolitionPoints: row.demolitionPoints,
-    exGuildContribution: row.contributionExGuild || 0,
-    shieldWalls: row.shieldWalls,
-    pathers: row.pathers,
-    banners: row.banners,
-    conductBonus: row.conductBonus,
-    dutyPoints: row.dutyPoints,
-    conductPoints: row.conductPoints,
-    weightedScore: row.weightedScore,
-    finalRank: `#${row.finalRank}`,
-    finalReward: contributionRewardExportLabel(row.finalReward),
-    sourceName: row.sourceName,
-    playerKey: row.playerKey,
-  }));
+  return (model.rows || []).map((row) =>
+    roundWeightedCsvRow({
+      player: row.playerName,
+      currentRank: row.currentRank ? `#${row.currentRank}` : '',
+      currentReward: contributionRewardExportLabel(row.currentReward),
+      contributionScore: row.contributionScore,
+      demolition: row.totalDemolition,
+      demolitionPoints: row.demolitionPoints,
+      exGuildContribution: row.contributionExGuild || 0,
+      shieldWalls: row.shieldWalls,
+      pathers: row.pathers,
+      banners: row.banners,
+      conductBonus: row.conductBonus,
+      dutyPoints: row.dutyPoints,
+      conductPoints: row.conductPoints,
+      weightedScore: row.weightedScore,
+      finalRank: `#${row.finalRank}`,
+      finalReward: contributionRewardExportLabel(row.finalReward),
+      sourceName: row.sourceName,
+      playerKey: row.playerKey,
+    })
+  );
 }
 
-function buildAdminAllDataRows() {
-  const rows = [];
-  const attacks = Array.isArray(state.dashData?.attacks) ? state.dashData.attacks : [];
-  attacks.forEach((attack) => {
-    const target = getDatasetStructureTarget(attack);
-    const attackDate = displayGameTime(attack.game_time);
-    pushAdminExportRow(rows, 'attack', {
-      recordId: attack.id || '',
-      date: attackDate,
-      type: 'structure_attack',
-      metric: 'total_demolition',
-      value: attack.total_demolition || '',
-      structure: target.structure_name,
-      level: target.structure_level,
-      time: attack.start_time || '',
-      rawJson: attack,
-    });
-    attackPlayers(attack).forEach((player) => {
-      pushAdminExportRow(rows, 'attack_player', {
-        recordId: attack.id || '',
-        date: attackDate,
-        type: 'structure_attack',
-        player: player.name || '',
-        rank: player.rank || '',
-        metric: 'demolition',
-        value: player.value || '',
-        structure: target.structure_name,
-        level: target.structure_level,
-        time: attack.start_time || '',
-        rawJson: player,
-      });
-    });
-  });
+function pickScoringSettingsForExport({
+  includeDemolitionPoints,
+  contributionWeight,
+  formPointWeight,
+}) {
+  return { includeDemolitionPoints, contributionWeight, formPointWeight };
+}
 
+// Everything the dashboard holds for the all-data export, read from state.
+// `loaded` marks the tab-loaded datasets the export could not include.
+function collectAdminExportData() {
   const playerSummary = Array.isArray(state._lastRenderedPlayerSummary)
     ? state._lastRenderedPlayerSummary
     : Array.isArray(state.dashData?.players_summary)
       ? state.dashData.players_summary
       : [];
-  playerSummary.forEach((player, index) => {
-    pushAdminExportRow(rows, 'leaderboard_player', {
-      recordId: `leaderboard-${index + 1}`,
-      type: 'leaderboard',
-      player: player.name || '',
-      rank: index + 1,
-      metric: 'total_demolition',
-      value: player.total_demolition || 0,
-      rawJson: player,
-    });
+  const allianceView = allianceViewController?.getState?.() || null;
+  let publicVoteResults = null;
+  try {
+    publicVoteResults = state.edenX1VoteSettings
+      ? buildEdenX1PublicVoteResults(state.edenX1VoteSettings)
+      : null;
+  } catch (e) {
+    publicVoteResults = null;
+  }
+  const votesLoaded =
+    state._edenVotesLoaded === true ||
+    (Array.isArray(state.edenX1Votes) && state.edenX1Votes.length > 0);
+  return {
+    attacks: Array.isArray(state.dashData?.attacks) ? state.dashData.attacks : [],
+    playerSummary,
+    rosterNames: state.rosterNames,
+    rosterSnapshots: state.rosterSnapshots,
+    bannerRecords: state.bannerRecords,
+    dutyRecords: state.dutyRecords,
+    contributionRecords: state.contributionRecords,
+    exGuildContributions: state.exGuildContributions,
+    r5Adjustments: state.r5Adjustments,
+    allianceList: state.allianceList,
+    weightedRows: buildWeightedContributionCsvRows(),
+    playerRegistry: normalizePlayerRegistry(state.playerRegistry || readStoredPlayerRegistry()),
+    conductSuggestions: state.conductSuggestions,
+    // Read-only copy of the scoring settings for the export, not a scoring site.
+    dutySettings: {
+      weights: state.dutyPointWeights || {},
+      ...pickScoringSettingsForExport(state),
+    },
+    rewardSettings: state.rewardSettings,
+    voteSettings: state.edenX1VoteSettings,
+    publicVoteResults,
+    votes: state.edenX1Votes,
+    voteHistory: state.edenX1VoteHistory,
+    bohMatchResults: state.bohMatchResults,
+    allianceViewRosters: allianceView?.rosters || null,
+    r5Season: state.r5Season,
+    competition: state.bohSignupsSnapshot,
+    loaded: {
+      conductSuggestions: state._conductSuggestionsLoaded === true,
+      bohMatchResults: state._bohMatchResultsLoaded === true,
+      votes: votesLoaded,
+      allianceView: Boolean(allianceView),
+      competition: Boolean(state.bohSignupsSnapshot),
+    },
+  };
+}
+
+function buildAdminAllDataRows() {
+  return buildAdminAllDataRowsFromData(collectAdminExportData(), {
+    displayGameTime,
+    structureTarget: getDatasetStructureTarget,
+    rosterDisplayName: readRosterDisplayName,
   });
-
-  (Array.isArray(state.rosterNames) ? state.rosterNames : []).forEach((name, index) => {
-    pushAdminExportRow(rows, 'roster_name', {
-      recordId: `roster-name-${index + 1}`,
-      type: 'roster',
-      player: name,
-      metric: 'roster_index',
-      value: index + 1,
-      rawJson: name,
-    });
-  });
-
-  (Array.isArray(state.rosterSnapshots) ? state.rosterSnapshots : []).forEach(
-    (snapshot, sIndex) => {
-      const members = Array.isArray(snapshot?.members) ? snapshot.members : [];
-      members.forEach((member, memberIndex) => {
-        pushAdminExportRow(rows, 'roster_snapshot_member', {
-          recordId: snapshot?.id || snapshot?.createdAt || `roster-snapshot-${sIndex + 1}`,
-          date: snapshot?.date || snapshot?.createdAt || '',
-          type: 'roster_snapshot',
-          player: readRosterDisplayName(member),
-          guild: member?.alliance || '',
-          rank: member?.rank || '',
-          metric: 'snapshot_member_index',
-          value: memberIndex + 1,
-          status: member?.status || '',
-          rawJson: member,
-        });
-      });
-    }
-  );
-
-  (Array.isArray(state.bannerRecords) ? state.bannerRecords : []).forEach((record, index) => {
-    Object.entries(record?.teams || {}).forEach(([team, members]) => {
-      (Array.isArray(members) ? members : []).forEach((member) => {
-        pushAdminExportRow(rows, 'banner_assignment', {
-          recordId: record?.id || `banner-${index + 1}`,
-          date: record?.date || '',
-          type: 'banner',
-          player: member,
-          group: team,
-          metric: 'assignment_count',
-          value: 1,
-          note: record?.event || '',
-          rawJson: { record, team, member },
-        });
-      });
-    });
-  });
-
-  (Array.isArray(state.dutyRecords) ? state.dutyRecords : []).forEach((record) => {
-    (Array.isArray(record?.entries) ? record.entries : []).forEach((entry) => {
-      pushAdminExportRow(rows, 'duty_entry', {
-        recordId: record?.id || '',
-        date: record?.date || '',
-        type: record?.type || '',
-        player: entry?.confirmed || entry?.name || entry?.original || '',
-        metric: 'duty_count',
-        value: 1,
-        target: entry?.target || '',
-        group: entry?.group || '',
-        time: entry?.usageTime || record?.gameTime || '',
-        status: entry?.status || '',
-        note: entry?.note || record?.note || '',
-        rawJson: entry,
-      });
-    });
-  });
-
-  (Array.isArray(state.contributionRecords) ? state.contributionRecords : []).forEach((record) => {
-    (Array.isArray(record?.entries) ? record.entries : []).forEach((entry) => {
-      pushAdminExportRow(rows, 'contribution_entry', {
-        recordId: record?.id || '',
-        date: record?.date || '',
-        type: record?.isPrimary ? 'primary_contribution' : 'contribution',
-        player: entry?.name || '',
-        guild: entry?.guild || '',
-        rank: entry?.rank || '',
-        reward: entry?.rewardOverride || entry?.reward || '',
-        metric: 'contribution',
-        value: entry?.contribution || entry?.value || '',
-        status: entry?.position || '',
-        note: record?.note || '',
-        rawJson: entry,
-      });
-    });
-  });
-
-  (Array.isArray(state.exGuildContributions) ? state.exGuildContributions : []).forEach(
-    (entry, index) => {
-      pushAdminExportRow(rows, 'ex_guild_contribution', {
-        recordId: entry?.id || `ex-guild-${index + 1}`,
-        date: entry?.createdAt || '',
-        type: 'ex_guild',
-        player: entry?.playerName || entry?.name || '',
-        metric: 'contribution',
-        value: entry?.contribution || entry?.value || '',
-        status: entry?.status || '',
-        rawJson: entry,
-      });
-    }
-  );
-
-  (Array.isArray(state.r5Adjustments) ? state.r5Adjustments : []).forEach((adjustment) => {
-    pushAdminExportRow(rows, 'conduct_adjustment', {
-      recordId: adjustment?.id || '',
-      date: adjustment?.createdAt || '',
-      type: adjustment?.category || '',
-      player: adjustment?.playerName || '',
-      metric: 'conduct_bonus',
-      value: adjustment?.points || 0,
-      status: adjustment?.season || '',
-      note: adjustment?.note || '',
-      rawJson: adjustment,
-    });
-  });
-
-  (Array.isArray(state.allianceList) ? state.allianceList : []).forEach((alliance, index) => {
-    pushAdminExportRow(rows, 'alliance', {
-      recordId: `alliance-${index + 1}`,
-      type: 'alliance',
-      guild: alliance,
-      metric: 'alliance_index',
-      value: index + 1,
-      rawJson: alliance,
-    });
-  });
-
-  buildWeightedContributionCsvRows().forEach((row) => {
-    pushAdminExportRow(rows, 'weighted_contribution', {
-      recordId: row.playerKey,
-      type: 'weighted_contribution',
-      player: row.player,
-      rank: row.finalRank,
-      reward: row.finalReward,
-      metric: 'weighted_score',
-      value: row.weightedScore,
-      status: row.currentRank,
-      rawJson: row,
-    });
-  });
-
-  return rows;
 }
 
 function exportData() {
@@ -9166,13 +9042,76 @@ function exportWeightedContributionCsv() {
   );
 }
 
-function exportAdminAllDataCsv() {
-  const rows = buildAdminAllDataRows();
-  if (!rows.length) return;
+const ADMIN_EXPORT_DATASET_LABELS = {
+  conduct_suggestion: 'conduct suggestions',
+  boh_match_result: 'BoH match results',
+  vote: 'votes',
+  vote_history: 'vote history',
+  public_vote_result: 'public vote results',
+  alliance_view_member: 'Alliance View rosters',
+  competition_config: 'Competition #12 settings',
+  competition_schedule: 'Competition #12 schedule',
+  competition_signup: 'Competition #12 signups',
+};
+
+// Suggestions and BoH results only load when their tab opens; load them now
+// (same loaders, bounded) so the export does not silently skip them. Votes,
+// Alliance View and Competition #12 stay as loaded, and the toast names them.
+async function loadTabDatasetsForExport() {
+  if (state.adminIsAdmin !== true) return;
+  const tasks = [];
+  if (!state._conductSuggestionsLoaded) {
+    tasks.push(
+      runDashboardCloudTaskWithTimeout(
+        'Conduct suggestions export load',
+        async () => {
+          await loadConductSuggestionsForSeason();
+          state._conductSuggestionsLoaded = true;
+        },
+        DASHBOARD_CLOUD_BOOT_TIMEOUT_MS,
+        { optional: true }
+      )
+    );
+  }
+  if (!state._bohMatchResultsLoaded) {
+    tasks.push(
+      runDashboardCloudTaskWithTimeout(
+        'BoH match results export load',
+        async () => {
+          await loadBohMatchResultsForAdmin();
+          state._bohMatchResultsLoaded = true;
+        },
+        DASHBOARD_CLOUD_BOOT_TIMEOUT_MS,
+        { optional: true }
+      )
+    );
+  }
+  await Promise.allSettled(tasks);
+}
+
+async function exportAdminAllDataCsv() {
+  await loadTabDatasetsForExport();
+  const data = collectAdminExportData();
+  const rows = buildAdminAllDataRowsFromData(data, {
+    displayGameTime,
+    structureTarget: getDatasetStructureTarget,
+    rosterDisplayName: readRosterDisplayName,
+  });
+  if (!rows.some((row) => row.dataset !== 'export_manifest')) return;
   downloadCsv(
     rowsToCsv(ADMIN_EXPORT_COLUMNS, rows),
     `vts_admin_all_data_${exportTimestampForFilename()}.csv`
   );
+  const missing = describeAdminExportCoverage(data).map(
+    (dataset) => ADMIN_EXPORT_DATASET_LABELS[dataset] || dataset
+  );
+  if (missing.length && typeof window.showToast === 'function') {
+    window.showToast(
+      `Not included (open its tab first to load it): ${[...new Set(missing)].join(', ')}`,
+      'info',
+      8000
+    );
+  }
 }
 
 function currentTopPerformersSubtitle() {
@@ -9388,24 +9327,35 @@ function exportAttackCsv() {
   const attacks = Array.isArray(state._lastRenderedAttacks)
     ? state._lastRenderedAttacks
     : state.dashData.attacks;
-  let csv =
-    'Start Time (Game Time),End Time (Game Time),Structure,Level,Player Name,Rank,Demolition Value\n';
+  const lines = [
+    csvLine([
+      'Start Time (Game Time)',
+      'End Time (Game Time)',
+      'Structure',
+      'Level',
+      'Player Name',
+      'Rank',
+      'Demolition Value',
+    ]),
+  ];
   attacks.forEach((a) => {
     const date = displayGameTime(a.game_time);
-    const start = a.start_time ? a.start_time.replace(/"/g, '""') : '';
     const target = getDatasetStructureTarget(a);
-    (a.players || []).forEach((p) => {
-      const safeName = p.name.replace(/"/g, '""');
-      csv += `"${start}","${date}","${target.structure_name}","${target.structure_level}","${safeName}",${p.rank},${p.value}\n`;
+    attackPlayers(a).forEach((p) => {
+      lines.push(
+        csvLine([
+          a.start_time || '',
+          date,
+          target.structure_name,
+          target.structure_level,
+          p?.name ?? '',
+          p?.rank,
+          p?.value,
+        ])
+      );
     });
   });
-  const a = document.createElement('a');
-  const branded = `${csv}${csvFooterLines(getExportBranding())
-    .map((line) => `#${line}\n`)
-    .join('')}`;
-  a.href = URL.createObjectURL(new Blob([branded], { type: 'text/csv' }));
-  a.download = 'vts_attack_details.csv';
-  a.click();
+  downloadCsv(lines.join('\n'), 'vts_attack_details.csv');
 }
 
 function attackPlayers(attack) {
@@ -9429,9 +9379,9 @@ function refreshDashboardPlayerSummary() {
 }
 
 function downloadCsv(csv, filename) {
-  const branded = `${csv}${csvFooterLines(getExportBranding())
-    .map((line) => `#${line}\n`)
-    .join('')}`;
+  // Admin exports are the alliance's own data: the footer names the tool and
+  // the time only, each line one quoted cell so no comma spills a column.
+  const branded = withCsvFooter(csv, csvFooterCellLines(getExportBranding()));
   const blob = new Blob([`\uFEFF${branded}`], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -9457,50 +9407,27 @@ function safeCsvFilename(name) {
 
 function exportDebugCsv() {
   if (!state.dashData?.attacks?.length) return;
-  let csv =
-    'Attack ID,Start Time (Game Time),End Time (Game Time),Structure,Level,Raw Name,Grouped Name (Master),Demolition Value,Rank\n';
-  state.dashData.attacks.forEach((a) => {
-    const date = displayGameTime(a.game_time);
-    const start = a.start_time ? a.start_time.replace(/"/g, '""') : '';
-    const target = getDatasetStructureTarget(a);
-    const players = attackPlayers(a);
-    players.forEach((p) => {
-      const rawName = p.name.replace(/"/g, '""');
-      const groupedName = resolvePlayerNameForAttack(p, players).replace(/"/g, '""');
-      csv += `"${a.id}","${start}","${date}","${target.structure_name}","${target.structure_level}","${rawName}","${groupedName}",${p.value},${p.rank}\n`;
-    });
+  const csv = buildAttackDebugCsv(state.dashData.attacks, {
+    displayGameTime,
+    structureTarget: getDatasetStructureTarget,
+    groupedName: (player, players) => resolvePlayerNameForAttack(player, players) || '',
+    // The leaderboard's own aggregation name (buildPlayerSummary).
+    scoredAs: (player, players) => canonicalAggregationName(player, players),
   });
   downloadCsv(csv, `vts_debug_export_${new Date().getTime()}.csv`);
 }
 
-// Banner/Pather duty-record debug export. Mirrors exportDebugCsv so the same weekly
-// name-dedup loop applies to Viber-sourced duty data. Shows Raw -> Cleaned -> Grouped.
+// Banner/Pather duty-record debug export. Shows Raw -> Cleaned -> Grouped, and
+// "Scored As": the names the weighted score actually credits for the row.
 function exportDutyDebugCsv() {
   const records = Array.isArray(state.dutyRecords) ? state.dutyRecords : [];
   if (!records.length) return;
-  const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  let csv =
-    'Date,Type,Upload ID,Raw Name,Cleaned Name,Grouped Name (Master),Operator/Banner Note,Confirmed Name,Match Status,Target,Group,Time\n';
-  records.forEach((rec) => {
-    const entries = Array.isArray(rec.entries) ? rec.entries : [];
-    entries.forEach((e) => {
-      const raw = e.name || e.original || '';
-      csv +=
-        [
-          q(rec.date),
-          q(rec.type),
-          q(rec.id || rec.createdAt || ''),
-          q(raw),
-          q(cleanDutyRawName(raw)),
-          q(resolveDutyPlayerName(raw)),
-          q(getDutyOperatorNote(raw)),
-          q(e.confirmed || ''),
-          q(e.status || ''),
-          q(e.target),
-          q(e.group),
-          q(e.usageTime || rec.gameTime || ''),
-        ].join(',') + '\n';
-    });
+  const csv = buildDutyDebugCsv(records, {
+    cleanName: cleanDutyRawName,
+    resolveName: resolveDutyPlayerName,
+    operatorNote: getDutyOperatorNote,
+    scoredAs: dutyEntryScoredNames,
+    accountLink: dutyEntryAccountLink,
   });
   downloadCsv(csv, `vts_duty_debug_export_${new Date().getTime()}.csv`);
 }

@@ -107,6 +107,37 @@ export function normalizeAccountLinks(values) {
   return Array.from(byAccount.values());
 }
 
+/**
+ * Edit one account link in place: new account name, owner and/or type. A
+ * renamed account drops its old key. Returns `{ links }` on success or
+ * `{ error }` — 'required', 'self' (an account cannot run itself) or
+ * 'duplicate' (another link already uses that account name) — leaving the
+ * list untouched.
+ */
+export function editAccountLink(links, originalAccount, next = {}) {
+  const current = Array.isArray(links) ? links : [];
+  const originalKey = compactRegistryName(originalAccount);
+  const account = asText(next.account).slice(0, 80);
+  const owner = asText(next.owner).slice(0, 80);
+  const type = ACCOUNT_LINK_TYPES.includes(next.type) ? next.type : 'banner';
+  const key = compactRegistryName(account);
+  const ownerKey = compactRegistryName(owner);
+  if (!account || !owner || !key || !ownerKey) return { error: 'required' };
+  if (key === ownerKey) return { error: 'self' };
+  const index = current.findIndex((link) => compactRegistryName(link?.account) === originalKey);
+  if (index < 0) return { error: 'required' };
+  if (
+    current.some(
+      (link, linkIndex) => linkIndex !== index && compactRegistryName(link?.account) === key
+    )
+  ) {
+    return { error: 'duplicate' };
+  }
+  const updated = current.slice();
+  updated[index] = { account, owner, type };
+  return { links: normalizeAccountLinks(updated) };
+}
+
 // Duty rows default to Banner; this "un-banner" list names the accounts whose
 // uploaded duty rows should be guessed as Main instead. It lives inside the same
 // registry map as accountLinks, so it saves and publishes with it.

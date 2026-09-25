@@ -37,8 +37,7 @@ const COPY = {
     focus: 'Focus',
     final: 'Final reset',
     source: 'Source & interpretation',
-    sourceText:
-      'Roadmap by Don Pablone / S96, published by L96. Skill names stay in source English.',
+    sourceText: 'Skill names stay in source English.',
     openSource: 'Open full source sheet',
     caution:
       'Community acceleration path—not an absolute best build. Adapt troop, resource, season, and alliance branches to your account.',
@@ -73,8 +72,7 @@ const COPY = {
     focus: 'التركيز',
     final: 'إعادة التوزيع النهائية',
     source: 'المصدر والتفسير',
-    sourceText:
-      'مسار من Don Pablone / S96 ونشره L96. بقيت أسماء المهارات بالإنجليزية كما في المصدر.',
+    sourceText: 'بقيت أسماء المهارات بالإنجليزية كما في المصدر.',
     openSource: 'فتح الدليل الكامل',
     caution:
       'مسار مجتمعي لتسريع التطور، وليس أفضل بناء مطلقاً. عدّل فروع القوات والموارد والموسم والتحالف حسب حسابك.',

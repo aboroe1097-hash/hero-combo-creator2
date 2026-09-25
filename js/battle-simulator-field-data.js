@@ -152,7 +152,7 @@ function renderRecordCard(record, deps) {
           ${metadataRow(deps.t('fieldData.attackerSpeedPriority'), String(record.attackerSpeedPriority || deps.t('fieldData.notCaptured')))}
           ${metadataRow(deps.t('fieldData.sourceGameVersion'), String(record.sourceGameVersion || deps.t('fieldData.notCaptured')))}
           ${metadataRow(deps.t('fieldData.inclusionCriteria'), String(record.inclusionCriteria || deps.t('fieldData.notCaptured')))}
-          ${envelope ? metadataRow(deps.t('fieldData.provenance'), `${envelope.source} · ${envelope.credit} · ${envelope.captureDate}`) : ''}
+          ${envelope ? metadataRow(deps.t('fieldData.provenance'), `${envelope.source} · ${envelope.captureDate}`) : ''}
         </div>
       </details>
       <div class="battle-field-resembles">

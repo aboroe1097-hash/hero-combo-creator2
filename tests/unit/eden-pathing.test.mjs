@@ -258,7 +258,13 @@ test('a leg that walks back over counted ground shows 0 new tiles and its walked
     steps.items.reduce((sum, item) => sum + (item.legTiles ?? 0), 0),
     built.tiles
   );
-  assert.equal(EN_T('pathingLegTilesWalked', { tiles: 0, walked: 11 }), '≈ 0 tiles (11 walked)');
+  assert.equal(EN_T('pathingLegTilesWalked', { tiles: 0, walked: 11 }), 'Tiles ≈ 0 (11 walked)');
+  // The counts read the same at one as at many: the label carries the noun.
+  assert.equal(EN_T('pathingLegTiles', { tiles: 1 }), 'Tiles ≈ 1');
+  assert.equal(EN_T('pathingTotalTiles', { tiles: 1 }), 'Total tiles ≈ 1');
+  // 40 tiles a pather is the officers' confirmed rule, stated as one.
+  assert.equal(EN_T('pathingPathers', { count: 1, each: 40 }), 'Pathers: 1 (40 tiles each)');
+  assert.equal(EN_T('pathingPathers', { count: 3, each: 40 }), 'Pathers: 3 (40 tiles each)');
 });
 
 test('a router that returns no path falls back to the straight line', () => {
@@ -379,7 +385,7 @@ test('Eden Pathing is a lazy, enabled Eden Hub sub-tool', () => {
   assert.match(ops, /href="#edenHub\?subtab=pathing"/);
   assert.doesNotMatch(ops, /is-soon/);
   assert.match(app, /import '\.\.\/css\/eden-pathing\.css'/);
-  assert.match(app, /sourceCredits: \[\]/);
+  assert.doesNotMatch(app, /sourceCredits/);
   assert.match(app, /drawCanvasFooter/);
   // The route engine is the Eden Map's, not a copy.
   assert.match(app, /findRoute/);

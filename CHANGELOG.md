@@ -2,7 +2,7 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
-## 16.5.10 - 2026-09-25
+## 16.5.11 - 2026-09-25
 
 - **Velo aims where you aim.** Keyboard and mouse players now fire in the direction they aim — the mouse aims at the point under the cursor — instead of the old auto-lock on the nearest enemy. Touch players keep the assist on purpose: shots still bend to a foe inside a narrow cone around the direction they are moving, so a thumb never has to aim precisely. `?aim=free` and `?aim=assist` force either mode for testing or preference.
 - **Six enemy roles make waves read as armies.** The shieldwall blocks bolts that hit its front but not splash, fire or a flank; the skirmisher kites and shoots; the saboteur hunts your towers and ignores the stronghold while any tower stands; the herald buffs nearby foes; the hauler pays double gold; and the gate ram — an escort that arrives with the wave-10 warlord — only a slow effect can stop.
@@ -10,12 +10,26 @@ This is the release history, newest first. Entries describe their release-time b
 - **Feats.** Six named one-off challenges — Wingborne, Ashfall, Cold Calculus, Untouched, Warlord's Bane and Architect — are tracked in the browser, listed on the title and results cards, and announced the moment one is earned.
 - Fixed: on phones under 560 px wide the tower build picker was pushed below the arena and clipped; it now sits above the thumb controls where it belongs.
 
-## 16.5.9 - 2026-09-25
+## 16.5.10 - 2026-09-25
 
 - The arcade's real-time game is now **Velo's Rampart** — renamed from Eden Siege everywhere it appears, in all 13 languages, so it no longer reads like one of the Eden tools beside Eden Hub and Eden Map. The address stays `eden-siege.html`, so old links keep working. The mode chips read The Siege, Endless Siege and Daily War, and the warlord boss has a name: Kharr.
 - The game's ready screen is a living title scene: a slow camera drift over the rampart while Velo waits, with the game title over it. Reduced-motion players get the same scene without the drift.
 - **Share run** now makes a share card image — score, stars, wave, seed and a drawn Velo emblem — offered to the phone's share sheet where available and downloaded as a PNG otherwise. The share line still goes to the clipboard.
 - The arcade's next releases are planned in `docs/plans/arcade-revival.md`: aim rework with touch assist, enemy roles and wave modifiers, the pick-1-of-3 draft with elemental reactions, hero lineups from the real combo data, ghost replays and share links, the Alliance Daily league with replay-verified scores, and Velo's post-run tips.
+
+## 16.5.9 - 2026-09-25
+
+- Exports no longer carry a "Sources" credit line. CSV, JSON, PNG and the downloadable PDFs name the tool, version and time only. The author byline on the Eden Operations Lab source cards, the author credit on duel-record provenance lines and the other credit lines on the Buildings, Class Development and research pages are removed too.
+- The VTS Admin all-data CSV is fixed. Every footer line is one quoted cell, so a comma no longer spills into a second column, and the footer no longer runs into the last data row. Dates stored as Firestore timestamps are written as ISO 8601 instead of raw timestamp code, and a new "Date (ISO)" column at the end gives every dataset a sortable date: game-time dates such as "30/08/2026, Sunday, 22:07 GT" become 2026-08-30T22:07-02:00. The original "Date" column is unchanged. Computed numbers are rounded to at most 2 decimals, so 395064.80000000005 becomes 395064.8. The weighted-contribution rows show the current rank in the Note column instead of Status.
+- The all-data CSV now also includes the player registry and account links (owner and account type), taught aliases, "always main" accounts, contribution matches, conduct suggestions (status, suggested by, reviewer), duty point weights and scoring multipliers, reward settings, vote settings, public vote results, votes and vote history, BoH match results, Alliance View rosters, the R5 season and Competition #12 settings, schedule and signups. Each dataset has its own Dataset value. Conduct suggestions and BoH match results are loaded before the export. Votes, Alliance View and Competition #12 are included once their tab has been opened, and a notice names any dataset that was left out. A closing "export_manifest" block lists the row count of every dataset as included, empty or not loaded. The roster, snapshot, banner-assignment and ex-guild datasets were empty because the active season has no saved roster, manual banner assignments were replaced by duty lists, and no ex-guild contributions are stored; they were not skipped. Complaints, PINs, credentials and contact numbers are never exported.
+- The duty debug CSV has a "Scored As" column holding the exact name the weighted score credits for each row. When an account link carries the credit to its owner, Match Status reads "linked" and Scored As names the link type (alt/banner or secondary). "Likely" now means only a fuzzy name match. The attack debug CSV quotes every field, including the attack id, structure and level, tolerates a missing player name, and adds "Scored As" and "Counted" columns that match the leaderboard's grouping.
+- The duty spelling "q.Immortal" (without the space) now counts for the same account as "q. Immortal", following the owner's earlier answer. Before, duty rows confirmed with that spelling scored to a separate account that no leaderboard row showed.
+- Account links: every row in the Linked accounts list has an Edit button. It changes the account name, who runs it and the type in place, refuses duplicates and self-links, and saves and rescores the same way as adding a link.
+- R5 Bonus Team Effort Points has "Export image" and "Export CSV" buttons. They export the season's bonus and penalty adjustments grouped by player, with each player's total, sorted by total, and follow the category filter.
+- Competition #12 registration: the Power step can read a Lord Info → Power screenshot with the same secured OCR service as the score upload. The numbers fill the fields, which stay editable. A value the OCR cannot read stays blank. The member ticks a box to confirm the numbers before saving, and the image is not stored.
+- Competition #12 registration no longer asks for T9 troop types, ready speed heroes, level 50 heroes, preferred and second role, availability, VTS 1097 membership or a contact. ROC level moves into the Power step, and the last step is now "Active times and commitment". A registration saved earlier keeps its stored answers when it is edited.
+- "Contact Devs" in every footer now opens the Issue or Complaint form on the Eden page instead of an email draft.
+- The Buildings Castle cost source now links to the Google Sheet the figures come from.
 
 ## 16.5.8 - 2026-09-25
 

@@ -124,6 +124,8 @@ export default Object.freeze({
   emptyTitle: 'Eşleşen operasyon yok',
   assigned: 'Katılanlar',
   staffMissing: '{count} oyuncu daha gerekli',
+  countsReadOnly: 'Paylaşılan sayılar · değiştirmek için yönetici girişi ve bağlantı gerekir',
+  countSaveFailed: 'Paylaşılan sayılar kaydedilmedi. Değişikliğin geri alındı.',
   'op.specialty-build.title': 'Uzmanlık yapısı',
   'op.material-budget.title': 'Malzeme bütçesi',
   'op.hold-tile.title': 'Daha yüksek karo',

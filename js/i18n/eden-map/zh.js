@@ -139,7 +139,7 @@ export default {
     pathingLegTiles: '≈ {tiles} 格',
     pathingLegTilesWalked: '≈ {tiles} 格（共走 {walked} 格）',
     pathingTotalTiles: '总计 ≈ {tiles} 格',
-    pathingPathers: '预计 pather：≈ {count}（按每人 {each} 格估算）',
+    pathingPathers: 'pather：{count}（每人 {each} 格）',
     pathingRepeatTiles: '重复经过的格数：{tiles}',
     pathingBlocked: '有一段被不可通行地形阻挡，因此显示为直线。添加山口即可绕行。',
     pathingRouting: '正在计算路线…',
@@ -156,7 +156,8 @@ export default {
     pathingZoomIn: '放大',
     pathingZoomOut: '缩小',
     pathingFit: '适应地图',
-    pathingMapLabel: '伊甸寻路地图。拖动或使用方向键平移，双指缩放、滚动滚轮或按 + 和 − 缩放，点击放置站点。',
+    pathingMapLabel:
+      '伊甸寻路地图。拖动或使用方向键平移，双指缩放、滚动滚轮或按 + 和 − 缩放，点击放置站点。',
     pathingGate: '关口',
     pathingImpassable: '不可通行',
     pathingControls: '路线控制',

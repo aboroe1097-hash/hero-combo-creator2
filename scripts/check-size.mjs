@@ -389,7 +389,12 @@ const LIMITS = {
   // 16.5.4 combined release: the lazy hub-PDF, Competition #12, Eden Pathing,
   // motion and Siege daily/promo chunks. Measured 807 files; keep three of
   // headroom.
-  deployFileCount: 810,
+  // 16.5.9 raises the cap by the measured minimum (810 -> 814): the admin
+  // export model is shared by the dashboard and the lazy R5 bonus export, so
+  // Vite emits admin-export-model-*.js and conduct-adjustment-export-*.js, and
+  // the export model's game-time parser splits ocr-time-filter-*.js and
+  // game-time-*.js out as shared chunks. No headroom is added.
+  deployFileCount: 814,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive

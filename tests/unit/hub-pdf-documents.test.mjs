@@ -5,15 +5,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import en from '../../js/i18n/hub-pdf/en.js';
-import {
-  formatCell,
-  normalizeSettings,
-  numberSections,
-  renderDocumentHtml,
-  sumKnown,
-  tableOfContents,
-  TOC_MAX_ENTRIES,
-} from '../../js/hub-pdf/document.js';
+import { sumKnown } from '../../js/hub-pdf/document.js';
 import {
   buildHeroesDocument,
   defaultHeroChoices,
@@ -50,185 +42,83 @@ import { CLASS_DEVELOPMENT_PROFILES } from '../../js/class-development-data.js';
 import { BUILDING_UPGRADE_COSTS, EDEN_STRUCTURES } from '../../js/eden-operations-data.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const branding = {
-  siteName: 'RoC VTS Toolkit',
-  siteUrl: 'https://roc-vts.com',
-  appVersion: '0.0.0',
-  generatedAt: 'test',
-};
 
 const sectionByTitle = (doc, title) => doc.sections.find((section) => section.title === title);
 const tableRows = (block) => block.rows.filter((row) => Array.isArray(row));
 const firstTable = (blocks) => blocks.find((block) => block.type === 'table');
 
-test('Heroes designs preserve every data cell and use readable print layouts', () => {
-  const doc = buildHeroesDocument(defaultHeroChoices(), en, { detail: 'full' });
-  const classic = renderDocumentHtml(doc, {}, { copy: en, branding });
-  // A designed sheet moves the lineups to the front, so the comparison is made per
-  // section: every section must carry the same values, in the same order, as the
-  // plain document prints them. The "no rows" placeholders are not values.
-  const sectionsOf = (html, extract) =>
-    Object.fromEntries(
-      [
-        ...html.matchAll(
-          /<section class="doc-section[^"]*"><h2 class="section-title">([\s\S]*?)<\/h2>([\s\S]*?)<\/section>/g
-        ),
-      ].map((match) => [match[1].replace(/^\d+\.\s*/, ''), extract(match[2])])
-    );
-  const plainCells = (html) =>
-    [...html.matchAll(/<td(?![^>]*class="empty")[^>]*>([\s\S]*?)<\/td>/g)].map((match) => match[1]);
-  const designedCells = (html) =>
-    [...html.matchAll(/<[^>]*\sdata-cell[^>]*>([\s\S]*?)</g)].map((match) => match[1]);
-  const plainSections = sectionsOf(classic, plainCells);
-  const dataSections = Object.entries(plainSections).filter(([, cells]) => cells.length);
-  assert.ok(dataSections.length > 1, 'the plain document has data sections');
-  for (const design of ['dashboard', 'midnight', 'reference']) {
-    const html = renderDocumentHtml(
-      doc,
-      { design, orientation: 'landscape' },
-      { copy: en, branding }
-    );
-    const designedSections = sectionsOf(html, designedCells);
-    // The designed sheets keep every section; only the lineups move to the front.
-    assert.deepEqual(
-      Object.keys(designedSections).sort(),
-      Object.keys(plainSections).sort(),
-      `${design} keeps every section`
-    );
-    assert.equal(Object.keys(designedSections)[0], 'Top combos', `${design} leads with lineups`);
-    for (const [title, cells] of dataSections) {
-      assert.deepEqual(designedSections[title], cells, `${design} preserves ${title}`);
-    }
-    assert.match(html, new RegExp(`data-hero-design="${design}"`));
-    assert.doesNotMatch(html, /<nav class="toc"/);
-    assert.match(html, /column-span: all/);
-    assert.match(html, /font: 9pt\/1.3 var\(--sans\)/);
-    assert.match(html, /print-color-adjust: exact/);
-    assert.match(html, /Background graphics/);
-    assert.doesNotMatch(html, /<script/i);
+// ---------------------------------------------------------------- sheet model
+
+test('every combo on a hero sheet carries portraits and per-hero skin marks', () => {
+  const doc = buildHeroesDocument({ ...defaultHeroChoices(), seasons: ['S1'] }, en);
+  const combos = doc.sections
+    .flatMap((section) => section.subsections || [])
+    .flatMap((sub) => sub.blocks || [])
+    .filter((block) => block.presentation === 'hero-combos');
+  assert.ok(combos.length, 'the sheet has combo tables');
+  for (const block of combos) {
+    assert.equal(block.portraits.length, block.rows.length, 'a portrait set per combo');
+    assert.equal(block.skinFlags.length, block.rows.length, 'skin marks per combo');
+    for (const flags of block.skinFlags) assert.equal(flags.length, 3, 'one mark per hero');
+    for (const portraits of block.portraits) assert.equal(portraits.length, 3);
   }
-  assert.equal(normalizeSettings({ design: '<script>' }).design, 'classic');
-  const research = renderDocumentHtml(
-    { title: 'Research', sections: [] },
-    { design: 'dashboard' },
-    { copy: en, branding }
-  );
-  assert.doesNotMatch(research, /data-hero-design/);
 });
 
-test('Heroes dark designs retain RTL, paper choices and source toggles', () => {
+test('skin marks follow the skin-lane choice, hero by hero', () => {
+  const flagsOf = (doc) =>
+    doc.sections
+      .flatMap((section) => section.subsections || [])
+      .flatMap((sub) => sub.blocks || [])
+      .filter((block) => block.presentation === 'hero-combos')
+      .flatMap((block) => block.skinFlags)
+      .flat();
+  const plain = flagsOf(buildHeroesDocument({ ...defaultHeroChoices(), seasons: ['S1'] }, en));
+  assert.ok(
+    plain.every((flag) => flag === false),
+    'plain lanes need no skin'
+  );
+  const skinned = flagsOf(
+    buildHeroesDocument(
+      { ...defaultHeroChoices(), seasons: heroSeasons(), skinLanes: true, comboCount: 'all' },
+      en
+    )
+  );
+  assert.ok(skinned.some(Boolean), 'the skin-lane choice marks the heroes that need one');
+  assert.ok(skinned.every((flag) => typeof flag === 'boolean'));
+});
+
+test('the hero list and the skins table carry a portrait for every row', () => {
+  const doc = buildHeroesDocument({ ...defaultHeroChoices(), seasons: ['S1'] }, en);
+  const blocks = doc.sections.flatMap((section) => section.blocks || []);
+  const list = blocks.find((block) => block.presentation === 'hero-list');
+  assert.equal(list.portraits.length, list.rows.length);
+  const skins = blocks.find((block) => block.presentation === 'hero-skins');
+  assert.ok(skins.rows.length > 0, 'the skin catalogue has rows to draw');
+  assert.equal(skins.portraits.length, skins.rows.length);
+});
+
+test('a sheet is drawn from tables: the prose stays in the model, not the page', async () => {
+  const { documentHasContent, portraitUrls } = await import('../../js/hub-pdf/canvas-doc.js');
+  const doc = buildHeroesDocument(defaultHeroChoices(), en, { detail: 'full' });
+  const blocks = doc.sections.flatMap((section) => [
+    ...(section.blocks || []),
+    ...(section.subsections || []).flatMap((sub) => sub.blocks || []),
+  ]);
+  assert.ok(
+    blocks.some((block) => block.type === 'paragraph' || block.type === 'note'),
+    'the model still carries prose'
+  );
+  const drawn = blocks.filter((block) => block.type === 'table' && (block.rows || []).length);
+  assert.ok(drawn.length >= 3, 'and several tables to draw');
+  assert.equal(documentHasContent(doc), true);
+  assert.ok(portraitUrls(doc).length > 0, 'a hero sheet needs portraits');
+});
+
+test('a scope with nothing selected has nothing to draw', async () => {
+  const { documentHasContent } = await import('../../js/hub-pdf/canvas-doc.js');
   const doc = buildHeroesDocument({ ...defaultHeroChoices(), seasons: [] }, en);
-  const html = renderDocumentHtml(
-    doc,
-    { design: 'midnight', paper: 'letter', orientation: 'portrait', sources: false },
-    { copy: en, branding, dir: 'rtl', language: 'ar' }
-  );
-  assert.match(html, /lang="ar" dir="rtl"/);
-  assert.match(html, /@page \{ size: letter portrait/);
-  assert.match(html, /column-count: 1/);
-  assert.doesNotMatch(html, /Sources and notes/);
-  assert.match(html, /class="empty"/);
+  assert.equal(documentHasContent(doc), false);
 });
-
-// ---------------------------------------------------------------- document
-
-test('unknown cells print the unknown label and never 0', () => {
-  assert.equal(formatCell(null, { unknown: 'Unknown' }), 'Unknown');
-  assert.equal(formatCell(undefined, { unknown: 'Unknown' }), 'Unknown');
-  assert.equal(formatCell(Number.NaN, { unknown: 'Unknown' }), 'Unknown');
-  assert.equal(formatCell(0), '0');
-  assert.equal(formatCell(1234567, { language: 'en' }), '1,234,567');
-  assert.equal(formatCell({ value: 5, suffix: ' *' }), '5 *');
-  assert.equal(sumKnown([1, 2, 3]), 6);
-  assert.equal(sumKnown([1, null, 3]), null, 'a sum with an unknown addend is unknown');
-
-  const html = renderDocumentHtml(
-    {
-      title: 'T',
-      sections: [
-        {
-          title: 'S',
-          blocks: [{ type: 'table', columns: [{ label: 'A', align: 'num' }], rows: [[null], [0]] }],
-        },
-      ],
-    },
-    {},
-    { copy: en, branding }
-  );
-  assert.match(html, /<td class="num unknown">Unknown<\/td>/);
-  assert.match(html, /<td class="num">0<\/td>/);
-});
-
-test('documents number their sections and list contents only when there is more than one', () => {
-  const sections = [
-    { title: 'A', blocks: [], subsections: [{ title: 'A1', blocks: [] }] },
-    { title: 'B', blocks: [] },
-  ];
-  const numbered = numberSections(sections);
-  assert.equal(numbered[0].number, '1');
-  assert.equal(numbered[0].subsections[0].number, '1.1');
-  assert.equal(numbered[1].number, '2');
-  assert.deepEqual(
-    tableOfContents(sections).map((entry) => entry.number),
-    ['1', '1.1', '2']
-  );
-  assert.deepEqual(tableOfContents([sections[0]]), []);
-  const many = [
-    {
-      title: 'Big',
-      blocks: [],
-      subsections: Array.from({ length: TOC_MAX_ENTRIES }, (_, index) => ({ title: `s${index}` })),
-    },
-    { title: 'Small', blocks: [] },
-  ];
-  assert.deepEqual(
-    tableOfContents(many).map((entry) => entry.level),
-    [1, 1],
-    'a very long contents list keeps only the numbered sections'
-  );
-});
-
-test('the rendered document is a paginated print document with repeating table headers', () => {
-  const doc = buildHeroesDocument(defaultHeroChoices(), en, { detail: 'summary' });
-  const html = renderDocumentHtml(
-    doc,
-    { paper: 'letter', orientation: 'landscape', detail: 'summary', sources: true },
-    { copy: en, language: 'en', branding }
-  );
-  assert.match(html, /@page \{ size: letter landscape;/);
-  assert.match(html, /@bottom-left \{ content: "RoC VTS Toolkit · roc-vts\.com"/);
-  assert.match(html, /@bottom-right \{ content: "Page " counter\(page\) " of " counter\(pages\)/);
-  assert.match(html, /table\.data thead \{ display: table-header-group; \}/);
-  assert.match(html, /<nav class="toc"/);
-  assert.match(html, /<h2 class="section-title">1\. Roster summary<\/h2>/);
-  assert.match(html, /<thead><tr><th scope="col">Season<\/th>/);
-  assert.match(html, /Sources and notes/);
-  assert.doesNotMatch(html, /<script/i, 'the document carries no script');
-
-  const noSources = renderDocumentHtml(
-    doc,
-    { sources: false },
-    { copy: en, language: 'en', branding }
-  );
-  assert.doesNotMatch(noSources, /Sources and notes/);
-  assert.match(noSources, /@page \{ size: A4 portrait;/);
-  assert.equal(normalizeSettings({ paper: 'tabloid' }).paper, 'a4');
-});
-
-test('labels are escaped in HTML and in page-footer CSS strings', () => {
-  const copy = { ...en, docPage: 'Page"}<b>', docOf: 'of' };
-  const html = renderDocumentHtml(
-    { title: '<img src=x>', sections: [] },
-    {},
-    { copy, branding: { ...branding, siteName: 'A"B' } }
-  );
-  assert.match(html, /&lt;img src=x&gt;/);
-  assert.match(html, /content: "A\\"B · roc-vts\.com"/);
-  assert.match(html, /content: "Page\\"\}<b> " counter\(page\)/);
-});
-
-// ---------------------------------------------------------------- heroes
-
 test('hero filters follow season, troop and access choices', () => {
   const all = filterHeroes(defaultHeroChoices());
   assert.equal(all.length, allHeroesData.length);

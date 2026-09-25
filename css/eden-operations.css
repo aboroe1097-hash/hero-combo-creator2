@@ -370,7 +370,11 @@
   padding: 0.8rem;
   border: 1px solid var(--ops-line);
   border-radius: 1rem;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--tree-color) 8%, var(--ops-panel-2)), var(--ops-panel-2));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--tree-color) 8%, var(--ops-panel-2)),
+    var(--ops-panel-2)
+  );
 }
 
 .eden-ops-tree--green {
@@ -1396,4 +1400,15 @@ a.eden-ops-more-card:hover {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Shared counters: a viewer without the admin claim reads the numbers only. */
+.eden-ops-counter-controls--readonly {
+  justify-content: flex-end;
+}
+
+.eden-ops-staff-note {
+  margin: 0.35rem 0 0;
+  color: var(--ops-muted);
+  font-size: 0.74rem;
 }

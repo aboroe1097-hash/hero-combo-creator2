@@ -1,12 +1,12 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.10";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.11";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
   {
-    "version": "16.5.10",
+    "version": "16.5.11",
     "date": "2026-09-25",
     "highlights": [
       "**Velo aims where you aim.** Keyboard and mouse players now fire in the direction they aim — the mouse aims at the point under the cursor — instead of the old auto-lock on the nearest enemy. Touch players keep the assist on purpose: shots still bend to a foe inside a narrow cone…",
@@ -17,13 +17,25 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     ]
   },
   {
-    "version": "16.5.9",
+    "version": "16.5.10",
     "date": "2026-09-25",
     "highlights": [
       "The arcade's real-time game is now **Velo's Rampart** — renamed from Eden Siege everywhere it appears, in all 13 languages, so it no longer reads like one of the Eden tools beside Eden Hub and Eden Map. The address stays `eden-siege.html`, so old links keep working. The mode chi…",
       "The game's ready screen is a living title scene: a slow camera drift over the rampart while Velo waits, with the game title over it. Reduced-motion players get the same scene without the drift.",
       "**Share run** now makes a share card image — score, stars, wave, seed and a drawn Velo emblem — offered to the phone's share sheet where available and downloaded as a PNG otherwise. The share line still goes to the clipboard.",
       "The arcade's next releases are planned in `docs/plans/arcade-revival.md`: aim rework with touch assist, enemy roles and wave modifiers, the pick-1-of-3 draft with elemental reactions, hero lineups from the real combo data, ghost replays and share links, the Alliance Daily league…"
+    ]
+  },
+  {
+    "version": "16.5.9",
+    "date": "2026-09-25",
+    "highlights": [
+      "Exports no longer carry a \"Sources\" credit line. CSV, JSON, PNG and the downloadable PDFs name the tool, version and time only. The author byline on the Eden Operations Lab source cards, the author credit on duel-record provenance lines and the other credit lines on the Building…",
+      "The VTS Admin all-data CSV is fixed. Every footer line is one quoted cell, so a comma no longer spills into a second column, and the footer no longer runs into the last data row. Dates stored as Firestore timestamps are written as ISO 8601 instead of raw timestamp code, and a ne…",
+      "The all-data CSV now also includes the player registry and account links (owner and account type), taught aliases, \"always main\" accounts, contribution matches, conduct suggestions (status, suggested by, reviewer), duty point weights and scoring multipliers, reward settings, vot…",
+      "The duty debug CSV has a \"Scored As\" column holding the exact name the weighted score credits for each row. When an account link carries the credit to its owner, Match Status reads \"linked\" and Scored As names the link type (alt/banner or secondary). \"Likely\" now means only a fu…",
+      "The duty spelling \"q.Immortal\" (without the space) now counts for the same account as \"q. Immortal\", following the owner's earlier answer. Before, duty rows confirmed with that spelling scored to a separate account that no leaderboard row showed.",
+      "Account links: every row in the Linked accounts list has an Edit button. It changes the account name, who runs it and the type in place, refuses duplicates and self-links, and saves and rescores the same way as adding a link."
     ]
   },
   {
@@ -96,13 +108,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Specialization Towers: every node now shows its medal cost from the community workbook for all three troops (735 nodes each), where it used to say the cost was unknown. Repeated node names at different strengths are matched by the strength the workbook states, and five naming di…",
       "Eden Operations Lab: a task board with six common jobs filtered by season stage and role, a saved three-step checklist per job, one-tap Critical/Essential/Advanced specialty routes, attacker and support counters for the chosen siege objective, links into Eden Map and Loyalty, an…",
       "Duty list PNGs no longer carry a data-sources line: they are the alliance's own records. Exports whose credit list does not fit now point to the site instead of naming only the first contributor."
-    ]
-  },
-  {
-    "version": "16.5.1",
-    "date": "2026-09-24",
-    "highlights": [
-      "Fixed: the site could fail to open with \"This site can't be reached\" in a browser whose offline cache storage was damaged. The offline helper now treats every cache read and write as optional, so the page always loads from the network when the cache cannot be used, and the fixed…"
     ]
   }
 ].map((release) =>

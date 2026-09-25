@@ -289,6 +289,55 @@ export function writeBohSignupFormValues(root, signup = {}) {
 }
 
 /* ------------------------------------------------------------------ *
+ * Retired member-form questions (16.5.9)
+ *
+ * Competition #12's form no longer asks for T9 troop types, ready speed
+ * heroes, level 50 heroes, preferred/second role, availability, VTS 1097
+ * membership or a contact. firestore.rules (validAllStarBohSubmissionData)
+ * and the vtsScore / bohSignupAdmin Functions still pin those keys, so the
+ * document keeps them: a value an existing document already holds is kept on
+ * edit (read-then-merge), and a new registration gets a rule-valid neutral
+ * placeholder. `commitment.secondaryRole` has no placeholder: it is kept when
+ * stored and otherwise left to the model.
+ * ------------------------------------------------------------------ */
+
+export const BOH_SIGNUP_RETIRED_MEMBER_FIELDS = Object.freeze({
+  'stats.t9TroopTypes': Object.freeze([]),
+  'stats.readySpeedHeroes': Object.freeze([]),
+  // Placeholder, no longer collected: the rules still require an int here.
+  'stats.level50HeroCount': 0,
+  'commitment.availability': '',
+  'commitment.preferredRole': '',
+  'commitment.secondaryRole': undefined,
+  // This is the VTS 1097 competition page: everyone registering is a member.
+  'commitment.vts1097Member': true,
+  'commitment.contactNumber': '',
+});
+
+/**
+ * The member form's values plus every retired field: the value the form still
+ * sent, else the stored document's value, else the neutral placeholder.
+ */
+export function mergeRetiredBohSignupFields(values = {}, stored = null) {
+  const merged = {
+    ...values,
+    stats: { ...(isPlainObject(values.stats) ? values.stats : {}) },
+    commitment: { ...(isPlainObject(values.commitment) ? values.commitment : {}) },
+  };
+  for (const [path, placeholder] of Object.entries(BOH_SIGNUP_RETIRED_MEMBER_FIELDS)) {
+    const [group, key] = path.split('.');
+    if (merged[group][key] !== undefined) continue;
+    const storedValue = pathValue(stored, path);
+    if (storedValue !== undefined && storedValue !== null) {
+      merged[group][key] = Array.isArray(storedValue) ? [...storedValue] : storedValue;
+    } else if (placeholder !== undefined) {
+      merged[group][key] = Array.isArray(placeholder) ? [...placeholder] : placeholder;
+    }
+  }
+  return merged;
+}
+
+/* ------------------------------------------------------------------ *
  * Document build + validation
  * ------------------------------------------------------------------ */
 
