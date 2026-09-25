@@ -379,6 +379,52 @@ export const TOOL_DECLARATIONS = Object.freeze([
       'Read the public VtsScore scoring mechanics: the power fields used for final score upload, how a score is computed and reviewed, and the tier bands. Use for "how does VtsScore work", "which power fields matter", or "what do the score tiers mean". It never returns any player\'s scores or signup data.',
     parameters: { type: 'object', properties: {}, additionalProperties: false },
   },
+  {
+    type: 'function',
+    name: 'get_competition_status',
+    description:
+      'Read the published Competition #12 (VtsScore pre-season prep) schedule: the phase now, the next deadline, each phase\'s open and close times in game time (UTC-2) and in the viewer\'s local time, and the BoH and Epic Showdown time-slot catalogs. Use for "when does registration/re-upload close", "what phase is Competition #12 in", or which slots exist. If no schedule is published, say so instead of guessing dates.',
+    parameters: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    type: 'function',
+    name: 'get_building_costs',
+    description:
+      "Read the Buildings planner data from the community Google Sheet: kind=castle returns Castle 26-30 per-level resource costs (orichalcum, gold, food, lumber, charcoal, marble, iron) with prerequisites; kind=building returns one building's 26-30 Orichalcum costs, prerequisites and last-level bonus; kind=list returns every building's Orichalcum total. A null value is an unknown source cell: report it as unknown and never estimate it.",
+    parameters: {
+      type: 'object',
+      properties: {
+        kind: { type: 'string', enum: ['castle', 'building', 'list'] },
+        building: { type: 'string', minLength: 1, maxLength: 60 },
+      },
+      required: ['kind'],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: 'function',
+    name: 'get_eden_operations',
+    description:
+      "Read Eden operations planning data. kind=pathing_rule returns the confirmed pathing rule (40 tiles per pather, one pather per started block, so pathers = ceil(tiles / 40)) and, when tiles is given, the pathers needed. kind=staffing returns the Operations Lab objectives with required attackers and support and the alliance's shared assigned counters; filter with structure (e.g. gate-3, city-2, capital-6, temple-7, stronghold) and banner. When the counters cannot be read, assigned counts are unknown, not zero.",
+    parameters: {
+      type: 'object',
+      properties: {
+        kind: { type: 'string', enum: ['pathing_rule', 'staffing'] },
+        tiles: { type: 'integer', minimum: 0, maximum: 100000 },
+        structure: { type: 'string', minLength: 1, maxLength: 32 },
+        banner: { type: 'boolean' },
+      },
+      required: ['kind'],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: 'function',
+    name: 'get_my_competition',
+    description:
+      "Read the signed-in member's OWN Competition #12 registration, only with personal:my_competition consent: whether they registered, which power fields are filled, ROC level, chosen BoH and Epic active times, public-comparison consent, and their own baseline source and growth once the growth board is published. When signedIn is false, tell them to sign in (unlock VtsScore with their member PIN on that page) to see their registration. Never ask for the PIN and never discuss another member's private values.",
+    parameters: { type: 'object', properties: {}, additionalProperties: false },
+  },
 ]);
 
 export const TOOL_NAMES = Object.freeze(TOOL_DECLARATIONS.map(({ name }) => name));
@@ -393,6 +439,7 @@ export function validateToolPermission(name, args, allowedGroups) {
   if (!groups.has('static')) return false;
 
   if (name === 'get_admin_context') return groups.has('private:admin_dashboard');
+  if (name === 'get_my_competition') return groups.has('personal:my_competition');
 
   if (name === 'get_material_plan_summary') return groups.has('personal:dm_plan');
   if (name === 'get_combo_recommendations') {
@@ -713,5 +760,36 @@ export function validateToolArguments(name, args) {
     return hasOnlyKeys(args, ['kind']) && ['overview', 'scoring'].includes(args.kind);
   }
   if (name === 'get_vts_score_mechanics') return hasOnlyKeys(args, []);
+  if (name === 'get_competition_status') return hasOnlyKeys(args, []);
+  if (name === 'get_my_competition') return hasOnlyKeys(args, []);
+  if (name === 'get_building_costs') {
+    if (!hasOnlyKeys(args, ['kind', 'building'])) return false;
+    if (args.kind === 'building') {
+      return (
+        typeof args.building === 'string' && args.building.length > 0 && args.building.length <= 60
+      );
+    }
+    return ['castle', 'list'].includes(args.kind) && args.building === undefined;
+  }
+  if (name === 'get_eden_operations') {
+    if (!hasOnlyKeys(args, ['kind', 'tiles', 'structure', 'banner'])) return false;
+    if (args.kind === 'pathing_rule') {
+      return (
+        args.structure === undefined &&
+        args.banner === undefined &&
+        (args.tiles === undefined ||
+          (Number.isInteger(args.tiles) && args.tiles >= 0 && args.tiles <= 100_000))
+      );
+    }
+    return (
+      args.kind === 'staffing' &&
+      args.tiles === undefined &&
+      (args.structure === undefined ||
+        (typeof args.structure === 'string' &&
+          args.structure.length > 0 &&
+          args.structure.length <= 32)) &&
+      (args.banner === undefined || typeof args.banner === 'boolean')
+    );
+  }
   return false;
 }

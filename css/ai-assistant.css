@@ -151,6 +151,44 @@
   color: var(--ai-danger);
 }
 
+/* -- Competition #12 deadline line (js/ai/deadline-reminder.js) -- */
+.ai-deadline {
+  display: flex;
+  align-items: stretch;
+  gap: 0.25rem;
+  border: 1px solid color-mix(in srgb, var(--ai-warn) 45%, transparent);
+  border-radius: var(--ai-radius);
+  background: var(--ai-surface-raised);
+  font-size: 0.8rem;
+}
+.ai-deadline__ask,
+.ai-deadline__dismiss {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.ai-deadline__ask {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-block: 0.35rem;
+  padding-inline: 0.75rem 0.25rem;
+  text-align: start;
+  overflow-wrap: anywhere;
+}
+.ai-deadline__dismiss {
+  flex: 0 0 44px;
+  font-size: 1.1rem;
+  color: var(--ai-text-dim);
+}
+.ai-deadline__ask:focus-visible,
+.ai-deadline__dismiss:focus-visible {
+  outline: 2px solid var(--ai-warn);
+  outline-offset: -2px;
+}
+
 /* -- Conversation area -- */
 .ai-conversation {
   flex: 1 1 auto;

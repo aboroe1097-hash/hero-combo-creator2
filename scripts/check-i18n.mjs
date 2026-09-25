@@ -8,6 +8,7 @@ import {
   translations,
   translationCoverage,
 } from '../js/translations.js';
+import { getVeloCopy } from '../js/i18n/velo-copy.js';
 
 await Promise.all(availableLanguages.map((lang) => loadTranslationsForLanguage(lang)));
 
@@ -343,8 +344,12 @@ for (const absolutePath of walkJsFiles(path.join(rootDir, 'js', 'i18n'))) {
   });
 }
 
+// Velo's lazy domain pack (js/i18n/velo-copy.js) defines its own keys in all 13
+// locales; velo-tool-parity.test.mjs enforces its locale and token parity.
+const veloPackKeys = new Set(Object.keys(getVeloCopy('en')));
+
 for (const [key, locations] of referencedKeys.entries()) {
-  if (!(key in translations.en)) {
+  if (!(key in translations.en) && !veloPackKeys.has(key)) {
     errors.push(`Missing English translation key "${key}" used at ${locations.join(', ')}`);
   }
 }
