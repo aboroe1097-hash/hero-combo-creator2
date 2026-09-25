@@ -1625,3 +1625,10 @@
 [data-theme='light'] .siege-feats-progress {
   color: #a16207;
 }
+
+/* Wing buttons dim while the swap is on cooldown. */
+.siege-wing.is-cooling,
+.siege-wing--fire.is-cooling,
+.siege-elements button.is-cooling {
+  opacity: 0.45;
+}

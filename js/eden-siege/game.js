@@ -244,20 +244,41 @@ export async function startSiege({
     return chips;
   }
 
-  // The wave-omen chooser: shown while the simulation says an omen is on
-  // offer for the next wave. The signature keeps the DOM rebuild to changes.
-  let lastOmenSignature = null;
-  function syncOmen() {
+  // One choice panel, two kinds of choice: the War Council draft takes the
+  // panel first (it only appears after waves 3/6/9), then the wave omen gets
+  // it — so a build phase that offers both still asks one question at a time.
+  // The signature keeps the DOM rebuild to actual changes.
+  let lastChoiceSignature = null;
+  let choiceMode = null;
+  function syncChoice() {
     const state = world.state;
-    const offering = state.phase === 'build' && Boolean(state.omenOffered);
-    const signature = offering ? `${state.wave}:${state.pendingOmen || 'none'}` : 'hidden';
-    if (signature === lastOmenSignature) return;
-    lastOmenSignature = signature;
-    if (!offering) {
+    const inBuild = state.phase === 'build';
+    const draft = inBuild && Boolean(state.draftOffered);
+    const omen = inBuild && Boolean(state.omenOffered);
+    const mode = draft ? 'draft' : omen ? 'omen' : null;
+    const armed = draft ? state.pendingBoon : state.pendingOmen;
+    const signature = mode ? `${mode}:${state.wave}:${armed || 'none'}` : 'hidden';
+    if (signature === lastChoiceSignature) return;
+    lastChoiceSignature = signature;
+    if (!mode) {
+      choiceMode = null;
       hud.hideOmen();
       return;
     }
-    const armed = state.pendingOmen;
+    choiceMode = mode;
+    if (mode === 'draft') {
+      hud.showOmen({
+        title: copy.draft.title,
+        body: copy.draft.body,
+        options: (state.draftOptions || []).map((id) => ({
+          id,
+          label: copy.draft.boons[id]?.name || id,
+          desc: copy.draft.boons[id]?.desc || '',
+          active: state.pendingBoon === id,
+        })),
+      });
+      return;
+    }
     hud.showOmen({
       options: [
         { id: 'ironTide', label: copy.omens.ironTide, desc: copy.omens.ironTideDesc, active: armed === 'ironTide' },
@@ -531,6 +552,10 @@ export async function startSiege({
         case 'omen':
           hud.banner(copy.omens[event.omen] || copy.omens.title, 'wave');
           break;
+        case 'reaction':
+          hud.announce(copy.reactions[event.reaction] || '', `reaction-${event.reaction}`);
+          audio.play('crit');
+          break;
         case 'pickup':
           audio.play('pickup', { step: Math.min(8, world.state.combo.count) });
           if (event.x !== undefined) floatAt(event.x, event.z, `+${event.value}`, 'gold', 1.1);
@@ -742,7 +767,7 @@ export async function startSiege({
       lastPhase = world.state.phase;
       if (lastPhase === 'ready') hud.setOverlay(overlayFor('ready'));
       else if (lastPhase !== 'victory' && lastPhase !== 'defeat') hud.setOverlay(null);
-      syncOmen();
+      syncChoice();
     }
     renderer.render(world.state, delta, accumulator / STEP_MS);
     frames += 1;
@@ -751,7 +776,8 @@ export async function startSiege({
     if (hudClock >= 90) {
       hudClock = 0;
       hud.update(world.state, { best });
-      syncOmen();
+      syncChoice();
+      hud.setSwapReady?.(!(world.state.player.swapCdMs > 0));
     }
 
     if (!isTerminalPhase()) scheduleFrame();
@@ -763,7 +789,10 @@ export async function startSiege({
     nova: () => input.requestNova(),
     ult: () => input.requestUlt(),
     dash: () => input.requestDash(),
-    omen: (id) => input.requestOmen(id),
+    omen: (id) => {
+      if (choiceMode === 'draft') input.requestBoon(id);
+      else input.requestOmen(id);
+    },
     skipTutorial: () => {
       world.setInput({ skipTutorial: true });
       markTutorialSeen();

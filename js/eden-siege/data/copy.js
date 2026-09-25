@@ -129,6 +129,27 @@ const EN = {
     mirrorIce: 'Mirror Ice',
     mirrorIceDesc: 'Ice barely bites. +80% score.',
   },
+  reactions: {
+    shatter: 'Shatter',
+    melt: 'Melt',
+    deepFreeze: 'Deep Freeze',
+    immolate: 'Immolate',
+  },
+  draft: {
+    title: 'War Council',
+    body: 'Choose one boon for the rest of the run.',
+    choose: 'Take it',
+    boons: {
+      emberHeart: { name: 'Ember Heart', desc: 'Fire burns 40% harder.' },
+      frostGrip: { name: 'Frost Grip', desc: 'Ice slows bite 30% deeper and hold longer.' },
+      swiftWings: { name: 'Swift Wings', desc: 'Move 12% faster and dash 20% sooner.' },
+      heavyNova: { name: 'Heavy Nova', desc: 'Nova hits 50% harder and pushes further.' },
+      goldRush: { name: 'Gold Rush', desc: 'Fallen foes drop 35% more gold.' },
+      longReach: { name: 'Long Reach', desc: 'Your bolts and towers reach 15% further.' },
+      quickChain: { name: 'Quick Chain', desc: 'Chains fade 40% slower.' },
+      towerWall: { name: 'Tower Wall', desc: 'Towers gain 40% more health.' },
+    },
+  },
   tips: [
     'Alternate Ice and Fire kills — the chain multiplier is where the score lives.',
     'Ice locks a cavalry charge in place. Fire finishes what Ice holds.',

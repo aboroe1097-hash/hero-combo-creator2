@@ -115,6 +115,51 @@
       "mirrorIce": "Hielo espejo",
       "mirrorIceDesc": "El Hielo apenas muerde. +80% de puntos."
     },
+    "reactions": {
+      "shatter": "Estallido",
+      "melt": "Deshielo",
+      "deepFreeze": "Congelación profunda",
+      "immolate": "Inmolación"
+    },
+    "draft": {
+      "title": "Consejo de Guerra",
+      "body": "Elige una bendición para el resto de la partida.",
+      "choose": "Tómala",
+      "boons": {
+        "emberHeart": {
+          "name": "Corazón de Ascuas",
+          "desc": "El Fuego quema un 40% más."
+        },
+        "frostGrip": {
+          "name": "Agarre de Escarcha",
+          "desc": "El Hielo ralentiza un 30% más y dura más."
+        },
+        "swiftWings": {
+          "name": "Alas Veloces",
+          "desc": "Te mueves un 12% más rápido y el Esquivar se recarga un 20% antes."
+        },
+        "heavyNova": {
+          "name": "Nova Pesada",
+          "desc": "La Nova golpea un 50% más fuerte y empuja más lejos."
+        },
+        "goldRush": {
+          "name": "Fiebre del Oro",
+          "desc": "Los enemigos caídos sueltan un 35% más de oro."
+        },
+        "longReach": {
+          "name": "Largo Alcance",
+          "desc": "Tus disparos y tus torres alcanzan un 15% más lejos."
+        },
+        "quickChain": {
+          "name": "Cadena Rápida",
+          "desc": "Las cadenas se desvanecen un 40% más despacio."
+        },
+        "towerWall": {
+          "name": "Muro de Torres",
+          "desc": "Las torres ganan un 40% más de vida."
+        }
+      }
+    },
     "maps": {
       "mapKeepName": "Muralla del Torreón",
       "mapKeepDesc": "Murallas nevadas. Tres puertas, una fortaleza.",
@@ -334,6 +379,51 @@
       "bloodMoonDesc": "Inimigos mais rápidos, correntes mais lentas. +50% de pontos.",
       "mirrorIce": "Gelo Espelhado",
       "mirrorIceDesc": "O Gelo quase não morde. +80% de pontos."
+    },
+    "reactions": {
+      "shatter": "Estilhaço",
+      "melt": "Degelo",
+      "deepFreeze": "Congelamento profundo",
+      "immolate": "Imolação"
+    },
+    "draft": {
+      "title": "Conselho de Guerra",
+      "body": "Escolha uma bênção para o resto da partida.",
+      "choose": "Pegue-a",
+      "boons": {
+        "emberHeart": {
+          "name": "Coração de Brasa",
+          "desc": "O Fogo queima 40% mais forte."
+        },
+        "frostGrip": {
+          "name": "Aperto de Gelo",
+          "desc": "O Gelo desacelera 30% mais forte e por mais tempo."
+        },
+        "swiftWings": {
+          "name": "Asas Velozes",
+          "desc": "Você se move 12% mais rápido e a Investida recarrega 20% antes."
+        },
+        "heavyNova": {
+          "name": "Nova Pesada",
+          "desc": "A Nova bate 50% mais forte e empurra mais longe."
+        },
+        "goldRush": {
+          "name": "Corrida do Ouro",
+          "desc": "Inimigos caídos deixam 35% mais ouro."
+        },
+        "longReach": {
+          "name": "Longo Alcance",
+          "desc": "Seus disparos e suas torres alcançam 15% mais longe."
+        },
+        "quickChain": {
+          "name": "Corrente Rápida",
+          "desc": "As correntes somem 40% mais devagar."
+        },
+        "towerWall": {
+          "name": "Muralha de Torres",
+          "desc": "As torres ganham 40% mais vida."
+        }
+      }
     },
     "maps": {
       "mapKeepName": "Muralha do Torreão",
@@ -555,6 +645,51 @@
       "mirrorIce": "Eisiger Spiegel",
       "mirrorIceDesc": "Eis beißt kaum noch. +80% Punkte."
     },
+    "reactions": {
+      "shatter": "Zersplittert",
+      "melt": "Geschmolzen",
+      "deepFreeze": "Tiefgekühlt",
+      "immolate": "Eingeäschert"
+    },
+    "draft": {
+      "title": "Kriegsrat",
+      "body": "Wähle eine Gabe für den Rest des Laufs.",
+      "choose": "Nimm sie",
+      "boons": {
+        "emberHeart": {
+          "name": "Glutherz",
+          "desc": "Feuer brennt 40% stärker."
+        },
+        "frostGrip": {
+          "name": "Frostgriff",
+          "desc": "Eis bremst 30% tiefer und hält länger."
+        },
+        "swiftWings": {
+          "name": "Flinke Flügel",
+          "desc": "Du bewegst dich 12% schneller, der Sprint lädt 20% früher."
+        },
+        "heavyNova": {
+          "name": "Schwere Nova",
+          "desc": "Nova trifft 50% härter und stößt weiter."
+        },
+        "goldRush": {
+          "name": "Goldrausch",
+          "desc": "Gefallene Feinde lassen 35% mehr Gold fallen."
+        },
+        "longReach": {
+          "name": "Weite Reichweite",
+          "desc": "Deine Geschosse und Türme reichen 15% weiter."
+        },
+        "quickChain": {
+          "name": "Schnelle Kette",
+          "desc": "Ketten verblassen 40% langsamer."
+        },
+        "towerWall": {
+          "name": "Turmwall",
+          "desc": "Türme erhalten 40% mehr Leben."
+        }
+      }
+    },
     "maps": {
       "mapKeepName": "Burgwall",
       "mapKeepDesc": "Verschneite Wälle. Drei Tore, eine Festung.",
@@ -774,6 +909,51 @@
       "bloodMoonDesc": "Ennemis plus rapides, chaînes plus lentes. +50% de score.",
       "mirrorIce": "Glace miroir",
       "mirrorIceDesc": "La Glace ne mord presque plus. +80% de score."
+    },
+    "reactions": {
+      "shatter": "Fracas",
+      "melt": "Fonte",
+      "deepFreeze": "Grand gel",
+      "immolate": "Immolation"
+    },
+    "draft": {
+      "title": "Conseil de guerre",
+      "body": "Choisissez une bénédiction pour le reste de la partie.",
+      "choose": "Prenez-la",
+      "boons": {
+        "emberHeart": {
+          "name": "Cœur de braise",
+          "desc": "Le Feu brûle 40% plus fort."
+        },
+        "frostGrip": {
+          "name": "Poigne de givre",
+          "desc": "La Glace ralentit 30% plus fort et tient plus longtemps."
+        },
+        "swiftWings": {
+          "name": "Ailes rapides",
+          "desc": "Vous vous déplacez 12% plus vite et la Ruée se recharge 20% plus tôt."
+        },
+        "heavyNova": {
+          "name": "Nova lourde",
+          "desc": "La Nova frappe 50% plus fort et repousse plus loin."
+        },
+        "goldRush": {
+          "name": "Ruée vers l'or",
+          "desc": "Les ennemis tombés laissent 35% d'or en plus."
+        },
+        "longReach": {
+          "name": "Longue portée",
+          "desc": "Vos traits et vos tours portent 15% plus loin."
+        },
+        "quickChain": {
+          "name": "Chaîne rapide",
+          "desc": "Les chaînes s'estompent 40% plus lentement."
+        },
+        "towerWall": {
+          "name": "Mur de tours",
+          "desc": "Les tours gagnent 40% de vie en plus."
+        }
+      }
     },
     "maps": {
       "mapKeepName": "Rempart du Donjon",
@@ -995,6 +1175,51 @@
       "mirrorIce": "Zrcalni led",
       "mirrorIceDesc": "Led jedva grize. +80% bodova."
     },
+    "reactions": {
+      "shatter": "Razbijanje",
+      "melt": "Taljenje",
+      "deepFreeze": "Duboko smrzavanje",
+      "immolate": "Spaljivanje"
+    },
+    "draft": {
+      "title": "Ratno vijeće",
+      "body": "Odaberi jedan dar za ostatak runde.",
+      "choose": "Uzmi",
+      "boons": {
+        "emberHeart": {
+          "name": "Srce žara",
+          "desc": "Vatra gori 40% jače."
+        },
+        "frostGrip": {
+          "name": "Ledeni stisak",
+          "desc": "Led usporava 30% jače i drži dulje."
+        },
+        "swiftWings": {
+          "name": "Brza krila",
+          "desc": "Krećeš se 12% brže, Jurnjava se puni 20% ranije."
+        },
+        "heavyNova": {
+          "name": "Teška Nova",
+          "desc": "Nova udara 50% jače i gura dalje."
+        },
+        "goldRush": {
+          "name": "Zlatna groznica",
+          "desc": "Pali neprijatelji ispuštaju 35% više zlata."
+        },
+        "longReach": {
+          "name": "Dug doseg",
+          "desc": "Tvoji hitci i kule dosežu 15% dalje."
+        },
+        "quickChain": {
+          "name": "Brzi lanac",
+          "desc": "Lanci blijede 40% sporije."
+        },
+        "towerWall": {
+          "name": "Zid kula",
+          "desc": "Kule dobivaju 40% više zdravlja."
+        }
+      }
+    },
     "maps": {
       "mapKeepName": "Zid tvrđave",
       "mapKeepDesc": "Snježni bedemi. Troja vrata, jedna tvrđava.",
@@ -1214,6 +1439,51 @@
       "bloodMoonDesc": "Daha hızlı düşmanlar, daha yavaş zincirler. +50% puan.",
       "mirrorIce": "Ayna Buzu",
       "mirrorIceDesc": "Buz neredeyse işlemez. +80% puan."
+    },
+    "reactions": {
+      "shatter": "Parçalanma",
+      "melt": "Erime",
+      "deepFreeze": "Derin Donma",
+      "immolate": "Tutuşma"
+    },
+    "draft": {
+      "title": "Savaş Konseyi",
+      "body": "Koşunun kalanı için bir lütuf seç.",
+      "choose": "Al",
+      "boons": {
+        "emberHeart": {
+          "name": "Kor Yürek",
+          "desc": "Ateş %40 daha sert yanar."
+        },
+        "frostGrip": {
+          "name": "Buz Kavrayışı",
+          "desc": "Buz %30 daha derin yavaşlatır ve daha uzun tutar."
+        },
+        "swiftWings": {
+          "name": "Çevik Kanatlar",
+          "desc": "%12 daha hızlı hareket et, Atılma %20 daha erken dolsun."
+        },
+        "heavyNova": {
+          "name": "Ağır Nova",
+          "desc": "Nova %50 daha sert vurur ve daha uzağa iter."
+        },
+        "goldRush": {
+          "name": "Altına Hücum",
+          "desc": "Düşen düşmanlar %35 daha fazla altın bırakır."
+        },
+        "longReach": {
+          "name": "Uzun Menzil",
+          "desc": "Okların ve kulelerin %15 daha uzağa erişir."
+        },
+        "quickChain": {
+          "name": "Hızlı Zincir",
+          "desc": "Zincirler %40 daha yavaş söner."
+        },
+        "towerWall": {
+          "name": "Kule Duvarı",
+          "desc": "Kuleler %40 daha fazla can kazanır."
+        }
+      }
     },
     "maps": {
       "mapKeepName": "Kale Suru",
@@ -1435,6 +1705,51 @@
       "mirrorIce": "Зеркальный лёд",
       "mirrorIceDesc": "Лёд почти не кусает. +80% очков."
     },
+    "reactions": {
+      "shatter": "Раскол",
+      "melt": "Таяние",
+      "deepFreeze": "Глубокая заморозка",
+      "immolate": "Испепеление"
+    },
+    "draft": {
+      "title": "Военный совет",
+      "body": "Выберите одно благословение до конца забега.",
+      "choose": "Взять",
+      "boons": {
+        "emberHeart": {
+          "name": "Угольное сердце",
+          "desc": "Огонь жжёт на 40% сильнее."
+        },
+        "frostGrip": {
+          "name": "Ледяная хватка",
+          "desc": "Лёд замедляет на 30% сильнее и держит дольше."
+        },
+        "swiftWings": {
+          "name": "Быстрые крылья",
+          "desc": "Движение на 12% быстрее, Рывок готов на 20% раньше."
+        },
+        "heavyNova": {
+          "name": "Тяжёлая Нова",
+          "desc": "Нова бьёт на 50% сильнее и отбрасывает дальше."
+        },
+        "goldRush": {
+          "name": "Золотая лихорадка",
+          "desc": "Павшие враги роняют на 35% больше золота."
+        },
+        "longReach": {
+          "name": "Дальний выстрел",
+          "desc": "Ваши снаряды и башни бьют на 15% дальше."
+        },
+        "quickChain": {
+          "name": "Быстрая цепь",
+          "desc": "Цепи гаснут на 40% медленнее."
+        },
+        "towerWall": {
+          "name": "Стена башен",
+          "desc": "Башни получают на 40% больше прочности."
+        }
+      }
+    },
     "maps": {
       "mapKeepName": "Стена цитадели",
       "mapKeepDesc": "Снежные стены. Трое ворот, одна крепость.",
@@ -1654,6 +1969,51 @@
       "bloodMoonDesc": "Musuh lebih cepat, rantai lebih lambat. +50% skor.",
       "mirrorIce": "Es Cermin",
       "mirrorIceDesc": "Es hampir tak menggigit. +80% skor."
+    },
+    "reactions": {
+      "shatter": "Pecah",
+      "melt": "Meleleh",
+      "deepFreeze": "Beku Total",
+      "immolate": "Terbakar"
+    },
+    "draft": {
+      "title": "Dewan Perang",
+      "body": "Pilih satu berkah untuk sisa permainan.",
+      "choose": "Ambil",
+      "boons": {
+        "emberHeart": {
+          "name": "Jantung Bara",
+          "desc": "Api membakar 40% lebih kuat."
+        },
+        "frostGrip": {
+          "name": "Cengkeraman Beku",
+          "desc": "Es memperlambat 30% lebih dalam dan menahan lebih lama."
+        },
+        "swiftWings": {
+          "name": "Sayap Gesit",
+          "desc": "Bergerak 12% lebih cepat, Terjang siap 20% lebih awal."
+        },
+        "heavyNova": {
+          "name": "Nova Berat",
+          "desc": "Nova memukul 50% lebih keras dan mendorong lebih jauh."
+        },
+        "goldRush": {
+          "name": "Demam Emas",
+          "desc": "Musuh yang tumbang menjatuhkan 35% lebih banyak emas."
+        },
+        "longReach": {
+          "name": "Jangkauan Jauh",
+          "desc": "Bidikan dan menaramu menjangkau 15% lebih jauh."
+        },
+        "quickChain": {
+          "name": "Rantai Cepat",
+          "desc": "Rantai memudar 40% lebih lambat."
+        },
+        "towerWall": {
+          "name": "Tembok Menara",
+          "desc": "Menara mendapat 40% lebih banyak nyawa."
+        }
+      }
     },
     "maps": {
       "mapKeepName": "Tembok Benteng",
@@ -1875,6 +2235,51 @@
       "mirrorIce": "镜冰",
       "mirrorIceDesc": "冰几乎失效。+80% 得分。"
     },
+    "reactions": {
+      "shatter": "碎裂",
+      "melt": "融化",
+      "deepFreeze": "深度冻结",
+      "immolate": "焚身"
+    },
+    "draft": {
+      "title": "战争议会",
+      "body": "为本局剩余时间选择一项恩赐。",
+      "choose": "收下",
+      "boons": {
+        "emberHeart": {
+          "name": "余烬之心",
+          "desc": "火焰灼烧强度提高 40%。"
+        },
+        "frostGrip": {
+          "name": "寒霜之握",
+          "desc": "寒冰减速效果加深 30%，持续时间更长。"
+        },
+        "swiftWings": {
+          "name": "迅捷之翼",
+          "desc": "移动速度提高 12%，冲刺冷却缩短 20%。"
+        },
+        "heavyNova": {
+          "name": "重型新星",
+          "desc": "新星伤害提高 50%，击退距离更远。"
+        },
+        "goldRush": {
+          "name": "淘金热",
+          "desc": "倒下的敌人掉落金币增加 35%。"
+        },
+        "longReach": {
+          "name": "远程延伸",
+          "desc": "箭矢与防御塔射程提高 15%。"
+        },
+        "quickChain": {
+          "name": "快速连锁",
+          "desc": "连锁消失速度减慢 40%。"
+        },
+        "towerWall": {
+          "name": "塔墙",
+          "desc": "防御塔生命值提高 40%。"
+        }
+      }
+    },
     "maps": {
       "mapKeepName": "堡垒城墙",
       "mapKeepDesc": "覆雪的城墙，三道城门，一座要塞。",
@@ -2094,6 +2499,51 @@
       "bloodMoonDesc": "أعداء أسرع وسلاسل أبطأ. +50% من النقاط.",
       "mirrorIce": "جليد مرآوي",
       "mirrorIceDesc": "الجليد بالكاد يؤثر. +80% من النقاط."
+    },
+    "reactions": {
+      "shatter": "تحطم",
+      "melt": "ذوبان",
+      "deepFreeze": "تجميد عميق",
+      "immolate": "إحراق"
+    },
+    "draft": {
+      "title": "مجلس الحرب",
+      "body": "اختر بركة واحدة لما تبقى من الجولة.",
+      "choose": "خذه",
+      "boons": {
+        "emberHeart": {
+          "name": "قلب الجمر",
+          "desc": "النار تحرق بقوة أكبر بنسبة 40%."
+        },
+        "frostGrip": {
+          "name": "قبضة الصقيع",
+          "desc": "الجليد يبطئ أعمق بنسبة 30% ويدوم أطول."
+        },
+        "swiftWings": {
+          "name": "أجنحة سريعة",
+          "desc": "تتحرك أسرع بنسبة 12% ويُعاد شحن الاندفاع قبل 20%."
+        },
+        "heavyNova": {
+          "name": "نوفا ثقيلة",
+          "desc": "نوفا تضرب بقوة أكبر بنسبة 50% وتدفع أبعد."
+        },
+        "goldRush": {
+          "name": "حمى الذهب",
+          "desc": "الأعداء الساقطون يسقطون ذهبًا أكثر بنسبة 35%."
+        },
+        "longReach": {
+          "name": "مدى بعيد",
+          "desc": "سهامك وأبراجك تصل أبعد بنسبة 15%."
+        },
+        "quickChain": {
+          "name": "سلسلة سريعة",
+          "desc": "تتلاشى السلاسل ببطء أكبر بنسبة 40%."
+        },
+        "towerWall": {
+          "name": "سور الأبراج",
+          "desc": "تزداد متانة الأبراج بنسبة 40%."
+        }
+      }
     },
     "maps": {
       "mapKeepName": "سور القلعة",
@@ -2315,6 +2765,51 @@
       "mirrorIce": "거울 얼음",
       "mirrorIceDesc": "얼음이 거의 듣지 않습니다. 점수 +80%."
     },
+    "reactions": {
+      "shatter": "산산조각",
+      "melt": "해빙",
+      "deepFreeze": "완전 동결",
+      "immolate": "소각"
+    },
+    "draft": {
+      "title": "전쟁 회의",
+      "body": "남은 판 동안 축복 하나를 고르세요.",
+      "choose": "받기",
+      "boons": {
+        "emberHeart": {
+          "name": "잿불 심장",
+          "desc": "불이 40% 더 강하게 타오릅니다."
+        },
+        "frostGrip": {
+          "name": "서리 손아귀",
+          "desc": "얼음 둔화가 30% 더 깊어지고 더 오래갑니다."
+        },
+        "swiftWings": {
+          "name": "신속한 날개",
+          "desc": "이동 속도 12% 증가, 대시 재사용 20% 단축."
+        },
+        "heavyNova": {
+          "name": "중량 노바",
+          "desc": "노바가 50% 더 강하게 타격하고 더 멀리 밀어냅니다."
+        },
+        "goldRush": {
+          "name": "골드 러시",
+          "desc": "쓰러진 적이 35% 더 많은 골드를 떨어뜨립니다."
+        },
+        "longReach": {
+          "name": "긴 사거리",
+          "desc": "화살과 탑의 사거리가 15% 늘어납니다."
+        },
+        "quickChain": {
+          "name": "빠른 연쇄",
+          "desc": "연쇄가 40% 더 천천히 사라집니다."
+        },
+        "towerWall": {
+          "name": "탑 성벽",
+          "desc": "탑의 체력이 40% 증가합니다."
+        }
+      }
+    },
     "maps": {
       "mapKeepName": "성채 성벽",
       "mapKeepDesc": "눈 덮인 성벽. 세 개의 성문, 하나의 요새.",
@@ -2534,6 +3029,51 @@
       "bloodMoonDesc": "Nemici più veloci, catene più lente. +50% di punteggio.",
       "mirrorIce": "Ghiaccio specchio",
       "mirrorIceDesc": "Il Ghiaccio morde appena. +80% di punteggio."
+    },
+    "reactions": {
+      "shatter": "Frantumazione",
+      "melt": "Disgelo",
+      "deepFreeze": "Gelo profondo",
+      "immolate": "Immolazione"
+    },
+    "draft": {
+      "title": "Consiglio di guerra",
+      "body": "Scegli una benedizione per il resto della partita.",
+      "choose": "Prendila",
+      "boons": {
+        "emberHeart": {
+          "name": "Cuore di brace",
+          "desc": "Il Fuoco brucia il 40% in più."
+        },
+        "frostGrip": {
+          "name": "Presa del gelo",
+          "desc": "Il Ghiaccio rallenta il 30% in più e dura più a lungo."
+        },
+        "swiftWings": {
+          "name": "Ali rapide",
+          "desc": "Ti muovi il 12% più veloce e lo Scatto si ricarica il 20% prima."
+        },
+        "heavyNova": {
+          "name": "Nova pesante",
+          "desc": "La Nova colpisce il 50% più forte e spinge più lontano."
+        },
+        "goldRush": {
+          "name": "Corsa all'oro",
+          "desc": "I nemici caduti lasciano il 35% di oro in più."
+        },
+        "longReach": {
+          "name": "Lunga portata",
+          "desc": "I tuoi dardi e le tue torri arrivano il 15% più lontano."
+        },
+        "quickChain": {
+          "name": "Catena rapida",
+          "desc": "Le catene svaniscono il 40% più lentamente."
+        },
+        "towerWall": {
+          "name": "Muro di torri",
+          "desc": "Le torri ottengono il 40% di salute in più."
+        }
+      }
     },
     "maps": {
       "mapKeepName": "Mura del Torrione",

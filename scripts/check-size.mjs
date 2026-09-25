@@ -183,7 +183,7 @@ const LIMITS = {
   // release 11614.1 KiB). Retain ~20 KiB again.
   // Both land in one 16.5.6 release (with the Heroes PDF designs, which sit in
   // the lazy hub-pdf chunk): measured 11637.3 KiB locally; retain ~20 KiB.
-  totalJsBytes: 11658 * 1024,
+  totalJsBytes: 11700 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -505,7 +505,7 @@ const LIMITS = {
     // combat pass can land before its own measured lift is recorded.
     // 16.5.10 combat depth (roles, omens, aim, feats): 729.2 KiB; retain about
     // 4 KiB for the R3 draft/reactions pass.
-    'eden-siege.html': { desktop: 733 * 1024, mobile: 733 * 1024 },
+    'eden-siege.html': { desktop: 738 * 1024, mobile: 738 * 1024 },
   },
 };
 

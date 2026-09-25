@@ -2,6 +2,12 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.12 - 2026-09-25
+
+- **The War Council.** After the third, sixth and ninth wave — every third wave in Endless War — pick one of three boons for the rest of the run: Ember Heart (fire burns 40% harder), Frost Grip (ice slows bite deeper and hold longer), Swift Wings (faster movement, shorter dash cooldown), Heavy Nova (harder, wider nova), Gold Rush (+35% gold), Long Reach (+15% bolt and tower range), Quick Chain (chains fade 40% slower) or Tower Wall (+40% tower health). The same seed offers the same three boons to every player, so Daily runs stay comparable, and only three of the eight fit in a run.
+- **Elemental reactions.** Ice onto a burning foe **shatters** it (bonus damage, armour ignored, the burn is consumed); fire onto a slowed foe **melts** it (double burn, slow cleared); three slows in a row **deep-freeze** a foe in place for a moment; and a burning foe that dies **immolates** its neighbours. Each reaction calls out on screen, so the counter-play is legible.
+- Wing swaps now sit on a 2.5-second cooldown and the wing buttons dim while it runs, so committing to an element is a decision rather than a toggle.
+
 ## 16.5.11 - 2026-09-25
 
 - **Velo aims where you aim.** Keyboard and mouse players now fire in the direction they aim — the mouse aims at the point under the cursor — instead of the old auto-lock on the nearest enemy. Touch players keep the assist on purpose: shots still bend to a foe inside a narrow cone around the direction they are moving, so a thumb never has to aim precisely. `?aim=free` and `?aim=assist` force either mode for testing or preference.

@@ -510,6 +510,12 @@ export function createHud({ root, copy, heroName }) {
     setTouchVisible(visible) {
       nodes.touch.hidden = !visible;
     },
+    /** Dim the wing buttons while the swap sits on its cooldown. */
+    setSwapReady(ready) {
+      for (const node of [nodes.wingIce, nodes.wingFire, nodes.ice, nodes.fire]) {
+        node?.classList.toggle('is-cooling', !ready);
+      }
+    },
     showOmen,
     hideOmen,
     toast(text) {

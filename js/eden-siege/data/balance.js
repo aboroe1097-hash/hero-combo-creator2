@@ -28,6 +28,9 @@ export const PLAYER = {
   ice: { damage: 9, slowMs: 1500, slowFactor: 0.45 },
   fire: { damage: 13, burnMs: 3000, burnDps: 4 },
   hitInvulnMs: 600,
+  // Swapping wings is a decision, not a twitch: one swap every two and a half
+  // seconds, so committing to a wing costs the other one for a while.
+  swapCooldownMs: 2500,
 };
 
 export const NOVA = {
@@ -456,6 +459,67 @@ export const OMENS = {
 };
 
 export const OMEN_ORDER = ['ironTide', 'fogOfWar', 'bloodMoon', 'mirrorIce'];
+
+// ── Elemental reactions ─────────────────────────────────────────────────────
+// The two wings react with what the other one leaves behind, so alternating
+// fire and ice is worth more than either wing alone. Every one of these is a
+// plain number here and a rule in sim/world.js.
+export const REACTIONS = {
+  // Ice landing on something already burning: the burn shatters the plate with
+  // it, so the blow lands half again as hard and armour does not blunt it.
+  shatter: { damageMult: 1.6 },
+  // Fire landing on something already held: the ice melts into the burn, which
+  // takes twice the flame and lets go of the target.
+  melt: { burnDpsMult: 2 },
+  // Three slows in a row lock a unit where it stands; a warlord shrugs it off
+  // in half the time. Stacks fade if nothing has slowed the unit for a while.
+  deepFreeze: { stacks: 3, freezeMs: 1200, bossFreezeMs: 600, stackDecayMs: 4000 },
+  // A burning corpse passes half its fire to whatever stands beside it.
+  immolate: { radius: 2.5, burnDpsMult: 0.5 },
+};
+
+// ── The War Council ─────────────────────────────────────────────────────────
+// One boon per council, and a council sits once every few waves. A boon is not
+// a new mechanic: it is a permanent multiplier on the same `mods` object the
+// heroes use, which is why every key below has to exist in defaultMods().
+export const BOONS = {
+  // Ember Heart: the Fire wing burns 40% harder.
+  emberHeart: { labelKey: 'emberHeart', mods: { fireDamage: 1.4 } },
+  // Frost Grip: the Ice wing holds 30% deeper for 30% longer.
+  frostGrip: { labelKey: 'frostGrip', mods: { iceSlow: 1.3, iceSlowDepth: 1.3 } },
+  // Swift Wings: the hero runs 12% faster and dashes 20% sooner.
+  swiftWings: { labelKey: 'swiftWings', mods: { speed: 1.12, dashCd: 0.8 } },
+  // Heavy Nova: the nova hits 50% harder and throws 40% further.
+  heavyNova: { labelKey: 'heavyNova', mods: { novaDamage: 1.5, novaKnockback: 1.4 } },
+  // Gold Rush: fallen foes drop 35% more gold.
+  goldRush: { labelKey: 'goldRush', mods: { gold: 1.35 } },
+  // Long Reach: bolts and spires both reach 15% further.
+  longReach: { labelKey: 'longReach', mods: { range: 1.15, towerRange: 1.15 } },
+  // Quick Chain: the chain fades 40% slower, so it survives a walk between foes.
+  quickChain: { labelKey: 'quickChain', mods: { comboDecay: 1.4 } },
+  // Tower Wall: spires carry 40% more health (and stand at it when the boon lands).
+  towerWall: { labelKey: 'towerWall', mods: { towerHp: 1.4 } },
+};
+
+export const BOON_ORDER = [
+  'emberHeart',
+  'frostGrip',
+  'swiftWings',
+  'heavyNova',
+  'goldRush',
+  'longReach',
+  'quickChain',
+  'towerWall',
+];
+
+// The draft itself: offered during the build phase after clearing waves 3, 6 and
+// 9 of the campaign, and after every third wave once the siege is endless.
+export const DRAFT = {
+  everyWaves: 3,
+  campaignUntilWave: 9,
+  // How many distinct boons a single council puts up.
+  options: 3,
+};
 
 // ── Boss waves ──────────────────────────────────────────────────────────────
 export const BOSS = {

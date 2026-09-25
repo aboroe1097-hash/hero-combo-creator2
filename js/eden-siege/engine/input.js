@@ -31,6 +31,7 @@ export function createInput({ onPause, onRestart, assistAim = false } = {}) {
     start: false,
     restart: false,
     chooseOmen: null,
+    chooseBoon: null,
   };
 
   // The mouse pointer, for free aiming. Touch aiming goes through the stick,
@@ -46,6 +47,7 @@ export function createInput({ onPause, onRestart, assistAim = false } = {}) {
   let queuedUlt = false;
   let queuedStart = false;
   let queuedOmen = null;
+  let queuedBoon = null;
   const padLatch = { dash: false, ult: false };
 
   function onKeyDown(event) {
@@ -189,11 +191,13 @@ export function createInput({ onPause, onRestart, assistAim = false } = {}) {
       command.ult = queuedUlt;
       command.start = queuedStart;
       command.chooseOmen = queuedOmen;
+      command.chooseBoon = queuedBoon;
       queuedNova = false;
       queuedDash = false;
       queuedUlt = false;
       queuedStart = false;
       queuedOmen = null;
+      queuedBoon = null;
       command.restart = false;
       return command;
     },
@@ -230,6 +234,10 @@ export function createInput({ onPause, onRestart, assistAim = false } = {}) {
     /** Pick a wave omen (or 'skip'); the simulation validates the id. */
     requestOmen(id) {
       queuedOmen = id || null;
+    },
+    /** Pick a War Council boon; the simulation validates the id. */
+    requestBoon(id) {
+      queuedBoon = id || null;
     },
     dispose() {
       window.removeEventListener('keydown', onKeyDown);

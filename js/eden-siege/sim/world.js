@@ -32,6 +32,10 @@ import {
   OMENS,
   BOSS,
   TUTORIAL,
+  REACTIONS,
+  BOONS,
+  BOON_ORDER,
+  DRAFT,
   waveAt,
 } from '../data/balance.js';
 import { ASSETS, FACTIONS, heroByName } from '../data/theme.js';
@@ -70,6 +74,7 @@ function emptyInput() {
     continueEndless: false,
     skipTutorial: false,
     chooseOmen: null,
+    chooseBoon: null,
   };
 }
 
@@ -86,6 +91,9 @@ function emptyTutorial(enabled) {
   };
 }
 
+// Every multiplier a run can earn lives here. Heroes and the War Council both
+// fold into this one object, so a boon is a number rather than a second code
+// path through the rules (see BOONS in data/balance.js).
 function defaultMods() {
   return {
     iceDamage: 1,
@@ -96,8 +104,17 @@ function defaultMods() {
     gold: 1,
     novaCharge: 1,
     iceSlow: 1,
+    // How hard the slow bites, which the depth boon deepens separately from the
+    // duration `iceSlow` lengthens.
+    iceSlowDepth: 1,
     burnDps: 1,
     range: 1,
+    novaDamage: 1,
+    novaKnockback: 1,
+    comboDecay: 1,
+    towerHp: 1,
+    towerRange: 1,
+    dashCd: 1,
   };
 }
 
@@ -106,6 +123,11 @@ function applyHeroMods(mods, hero) {
     if (key in mods) mods[key] *= value;
   }
   return mods;
+}
+
+/** A hero's own multipliers, before any boon a run has taken. */
+function heroMods(hero) {
+  return applyHeroMods(defaultMods(), hero);
 }
 
 function emptyStats() {
@@ -132,7 +154,7 @@ export function createWorld(options = {}) {
   const hero = heroByName(options.heroName);
   const seed = options.seed === undefined ? `${map.id}:dev` : options.seed;
   const rng = createRng(seed);
-  const mods = applyHeroMods(defaultMods(), hero);
+  const mods = heroMods(hero);
   const difficulty = options.difficulty === 'hard' ? 1.25 : 1;
   const mode = ['campaign', 'endless', 'daily'].includes(options.mode) ? options.mode : 'campaign';
   const startsEndless = mode !== 'campaign';
@@ -160,6 +182,13 @@ export function createWorld(options = {}) {
     pendingOmen: null,
     // Derived: whether the omen offer should be on screen this build phase.
     omenOffered: false,
+    // The War Council draft, all four hashed (see snapshotHash): whether a
+    // council is sitting this build phase, the boons it is offering, the one
+    // just taken (for the toast) and every boon the run has taken so far.
+    draftOffered: false,
+    draftOptions: [],
+    pendingBoon: null,
+    draftPicked: [],
     score: 0,
     combo: { count: 0, mult: 1, timerMs: 0, lastElement: null },
     gold: GOLD.start,
@@ -186,6 +215,9 @@ export function createWorld(options = {}) {
       aimX: 0,
       aimZ: -1,
       attackCdMs: 0,
+      // Swapping wings is on its own cooldown; the HUD dims the wing button
+      // while this is above zero.
+      swapCdMs: 0,
       alive: true,
       respawnMs: 0,
       slowMs: 0,
@@ -307,6 +339,64 @@ export function createWorld(options = {}) {
     state.pendingOmen = omen === 'skip' ? null : omen;
   }
 
+  // ── The War Council ───────────────────────────────────────────────────────
+  // A draft is offered during the build phase after clearing waves 3, 6 and 9
+  // of the campaign; once the siege is endless, after every third wave. The
+  // offer stands for the whole build phase and is dropped with it, and a boon
+  // taken is a permanent multiplier for the rest of the run.
+
+  function draftIsOffered(clearedWave) {
+    if (clearedWave <= 0 || clearedWave % DRAFT.everyWaves !== 0) return false;
+    return state.endless || clearedWave <= DRAFT.campaignUntilWave;
+  }
+
+  // Three distinct boons, drawn from the ones this run has not taken yet. The
+  // draw comes off the run's own generator, so the same seed offers the same
+  // council to everyone replaying it.
+  function rollDraftOptions() {
+    const pool = BOON_ORDER.filter((id) => !state.draftPicked.includes(id));
+    const options = [];
+    const count = Math.min(DRAFT.options, pool.length);
+    for (let index = 0; index < count; index += 1) {
+      options.push(pool.splice(rng.int(0, pool.length - 1), 1)[0]);
+    }
+    return options;
+  }
+
+  function openDraft() {
+    state.draftOptions = rollDraftOptions();
+    state.draftOffered = state.draftOptions.length > 0;
+    // The toast for the last pick comes down as the next council is called.
+    state.pendingBoon = null;
+  }
+
+  // Tower Wall changes the ceiling, so every spire standing gets the new one —
+  // and is healed to it, because a boon should never arrive as damage taken.
+  function refreshTowerHp() {
+    for (const tower of state.towers) {
+      tower.maxHp = towerStats(tower.kind, tower.level).maxHp * mods.towerHp;
+      tower.hp = tower.maxHp;
+    }
+  }
+
+  function takeBoon(id) {
+    // A pick only counts while a council is actually sitting.
+    if (!state.draftOffered) return;
+    const def = BOONS[id];
+    if (!def || state.draftPicked.includes(id)) return;
+    let towerHpRaised = false;
+    for (const [key, value] of Object.entries(def.mods || {})) {
+      if (!(key in mods)) continue;
+      mods[key] *= value;
+      if (key === 'towerHp') towerHpRaised = true;
+    }
+    state.draftPicked.push(id);
+    state.pendingBoon = id;
+    state.draftOffered = false;
+    state.draftOptions.length = 0;
+    if (towerHpRaised) refreshTowerHp();
+  }
+
   function spawnUnit(kind, tier, gateIndex) {
     const gate = map.gates[gateIndex % map.gates.length];
     const kindDef = ENEMY_KINDS[kind];
@@ -358,6 +448,11 @@ export function createWorld(options = {}) {
       attackCdMs: rng.int(0, 600),
       slowMs: 0,
       slowFactor: 1,
+      // Reaction state: how many slows have landed in a row (and how long the
+      // unit has been free of them), how long it is frozen for, and the burn.
+      slowStacks: 0,
+      slowIdleMs: 0,
+      freezeMs: 0,
       burnMs: 0,
       burnDps: 0,
       facing: 0,
@@ -411,6 +506,9 @@ export function createWorld(options = {}) {
     state.omen = state.pendingOmen;
     state.pendingOmen = null;
     state.omenOffered = false;
+    // An offer that was not taken before the wave opened is gone with it.
+    state.draftOffered = false;
+    state.draftOptions.length = 0;
     spawnQueue = [];
     const length = queueGroups(wave);
     if (state.waveIsBoss) {
@@ -451,6 +549,9 @@ export function createWorld(options = {}) {
     // is the one that just ended.
     state.gold += Math.round((currentWave ? currentWave.reward : 0) * omenMod('goldMult', omen));
     state.omenOffered = omenOffered(state.wave + 1);
+    // The council is called on the strength of the wave that was just cleared,
+    // not the one that has not started yet.
+    if (draftIsOffered(state.wave)) openDraft();
     emit('buildPhase', { wave: state.wave + 1 });
   }
 
@@ -552,8 +653,9 @@ export function createWorld(options = {}) {
     const alternating = combo.lastElement && combo.lastElement !== unit.element;
     combo.count += alternating ? 2 : 1;
     combo.lastElement = unit.element;
-    // Blood Moon drags the chain out; everything else keeps the stock timer.
-    combo.timerMs = COMBO.decayMs * omenMod('comboDecayMult');
+    // Blood Moon drags the chain out, the War Council's chain boon drags it out
+    // further; everything else keeps the stock timer.
+    combo.timerMs = COMBO.decayMs * omenMod('comboDecayMult') * mods.comboDecay;
     combo.mult = Math.min(COMBO.max, 1 + combo.count * COMBO.perKill);
     state.stats.maxChain = Math.max(state.stats.maxChain, combo.count);
     const gained = Math.round(unit.score * combo.mult * omenMod('scoreMult'));
@@ -606,6 +708,8 @@ export function createWorld(options = {}) {
       scale: (1 + unit.radius) * (unit.boss ? 2 : 1),
     });
     if (unit.boss) state.stats.bossKills += 1;
+    // Whatever dies still burning sets its neighbours alight before it goes.
+    if (unit.burnMs > 0) immolate(unit);
     emit('kill', {
       kind: unit.kind,
       tier: unit.tier,
@@ -623,10 +727,27 @@ export function createWorld(options = {}) {
     state.units.splice(index, 1);
   }
 
+  // One event per reaction trigger. The payload is deliberately tiny — the
+  // renderer only needs which reaction and where — but `reaction` must stay
+  // exactly the copy key (see the REACTIONS table).
+  function emitReaction(reaction, x, z) {
+    emit('reaction', { reaction, x, z });
+  }
+
+  // Every slow that lands is a stack, whether it is a fresh one or a refresh of
+  // one already running. The third in a row freezes the unit where it stands;
+  // the count only survives while slows keep coming (see updateUnits).
   function applySlow(unit, ms, factor) {
     if (ms <= 0) return;
     unit.slowMs = Math.max(unit.slowMs, ms);
     unit.slowFactor = Math.min(unit.slowFactor, factor);
+    unit.slowStacks = (unit.slowStacks || 0) + 1;
+    unit.slowIdleMs = 0;
+    if (unit.slowStacks < REACTIONS.deepFreeze.stacks) return;
+    unit.slowStacks = 0;
+    const freeze = unit.boss ? REACTIONS.deepFreeze.bossFreezeMs : REACTIONS.deepFreeze.freezeMs;
+    unit.freezeMs = Math.max(unit.freezeMs || 0, freeze);
+    emitReaction('deepFreeze', unit.x, unit.z);
   }
 
   function applyBurn(unit, dps, ms) {
@@ -634,10 +755,39 @@ export function createWorld(options = {}) {
     unit.burnMs = Math.max(unit.burnMs, ms);
   }
 
+  // Immolate: a foe that dies still burning passes the fire on. Each neighbour
+  // inside the radius gets half the dead unit's burn dps for the rest of its
+  // burn, and the whole spread is one event.
+  function immolate(unit) {
+    const dps = unit.burnDps * REACTIONS.immolate.burnDpsMult;
+    if (dps <= 0) return;
+    const radiusSq = REACTIONS.immolate.radius * REACTIONS.immolate.radius;
+    let lit = 0;
+    for (const other of state.units) {
+      if (other === unit) continue;
+      const dx = other.x - unit.x;
+      const dz = other.z - unit.z;
+      if (dx * dx + dz * dz > radiusSq) continue;
+      applyBurn(other, dps, unit.burnMs);
+      lit += 1;
+    }
+    if (lit > 0) emitReaction('immolate', unit.x, unit.z);
+  }
+
   // Direct damage goes through a unit's shield and armour; burn ticks do not
   // (see updateUnits), which is why Fire is the answer to armour.
+  //
+  // This is also where the wings react to each other. A dual bolt (the
+  // ultimate) counts as both wings at once, and every reaction reads the state
+  // the blow *landed on*, so a burn already ticking is what ice shatters and a
+  // slow already holding is what fire melts — not the other way round.
   function damageUnit(unit, amount, element, options = {}) {
-    let damage = amount;
+    const ice = element === 'ice' || Boolean(options.dual);
+    const fire = element === 'fire' || Boolean(options.dual);
+    const shatter = ice && (unit.burnMs || 0) > 0;
+    const melt = fire && (unit.slowMs || 0) > 0;
+
+    let damage = shatter ? amount * REACTIONS.shatter.damageMult : amount;
     let shieldHit = false;
     if (unit.shield > 0) {
       const factor = element === 'ice' || options.dual ? MODIFIERS.shielded.iceShieldMult : 1;
@@ -650,14 +800,32 @@ export function createWorld(options = {}) {
         emit('shieldBreak', { x: unit.x, z: unit.z, id: unit.id });
       }
     }
-    if (unit.modifier === 'armored') damage *= MODIFIERS.armored.directDamageMult;
+    // A shattered plate is no plate: the blow that breaks the burn lands whole.
+    if (unit.modifier === 'armored' && !shatter) damage *= MODIFIERS.armored.directDamageMult;
     unit.hp -= damage;
     unit.hitFlashMs = 140;
-    if (element === 'ice' || options.dual) {
-      applySlow(unit, PLAYER.ice.slowMs * mods.iceSlow, PLAYER.ice.slowFactor);
+    if (shatter) {
+      // The ice goes out with the burn it landed on.
+      unit.burnMs = 0;
+      unit.burnDps = 0;
+      emitReaction('shatter', unit.x, unit.z);
     }
-    if ((element === 'fire' || options.dual) && options.burn !== false) {
-      applyBurn(unit, PLAYER.fire.burnDps * mods.burnDps, PLAYER.fire.burnMs);
+    if (melt) {
+      // Fire thaws what was holding the unit: the slow lets go, and the burn
+      // this very blow applies comes with it twice as fierce (see below).
+      unit.slowMs = 0;
+      unit.slowFactor = 1;
+      emitReaction('melt', unit.x, unit.z);
+    }
+    if (ice) {
+      applySlow(unit, PLAYER.ice.slowMs * mods.iceSlow, PLAYER.ice.slowFactor / mods.iceSlowDepth);
+    }
+    if (fire && options.burn !== false) {
+      applyBurn(
+        unit,
+        PLAYER.fire.burnDps * mods.burnDps * (melt ? REACTIONS.melt.burnDpsMult : 1),
+        PLAYER.fire.burnMs
+      );
     }
     emit('hit', {
       x: unit.x,
@@ -851,8 +1019,8 @@ export function createWorld(options = {}) {
       level: 1,
       cooldownMs: 0,
       angle: 0,
-      hp: def.maxHp,
-      maxHp: def.maxHp,
+      hp: def.maxHp * mods.towerHp,
+      maxHp: def.maxHp * mods.towerHp,
     });
     state.stats.towersBuilt += 1;
     state.fx.push({
@@ -879,8 +1047,8 @@ export function createWorld(options = {}) {
     }
     state.gold -= cost;
     tower.level += 1;
-    tower.hp = towerStats(tower.kind, tower.level).maxHp;
-    tower.maxHp = tower.hp;
+    tower.maxHp = towerStats(tower.kind, tower.level).maxHp * mods.towerHp;
+    tower.hp = tower.maxHp;
     state.stats.upgrades += 1;
     state.fx.push({
       id: nextId++,
@@ -932,13 +1100,16 @@ export function createWorld(options = {}) {
       const dz = unit.z - player.z;
       const d = dx * dx + dz * dz;
       if (d > radiusSq) continue;
-      damageUnit(unit, NOVA.damage, player.element, { burn: false, source: 'nova' });
+      damageUnit(unit, NOVA.damage * mods.novaDamage, player.element, {
+        burn: false,
+        source: 'nova',
+      });
       applySlow(unit, NOVA.slowMs, 0.4);
       const length = Math.hypot(dx, dz) || 1;
       // The warlord shrugs the blast off; a gate ram cannot be moved at all.
       const push = ENEMY_KINDS[unit.kind].knockbackImmune ? 0 : unit.boss ? 0.1 : 0.35;
-      unit.x += (dx / length) * NOVA.knockback * push;
-      unit.z += (dz / length) * NOVA.knockback * push;
+      unit.x += (dx / length) * NOVA.knockback * mods.novaKnockback * push;
+      unit.z += (dz / length) * NOVA.knockback * mods.novaKnockback * push;
       if (unit.hp <= 0) killUnit(index, player.element, { source: 'nova' });
     }
     state.nova.charge = 0;
@@ -996,7 +1167,7 @@ export function createWorld(options = {}) {
     player.dashMs = DASH.durationMs;
     player.iframeMs = DASH.iframeMs;
     player.dodged = false;
-    player.dashCdMs = DASH.cooldownMs;
+    player.dashCdMs = DASH.cooldownMs * mods.dashCd;
     emit('dash', { x: player.x, z: player.z, dirX, dirZ });
   }
 
@@ -1005,6 +1176,7 @@ export function createWorld(options = {}) {
     if (player.hitFlashMs > 0) player.hitFlashMs -= dtMs;
     if (player.attackCdMs > 0) player.attackCdMs -= dtMs;
     if (player.dashCdMs > 0) player.dashCdMs -= dtMs;
+    if (player.swapCdMs > 0) player.swapCdMs -= dtMs;
     if (player.iframeMs > 0) {
       player.iframeMs -= dtMs;
       if (player.iframeMs <= 0) player.dodged = false;
@@ -1085,8 +1257,14 @@ export function createWorld(options = {}) {
       player.facing = Math.atan2(player.aimX, player.aimZ);
     }
 
-    if ((input.swap === 'ice' || input.swap === 'fire') && input.swap !== player.element) {
+    // Wings swap on a cooldown, so a wing is a commitment rather than a twitch.
+    if (
+      (input.swap === 'ice' || input.swap === 'fire') &&
+      input.swap !== player.element &&
+      player.swapCdMs <= 0
+    ) {
       player.element = input.swap;
+      player.swapCdMs = PLAYER.swapCooldownMs;
       tutorialStep('swap');
       emit('swap', { element: player.element });
     }
@@ -1228,8 +1406,25 @@ export function createWorld(options = {}) {
       }
       if (unit.slowMs > 0) {
         unit.slowMs -= dtMs;
+        unit.slowIdleMs = 0;
       } else {
         unit.slowFactor = 1;
+        // Slow stacks do not last forever: a unit that has been free of them
+        // for a few seconds starts its next freeze from zero again.
+        if (unit.slowStacks > 0) {
+          unit.slowIdleMs = (unit.slowIdleMs || 0) + dtMs;
+          if (unit.slowIdleMs >= REACTIONS.deepFreeze.stackDecayMs) {
+            unit.slowStacks = 0;
+            unit.slowIdleMs = 0;
+          }
+        }
+      }
+
+      // Deep Freeze: while it holds, the unit neither walks nor swings — and a
+      // warlord mid-telegraph holds its arm where it was.
+      if (unit.freezeMs > 0) {
+        unit.freezeMs -= dtMs;
+        continue;
       }
 
       // A telegraphing warlord plants its feet until the slam lands.
@@ -1354,7 +1549,8 @@ export function createWorld(options = {}) {
       if (tower.cooldownMs > 0) tower.cooldownMs -= dtMs;
       if (tower.cooldownMs > 0) continue;
       const stats = towerStats(tower.kind, tower.level);
-      const rangeSq = stats.range ** 2;
+      const range = stats.range * mods.towerRange;
+      const rangeSq = range ** 2;
       let target = null;
       let best = rangeSq;
       for (const unit of state.units) {
@@ -1617,6 +1813,13 @@ export function createWorld(options = {}) {
     state.omen = null;
     state.pendingOmen = null;
     state.omenOffered = false;
+    state.draftOffered = false;
+    state.draftOptions.length = 0;
+    state.pendingBoon = null;
+    state.draftPicked.length = 0;
+    // Boons are run state, not hero state: a restarted run starts from the
+    // hero's own multipliers again, exactly as the first attempt did.
+    Object.assign(mods, heroMods(hero));
     state.score = 0;
     state.combo.count = 0;
     state.combo.mult = 1;
@@ -1649,6 +1852,7 @@ export function createWorld(options = {}) {
       facing: Math.PI,
       dashMs: 0,
       dashCdMs: 0,
+      swapCdMs: 0,
       iframeMs: 0,
       dodged: false,
     });
@@ -1677,6 +1881,7 @@ export function createWorld(options = {}) {
     input.continueEndless = false;
     input.skipTutorial = false;
     input.chooseOmen = null;
+    input.chooseBoon = null;
   }
 
   function step() {
@@ -1707,6 +1912,7 @@ export function createWorld(options = {}) {
 
     if (input.skipTutorial) finishTutorial(true);
     if (input.chooseOmen) chooseOmen(input.chooseOmen);
+    if (input.chooseBoon) takeBoon(input.chooseBoon);
     if (input.buildSocket !== null) buildTower(input.buildSocket, input.buildKind || 'frost');
     if (input.upgradeSocket !== null) upgradeTower(input.upgradeSocket);
     if (input.nova) fireNova();
@@ -1735,6 +1941,9 @@ export function createWorld(options = {}) {
       state.wave,
       state.omen || '-',
       state.pendingOmen || '-',
+      state.draftOffered ? 1 : 0,
+      state.pendingBoon || '-',
+      state.draftPicked.join(',') || '-',
       Math.round(state.core.hp * 100),
       Math.round(state.player.x * 1000),
       Math.round(state.player.z * 1000),
@@ -1756,7 +1965,9 @@ export function createWorld(options = {}) {
         Math.round(unit.x * 1000),
         Math.round(unit.z * 1000),
         Math.round(unit.hp * 100),
-        Math.round(unit.shield * 100)
+        Math.round(unit.shield * 100),
+        Math.round(unit.freezeMs || 0),
+        unit.slowStacks || 0
       );
     }
     let hash = 0x811c9dc5;
@@ -1807,6 +2018,9 @@ export function createWorld(options = {}) {
       if (command.skipTutorial) input.skipTutorial = true;
       if (command.chooseOmen !== undefined && command.chooseOmen !== null) {
         input.chooseOmen = command.chooseOmen;
+      }
+      if (command.chooseBoon !== undefined && command.chooseBoon !== null) {
+        input.chooseBoon = command.chooseBoon;
       }
     },
     drainEvents() {
