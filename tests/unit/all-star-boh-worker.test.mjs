@@ -789,6 +789,57 @@ test('provider output is range-bound and cannot expand the public response contr
   );
 });
 
+test('provider JSON wrapped in prose, fences, or content parts is still read', () => {
+  const payload = JSON.parse(providerEnvelope().choices[0].message.content);
+  const json = JSON.stringify(payload);
+  const envelopeWith = (content) => ({ choices: [{ message: { content } }] });
+  const originalWarn = console.warn;
+  console.warn = () => {};
+  try {
+    for (const content of [
+      `Here is the JSON:\n\`\`\`json\n${json}\n\`\`\`\nLet me know if you need more.`,
+      `Result: ${json}`,
+      [{ type: 'text', text: json.slice(0, 40) }, { type: 'image_url' }, { text: json.slice(40) }],
+    ]) {
+      const normalized = normalizeBohStatsOcrProviderResponse(envelopeWith(content), {}, 'id');
+      assert.equal(normalized.extracted.totalCastlePower, 123456789);
+      assert.equal(normalized.extracted.gameName, 'VTS Hero');
+    }
+
+    const flat = normalizeBohStatsOcrProviderResponse(
+      envelopeWith(JSON.stringify({ ...payload.extracted, artifactPower: '7,654,321' })),
+      {},
+      'id'
+    );
+    assert.equal(flat.extracted.troopPower, 20_000_000);
+    assert.equal(flat.extracted.artifactPower, 7654321);
+    assert.equal(flat.confidence.overall, null);
+
+    const oddConfidence = normalizeBohStatsOcrProviderResponse(
+      envelopeWith(JSON.stringify({ ...payload, confidence: 'high' })),
+      {},
+      'id'
+    );
+    assert.equal(oddConfidence.extracted.dragonPower, 8_456_789);
+    assert.equal(oddConfidence.confidence.troopPower, null);
+    assert.ok(oddConfidence.warnings.some((warning) => /could not be read/iu.test(warning)));
+
+    for (const content of [
+      'I cannot read this image.',
+      '{"extracted": {"troopPower": 1',
+      [],
+      [{ type: 'image_url' }],
+    ]) {
+      assert.throws(
+        () => normalizeBohStatsOcrProviderResponse(envelopeWith(content), {}, 'id'),
+        (error) => error.code === 'invalid_provider_response'
+      );
+    }
+  } finally {
+    console.warn = originalWarn;
+  }
+});
+
 test('suspicious single-digit extended powers are cleared for manual review', () => {
   const baseline = JSON.parse(providerEnvelope().choices[0].message.content);
   const normalized = normalizeBohStatsOcrProviderResponse(

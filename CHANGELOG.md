@@ -5,6 +5,7 @@ This is the release history, newest first. Entries describe their release-time b
 ## 16.5.16 - 2026-09-25
 
 - The Eden top lists (Most Banners Placed, march paths, shield walls and Most R5 Bonus Team Effort Points) show a linked banner or alt account under the player who runs it. Its banners, paths, shield walls and bonus points add to the owner's total, so ANGEL appears instead of Angel Banner, the same way scoring already credits the owner.
+- Registration screenshot OCR no longer fails with "OCR provider response is malformed" when the model wraps its JSON in a sentence or code fence, splits it into parts, returns the power fields without the `extracted` wrapper, or leaves out the confidence block. A reply with no JSON at all still fails, and the Worker now logs why (without the reply text). **Redeploy the OCR Worker (`npm run worker:deploy`) after this release.**
 
 ## 16.5.15 - 2026-09-25
 
