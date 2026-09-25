@@ -103,7 +103,8 @@ export default {
     subTabPathing: 'Percorsi Eden',
     subTabPathingDesc:
       'Pianifica percorsi tra porte da A a B con tappe in montagna ed esporta un PNG.',
-    pathingIntro: 'Pianifica percorsi di marcia da A a B attraverso porte e passi di montagna, poi esporta un PNG per la tua squadra.',
+    pathingIntro:
+      'Pianifica percorsi di marcia da A a B attraverso porte e passi di montagna, poi esporta un PNG per la tua squadra.',
     pathingPlan: 'Piano',
     pathingPlanName: 'Nome del piano',
     pathingDefaultPlan: 'Piano Eden {n}',
@@ -123,7 +124,8 @@ export default {
     pathingModeEnd: 'Destinazione (B)',
     pathingHintStart: 'Tocca una struttura o un terreno libero per impostare la partenza (A).',
     pathingHintEnd: 'Tocca dove termina la marcia (B).',
-    pathingHintWaypoint: 'Tocca una porta per passarci attraverso, o un terreno libero per aggiungere un passo di montagna.',
+    pathingHintWaypoint:
+      'Tocca una porta per passarci attraverso, o un terreno libero per aggiungere un passo di montagna.',
     pathingSearch: 'Cerca una struttura o delle coordinate',
     pathingSearchPh: 'Porta, città, capitale o 800:800',
     pathingNoResults: 'Nessuna struttura corrispondente.',
@@ -141,9 +143,10 @@ export default {
     pathingLegTiles: '≈ {tiles} caselle',
     pathingLegTilesWalked: '≈ {tiles} caselle ({walked} percorse)',
     pathingTotalTiles: 'Totale ≈ {tiles} caselle',
-    pathingPathers: 'Pather stimati: ≈ {count} (supponendo {each} caselle ciascuno)',
+    pathingPathers: 'Pather: {count} ({each} caselle ciascuno)',
     pathingRepeatTiles: 'Caselle percorse due volte: {tiles}',
-    pathingBlocked: 'Un tratto è bloccato da terreno invalicabile, quindi viene mostrata una linea retta. Aggiungi un passo di montagna per aggirarlo.',
+    pathingBlocked:
+      'Un tratto è bloccato da terreno invalicabile, quindi viene mostrata una linea retta. Aggiungi un passo di montagna per aggirarlo.',
     pathingRouting: 'Calcolo del percorso…',
     pathingNeedTwo: 'Aggiungi una destinazione (B) per tracciare il percorso.',
     pathingStopAdded: '{stop} aggiunto.',
@@ -158,11 +161,13 @@ export default {
     pathingZoomIn: 'Ingrandisci',
     pathingZoomOut: 'Riduci',
     pathingFit: 'Adatta mappa',
-    pathingMapLabel: 'Mappa dei percorsi di Eden. Trascina o usa le frecce per spostarti; pizzica, usa la rotellina o premi + e − per lo zoom; tocca per aggiungere una tappa.',
+    pathingMapLabel:
+      'Mappa dei percorsi di Eden. Trascina o usa le frecce per spostarti; pizzica, usa la rotellina o premi + e − per lo zoom; tocca per aggiungere una tappa.',
     pathingGate: 'Porta',
     pathingImpassable: 'Invalicabile',
     pathingControls: 'Controlli del percorso',
-    pathingStorageOff: 'Questo browser blocca il salvataggio. Usa «Condividi link» per conservare il piano.',
+    pathingStorageOff:
+      'Questo browser blocca il salvataggio. Usa «Condividi link» per conservare il piano.',
     routePlayback: 'Riproduzione percorso',
     routePlay: 'Riproduci',
     routePause: 'Pausa',

@@ -2297,6 +2297,7 @@ export {
   showModal,
   closeModal,
   buildPlayerSummary,
+  canonicalAggregationName,
   uniqueStructureCount,
   animateAnalyticsCards,
 };

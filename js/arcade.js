@@ -11,7 +11,7 @@ import { initArcadeLobbyUI } from './arcade-lobby-ui.js';
 import { currentLanguage, setCurrentLanguage } from './state.js';
 import { mountSiegeFeature } from './siege-promo.js';
 
-export const APP_VERSION = '16.5.9';
+export const APP_VERSION = '16.5.10';
 const THEME_STORAGE_KEY = 'vts_theme';
 const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#070b16' };
 const THEME_MANIFESTS = { light: 'site-light.webmanifest', dark: 'site.webmanifest' };

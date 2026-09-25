@@ -126,6 +126,8 @@ export default Object.freeze({
   emptyTitle: 'Tidak ada operasi yang cocok',
   assigned: 'Terdaftar',
   staffMissing: 'Masih perlu {count} pemain',
+  countsReadOnly: 'Hitungan bersama · mengubahnya perlu masuk sebagai admin dan koneksi',
+  countSaveFailed: 'Hitungan bersama tidak tersimpan. Perubahanmu dikembalikan.',
   'op.specialty-build.title': 'Build spesialisasi',
   'op.material-budget.title': 'Anggaran bahan',
   'op.hold-tile.title': 'Petak tingkat lebih tinggi',

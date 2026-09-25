@@ -36,9 +36,9 @@ const COPY = Object.freeze({
     requirementsDirectCosts: 'Requirements and direct costs',
     castleMaxed: 'Castle is already level 30.',
     costSourceLabel: 'Cost source:',
-    costSourceLink: 'ROCAcademy Castle Upgrade Costs',
+    costSourceLink: 'Google Sheet: Castle upgrade costs',
     costSourceBody:
-      'Figures are direct Castle costs; prerequisite buildings are not included. The source notes that accumulated totals may vary with current building levels.',
+      'Figures are direct Castle costs; prerequisite buildings are not included. Accumulated totals may vary with current building levels.',
     noPrerequisite: 'No prerequisite listed',
     sourceRow: 'Source row {row}',
     selectedLevels: 'Selected levels',
@@ -68,7 +68,7 @@ const COPY = Object.freeze({
     aboutSource: 'About the source data',
     dataLabel: 'Data:',
     googleSheet: 'Google Sheet',
-    observedLine: 'observed {date} · credited to Raven G.',
+    observedLine: 'observed {date}',
     genericIcons:
       'Every building mark here is a generic symbol drawn for this tool; no external icon set is loaded.',
     plannerEyebrow: 'Rise of Castles · Upgrade planner',

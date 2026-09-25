@@ -124,6 +124,8 @@ export default Object.freeze({
   emptyTitle: 'Подходящих операций нет',
   assigned: 'Записались',
   staffMissing: 'Нужно ещё игроков: {count}',
+  countsReadOnly: 'Общие счётчики · для изменений нужен вход админа и соединение',
+  countSaveFailed: 'Общие счётчики не сохранились. Изменение отменено.',
   'op.specialty-build.title': 'Сборка специализации',
   'op.material-budget.title': 'Бюджет материалов',
   'op.hold-tile.title': 'Клетки выше уровнем',

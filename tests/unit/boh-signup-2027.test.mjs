@@ -19,6 +19,7 @@ import {
   BohSignupDocumentError,
   buildBohSignupDocument,
   getBohSignupDocumentPath,
+  mergeRetiredBohSignupFields,
   readBohSignupFormValues,
   readBohSignupSubmission,
   validateBohSignupDocument,
@@ -296,7 +297,37 @@ test('the VtsScore page carries the revived signup as its first member step', ()
   assert.match(page, /data-boh-list="true"\s+data-boh-field="commitment\.epicTimeSlots"/);
   assert.match(page, /type="checkbox"\s+data-boh-field="commitment\.publicComparisonConsent"/);
   assert.doesNotMatch(page, /commitment\.fightingTimeIds/);
-  assert.match(page, /data-boh-field="commitment\.vts1097Member"/);
+  // 16.5.9: questions the registration no longer asks. The document still
+  // carries them (rule-valid placeholders, see mergeRetiredBohSignupFields).
+  for (const retired of [
+    'stats.t9TroopTypes',
+    'stats.readySpeedHeroes',
+    'stats.level50HeroCount',
+    'commitment.preferredRole',
+    'commitment.secondaryRole',
+    'commitment.availability',
+    'commitment.vts1097Member',
+    'commitment.contactNumber',
+  ]) {
+    assert.doesNotMatch(page, new RegExp(`data-boh-field="${retired.replace('.', '\\.')}"`));
+  }
+  assert.match(page, /data-boh-field="stats\.rocLevel"/);
+  assert.match(page, /data-vts-i18n="signupCommitmentTitle"/);
+  const steps = [
+    ...page
+      .slice(page.indexOf('id="vtsScoreSignupForm"'), page.indexOf('id="vtsScoreSignupSubmit"'))
+      .matchAll(/vts-score-step__number" aria-hidden="true">(\d+)</g),
+  ].map((match) => Number(match[1]));
+  assert.deepEqual(steps, [1, 2, 3], 'registration steps stay contiguous');
+  // The Lord Info → Power screenshot upload sits at the top of the power step.
+  const powerStep = page.indexOf('data-vts-i18n="signupPowerTitle"');
+  assert.ok(powerStep > 0 && page.indexOf('id="vtsScoreSignupImage"') > powerStep);
+  assert.ok(
+    page.indexOf('id="vtsScoreSignupImage"') < page.indexOf('id="vtsScoreSignupTotalCastlePower"')
+  );
+  assert.match(page, /id="vtsScoreSignupOcrConsent"/);
+  assert.match(page, /id="vtsScoreSignupReadButton"/);
+  assert.match(page, /id="vtsScoreSignupOcrConfirm"/);
   // The signup step precedes the score upload, and the workspace still needs
   // the member grant the PIN form issues.
   assert.ok(
@@ -529,4 +560,76 @@ test('optional Artifact Power stays absent when blank and round-trips when fille
     writeBohSignupFormValues(reopenedForm, savedSignup);
     assert.equal(reopenedForm.nodes[0].value, value);
   }
+});
+
+test('a slimmed registration builds a rule-valid document with neutral placeholders', () => {
+  const slim = signupValues();
+  delete slim.stats.t9TroopTypes;
+  delete slim.stats.readySpeedHeroes;
+  delete slim.stats.level50HeroCount;
+  for (const key of ['availability', 'preferredRole', 'secondaryRole', 'vts1097Member']) {
+    delete slim.commitment[key];
+  }
+  delete slim.commitment.contactNumber;
+  delete slim.commitment.fightingTimeIds;
+  const document = build({ values: mergeRetiredBohSignupFields(slim, null) });
+  assert.deepEqual(validateBohSignupDocument(document), []);
+  assert.deepEqual(document.stats.t9TroopTypes, []);
+  assert.deepEqual(document.stats.readySpeedHeroes, []);
+  assert.equal(document.stats.level50HeroCount, 0);
+  assert.equal(document.commitment.availability, '');
+  assert.equal(document.commitment.preferredRole, '');
+  assert.equal(document.commitment.vts1097Member, true);
+  assert.equal(document.commitment.contactNumber, '');
+
+  // Same required-key shape the rules pin.
+  const rules = readFileSync('firestore.rules', 'utf8');
+  const validator = rules.match(/function validAllStarBohSubmissionData\([\s\S]*?\n {4}\}/)[0];
+  const quoted = (block) => [...block.matchAll(/'([A-Za-z0-9_]+)'/g)].map((m) => m[1]);
+  const statsHasAll = quoted(validator.match(/stats\.keys\(\)\.hasAll\(\[[\s\S]*?\]\)/)[0]);
+  const commitmentHasOnly = quoted(
+    validator.match(/commitment\.keys\(\)\.hasOnly\(\[[\s\S]*?\]\)/)[0]
+  );
+  for (const key of statsHasAll) assert.ok(key in document.stats, `stats.${key} present`);
+  for (const key of Object.keys(document.commitment)) {
+    assert.ok(commitmentHasOnly.includes(key), `commitment.${key} allowed`);
+  }
+  assert.equal(typeof document.commitment.vts1097Member, 'boolean');
+  assert.ok(Number.isInteger(document.stats.level50HeroCount));
+});
+
+test('editing a registration keeps the retired answers it already stored', () => {
+  const stored = build({ values: signupValues() });
+  const slim = signupValues();
+  delete slim.stats.t9TroopTypes;
+  delete slim.stats.level50HeroCount;
+  delete slim.commitment.preferredRole;
+  delete slim.commitment.secondaryRole;
+  delete slim.commitment.contactNumber;
+  delete slim.commitment.vts1097Member;
+  const merged = mergeRetiredBohSignupFields(slim, {
+    ...stored,
+    commitment: { ...stored.commitment, contactNumber: '+100', vts1097Member: false },
+  });
+  const document = build({ values: merged });
+  assert.deepEqual(document.stats.t9TroopTypes, ['Spearman', 'Archer']);
+  assert.equal(document.stats.level50HeroCount, 12);
+  assert.equal(document.commitment.preferredRole, 'offensive');
+  assert.equal(document.commitment.secondaryRole, 'rune');
+  assert.equal(document.commitment.contactNumber, '+100');
+  assert.equal(document.commitment.vts1097Member, false);
+});
+
+test('an OCR-filled registration saves only with the values confirmed', async () => {
+  const { buildSignupOcrAudit } = await import('../../js/vts-score-signup-ocr.js');
+  const review = { confidence: { overall: 0.9, troopPower: 0.8 }, warnings: [] };
+  const confirmed = build({
+    values: { ...signupValues(), entryMethod: 'ocr' },
+    ocr: buildSignupOcrAudit(review, { confirmed: true }),
+  });
+  assert.deepEqual(validateBohSignupDocument(confirmed), []);
+  assert.equal(confirmed.entryMethod, 'ocr');
+  assert.equal(confirmed.ocr.used, true);
+  assert.equal(confirmed.ocr.valuesConfirmed, true);
+  assert.equal(confirmed.ocr.fieldConfidence.troopPower, 0.8);
 });

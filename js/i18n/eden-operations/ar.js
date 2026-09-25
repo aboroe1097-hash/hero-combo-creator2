@@ -121,6 +121,8 @@ export default Object.freeze({
   emptyTitle: 'لا توجد عملية مطابقة',
   assigned: 'المسجَّلون',
   staffMissing: 'يلزم {count} لاعبين إضافيين',
+  countsReadOnly: 'أعداد مشتركة · تغييرها يتطلب تسجيل دخول إداري واتصالًا',
+  countSaveFailed: 'لم يتم حفظ الأعداد المشتركة. تم التراجع عن تغييرك.',
   'op.specialty-build.title': 'بناء التخصص',
   'op.material-budget.title': 'ميزانية المواد',
   'op.hold-tile.title': 'بلاطات أعلى',

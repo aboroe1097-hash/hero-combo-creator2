@@ -8,7 +8,6 @@ export const EDEN_OPERATIONS_SOURCES = Object.freeze({
   specialtyGuide: Object.freeze({
     id: 'l96-eden-specialty-guide',
     title: 'A brief guide about Eden Specialty',
-    author: 'DonPablone · Legion 96',
     url: 'https://sites.google.com/view/l96/knowledge-base/roceden/a-very-brief-guide-about-eden-specialty',
     published: '2021-10-19',
     status: 'community-guidance',
@@ -16,7 +15,6 @@ export const EDEN_OPERATIONS_SOURCES = Object.freeze({
   specialtyHonor: Object.freeze({
     id: 'l96-honor-by-level',
     title: 'Specialty Level — Honor needed by level',
-    author: 'DonPablone · Legion 96',
     url: 'https://l96.app/public/specialty-level-honor-needed-by-level',
     suppliedImage: 'codex-clipboard-60aa3960-fe6b-448b-8829-cf2a31c616d3.png',
     status: 'community-sheet',

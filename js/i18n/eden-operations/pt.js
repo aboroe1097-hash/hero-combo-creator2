@@ -124,6 +124,8 @@ export default Object.freeze({
   emptyTitle: 'Nenhuma operação encontrada',
   assigned: 'Inscritos',
   staffMissing: 'Faltam {count} jogadores',
+  countsReadOnly: 'Contagens compartilhadas · alterá-las exige login de admin e conexão',
+  countSaveFailed: 'As contagens compartilhadas não foram salvas. Sua alteração foi revertida.',
   'op.specialty-build.title': 'Build de especialidade',
   'op.material-budget.title': 'Orçamento de materiais',
   'op.hold-tile.title': 'Terreno de nível maior',

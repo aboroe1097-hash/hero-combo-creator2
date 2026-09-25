@@ -297,7 +297,8 @@ function buildFooter() {
   const actions = document.createElement('div');
   actions.className = 'standalone-footer-actions';
   const contact = document.createElement('a');
-  contact.href = 'mailto:aboroe1097@gmail.com';
+  // Contact Devs opens the feedback/complaint form rather than a mail client.
+  contact.href = 'eden-x2.html#edenX1Complaints';
   contact.dataset.toolShellText = 'contact';
   const site = document.createElement('a');
   site.href = 'https://roc-vts.com/';

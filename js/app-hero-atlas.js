@@ -1449,7 +1449,7 @@ function renderDuelRecordCard(record) {
       </div>
       <div class="duel-record-lineups">${opponentsHtml}</div>
       ${record.inclusionCriteria ? `<p class="duel-record-criteria">${escapeHtml(String(record.inclusionCriteria))}</p>` : ''}
-      ${envelope ? `<p class="duel-record-credit">${escapeHtml(envelope.source)} · ${escapeHtml(envelope.credit)} · ${escapeHtml(envelope.captureDate)}</p>` : ''}
+      ${envelope ? `<p class="duel-record-credit">${escapeHtml(envelope.source)} · ${escapeHtml(envelope.captureDate)}</p>` : ''}
     </article>`;
 }
 

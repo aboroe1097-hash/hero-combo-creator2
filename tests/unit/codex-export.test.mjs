@@ -56,7 +56,7 @@ test('csvCell escapes commas, quotes and newlines', () => {
   assert.equal(csvCell('say "hi"'), '"say ""hi"""');
 });
 
-test('csv exports carry branding footers with credits', () => {
+test('csv exports carry branding footers without a Sources credit', () => {
   const text = buildCsvText({
     columns: ['hero', 'season'],
     rows: [
@@ -70,11 +70,11 @@ test('csv exports carry branding footers with credits', () => {
   assert.ok(text.includes('Cyrus'));
   assert.ok(text.startsWith('\uFEFFhero,season'));
   const footerLines = text.split('\n').filter((line) => line.startsWith('#'));
-  assert.ok(footerLines.length >= 3);
+  assert.ok(footerLines.length >= 2);
   const joined = footerLines.join('\n');
-  assert.ok(joined.includes('DonPablone'));
   assert.ok(joined.includes('RoC VTS Toolkit'));
-  assert.ok(joined.includes('riseofcastles.net community'));
+  assert.ok(joined.includes('Generated at'));
+  assert.doesNotMatch(joined, /Sources|DonPablone|riseofcastles/);
 });
 
 test('csv exports reject third-party watermark content', () => {
@@ -97,7 +97,7 @@ test('json exports produce a schema-versioned envelope', () => {
   assert.equal(document.schema, 'roc-vts.research-planner');
   assert.equal(document.schemaVersion, 1);
   assert.equal(document.payload.plan.warBadges, 100);
-  assert.equal(document.sources.length, 7);
+  assert.equal('sources' in document, false);
   assert.match(text, /"schemaVersion": 1/);
 });
 

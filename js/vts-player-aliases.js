@@ -210,8 +210,10 @@ export const CONFIRMED_GROUPS = [
   // q. Immortal was renamed blaze banner 2 (owner-confirmed 2026-09-15). The data
   // agrees: the old name leaves the X2 lists exactly as the new one arrives, and
   // the two never share a contribution list or an attack. "Immortal" in banner
-  // duty lists is the same account.
-  ['blaze banner 2', 'q. Immortal', 'q. Immortalis', 'Immortal'],
+  // duty lists is the same account. "q.Immortal" (no space) is the spelling the
+  // duty review confirmed three rows under; it is the same name without its
+  // space, and without it those duties scored to a phantom account (16.5.9).
+  ['blaze banner 2', 'q. Immortal', 'q. Immortalis', 'Immortal', 'q.Immortal'],
   ['qImmortal.Banner', 'qmmortal.Banner'],
   ['Liskylli banner'],
   ['AK Чапай-baner'],

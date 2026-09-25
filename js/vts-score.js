@@ -16,6 +16,7 @@ import {
   initFirebase,
 } from './firebase.js';
 import { createVtsScoreI18n } from './vts-score-i18n.js';
+import { buildSignupOcrAudit, mapOcrReviewToSignupFields } from './vts-score-signup-ocr.js';
 import {
   buildVtsScoreSubmission,
   rankVtsScorePlayers,
@@ -221,6 +222,8 @@ export async function bootVtsScore(options = {}) {
     visiblePlayers: [],
     highlightedPlayerIndex: -1,
     review: null,
+    signupFile: null,
+    signupOcrReview: null,
     signup: null,
     signupSession: null,
     scoreWorkspaceOpen: false,
@@ -318,6 +321,28 @@ export async function bootVtsScore(options = {}) {
   element('vtsScoreLanguage')?.addEventListener('change', () => {
     if (state.review) renderPowerFields();
   });
+
+  /**
+   * One screenshot through the secured OCR worker (buildBohStatsOcrRequest →
+   * the member access client), as the review model both the score upload and
+   * the registration read. The image is sent once and never stored.
+   */
+  async function readPowerScreenshot(file) {
+    const prepared = await prepareBohStatsScreenshot(file);
+    const request = buildBohStatsOcrRequest({
+      seasonId: state.grant.seasonId,
+      imageData: prepared.imageData,
+    });
+    const response = await state.client.processOcr(request);
+    return buildBohStatsReviewModel(response?.result || response);
+  }
+
+  function isAccessLost(error) {
+    return (
+      error instanceof AllStarBohAccessError &&
+      (error.code === 'access_expired' || error.code === 'access_denied')
+    );
+  }
 
   function closePlayerResults() {
     state.visiblePlayers = [];
@@ -730,6 +755,73 @@ export async function bootVtsScore(options = {}) {
     if (state.grant) renderSignupState();
   });
 
+  // Registration: prefill the power fields from a Lord Info → Power
+  // screenshot. The fields stay editable; the confirm tick is required before
+  // an OCR-filled registration saves (the rules require it too).
+  const signupImage = element('vtsScoreSignupImage');
+  const signupReadButton = element('vtsScoreSignupReadButton');
+  const signupOcrReview = element('vtsScoreSignupOcrReview');
+  const signupOcrConfirm = element('vtsScoreSignupOcrConfirm');
+
+  function resetSignupOcr() {
+    state.signupOcrReview = null;
+    if (signupOcrConfirm) signupOcrConfirm.checked = false;
+    setHidden(signupOcrReview, true);
+  }
+
+  signupImage?.addEventListener('change', () => {
+    try {
+      state.signupFile = getSingleBohStatsScreenshot(signupImage.files);
+      setStatus(i18n.text('statusFileReady', { name: state.signupFile.name }), 'success');
+    } catch (error) {
+      state.signupFile = null;
+      signupImage.value = '';
+      setStatus(friendlyError(error), 'error');
+    }
+  });
+
+  signupReadButton?.addEventListener('click', async () => {
+    if (!['open', 'edit'].includes(currentPageState().signup)) return;
+    if (!state.signupFile) {
+      setStatus(i18n.text('statusChooseScreenshot'), 'error');
+      signupImage?.focus();
+      return;
+    }
+    if (!element('vtsScoreSignupOcrConsent')?.checked) {
+      setStatus(i18n.text('statusConfirmConsent'), 'error');
+      element('vtsScoreSignupOcrConsent')?.focus();
+      return;
+    }
+    setBusy(signupReadButton, true, i18n.text('statusReading'));
+    setProgress(true);
+    try {
+      const review = await readPowerScreenshot(state.signupFile);
+      const fields = mapOcrReviewToSignupFields(review);
+      for (const [path, value] of Object.entries(fields)) {
+        const input = signupForm?.querySelector(`[data-boh-field="${path}"]`);
+        if (input) input.value = value === '' ? '' : String(value);
+      }
+      state.signupOcrReview = review;
+      if (signupOcrConfirm) signupOcrConfirm.checked = false;
+      setHidden(signupOcrReview, false);
+      setStatus(i18n.text('signupOcrFilled'), 'success');
+      signupForm?.querySelector('[data-boh-field="stats.totalCastlePower"]')?.focus();
+    } catch (error) {
+      resetSignupOcr();
+      if (isAccessLost(error)) {
+        setHidden(signupPanel, true);
+        setHidden(scorePanel, true);
+        setHidden(pinPanel, false);
+        setStatus(i18n.text('statusEnterPin'), 'error');
+      } else {
+        setStatus(friendlyError(error), 'error');
+      }
+    } finally {
+      setProgress(false);
+      setBusy(signupReadButton, false);
+    }
+  });
+
   signupForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!['open', 'edit'].includes(currentPageState().signup)) return;
@@ -747,9 +839,22 @@ export async function bootVtsScore(options = {}) {
         return;
       }
     }
+    let ocr;
+    if (state.signupOcrReview) {
+      if (!signupOcrConfirm?.checked) {
+        setStatus(i18n.text('signupOcrConfirmRequired'), 'error');
+        signupOcrConfirm?.focus();
+        return;
+      }
+      values.entryMethod = 'ocr';
+      ocr = buildSignupOcrAudit(state.signupOcrReview, { confirmed: true });
+    }
     setBusy(signupButton, true, i18n.text('signupSaving'));
     try {
-      const saved = await state.signupSession.save(values);
+      const saved = await state.signupSession.save(values, ocr ? { ocr } : {});
+      resetSignupOcr();
+      if (signupImage) signupImage.value = '';
+      state.signupFile = null;
       state.signup = saved;
       renderSignupState();
       element('vtsScoreSignupSuccessName').textContent = saved.gameName || '';
@@ -779,23 +884,14 @@ export async function bootVtsScore(options = {}) {
     setBusy(readButton, true, i18n.text('statusReading'));
     setProgress(true);
     try {
-      const prepared = await prepareBohStatsScreenshot(state.file);
-      const request = buildBohStatsOcrRequest({
-        seasonId: state.grant.seasonId,
-        imageData: prepared.imageData,
-      });
-      const response = await state.client.processOcr(request);
-      state.review = buildBohStatsReviewModel(response?.result || response);
+      state.review = await readPowerScreenshot(state.file);
       renderPowerFields();
       setStatus(i18n.text('statusReviewReady'), 'success');
       powerInput(VTS_SCORE_POWER_FIELDS[0])?.focus();
     } catch (error) {
       state.review = null;
       clearPowerFields();
-      if (
-        error instanceof AllStarBohAccessError &&
-        (error.code === 'access_expired' || error.code === 'access_denied')
-      ) {
+      if (isAccessLost(error)) {
         setHidden(scorePanel, true);
         setHidden(pinPanel, false);
         setStatus(i18n.text('statusEnterPin'), 'error');

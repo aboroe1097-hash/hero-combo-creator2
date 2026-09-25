@@ -3314,6 +3314,30 @@
 #ocrDashboardRoot .dash-account-links-form .dash-btn {
   min-height: 40px;
 }
+/* Inline edit of a saved link (16.5.9): full row width, 44px targets. */
+#ocrDashboardRoot .dash-account-link-editor {
+  flex: 1 1 100%;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(8rem, auto) auto auto;
+  margin: 0;
+}
+#ocrDashboardRoot .dash-account-link-editor input,
+#ocrDashboardRoot .dash-account-link-editor select,
+#ocrDashboardRoot .dash-account-link-editor .dash-btn {
+  min-height: 44px;
+}
+#ocrDashboardRoot .dash-account-link-edit-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--danger, #f87171);
+}
+@media (max-width: 720px) {
+  #ocrDashboardRoot .dash-account-link-editor {
+    grid-template-columns: 1fr 1fr;
+  }
+  #ocrDashboardRoot .dash-account-link-editor .dash-match-field {
+    grid-column: 1 / -1;
+  }
+}
 #ocrDashboardRoot .dash-account-links .dash-match-label,
 #ocrDashboardRoot .dash-duty-match-row .dash-match-label {
   display: block;
@@ -4594,6 +4618,17 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
+}
+
+#ocrDashboardRoot .dash-conduct-export-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-inline-start: auto;
+}
+
+#ocrDashboardRoot .dash-conduct-export-actions .dash-btn {
+  min-height: 44px;
 }
 
 #ocrDashboardRoot .dash-conduct-list-head h3 {

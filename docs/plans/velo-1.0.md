@@ -1,7 +1,7 @@
 # Velo 1.0 — rebrand, naming system, and presence plan
 
-Status: implemented for the 16.5.9 release lane (PR #248; merges strictly after #245). This doc
-records the brainstorm behind Velo 1.0:
+Status: implemented for the **16.5.10** release lane (PR #249), which took the next free patch
+after the owner's own 16.5.9 release landed. This doc records the brainstorm behind Velo 1.0:
 what is wrong with today's assistant identity, the naming decision and its rejected alternatives,
 the layout and responsiveness fixes, and the presence backlog that did not fit this release.
 

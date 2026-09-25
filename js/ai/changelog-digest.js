@@ -1,17 +1,29 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.9";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.10";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
   {
-    "version": "16.5.9",
+    "version": "16.5.10",
     "date": "2026-09-25",
     "highlights": [
       "Velo graduates to **Velo 1.0**. The chat header's \"Beta 0.4\" badge becomes a plain \"Velo 1.0\" version mark in every language — a version number needs no translation — and the internal b0.4 build number is retired from the assistant's own answers, the toolkit map, and the system …",
       "The command palette (Ctrl/Cmd+K) now finds **Talk with Velo** and opens the assistant drawer from there through the same lazy loader the floating launcher uses, so no page pays for the drawer until someone asks for it. Closing the drawer returns keyboard focus to the palette tri…",
       "The chat's copy button and source chips reach the 44-pixel touch target on phones instead of 32-pixel rows that were hard to hit, and answer tables no longer force sideways scrolling on 320-pixel screens — a narrow table now shrinks with its wrapper while wide answers keep their…"
+    ]
+  },
+  {
+    "version": "16.5.9",
+    "date": "2026-09-25",
+    "highlights": [
+      "Exports no longer carry a \"Sources\" credit line. CSV, JSON, PNG and the downloadable PDFs name the tool, version and time only. The author byline on the Eden Operations Lab source cards, the author credit on duel-record provenance lines and the other credit lines on the Building…",
+      "The VTS Admin all-data CSV is fixed. Every footer line is one quoted cell, so a comma no longer spills into a second column, and the footer no longer runs into the last data row. Dates stored as Firestore timestamps are written as ISO 8601 instead of raw timestamp code, and a ne…",
+      "The all-data CSV now also includes the player registry and account links (owner and account type), taught aliases, \"always main\" accounts, contribution matches, conduct suggestions (status, suggested by, reviewer), duty point weights and scoring multipliers, reward settings, vot…",
+      "The duty debug CSV has a \"Scored As\" column holding the exact name the weighted score credits for each row. When an account link carries the credit to its owner, Match Status reads \"linked\" and Scored As names the link type (alt/banner or secondary). \"Likely\" now means only a fu…",
+      "The duty spelling \"q.Immortal\" (without the space) now counts for the same account as \"q. Immortal\", following the owner's earlier answer. Before, duty rows confirmed with that spelling scored to a separate account that no leaderboard row showed.",
+      "Account links: every row in the Linked accounts list has an Edit button. It changes the account name, who runs it and the type in place, refuses duplicates and self-links, and saves and rescores the same way as adding a link."
     ]
   },
   {
@@ -91,18 +103,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-09-24",
     "highlights": [
       "Fixed: the site could fail to open with \"This site can't be reached\" in a browser whose offline cache storage was damaged. The offline helper now treats every cache read and write as optional, so the page always loads from the network when the cache cannot be used, and the fixed…"
-    ]
-  },
-  {
-    "version": "16.5.0",
-    "date": "2026-09-23",
-    "highlights": [
-      "Motion and visual-craft release. Hubs gained a one-shot card entry and a pointer spotlight, tab changes cross-fade the incoming panel where the browser supports View Transitions, and the loader settles once when loading really completes.",
-      "Confirmed actions now get a short celebration: a saved combo, a copied or shared link, and a saved Eden vote. Nothing is celebrated until the existing action has already succeeded, and reduced-motion or Save-Data sessions keep the same success text with no particles.",
-      "The top combo result's shimmer runs twice instead of looping forever, and the open hero detail card follows the pointer with a small capped tilt.",
-      "Heroes: the Atlas gained a season timeline. It lists the canonical hero-release seasons with hero counts that reconcile with the season filter, links each season to its shareable deep link, is a vertical list on phones, and stays readable at 320px, in both themes, and under redu…",
-      "Buildings: added Castle 26–30 direct costs across Orichalcum, gold, food, lumber, charcoal, marble and iron, plus a searchable planner for the 43 buildings and their level costs, prerequisites and final-level bonuses. Missing sheet cells remain unknown, and the sheet's mismatche…",
-      "Room to breathe: removed unused atmosphere utilities and four dead tokens (about 3 KiB of entry CSS) and lowered the entry CSS ceiling by the measured amount."
     ]
   }
 ].map((release) =>

@@ -230,7 +230,7 @@ export function buildClassDocument(rawChoices, copy) {
     ],
     sections,
     sources: profiles.map((profile) => ({
-      label: `${profile.name} — Don Pablone / S96 (L96)`,
+      label: profile.name,
       url: profile.sourceUrl,
     })),
   };
