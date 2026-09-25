@@ -1,0 +1,4 @@
+{
+  "about": "New X8 lineups waiting to be placed. Each entry: heroes in Front, Middle, Back order, an optional skin code (3 must, 2 recommended, 1 optional) and an optional source. Run npm run combos:plan, place them and press Save; a placed lineup moves from here into js/combos-db.js.",
+  "lanes": []
+}

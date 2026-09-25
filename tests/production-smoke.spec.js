@@ -113,7 +113,7 @@ test('public entry pages follow the release maintenance flag', async ({ browser 
   await context.close();
 });
 
-test('home, admin and Eden X2 do not request Eden Siege or three.js chunks', async ({
+test("home, admin and Eden X2 do not request Velo's Rampart or three.js chunks", async ({
   browser,
 }) => {
   test.skip(maintenanceEnabled, 'maintenance mode is enabled in this build');

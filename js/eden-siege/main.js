@@ -1,4 +1,4 @@
-// Eden Siege route controller.
+// Velo's Rampart route controller.
 //
 // The page ships a canvas, a HUD host and a status block. Everything else —
 // the simulation, three.js, the audio graph — is pulled in lazily from here, so

@@ -11,7 +11,7 @@
 // different i18n systems (or none). The module follows <html lang>, which each
 // page's own language switcher already maintains.
 //
-// This module carries no CSS on purpose: Eden, Arcade and Eden Siege already
+// This module carries no CSS on purpose: Eden, Arcade and Velo's Rampart already
 // link css/standalone-footer-v14.css, and importing it here duplicated it on
 // every one of them. Pages that need the footer or bar styles import
 // css/standalone-footer-v14.css and css/tool-shell.css in their own entry.

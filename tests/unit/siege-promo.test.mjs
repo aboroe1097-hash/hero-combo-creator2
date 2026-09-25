@@ -42,7 +42,7 @@ test('the homepage callout is dismissed once per version and survives broken sto
   assert.equal(dismissCallout(broken), false);
 });
 
-test('the Arcade banner names today’s Daily Siege with every placeholder filled', () => {
+test('the Arcade banner names today’s Daily War with every placeholder filled', () => {
   const today = dailySiegeFor(new Date('2026-09-23T08:00:00Z'));
   for (const [lang, pack] of Object.entries(translations)) {
     const template = pack.arcadeSiegeDailyNote || translations.en.arcadeSiegeDailyNote;

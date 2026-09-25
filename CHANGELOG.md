@@ -2,11 +2,32 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
-## 16.5.10 - 2026-09-25
+## 16.5.13 - 2026-09-25
 
 - Velo graduates to **Velo 1.0**. The chat header's "Beta 0.4" badge becomes a plain "Velo 1.0" version mark in every language — a version number needs no translation — and the internal b0.4 build number is retired from the assistant's own answers, the toolkit map, and the system prompt, so asking "what version is this?" gets 1.0 everywhere. **Action for the owner:** run `npm run worker:deploy` — the wording the AI uses about itself lives in the Cloudflare Worker's system prompt, and until that redeploy Velo still calls itself b0.4 in chat even though the site chrome says 1.0.
 - The command palette (Ctrl/Cmd+K) now finds **Talk with Velo** and opens the assistant drawer from there through the same lazy loader the floating launcher uses, so no page pays for the drawer until someone asks for it. Closing the drawer returns keyboard focus to the palette trigger. The label was already translated in every language and had no consumer; now it does.
 - The chat's copy button and source chips reach the 44-pixel touch target on phones instead of 32-pixel rows that were hard to hit, and answer tables no longer force sideways scrolling on 320-pixel screens — a narrow table now shrinks with its wrapper while wide answers keep their scroll. Both fixes are checked in a real browser at 320px and 390px.
+
+## 16.5.12 - 2026-09-25
+
+- **The War Council.** After the third, sixth and ninth wave — every third wave in Endless War — pick one of three boons for the rest of the run: Ember Heart (fire burns 40% harder), Frost Grip (ice slows bite deeper and hold longer), Swift Wings (faster movement, shorter dash cooldown), Heavy Nova (harder, wider nova), Gold Rush (+35% gold), Long Reach (+15% bolt and tower range), Quick Chain (chains fade 40% slower) or Tower Wall (+40% tower health). The same seed offers the same three boons to every player, so Daily runs stay comparable, and only three of the eight fit in a run.
+- **Elemental reactions.** Ice onto a burning foe **shatters** it (bonus damage, armour ignored, the burn is consumed); fire onto a slowed foe **melts** it (double burn, slow cleared); three slows in a row **deep-freeze** a foe in place for a moment; and a burning foe that dies **immolates** its neighbours. Each reaction calls out on screen, so the counter-play is legible.
+- Wing swaps now sit on a 2.5-second cooldown and the wing buttons dim while it runs, so committing to an element is a decision rather than a toggle.
+
+## 16.5.11 - 2026-09-25
+
+- **Velo aims where you aim.** Keyboard and mouse players now fire in the direction they aim — the mouse aims at the point under the cursor — instead of the old auto-lock on the nearest enemy. Touch players keep the assist on purpose: shots still bend to a foe inside a narrow cone around the direction they are moving, so a thumb never has to aim precisely. `?aim=free` and `?aim=assist` force either mode for testing or preference.
+- **Six enemy roles make waves read as armies.** The shieldwall blocks bolts that hit its front but not splash, fire or a flank; the skirmisher kites and shoots; the saboteur hunts your towers and ignores the stronghold while any tower stands; the herald buffs nearby foes; the hauler pays double gold; and the gate ram — an escort that arrives with the wave-10 warlord — only a slow effect can stop.
+- **Wave omens.** From the third wave on (every wave in Endless War), choose the omen the next wave carries, or take none: Iron Tide (every foe armoured, +60% gold), Fog of War (+40% score), Blood Moon (faster foes, slower chains, +50% score) or Mirror Ice (ice barely bites, +80% score).
+- **Feats.** Six named one-off challenges — Wingborne, Ashfall, Cold Calculus, Untouched, Warlord's Bane and Architect — are tracked in the browser, listed on the title and results cards, and announced the moment one is earned.
+- Fixed: on phones under 560 px wide the tower build picker was pushed below the arena and clipped; it now sits above the thumb controls where it belongs.
+
+## 16.5.10 - 2026-09-25
+
+- The arcade's real-time game is now **Velo's Rampart** — renamed from Eden Siege everywhere it appears, in all 13 languages, so it no longer reads like one of the Eden tools beside Eden Hub and Eden Map. The address stays `eden-siege.html`, so old links keep working. The mode chips read The Siege, Endless Siege and Daily War, and the warlord boss has a name: Kharr.
+- The game's ready screen is a living title scene: a slow camera drift over the rampart while Velo waits, with the game title over it. Reduced-motion players get the same scene without the drift.
+- **Share run** now makes a share card image — score, stars, wave, seed and a drawn Velo emblem — offered to the phone's share sheet where available and downloaded as a PNG otherwise. The share line still goes to the clipboard.
+- The arcade's next releases are planned in `docs/plans/arcade-revival.md`: aim rework with touch assist, enemy roles and wave modifiers, the pick-1-of-3 draft with elemental reactions, hero lineups from the real combo data, ghost replays and share links, the Alliance Daily league with replay-verified scores, and Velo's post-run tips.
 
 ## 16.5.9 - 2026-09-25
 

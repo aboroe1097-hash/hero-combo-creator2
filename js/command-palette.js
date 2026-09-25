@@ -122,8 +122,8 @@ const DESTS = [
     key: 'tabEdenSiege',
     href: 'eden-siege.html',
     kind: 'link',
-    fallback: 'Eden Siege',
-    kw: 'eden siege game play arena ice fire tower defense velo daily siege endless boss warlord',
+    fallback: "Velo's Rampart",
+    kw: 'velo rampart siege game play arena ice fire tower defense daily war endless boss warlord eden siege',
   },
   {
     key: 'tabBattleSimulator',

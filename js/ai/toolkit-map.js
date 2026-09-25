@@ -160,12 +160,12 @@ const entries = [
   },
   {
     id: 'edenSiege',
-    name: 'Eden Siege',
+    name: "Velo's Rampart",
     kind: 'page',
     href: 'eden-siege.html',
     summary:
       'Real-time Ice & Fire arena game: play Velo, hold the stronghold, raise five-tier towers, beat warlord bosses, try the Daily Siege shared seed or Endless mode.',
-    answers: ['Is there a real-time game?', 'What is the Daily Siege?', 'How do I play Eden Siege?'],
+    answers: ['Is there a real-time game?', 'What is the Daily War?', "How do I play Velo's Rampart?"],
     keywords: ['eden siege', 'siege', 'game', 'arena', 'tower defense', 'velo', 'daily siege', 'endless', 'warlord', 'play'],
   },
   {
