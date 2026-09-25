@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test';
 
-// Eden Siege has its own config so its engine checks can be run on demand —
+// Velo's Rampart has its own config so its engine checks can be run on demand —
 // a full arena run takes longer than the production smoke pass and needs a
 // preview server of its own.
 const requestedLocalPort = Number(process.env.PLAYWRIGHT_SIEGE_PORT || 4174);

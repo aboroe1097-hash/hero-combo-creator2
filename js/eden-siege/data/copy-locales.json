@@ -1,7 +1,7 @@
 {
   "es": {
     "game": {
-      "title": "Asedio de Eden",
+      "title": "El Baluarte de Velo",
       "kicker": "Arena Hielo y Fuego · VTS 1097",
       "tagline": "Aguanta la línea. El Hielo controla, el Fuego quema, y las alas recuerdan cada cadena."
     },
@@ -69,8 +69,96 @@
       "bossKills": "Señores",
       "history": "Partidas recientes",
       "continueEndless": "Seguir: sin fin",
-      "playDaily": "Asedio diario",
-      "campaignWon": "Campaña superada"
+      "playDaily": "Guerra diaria",
+      "campaignWon": "Asedio superado",
+      "cardSaved": "Carta guardada"
+    },
+    "feats": {
+      "title": "Hazañas",
+      "unlocked": "Hazaña desbloqueada",
+      "progress": "{unlocked} / {total} desbloqueadas",
+      "wingborne": {
+        "name": "Alado",
+        "desc": "Alcanza una cadena de ×50 en una sola partida."
+      },
+      "ashfall": {
+        "name": "Lluvia de ceniza",
+        "desc": "Reduce a cenizas a 100 enemigos."
+      },
+      "coldCalculus": {
+        "name": "Cálculo gélido",
+        "desc": "Gana una partida usando solo el ala de Hielo."
+      },
+      "untouched": {
+        "name": "Intacto",
+        "desc": "Gana con la fortaleza sin un solo rasguño."
+      },
+      "warlordsBane": {
+        "name": "Azote de los señores",
+        "desc": "Derriba a tres señores de la guerra en una sola partida."
+      },
+      "architect": {
+        "name": "Arquitecto",
+        "desc": "Lleva al máximo cada espacio de torre en una sola partida."
+      }
+    },
+    "omens": {
+      "title": "Presagio de oleada",
+      "body": "Elige el presagio que llevará la próxima oleada, o no tomes ninguno.",
+      "skip": "Sin presagio",
+      "ironTide": "Marea de hierro",
+      "ironTideDesc": "Todos los enemigos van acorazados. +60% de oro.",
+      "fogOfWar": "Niebla de guerra",
+      "fogOfWarDesc": "El campo se oscurece. +40% de puntos.",
+      "bloodMoon": "Luna de sangre",
+      "bloodMoonDesc": "Enemigos más rápidos, cadenas más lentas. +50% de puntos.",
+      "mirrorIce": "Hielo espejo",
+      "mirrorIceDesc": "El Hielo apenas muerde. +80% de puntos."
+    },
+    "reactions": {
+      "shatter": "Estallido",
+      "melt": "Deshielo",
+      "deepFreeze": "Congelación profunda",
+      "immolate": "Inmolación"
+    },
+    "draft": {
+      "title": "Consejo de Guerra",
+      "body": "Elige una bendición para el resto de la partida.",
+      "choose": "Tómala",
+      "boons": {
+        "emberHeart": {
+          "name": "Corazón de Ascuas",
+          "desc": "El Fuego quema un 40% más."
+        },
+        "frostGrip": {
+          "name": "Agarre de Escarcha",
+          "desc": "El Hielo ralentiza un 30% más y dura más."
+        },
+        "swiftWings": {
+          "name": "Alas Veloces",
+          "desc": "Te mueves un 12% más rápido y el Esquivar se recarga un 20% antes."
+        },
+        "heavyNova": {
+          "name": "Nova Pesada",
+          "desc": "La Nova golpea un 50% más fuerte y empuja más lejos."
+        },
+        "goldRush": {
+          "name": "Fiebre del Oro",
+          "desc": "Los enemigos caídos sueltan un 35% más de oro."
+        },
+        "longReach": {
+          "name": "Largo Alcance",
+          "desc": "Tus disparos y tus torres alcanzan un 15% más lejos."
+        },
+        "quickChain": {
+          "name": "Cadena Rápida",
+          "desc": "Las cadenas se desvanecen un 40% más despacio."
+        },
+        "towerWall": {
+          "name": "Muro de Torres",
+          "desc": "Las torres ganan un 40% más de vida."
+        }
+      }
     },
     "maps": {
       "mapKeepName": "Muralla del Torreón",
@@ -88,7 +176,13 @@
       "enemyRanger": "Explorador",
       "enemyCavalry": "Caballería",
       "enemyDreadnought": "Acorazado",
-      "enemyWarlord": "Señor de la guerra"
+      "enemyWarlord": "Kharr el Señor de la guerra",
+      "enemyShieldwall": "Muro de escudos",
+      "enemySkirmisher": "Escaramuzador",
+      "enemySaboteur": "Saboteador",
+      "enemyHerald": "Heraldo",
+      "enemyHauler": "Acarreador",
+      "enemyGateRam": "Ariete"
     },
     "towers": {
       "towerFrost": "Aguja de Escarcha",
@@ -136,9 +230,9 @@
     "modes": {
       "label": "Modo",
       "arena": "Arena",
-      "campaign": "Campaña",
-      "endless": "Sin fin",
-      "daily": "Asedio diario",
+      "campaign": "El Asedio",
+      "endless": "Asedio sin fin",
+      "daily": "Guerra diaria",
       "campaignDesc": "Diez oleadas, dos señores de la guerra. Tres estrellas si la fortaleza apenas sufre.",
       "endlessDesc": "Las puertas nunca se cierran. Cada quinta oleada trae un señor de la guerra.",
       "dailyDesc": "Un mapa, una semilla, el mismo asedio para todos hoy ({date})."
@@ -172,7 +266,7 @@
   },
   "pt": {
     "game": {
-      "title": "Cerco de Eden",
+      "title": "O Baluarte de Velo",
       "kicker": "Arena Gelo e Fogo · VTS 1097",
       "tagline": "Mantenha a linha. O Gelo controla, o Fogo queima, e as asas lembram cada corrente."
     },
@@ -240,8 +334,96 @@
       "bossKills": "Senhores da guerra",
       "history": "Partidas recentes",
       "continueEndless": "Continuar: Infinito",
-      "playDaily": "Cerco diário",
-      "campaignWon": "Campanha concluída"
+      "playDaily": "Guerra diária",
+      "campaignWon": "Cerco concluído",
+      "cardSaved": "Carta salva"
+    },
+    "feats": {
+      "title": "Feitos",
+      "unlocked": "Feito desbloqueado",
+      "progress": "{unlocked} / {total} desbloqueados",
+      "wingborne": {
+        "name": "Nascido das Asas",
+        "desc": "Alcance uma corrente de ×50 em uma única partida."
+      },
+      "ashfall": {
+        "name": "Chuva de Cinzas",
+        "desc": "Reduza 100 inimigos a cinzas."
+      },
+      "coldCalculus": {
+        "name": "Cálculo Frio",
+        "desc": "Vença uma partida usando apenas a asa de Gelo."
+      },
+      "untouched": {
+        "name": "Intocado",
+        "desc": "Vença com a fortaleza intacta."
+      },
+      "warlordsBane": {
+        "name": "Flagelo dos Senhores",
+        "desc": "Derrube três senhores da guerra em uma única partida."
+      },
+      "architect": {
+        "name": "Arquiteto",
+        "desc": "Maximize cada encaixe de torre em uma única partida."
+      }
+    },
+    "omens": {
+      "title": "Presságio da onda",
+      "body": "Escolha o presságio que a próxima onda carrega, ou não escolha nenhum.",
+      "skip": "Sem presságio",
+      "ironTide": "Maré de Ferro",
+      "ironTideDesc": "Todos os inimigos vêm blindados. +60% de ouro.",
+      "fogOfWar": "Névoa da Guerra",
+      "fogOfWarDesc": "O campo escurece. +40% de pontos.",
+      "bloodMoon": "Lua de Sangue",
+      "bloodMoonDesc": "Inimigos mais rápidos, correntes mais lentas. +50% de pontos.",
+      "mirrorIce": "Gelo Espelhado",
+      "mirrorIceDesc": "O Gelo quase não morde. +80% de pontos."
+    },
+    "reactions": {
+      "shatter": "Estilhaço",
+      "melt": "Degelo",
+      "deepFreeze": "Congelamento profundo",
+      "immolate": "Imolação"
+    },
+    "draft": {
+      "title": "Conselho de Guerra",
+      "body": "Escolha uma bênção para o resto da partida.",
+      "choose": "Pegue-a",
+      "boons": {
+        "emberHeart": {
+          "name": "Coração de Brasa",
+          "desc": "O Fogo queima 40% mais forte."
+        },
+        "frostGrip": {
+          "name": "Aperto de Gelo",
+          "desc": "O Gelo desacelera 30% mais forte e por mais tempo."
+        },
+        "swiftWings": {
+          "name": "Asas Velozes",
+          "desc": "Você se move 12% mais rápido e a Investida recarrega 20% antes."
+        },
+        "heavyNova": {
+          "name": "Nova Pesada",
+          "desc": "A Nova bate 50% mais forte e empurra mais longe."
+        },
+        "goldRush": {
+          "name": "Corrida do Ouro",
+          "desc": "Inimigos caídos deixam 35% mais ouro."
+        },
+        "longReach": {
+          "name": "Longo Alcance",
+          "desc": "Seus disparos e suas torres alcançam 15% mais longe."
+        },
+        "quickChain": {
+          "name": "Corrente Rápida",
+          "desc": "As correntes somem 40% mais devagar."
+        },
+        "towerWall": {
+          "name": "Muralha de Torres",
+          "desc": "As torres ganham 40% mais vida."
+        }
+      }
     },
     "maps": {
       "mapKeepName": "Muralha do Torreão",
@@ -259,7 +441,13 @@
       "enemyRanger": "Batedor",
       "enemyCavalry": "Cavalaria",
       "enemyDreadnought": "Encouraçado",
-      "enemyWarlord": "Senhor da guerra"
+      "enemyWarlord": "Kharr, o Senhor da guerra",
+      "enemyShieldwall": "Muralha de Escudos",
+      "enemySkirmisher": "Escaramuçador",
+      "enemySaboteur": "Sabotador",
+      "enemyHerald": "Arauto",
+      "enemyHauler": "Carregador",
+      "enemyGateRam": "Aríete"
     },
     "towers": {
       "towerFrost": "Agulha de Gelo",
@@ -307,9 +495,9 @@
     "modes": {
       "label": "Modo",
       "arena": "Arena",
-      "campaign": "Campanha",
-      "endless": "Infinito",
-      "daily": "Cerco diário",
+      "campaign": "O Cerco",
+      "endless": "Cerco infinito",
+      "daily": "Guerra diária",
       "campaignDesc": "Dez ondas, dois senhores da guerra. Três estrelas para uma fortaleza quase sem arranhões.",
       "endlessDesc": "Os portões nunca fecham. A cada cinco ondas chega um senhor da guerra.",
       "dailyDesc": "Um mapa, uma semente, o mesmo cerco para todos os jogadores hoje ({date})."
@@ -343,7 +531,7 @@
   },
   "de": {
     "game": {
-      "title": "Belagerung von Eden",
+      "title": "Velos Bollwerk",
       "kicker": "Eis-und-Feuer-Arena · VTS 1097",
       "tagline": "Halt die Linie. Eis kontrolliert, Feuer brennt, und die Flügel erinnern sich an jede Kette."
     },
@@ -411,8 +599,96 @@
       "bossKills": "Kriegsherren",
       "history": "Letzte Läufe",
       "continueEndless": "Weiter: Endlos",
-      "playDaily": "Tägliche Belagerung",
-      "campaignWon": "Kampagne geschafft"
+      "playDaily": "Täglicher Krieg",
+      "campaignWon": "Belagerung geschafft",
+      "cardSaved": "Karte gespeichert"
+    },
+    "feats": {
+      "title": "Taten",
+      "unlocked": "Tat freigeschaltet",
+      "progress": "{unlocked} / {total} freigeschaltet",
+      "wingborne": {
+        "name": "Flügelgeboren",
+        "desc": "Erreiche eine Kette von ×50 in einem Lauf."
+      },
+      "ashfall": {
+        "name": "Ascheregen",
+        "desc": "Verbrenne 100 Feinde zu Asche."
+      },
+      "coldCalculus": {
+        "name": "Kaltes Kalkül",
+        "desc": "Gewinne einen Lauf nur mit dem Eis-Flügel."
+      },
+      "untouched": {
+        "name": "Unberührt",
+        "desc": "Gewinne mit der Festung bei voller Stärke."
+      },
+      "warlordsBane": {
+        "name": "Schrecken der Kriegsherren",
+        "desc": "Strecke drei Kriegsherren in einem Lauf nieder."
+      },
+      "architect": {
+        "name": "Architekt",
+        "desc": "Bringe in einem Lauf jeden Turmsockel auf die Höchststufe."
+      }
+    },
+    "omens": {
+      "title": "Wellenvorzeichen",
+      "body": "Wähle das Vorzeichen der nächsten Welle oder nimm keines.",
+      "skip": "Kein Vorzeichen",
+      "ironTide": "Eisenflut",
+      "ironTideDesc": "Jeder Feind ist gepanzert. +60% Gold.",
+      "fogOfWar": "Nebel des Krieges",
+      "fogOfWarDesc": "Das Feld verdunkelt sich. +40% Punkte.",
+      "bloodMoon": "Blutmond",
+      "bloodMoonDesc": "Schnellere Feinde, langsamere Ketten. +50% Punkte.",
+      "mirrorIce": "Eisiger Spiegel",
+      "mirrorIceDesc": "Eis beißt kaum noch. +80% Punkte."
+    },
+    "reactions": {
+      "shatter": "Zersplittert",
+      "melt": "Geschmolzen",
+      "deepFreeze": "Tiefgekühlt",
+      "immolate": "Eingeäschert"
+    },
+    "draft": {
+      "title": "Kriegsrat",
+      "body": "Wähle eine Gabe für den Rest des Laufs.",
+      "choose": "Nimm sie",
+      "boons": {
+        "emberHeart": {
+          "name": "Glutherz",
+          "desc": "Feuer brennt 40% stärker."
+        },
+        "frostGrip": {
+          "name": "Frostgriff",
+          "desc": "Eis bremst 30% tiefer und hält länger."
+        },
+        "swiftWings": {
+          "name": "Flinke Flügel",
+          "desc": "Du bewegst dich 12% schneller, der Sprint lädt 20% früher."
+        },
+        "heavyNova": {
+          "name": "Schwere Nova",
+          "desc": "Nova trifft 50% härter und stößt weiter."
+        },
+        "goldRush": {
+          "name": "Goldrausch",
+          "desc": "Gefallene Feinde lassen 35% mehr Gold fallen."
+        },
+        "longReach": {
+          "name": "Weite Reichweite",
+          "desc": "Deine Geschosse und Türme reichen 15% weiter."
+        },
+        "quickChain": {
+          "name": "Schnelle Kette",
+          "desc": "Ketten verblassen 40% langsamer."
+        },
+        "towerWall": {
+          "name": "Turmwall",
+          "desc": "Türme erhalten 40% mehr Leben."
+        }
+      }
     },
     "maps": {
       "mapKeepName": "Burgwall",
@@ -430,7 +706,13 @@
       "enemyRanger": "Späher",
       "enemyCavalry": "Kavallerie",
       "enemyDreadnought": "Schlachtschiff",
-      "enemyWarlord": "Kriegsherr"
+      "enemyWarlord": "Kharr der Kriegsherr",
+      "enemyShieldwall": "Schildwall",
+      "enemySkirmisher": "Plänkler",
+      "enemySaboteur": "Saboteur",
+      "enemyHerald": "Herold",
+      "enemyHauler": "Schlepper",
+      "enemyGateRam": "Rammbock"
     },
     "towers": {
       "towerFrost": "Frostspitze",
@@ -478,9 +760,9 @@
     "modes": {
       "label": "Modus",
       "arena": "Arena",
-      "campaign": "Kampagne",
-      "endless": "Endlos",
-      "daily": "Tägliche Belagerung",
+      "campaign": "Die Belagerung",
+      "endless": "Endlose Belagerung",
+      "daily": "Täglicher Krieg",
       "campaignDesc": "Zehn Wellen, zwei Kriegsherren. Drei Sterne für eine Festung, die kaum einen Kratzer abbekommt.",
       "endlessDesc": "Die Tore schließen sich nie. Jede fünfte Welle bringt einen Kriegsherrn.",
       "dailyDesc": "Eine Karte, ein Seed, dieselbe Belagerung für alle Spieler heute ({date})."
@@ -514,7 +796,7 @@
   },
   "fr": {
     "game": {
-      "title": "Siège d'Eden",
+      "title": "Le Rempart de Velo",
       "kicker": "Arène de Glace et de Feu · VTS 1097",
       "tagline": "Tenez la ligne. La Glace contrôle, le Feu brûle, et les ailes se souviennent de chaque chaîne."
     },
@@ -582,8 +864,96 @@
       "bossKills": "Seigneurs",
       "history": "Parties récentes",
       "continueEndless": "Continuer : sans fin",
-      "playDaily": "Siège du jour",
-      "campaignWon": "Campagne réussie"
+      "playDaily": "Guerre du jour",
+      "campaignWon": "Siège réussi",
+      "cardSaved": "Carte enregistrée"
+    },
+    "feats": {
+      "title": "Hauts faits",
+      "unlocked": "Haut fait débloqué",
+      "progress": "{unlocked} / {total} débloqués",
+      "wingborne": {
+        "name": "Né des ailes",
+        "desc": "Atteignez une chaîne de ×50 en une seule partie."
+      },
+      "ashfall": {
+        "name": "Pluie de cendres",
+        "desc": "Réduisez 100 ennemis en cendres."
+      },
+      "coldCalculus": {
+        "name": "Calcul glacial",
+        "desc": "Remportez une partie en n'utilisant que l'aile de Glace."
+      },
+      "untouched": {
+        "name": "Intact",
+        "desc": "Gagnez avec la forteresse à pleine puissance."
+      },
+      "warlordsBane": {
+        "name": "Fléau des seigneurs",
+        "desc": "Abattez trois seigneurs de guerre en une seule partie."
+      },
+      "architect": {
+        "name": "Architecte",
+        "desc": "Amenez chaque emplacement de tour au niveau maximum en une partie."
+      }
+    },
+    "omens": {
+      "title": "Présage de vague",
+      "body": "Choisissez le présage que portera la prochaine vague, ou n'en prenez aucun.",
+      "skip": "Aucun présage",
+      "ironTide": "Marée de fer",
+      "ironTideDesc": "Chaque ennemi est blindé. +60% d'or.",
+      "fogOfWar": "Brouillard de guerre",
+      "fogOfWarDesc": "Le champ s'assombrit. +40% de score.",
+      "bloodMoon": "Lune de sang",
+      "bloodMoonDesc": "Ennemis plus rapides, chaînes plus lentes. +50% de score.",
+      "mirrorIce": "Glace miroir",
+      "mirrorIceDesc": "La Glace ne mord presque plus. +80% de score."
+    },
+    "reactions": {
+      "shatter": "Fracas",
+      "melt": "Fonte",
+      "deepFreeze": "Grand gel",
+      "immolate": "Immolation"
+    },
+    "draft": {
+      "title": "Conseil de guerre",
+      "body": "Choisissez une bénédiction pour le reste de la partie.",
+      "choose": "Prenez-la",
+      "boons": {
+        "emberHeart": {
+          "name": "Cœur de braise",
+          "desc": "Le Feu brûle 40% plus fort."
+        },
+        "frostGrip": {
+          "name": "Poigne de givre",
+          "desc": "La Glace ralentit 30% plus fort et tient plus longtemps."
+        },
+        "swiftWings": {
+          "name": "Ailes rapides",
+          "desc": "Vous vous déplacez 12% plus vite et la Ruée se recharge 20% plus tôt."
+        },
+        "heavyNova": {
+          "name": "Nova lourde",
+          "desc": "La Nova frappe 50% plus fort et repousse plus loin."
+        },
+        "goldRush": {
+          "name": "Ruée vers l'or",
+          "desc": "Les ennemis tombés laissent 35% d'or en plus."
+        },
+        "longReach": {
+          "name": "Longue portée",
+          "desc": "Vos traits et vos tours portent 15% plus loin."
+        },
+        "quickChain": {
+          "name": "Chaîne rapide",
+          "desc": "Les chaînes s'estompent 40% plus lentement."
+        },
+        "towerWall": {
+          "name": "Mur de tours",
+          "desc": "Les tours gagnent 40% de vie en plus."
+        }
+      }
     },
     "maps": {
       "mapKeepName": "Rempart du Donjon",
@@ -601,7 +971,13 @@
       "enemyRanger": "Éclaireur",
       "enemyCavalry": "Cavalerie",
       "enemyDreadnought": "Cuirassé",
-      "enemyWarlord": "Seigneur de guerre"
+      "enemyWarlord": "Kharr le Seigneur de guerre",
+      "enemyShieldwall": "Mur de boucliers",
+      "enemySkirmisher": "Tirailleur",
+      "enemySaboteur": "Saboteur",
+      "enemyHerald": "Héraut",
+      "enemyHauler": "Porteur",
+      "enemyGateRam": "Bélier"
     },
     "towers": {
       "towerFrost": "Flèche de Givre",
@@ -649,9 +1025,9 @@
     "modes": {
       "label": "Mode",
       "arena": "Arène",
-      "campaign": "Campagne",
-      "endless": "Sans fin",
-      "daily": "Siège du jour",
+      "campaign": "Le Siège",
+      "endless": "Siège sans fin",
+      "daily": "Guerre du jour",
       "campaignDesc": "Dix vagues, deux seigneurs de guerre. Trois étoiles pour une forteresse à peine égratignée.",
       "endlessDesc": "Les portes ne se ferment jamais. Toutes les cinq vagues, un seigneur de guerre arrive.",
       "dailyDesc": "Une carte, une graine, le même siège pour tous les joueurs aujourd'hui ({date})."
@@ -685,7 +1061,7 @@
   },
   "hr": {
     "game": {
-      "title": "Opsada Edena",
+      "title": "Bedem Vela",
       "kicker": "Arena leda i vatre · VTS 1097",
       "tagline": "Drži liniju. Led kontrolira, vatra pali, a krila pamte svaki lanac."
     },
@@ -753,8 +1129,96 @@
       "bossKills": "Vojskovođe",
       "history": "Nedavne igre",
       "continueEndless": "Nastavi: beskonačno",
-      "playDaily": "Dnevna opsada",
-      "campaignWon": "Kampanja završena"
+      "playDaily": "Dnevni rat",
+      "campaignWon": "Opsada završena",
+      "cardSaved": "Kartica spremljena"
+    },
+    "feats": {
+      "title": "Podvizi",
+      "unlocked": "Podvig otključan",
+      "progress": "{unlocked} / {total} otključano",
+      "wingborne": {
+        "name": "Krilati",
+        "desc": "Dostigni lanac od ×50 u jednoj igri."
+      },
+      "ashfall": {
+        "name": "Kiša pepela",
+        "desc": "Spali 100 neprijatelja u pepeo."
+      },
+      "coldCalculus": {
+        "name": "Hladni proračun",
+        "desc": "Pobijedi rundu koristeći samo ledeno krilo."
+      },
+      "untouched": {
+        "name": "Nedirnut",
+        "desc": "Pobijedi s tvrđavom na punoj snazi."
+      },
+      "warlordsBane": {
+        "name": "Prokletstvo vojskovođa",
+        "desc": "Obori tri vojskovođe u jednoj igri."
+      },
+      "architect": {
+        "name": "Arhitekt",
+        "desc": "U jednoj igri dovedi svako ležište za kulu do najviše razine."
+      }
+    },
+    "omens": {
+      "title": "Predznak vala",
+      "body": "Odaberi predznak koji nosi sljedeći val ili ne uzmi nijedan.",
+      "skip": "Bez predznaka",
+      "ironTide": "Željezna plima",
+      "ironTideDesc": "Svaki je neprijatelj oklopljen. +60% zlata.",
+      "fogOfWar": "Magla rata",
+      "fogOfWarDesc": "Polje se zamračuje. +40% bodova.",
+      "bloodMoon": "Krvavi mjesec",
+      "bloodMoonDesc": "Brži neprijatelji, sporiji lanci. +50% bodova.",
+      "mirrorIce": "Zrcalni led",
+      "mirrorIceDesc": "Led jedva grize. +80% bodova."
+    },
+    "reactions": {
+      "shatter": "Razbijanje",
+      "melt": "Taljenje",
+      "deepFreeze": "Duboko smrzavanje",
+      "immolate": "Spaljivanje"
+    },
+    "draft": {
+      "title": "Ratno vijeće",
+      "body": "Odaberi jedan dar za ostatak runde.",
+      "choose": "Uzmi",
+      "boons": {
+        "emberHeart": {
+          "name": "Srce žara",
+          "desc": "Vatra gori 40% jače."
+        },
+        "frostGrip": {
+          "name": "Ledeni stisak",
+          "desc": "Led usporava 30% jače i drži dulje."
+        },
+        "swiftWings": {
+          "name": "Brza krila",
+          "desc": "Krećeš se 12% brže, Jurnjava se puni 20% ranije."
+        },
+        "heavyNova": {
+          "name": "Teška Nova",
+          "desc": "Nova udara 50% jače i gura dalje."
+        },
+        "goldRush": {
+          "name": "Zlatna groznica",
+          "desc": "Pali neprijatelji ispuštaju 35% više zlata."
+        },
+        "longReach": {
+          "name": "Dug doseg",
+          "desc": "Tvoji hitci i kule dosežu 15% dalje."
+        },
+        "quickChain": {
+          "name": "Brzi lanac",
+          "desc": "Lanci blijede 40% sporije."
+        },
+        "towerWall": {
+          "name": "Zid kula",
+          "desc": "Kule dobivaju 40% više zdravlja."
+        }
+      }
     },
     "maps": {
       "mapKeepName": "Zid tvrđave",
@@ -772,7 +1236,13 @@
       "enemyRanger": "Izviđač",
       "enemyCavalry": "Konjica",
       "enemyDreadnought": "Bojni brod",
-      "enemyWarlord": "Vojskovođa"
+      "enemyWarlord": "Kharr Vojskovođa",
+      "enemyShieldwall": "Zid štitova",
+      "enemySkirmisher": "Prepadnik",
+      "enemySaboteur": "Saboter",
+      "enemyHerald": "Glasnik",
+      "enemyHauler": "Nosač",
+      "enemyGateRam": "Ovan"
     },
     "towers": {
       "towerFrost": "Ledeni toranj",
@@ -820,9 +1290,9 @@
     "modes": {
       "label": "Način",
       "arena": "Arena",
-      "campaign": "Kampanja",
-      "endless": "Beskonačno",
-      "daily": "Dnevna opsada",
+      "campaign": "Opsada",
+      "endless": "Beskonačna opsada",
+      "daily": "Dnevni rat",
       "campaignDesc": "Deset valova, dva vojskovođe. Tri zvjezdice za tvrđavu koja je jedva ogrebena.",
       "endlessDesc": "Vrata se nikad ne zatvaraju. Svaki peti val dovodi vojskovođu.",
       "dailyDesc": "Jedna karta, jedan seed, ista opsada za sve igrače danas ({date})."
@@ -856,7 +1326,7 @@
   },
   "tr": {
     "game": {
-      "title": "Eden Kuşatması",
+      "title": "Velo'nun Suru",
       "kicker": "Buz ve Ateş Arenası · VTS 1097",
       "tagline": "Hattı tut. Buz kontrol eder, Ateş yakar ve kanatlar her zinciri hatırlar."
     },
@@ -924,8 +1394,96 @@
       "bossKills": "Savaş lordları",
       "history": "Son oyunlar",
       "continueEndless": "Devam et: Sonsuz",
-      "playDaily": "Günlük Kuşatma",
-      "campaignWon": "Sefer tamamlandı"
+      "playDaily": "Günlük Savaş",
+      "campaignWon": "Kuşatma tamamlandı",
+      "cardSaved": "Kart kaydedildi"
+    },
+    "feats": {
+      "title": "Başarımlar",
+      "unlocked": "Başarım açıldı",
+      "progress": "{unlocked} / {total} açıldı",
+      "wingborne": {
+        "name": "Kanatlı",
+        "desc": "Tek koşuda ×50 zincire ulaş."
+      },
+      "ashfall": {
+        "name": "Kül Yağmuru",
+        "desc": "100 düşmanı küle çevir."
+      },
+      "coldCalculus": {
+        "name": "Soğuk Hesap",
+        "desc": "Bir koşuyu yalnızca Buz kanadıyla kazan."
+      },
+      "untouched": {
+        "name": "Dokunulmamış",
+        "desc": "Kaleyi tam güçte tutarak kazan."
+      },
+      "warlordsBane": {
+        "name": "Savaş Lordlarının Kâbusu",
+        "desc": "Tek koşuda üç savaş lordu devir."
+      },
+      "architect": {
+        "name": "Mimar",
+        "desc": "Tek koşuda her kule yuvasını en üst seviyeye çıkar."
+      }
+    },
+    "omens": {
+      "title": "Dalga alameti",
+      "body": "Sonraki dalganın taşıyacağı alameti seç ya da hiçbirini alma.",
+      "skip": "Alamet yok",
+      "ironTide": "Demir Dalgası",
+      "ironTideDesc": "Her düşman zırhlı. +60% altın.",
+      "fogOfWar": "Savaş Sisi",
+      "fogOfWarDesc": "Alan kararır. +40% puan.",
+      "bloodMoon": "Kan Ayı",
+      "bloodMoonDesc": "Daha hızlı düşmanlar, daha yavaş zincirler. +50% puan.",
+      "mirrorIce": "Ayna Buzu",
+      "mirrorIceDesc": "Buz neredeyse işlemez. +80% puan."
+    },
+    "reactions": {
+      "shatter": "Parçalanma",
+      "melt": "Erime",
+      "deepFreeze": "Derin Donma",
+      "immolate": "Tutuşma"
+    },
+    "draft": {
+      "title": "Savaş Konseyi",
+      "body": "Koşunun kalanı için bir lütuf seç.",
+      "choose": "Al",
+      "boons": {
+        "emberHeart": {
+          "name": "Kor Yürek",
+          "desc": "Ateş %40 daha sert yanar."
+        },
+        "frostGrip": {
+          "name": "Buz Kavrayışı",
+          "desc": "Buz %30 daha derin yavaşlatır ve daha uzun tutar."
+        },
+        "swiftWings": {
+          "name": "Çevik Kanatlar",
+          "desc": "%12 daha hızlı hareket et, Atılma %20 daha erken dolsun."
+        },
+        "heavyNova": {
+          "name": "Ağır Nova",
+          "desc": "Nova %50 daha sert vurur ve daha uzağa iter."
+        },
+        "goldRush": {
+          "name": "Altına Hücum",
+          "desc": "Düşen düşmanlar %35 daha fazla altın bırakır."
+        },
+        "longReach": {
+          "name": "Uzun Menzil",
+          "desc": "Okların ve kulelerin %15 daha uzağa erişir."
+        },
+        "quickChain": {
+          "name": "Hızlı Zincir",
+          "desc": "Zincirler %40 daha yavaş söner."
+        },
+        "towerWall": {
+          "name": "Kule Duvarı",
+          "desc": "Kuleler %40 daha fazla can kazanır."
+        }
+      }
     },
     "maps": {
       "mapKeepName": "Kale Suru",
@@ -943,7 +1501,13 @@
       "enemyRanger": "Avcı",
       "enemyCavalry": "Süvari",
       "enemyDreadnought": "Zırhlı",
-      "enemyWarlord": "Savaş Lordu"
+      "enemyWarlord": "Savaş Lordu Kharr",
+      "enemyShieldwall": "Kalkan Duvarı",
+      "enemySkirmisher": "Akıncı",
+      "enemySaboteur": "Sabotajcı",
+      "enemyHerald": "Müjdeci",
+      "enemyHauler": "Yükçü",
+      "enemyGateRam": "Koçbaşı"
     },
     "towers": {
       "towerFrost": "Buz Kulesi",
@@ -991,9 +1555,9 @@
     "modes": {
       "label": "Mod",
       "arena": "Arena",
-      "campaign": "Sefer",
-      "endless": "Sonsuz",
-      "daily": "Günlük Kuşatma",
+      "campaign": "Kuşatma",
+      "endless": "Sonsuz Kuşatma",
+      "daily": "Günlük Savaş",
       "campaignDesc": "On dalga, iki savaş lordu. Kale neredeyse çiziksiz kalırsa üç yıldız.",
       "endlessDesc": "Kapılar hiç kapanmaz. Her beşinci dalgada bir savaş lordu gelir.",
       "dailyDesc": "Tek harita, tek tohum; bugün her oyuncu için aynı kuşatma ({date})."
@@ -1027,7 +1591,7 @@
   },
   "ru": {
     "game": {
-      "title": "Осада Эдема",
+      "title": "Бастион Вело",
       "kicker": "Арена Льда и Огня · VTS 1097",
       "tagline": "Держи линию. Лёд держит, Огонь жжёт, а крылья помнят каждую цепь."
     },
@@ -1095,8 +1659,96 @@
       "bossKills": "Военачальники",
       "history": "Последние забеги",
       "continueEndless": "Дальше: бесконечно",
-      "playDaily": "Осада дня",
-      "campaignWon": "Кампания пройдена"
+      "playDaily": "Война дня",
+      "campaignWon": "Осада пройдена",
+      "cardSaved": "Карта сохранена"
+    },
+    "feats": {
+      "title": "Подвиги",
+      "unlocked": "Подвиг открыт",
+      "progress": "{unlocked} / {total} открыто",
+      "wingborne": {
+        "name": "Крылатый",
+        "desc": "Достигните цепи ×50 за один забег."
+      },
+      "ashfall": {
+        "name": "Пепельный дождь",
+        "desc": "Сожгите 100 врагов в пепел."
+      },
+      "coldCalculus": {
+        "name": "Холодный расчёт",
+        "desc": "Победите, используя только крыло Льда."
+      },
+      "untouched": {
+        "name": "Неприкосновенный",
+        "desc": "Победите с крепостью на полной прочности."
+      },
+      "warlordsBane": {
+        "name": "Гроза воевод",
+        "desc": "Сразите трёх военачальников за один забег."
+      },
+      "architect": {
+        "name": "Зодчий",
+        "desc": "Прокачайте каждое гнездо башни до максимума за один забег."
+      }
+    },
+    "omens": {
+      "title": "Знамение волны",
+      "body": "Выберите знамение для следующей волны или откажитесь от него.",
+      "skip": "Без знамения",
+      "ironTide": "Железный прилив",
+      "ironTideDesc": "Все враги в броне. +60% золота.",
+      "fogOfWar": "Туман войны",
+      "fogOfWarDesc": "Поле погружается во тьму. +40% очков.",
+      "bloodMoon": "Кровавая луна",
+      "bloodMoonDesc": "Враги быстрее, серии медленнее. +50% очков.",
+      "mirrorIce": "Зеркальный лёд",
+      "mirrorIceDesc": "Лёд почти не кусает. +80% очков."
+    },
+    "reactions": {
+      "shatter": "Раскол",
+      "melt": "Таяние",
+      "deepFreeze": "Глубокая заморозка",
+      "immolate": "Испепеление"
+    },
+    "draft": {
+      "title": "Военный совет",
+      "body": "Выберите одно благословение до конца забега.",
+      "choose": "Взять",
+      "boons": {
+        "emberHeart": {
+          "name": "Угольное сердце",
+          "desc": "Огонь жжёт на 40% сильнее."
+        },
+        "frostGrip": {
+          "name": "Ледяная хватка",
+          "desc": "Лёд замедляет на 30% сильнее и держит дольше."
+        },
+        "swiftWings": {
+          "name": "Быстрые крылья",
+          "desc": "Движение на 12% быстрее, Рывок готов на 20% раньше."
+        },
+        "heavyNova": {
+          "name": "Тяжёлая Нова",
+          "desc": "Нова бьёт на 50% сильнее и отбрасывает дальше."
+        },
+        "goldRush": {
+          "name": "Золотая лихорадка",
+          "desc": "Павшие враги роняют на 35% больше золота."
+        },
+        "longReach": {
+          "name": "Дальний выстрел",
+          "desc": "Ваши снаряды и башни бьют на 15% дальше."
+        },
+        "quickChain": {
+          "name": "Быстрая цепь",
+          "desc": "Цепи гаснут на 40% медленнее."
+        },
+        "towerWall": {
+          "name": "Стена башен",
+          "desc": "Башни получают на 40% больше прочности."
+        }
+      }
     },
     "maps": {
       "mapKeepName": "Стена цитадели",
@@ -1114,7 +1766,13 @@
       "enemyRanger": "Стрелок",
       "enemyCavalry": "Кавалерия",
       "enemyDreadnought": "Дредноут",
-      "enemyWarlord": "Военачальник"
+      "enemyWarlord": "Кхарр Воевода",
+      "enemyShieldwall": "Стена щитов",
+      "enemySkirmisher": "Застрельщик",
+      "enemySaboteur": "Диверсант",
+      "enemyHerald": "Вестник",
+      "enemyHauler": "Обозник",
+      "enemyGateRam": "Таран"
     },
     "towers": {
       "towerFrost": "Ледяной шпиль",
@@ -1162,9 +1820,9 @@
     "modes": {
       "label": "Режим",
       "arena": "Арена",
-      "campaign": "Кампания",
-      "endless": "Бесконечный",
-      "daily": "Осада дня",
+      "campaign": "Осада",
+      "endless": "Бесконечная осада",
+      "daily": "Война дня",
       "campaignDesc": "Десять волн, два военачальника. Три звезды — если крепость почти не пострадала.",
       "endlessDesc": "Ворота не закрываются. Каждая пятая волна ведёт военачальника.",
       "dailyDesc": "Одна карта, одно семя, одна осада для всех игроков сегодня ({date})."
@@ -1198,7 +1856,7 @@
   },
   "id": {
     "game": {
-      "title": "Pengepungan Eden",
+      "title": "Benteng Velo",
       "kicker": "Arena Es & Api · VTS 1097",
       "tagline": "Pertahankan garis. Es mengendalikan, Api membakar, dan sayap mengingat setiap rantai."
     },
@@ -1266,8 +1924,96 @@
       "bossKills": "Panglima",
       "history": "Permainan terakhir",
       "continueEndless": "Lanjut: tanpa akhir",
-      "playDaily": "Pengepungan Harian",
-      "campaignWon": "Kampanye selesai"
+      "playDaily": "Perang Harian",
+      "campaignWon": "Pengepungan selesai",
+      "cardSaved": "Kartu tersimpan"
+    },
+    "feats": {
+      "title": "Prestasi",
+      "unlocked": "Prestasi terbuka",
+      "progress": "{unlocked} / {total} terbuka",
+      "wingborne": {
+        "name": "Berjiwa Sayap",
+        "desc": "Capai rantai ×50 dalam satu permainan."
+      },
+      "ashfall": {
+        "name": "Hujan Abu",
+        "desc": "Bakar 100 musuh menjadi abu."
+      },
+      "coldCalculus": {
+        "name": "Kalkulasi Dingin",
+        "desc": "Menangkan permainan hanya dengan sayap Es."
+      },
+      "untouched": {
+        "name": "Tak Tersentuh",
+        "desc": "Menangkan dengan benteng yang masih utuh."
+      },
+      "warlordsBane": {
+        "name": "Momok Panglima",
+        "desc": "Tumbangkan tiga panglima dalam satu permainan."
+      },
+      "architect": {
+        "name": "Arsitek",
+        "desc": "Maksimalkan setiap soket menara dalam satu permainan."
+      }
+    },
+    "omens": {
+      "title": "Pertanda gelombang",
+      "body": "Pilih pertanda yang dibawa gelombang berikutnya, atau tidak sama sekali.",
+      "skip": "Tanpa pertanda",
+      "ironTide": "Pasang Besi",
+      "ironTideDesc": "Semua musuh berzirah. +60% emas.",
+      "fogOfWar": "Kabut Perang",
+      "fogOfWarDesc": "Medan menjadi gelap. +40% skor.",
+      "bloodMoon": "Bulan Darah",
+      "bloodMoonDesc": "Musuh lebih cepat, rantai lebih lambat. +50% skor.",
+      "mirrorIce": "Es Cermin",
+      "mirrorIceDesc": "Es hampir tak menggigit. +80% skor."
+    },
+    "reactions": {
+      "shatter": "Pecah",
+      "melt": "Meleleh",
+      "deepFreeze": "Beku Total",
+      "immolate": "Terbakar"
+    },
+    "draft": {
+      "title": "Dewan Perang",
+      "body": "Pilih satu berkah untuk sisa permainan.",
+      "choose": "Ambil",
+      "boons": {
+        "emberHeart": {
+          "name": "Jantung Bara",
+          "desc": "Api membakar 40% lebih kuat."
+        },
+        "frostGrip": {
+          "name": "Cengkeraman Beku",
+          "desc": "Es memperlambat 30% lebih dalam dan menahan lebih lama."
+        },
+        "swiftWings": {
+          "name": "Sayap Gesit",
+          "desc": "Bergerak 12% lebih cepat, Terjang siap 20% lebih awal."
+        },
+        "heavyNova": {
+          "name": "Nova Berat",
+          "desc": "Nova memukul 50% lebih keras dan mendorong lebih jauh."
+        },
+        "goldRush": {
+          "name": "Demam Emas",
+          "desc": "Musuh yang tumbang menjatuhkan 35% lebih banyak emas."
+        },
+        "longReach": {
+          "name": "Jangkauan Jauh",
+          "desc": "Bidikan dan menaramu menjangkau 15% lebih jauh."
+        },
+        "quickChain": {
+          "name": "Rantai Cepat",
+          "desc": "Rantai memudar 40% lebih lambat."
+        },
+        "towerWall": {
+          "name": "Tembok Menara",
+          "desc": "Menara mendapat 40% lebih banyak nyawa."
+        }
+      }
     },
     "maps": {
       "mapKeepName": "Tembok Benteng",
@@ -1285,7 +2031,13 @@
       "enemyRanger": "Penembak",
       "enemyCavalry": "Kavaleri",
       "enemyDreadnought": "Kapal Perang",
-      "enemyWarlord": "Panglima"
+      "enemyWarlord": "Panglima Kharr",
+      "enemyShieldwall": "Tembok Perisai",
+      "enemySkirmisher": "Penyerang",
+      "enemySaboteur": "Saboteur",
+      "enemyHerald": "Juru Kabar",
+      "enemyHauler": "Pengangkut",
+      "enemyGateRam": "Pendobrak"
     },
     "towers": {
       "towerFrost": "Menara Beku",
@@ -1333,9 +2085,9 @@
     "modes": {
       "label": "Mode",
       "arena": "Arena",
-      "campaign": "Kampanye",
-      "endless": "Tanpa akhir",
-      "daily": "Pengepungan Harian",
+      "campaign": "Pengepungan",
+      "endless": "Pengepungan Tanpa Akhir",
+      "daily": "Perang Harian",
       "campaignDesc": "Sepuluh gelombang, dua panglima. Tiga bintang untuk benteng yang nyaris tak tergores.",
       "endlessDesc": "Gerbang tak pernah tertutup. Setiap gelombang kelima membawa panglima.",
       "dailyDesc": "Satu peta, satu seed, pengepungan yang sama untuk semua pemain hari ini ({date})."
@@ -1369,7 +2121,7 @@
   },
   "zh": {
     "game": {
-      "title": "伊甸围城",
+      "title": "维洛壁垒",
       "kicker": "冰火竞技场 · VTS 1097",
       "tagline": "守住防线。冰控制，火灼烧，双翼会记住每一次连击。"
     },
@@ -1437,8 +2189,96 @@
       "bossKills": "督军",
       "history": "最近战绩",
       "continueEndless": "继续：无尽模式",
-      "playDaily": "每日攻城",
-      "campaignWon": "战役通关"
+      "playDaily": "每日之战",
+      "campaignWon": "攻城战通关",
+      "cardSaved": "卡牌已保存"
+    },
+    "feats": {
+      "title": "功绩",
+      "unlocked": "功绩解锁",
+      "progress": "已解锁 {unlocked} / {total}",
+      "wingborne": {
+        "name": "羽翼加身",
+        "desc": "单局达成 ×50 连锁。"
+      },
+      "ashfall": {
+        "name": "灰烬降临",
+        "desc": "将 100 名敌人烧成灰烬。"
+      },
+      "coldCalculus": {
+        "name": "冷酷算计",
+        "desc": "仅使用冰翼赢得一局。"
+      },
+      "untouched": {
+        "name": "毫发无伤",
+        "desc": "在要塞满耐久的情况下获胜。"
+      },
+      "warlordsBane": {
+        "name": "督军克星",
+        "desc": "单局击败三名督军。"
+      },
+      "architect": {
+        "name": "建筑师",
+        "desc": "单局将每个塔位升到满级。"
+      }
+    },
+    "omens": {
+      "title": "波次征兆",
+      "body": "选择下一波携带的征兆，或什么都不选。",
+      "skip": "无征兆",
+      "ironTide": "铁潮",
+      "ironTideDesc": "所有敌人身披护甲。+60% 金币。",
+      "fogOfWar": "战争迷雾",
+      "fogOfWarDesc": "战场变暗。+40% 得分。",
+      "bloodMoon": "血月",
+      "bloodMoonDesc": "敌人更快，连锁更慢。+50% 得分。",
+      "mirrorIce": "镜冰",
+      "mirrorIceDesc": "冰几乎失效。+80% 得分。"
+    },
+    "reactions": {
+      "shatter": "碎裂",
+      "melt": "融化",
+      "deepFreeze": "深度冻结",
+      "immolate": "焚身"
+    },
+    "draft": {
+      "title": "战争议会",
+      "body": "为本局剩余时间选择一项恩赐。",
+      "choose": "收下",
+      "boons": {
+        "emberHeart": {
+          "name": "余烬之心",
+          "desc": "火焰灼烧强度提高 40%。"
+        },
+        "frostGrip": {
+          "name": "寒霜之握",
+          "desc": "寒冰减速效果加深 30%，持续时间更长。"
+        },
+        "swiftWings": {
+          "name": "迅捷之翼",
+          "desc": "移动速度提高 12%，冲刺冷却缩短 20%。"
+        },
+        "heavyNova": {
+          "name": "重型新星",
+          "desc": "新星伤害提高 50%，击退距离更远。"
+        },
+        "goldRush": {
+          "name": "淘金热",
+          "desc": "倒下的敌人掉落金币增加 35%。"
+        },
+        "longReach": {
+          "name": "远程延伸",
+          "desc": "箭矢与防御塔射程提高 15%。"
+        },
+        "quickChain": {
+          "name": "快速连锁",
+          "desc": "连锁消失速度减慢 40%。"
+        },
+        "towerWall": {
+          "name": "塔墙",
+          "desc": "防御塔生命值提高 40%。"
+        }
+      }
     },
     "maps": {
       "mapKeepName": "堡垒城墙",
@@ -1456,7 +2296,13 @@
       "enemyRanger": "游骑兵",
       "enemyCavalry": "骑兵",
       "enemyDreadnought": "无畏战舰",
-      "enemyWarlord": "督军"
+      "enemyWarlord": "督军卡尔",
+      "enemyShieldwall": "盾墙兵",
+      "enemySkirmisher": "散兵",
+      "enemySaboteur": "破坏者",
+      "enemyHerald": "传令官",
+      "enemyHauler": "搬运者",
+      "enemyGateRam": "破门槌"
     },
     "towers": {
       "towerFrost": "寒霜尖塔",
@@ -1504,9 +2350,9 @@
     "modes": {
       "label": "模式",
       "arena": "战场",
-      "campaign": "战役",
-      "endless": "无尽",
-      "daily": "每日攻城",
+      "campaign": "攻城战",
+      "endless": "无尽攻城",
+      "daily": "每日之战",
       "campaignDesc": "十波敌人、两名督军。要塞几乎无损即可获得三星。",
       "endlessDesc": "城门永不关闭。每第五波由督军率领。",
       "dailyDesc": "同一地图、同一种子，今天所有玩家面对同一场攻城（{date}）。"
@@ -1540,7 +2386,7 @@
   },
   "ar": {
     "game": {
-      "title": "حصار عدن",
+      "title": "حصن فيلو",
       "kicker": "ساحة الجليد والنار · VTS 1097",
       "tagline": "اثبت على الخط. الجليد يوقف، والنار تحرق، والأجنحة تتذكر كل سلسلة."
     },
@@ -1608,8 +2454,96 @@
       "bossKills": "أمراء الحرب",
       "history": "آخر الجولات",
       "continueEndless": "واصل: بلا نهاية",
-      "playDaily": "حصار اليوم",
-      "campaignWon": "اكتملت الحملة"
+      "playDaily": "حرب اليوم",
+      "campaignWon": "اكتمل الحصار",
+      "cardSaved": "تم حفظ البطاقة"
+    },
+    "feats": {
+      "title": "إنجازات",
+      "unlocked": "تم فتح إنجاز",
+      "progress": "{unlocked} / {total} مفتوح",
+      "wingborne": {
+        "name": "ذو الجناحين",
+        "desc": "ابلغ سلسلة ×50 في جولة واحدة."
+      },
+      "ashfall": {
+        "name": "تساقط الرماد",
+        "desc": "أحرق 100 عدو حتى يصيروا رمادًا."
+      },
+      "coldCalculus": {
+        "name": "حساب بارد",
+        "desc": "افز بجولة مستخدمًا جناح الجليد فقط."
+      },
+      "untouched": {
+        "name": "لم يُمسّ",
+        "desc": "افز والحصن بكامل قوته."
+      },
+      "warlordsBane": {
+        "name": "كارثة أمراء الحرب",
+        "desc": "أسقط ثلاثة أمراء حرب في جولة واحدة."
+      },
+      "architect": {
+        "name": "المهندس",
+        "desc": "ارفع كل مقبس برج إلى أقصى مستوى في جولة واحدة."
+      }
+    },
+    "omens": {
+      "title": "فأل الموجة",
+      "body": "اختر الفأل الذي تحمله الموجة التالية، أو لا تختر شيئًا.",
+      "skip": "بلا فأل",
+      "ironTide": "مد الحديد",
+      "ironTideDesc": "كل عدو مدرّع. +60% من الذهب.",
+      "fogOfWar": "ضباب الحرب",
+      "fogOfWarDesc": "يُظلم الميدان. +40% من النقاط.",
+      "bloodMoon": "قمر الدم",
+      "bloodMoonDesc": "أعداء أسرع وسلاسل أبطأ. +50% من النقاط.",
+      "mirrorIce": "جليد مرآوي",
+      "mirrorIceDesc": "الجليد بالكاد يؤثر. +80% من النقاط."
+    },
+    "reactions": {
+      "shatter": "تحطم",
+      "melt": "ذوبان",
+      "deepFreeze": "تجميد عميق",
+      "immolate": "إحراق"
+    },
+    "draft": {
+      "title": "مجلس الحرب",
+      "body": "اختر بركة واحدة لما تبقى من الجولة.",
+      "choose": "خذه",
+      "boons": {
+        "emberHeart": {
+          "name": "قلب الجمر",
+          "desc": "النار تحرق بقوة أكبر بنسبة 40%."
+        },
+        "frostGrip": {
+          "name": "قبضة الصقيع",
+          "desc": "الجليد يبطئ أعمق بنسبة 30% ويدوم أطول."
+        },
+        "swiftWings": {
+          "name": "أجنحة سريعة",
+          "desc": "تتحرك أسرع بنسبة 12% ويُعاد شحن الاندفاع قبل 20%."
+        },
+        "heavyNova": {
+          "name": "نوفا ثقيلة",
+          "desc": "نوفا تضرب بقوة أكبر بنسبة 50% وتدفع أبعد."
+        },
+        "goldRush": {
+          "name": "حمى الذهب",
+          "desc": "الأعداء الساقطون يسقطون ذهبًا أكثر بنسبة 35%."
+        },
+        "longReach": {
+          "name": "مدى بعيد",
+          "desc": "سهامك وأبراجك تصل أبعد بنسبة 15%."
+        },
+        "quickChain": {
+          "name": "سلسلة سريعة",
+          "desc": "تتلاشى السلاسل ببطء أكبر بنسبة 40%."
+        },
+        "towerWall": {
+          "name": "سور الأبراج",
+          "desc": "تزداد متانة الأبراج بنسبة 40%."
+        }
+      }
     },
     "maps": {
       "mapKeepName": "سور القلعة",
@@ -1627,7 +2561,13 @@
       "enemyRanger": "رامٍ",
       "enemyCavalry": "فرسان",
       "enemyDreadnought": "مدرّعة",
-      "enemyWarlord": "أمير الحرب"
+      "enemyWarlord": "أمير الحرب خار",
+      "enemyShieldwall": "جدار الدروع",
+      "enemySkirmisher": "مناوش",
+      "enemySaboteur": "مخرّب",
+      "enemyHerald": "مناد",
+      "enemyHauler": "حمّال",
+      "enemyGateRam": "كبش البوابة"
     },
     "towers": {
       "towerFrost": "برج الصقيع",
@@ -1675,9 +2615,9 @@
     "modes": {
       "label": "الوضع",
       "arena": "الساحة",
-      "campaign": "الحملة",
-      "endless": "بلا نهاية",
-      "daily": "حصار اليوم",
+      "campaign": "الحصار",
+      "endless": "حصار بلا نهاية",
+      "daily": "حرب اليوم",
       "campaignDesc": "عشر موجات وأميرا حرب. ثلاث نجوم إذا بقي الحصن شبه سليم.",
       "endlessDesc": "البوابات لا تُغلق. كل موجة خامسة يقودها أمير حرب.",
       "dailyDesc": "خريطة واحدة وبذرة واحدة والحصار نفسه لكل اللاعبين اليوم ({date})."
@@ -1711,7 +2651,7 @@
   },
   "kr": {
     "game": {
-      "title": "에덴 공성전",
+      "title": "벨로의 보루",
       "kicker": "얼음과 불의 투기장 · VTS 1097",
       "tagline": "전선을 지켜라. 얼음은 제어하고, 불은 태우며, 날개는 모든 연쇄를 기억한다."
     },
@@ -1779,8 +2719,96 @@
       "bossKills": "군주",
       "history": "최근 기록",
       "continueEndless": "계속: 무한 모드",
-      "playDaily": "일일 공성전",
-      "campaignWon": "캠페인 완료"
+      "playDaily": "일일 전쟁",
+      "campaignWon": "공성전 완료",
+      "cardSaved": "카드 저장됨"
+    },
+    "feats": {
+      "title": "업적",
+      "unlocked": "업적 달성",
+      "progress": "{unlocked} / {total} 달성",
+      "wingborne": {
+        "name": "날개 달린 자",
+        "desc": "한 판에서 ×50 연쇄를 달성하세요."
+      },
+      "ashfall": {
+        "name": "잿더미",
+        "desc": "적 100명을 재로 만드세요."
+      },
+      "coldCalculus": {
+        "name": "냉정한 계산",
+        "desc": "얼음 날개만 사용해 한 판을 승리하세요."
+      },
+      "untouched": {
+        "name": "무결",
+        "desc": "요새가 온전한 상태로 승리하세요."
+      },
+      "warlordsBane": {
+        "name": "군주의 재앙",
+        "desc": "한 판에서 군주 셋을 쓰러뜨리세요."
+      },
+      "architect": {
+        "name": "건축가",
+        "desc": "한 판에서 모든 타워 소켓을 최대로 올리세요."
+      }
+    },
+    "omens": {
+      "title": "웨이브 징조",
+      "body": "다음 웨이브가 지닐 징조를 고르세요. 아무것도 고르지 않아도 됩니다.",
+      "skip": "징조 없음",
+      "ironTide": "철의 물결",
+      "ironTideDesc": "모든 적이 중무장합니다. 골드 +60%.",
+      "fogOfWar": "전장의 안개",
+      "fogOfWarDesc": "전장이 어두워집니다. 점수 +40%.",
+      "bloodMoon": "핏빛 달",
+      "bloodMoonDesc": "적은 더 빠르고 연쇄는 더 느립니다. 점수 +50%.",
+      "mirrorIce": "거울 얼음",
+      "mirrorIceDesc": "얼음이 거의 듣지 않습니다. 점수 +80%."
+    },
+    "reactions": {
+      "shatter": "산산조각",
+      "melt": "해빙",
+      "deepFreeze": "완전 동결",
+      "immolate": "소각"
+    },
+    "draft": {
+      "title": "전쟁 회의",
+      "body": "남은 판 동안 축복 하나를 고르세요.",
+      "choose": "받기",
+      "boons": {
+        "emberHeart": {
+          "name": "잿불 심장",
+          "desc": "불이 40% 더 강하게 타오릅니다."
+        },
+        "frostGrip": {
+          "name": "서리 손아귀",
+          "desc": "얼음 둔화가 30% 더 깊어지고 더 오래갑니다."
+        },
+        "swiftWings": {
+          "name": "신속한 날개",
+          "desc": "이동 속도 12% 증가, 대시 재사용 20% 단축."
+        },
+        "heavyNova": {
+          "name": "중량 노바",
+          "desc": "노바가 50% 더 강하게 타격하고 더 멀리 밀어냅니다."
+        },
+        "goldRush": {
+          "name": "골드 러시",
+          "desc": "쓰러진 적이 35% 더 많은 골드를 떨어뜨립니다."
+        },
+        "longReach": {
+          "name": "긴 사거리",
+          "desc": "화살과 탑의 사거리가 15% 늘어납니다."
+        },
+        "quickChain": {
+          "name": "빠른 연쇄",
+          "desc": "연쇄가 40% 더 천천히 사라집니다."
+        },
+        "towerWall": {
+          "name": "탑 성벽",
+          "desc": "탑의 체력이 40% 증가합니다."
+        }
+      }
     },
     "maps": {
       "mapKeepName": "성채 성벽",
@@ -1798,7 +2826,13 @@
       "enemyRanger": "레인저",
       "enemyCavalry": "기병",
       "enemyDreadnought": "드레드노트",
-      "enemyWarlord": "군주"
+      "enemyWarlord": "군주 카르",
+      "enemyShieldwall": "방패벽",
+      "enemySkirmisher": "척후병",
+      "enemySaboteur": "파괴공작원",
+      "enemyHerald": "전령",
+      "enemyHauler": "운반꾼",
+      "enemyGateRam": "공성추"
     },
     "towers": {
       "towerFrost": "서리 첨탑",
@@ -1846,9 +2880,9 @@
     "modes": {
       "label": "모드",
       "arena": "전장",
-      "campaign": "캠페인",
-      "endless": "무한",
-      "daily": "일일 공성전",
+      "campaign": "공성전",
+      "endless": "무한 공성전",
+      "daily": "일일 전쟁",
       "campaignDesc": "웨이브 10개, 군주 둘. 요새가 거의 긁히지 않으면 별 세 개.",
       "endlessDesc": "성문은 닫히지 않습니다. 다섯 번째 웨이브마다 군주가 옵니다.",
       "dailyDesc": "맵 하나, 시드 하나, 오늘 모든 플레이어에게 같은 공성전 ({date})."
@@ -1882,7 +2916,7 @@
   },
   "it": {
     "game": {
-      "title": "Assedio di Eden",
+      "title": "Il Baluardo di Velo",
       "kicker": "Arena Ghiaccio e Fuoco · VTS 1097",
       "tagline": "Tieni la linea. Il Ghiaccio controlla, il Fuoco brucia e le ali ricordano ogni catena."
     },
@@ -1950,8 +2984,96 @@
       "bossKills": "Signori della guerra",
       "history": "Partite recenti",
       "continueEndless": "Continua: Infinito",
-      "playDaily": "Assedio del giorno",
-      "campaignWon": "Campagna completata"
+      "playDaily": "Guerra del giorno",
+      "campaignWon": "Assedio completato",
+      "cardSaved": "Carta salvata"
+    },
+    "feats": {
+      "title": "Imprese",
+      "unlocked": "Impresa sbloccata",
+      "progress": "{unlocked} / {total} sbloccate",
+      "wingborne": {
+        "name": "Alato",
+        "desc": "Raggiungi una catena di ×50 in una sola partita."
+      },
+      "ashfall": {
+        "name": "Pioggia di cenere",
+        "desc": "Riduci in cenere 100 nemici."
+      },
+      "coldCalculus": {
+        "name": "Calcolo gelido",
+        "desc": "Vinci una partita usando solo l'ala di Ghiaccio."
+      },
+      "untouched": {
+        "name": "Intatto",
+        "desc": "Vinci con la fortezza a piena forza."
+      },
+      "warlordsBane": {
+        "name": "Flagello dei signori",
+        "desc": "Abbatti tre signori della guerra in una sola partita."
+      },
+      "architect": {
+        "name": "Architetto",
+        "desc": "Porta al massimo ogni slot delle torri in una sola partita."
+      }
+    },
+    "omens": {
+      "title": "Presagio dell'ondata",
+      "body": "Scegli il presagio che porterà la prossima ondata, oppure nessuno.",
+      "skip": "Nessun presagio",
+      "ironTide": "Marea di ferro",
+      "ironTideDesc": "Ogni nemico è corazzato. +60% oro.",
+      "fogOfWar": "Nebbia di guerra",
+      "fogOfWarDesc": "Il campo si oscura. +40% di punteggio.",
+      "bloodMoon": "Luna di sangue",
+      "bloodMoonDesc": "Nemici più veloci, catene più lente. +50% di punteggio.",
+      "mirrorIce": "Ghiaccio specchio",
+      "mirrorIceDesc": "Il Ghiaccio morde appena. +80% di punteggio."
+    },
+    "reactions": {
+      "shatter": "Frantumazione",
+      "melt": "Disgelo",
+      "deepFreeze": "Gelo profondo",
+      "immolate": "Immolazione"
+    },
+    "draft": {
+      "title": "Consiglio di guerra",
+      "body": "Scegli una benedizione per il resto della partita.",
+      "choose": "Prendila",
+      "boons": {
+        "emberHeart": {
+          "name": "Cuore di brace",
+          "desc": "Il Fuoco brucia il 40% in più."
+        },
+        "frostGrip": {
+          "name": "Presa del gelo",
+          "desc": "Il Ghiaccio rallenta il 30% in più e dura più a lungo."
+        },
+        "swiftWings": {
+          "name": "Ali rapide",
+          "desc": "Ti muovi il 12% più veloce e lo Scatto si ricarica il 20% prima."
+        },
+        "heavyNova": {
+          "name": "Nova pesante",
+          "desc": "La Nova colpisce il 50% più forte e spinge più lontano."
+        },
+        "goldRush": {
+          "name": "Corsa all'oro",
+          "desc": "I nemici caduti lasciano il 35% di oro in più."
+        },
+        "longReach": {
+          "name": "Lunga portata",
+          "desc": "I tuoi dardi e le tue torri arrivano il 15% più lontano."
+        },
+        "quickChain": {
+          "name": "Catena rapida",
+          "desc": "Le catene svaniscono il 40% più lentamente."
+        },
+        "towerWall": {
+          "name": "Muro di torri",
+          "desc": "Le torri ottengono il 40% di salute in più."
+        }
+      }
     },
     "maps": {
       "mapKeepName": "Mura del Torrione",
@@ -1969,7 +3091,13 @@
       "enemyRanger": "Esploratore",
       "enemyCavalry": "Cavalleria",
       "enemyDreadnought": "Corazzata",
-      "enemyWarlord": "Signore della guerra"
+      "enemyWarlord": "Kharr il Signore della guerra",
+      "enemyShieldwall": "Muro di scudi",
+      "enemySkirmisher": "Schermagliatore",
+      "enemySaboteur": "Sabotatore",
+      "enemyHerald": "Araldo",
+      "enemyHauler": "Trasportatore",
+      "enemyGateRam": "Ariete"
     },
     "towers": {
       "towerFrost": "Aguglia del Gelo",
@@ -2017,9 +3145,9 @@
     "modes": {
       "label": "Modalità",
       "arena": "Arena",
-      "campaign": "Campagna",
-      "endless": "Infinito",
-      "daily": "Assedio del giorno",
+      "campaign": "L'Assedio",
+      "endless": "Assedio infinito",
+      "daily": "Guerra del giorno",
       "campaignDesc": "Dieci ondate, due signori della guerra. Tre stelle per una fortezza appena scalfita.",
       "endlessDesc": "Le porte non si chiudono mai. Ogni quinta ondata arriva un signore della guerra.",
       "dailyDesc": "Una mappa, un seme, lo stesso assedio per tutti i giocatori oggi ({date})."

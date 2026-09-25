@@ -1,11 +1,11 @@
-// English fallback and runtime helpers for Eden Siege.
+// English fallback and runtime helpers for Velo's Rampart.
 // Localized packs live in copy-locales.json and are loaded with the Siege route.
 
 import { fetchLocalePack } from '../../i18n/fetch-locale-pack.js';
 
 const EN = {
   game: {
-    title: 'Eden Siege',
+    title: "Velo's Rampart",
     kicker: 'Ice & Fire Arena · VTS 1097',
     tagline: 'Hold the line. Ice controls, Fire burns, and the wings remember every chain.',
   },
@@ -39,9 +39,9 @@ const EN = {
   modes: {
     label: 'Mode',
     arena: 'Arena',
-    campaign: 'Campaign',
-    endless: 'Endless',
-    daily: 'Daily Siege',
+    campaign: 'The Siege',
+    endless: 'Endless Siege',
+    daily: 'Daily War',
     campaignDesc: 'Ten waves, two warlords. Three stars for a stronghold that barely got scratched.',
     endlessDesc: 'The gates never close. Every fifth wave brings a warlord.',
     dailyDesc: 'One map, one seed, the same siege for every player today ({date}).',
@@ -101,8 +101,54 @@ const EN = {
     bossKills: 'Warlords',
     history: 'Recent runs',
     continueEndless: 'Keep going: Endless',
-    playDaily: 'Daily Siege',
-    campaignWon: 'Campaign cleared',
+    playDaily: 'Daily War',
+    campaignWon: 'The Siege cleared',
+    cardSaved: 'Card saved',
+  },
+  feats: {
+    title: 'Feats',
+    unlocked: 'Feat unlocked',
+    progress: '{unlocked} / {total} unlocked',
+    wingborne: { name: 'Wingborne', desc: 'Reach a ×50 chain in one run.' },
+    ashfall: { name: 'Ashfall', desc: 'Burn 100 enemies to ash.' },
+    coldCalculus: { name: 'Cold Calculus', desc: 'Win a run using only the Ice wing.' },
+    untouched: { name: 'Untouched', desc: 'Win with the stronghold at full strength.' },
+    warlordsBane: { name: "Warlord's Bane", desc: 'Bring down three warlords in one run.' },
+    architect: { name: 'Architect', desc: 'Max out every tower socket in one run.' },
+  },
+  omens: {
+    title: 'Wave omen',
+    body: 'Choose the omen the next wave carries, or take none.',
+    skip: 'No omen',
+    ironTide: 'Iron Tide',
+    ironTideDesc: 'Every foe is armoured. +60% gold.',
+    fogOfWar: 'Fog of War',
+    fogOfWarDesc: 'The field darkens. +40% score.',
+    bloodMoon: 'Blood Moon',
+    bloodMoonDesc: 'Faster foes, slower chains. +50% score.',
+    mirrorIce: 'Mirror Ice',
+    mirrorIceDesc: 'Ice barely bites. +80% score.',
+  },
+  reactions: {
+    shatter: 'Shatter',
+    melt: 'Melt',
+    deepFreeze: 'Deep Freeze',
+    immolate: 'Immolate',
+  },
+  draft: {
+    title: 'War Council',
+    body: 'Choose one boon for the rest of the run.',
+    choose: 'Take it',
+    boons: {
+      emberHeart: { name: 'Ember Heart', desc: 'Fire burns 40% harder.' },
+      frostGrip: { name: 'Frost Grip', desc: 'Ice slows bite 30% deeper and hold longer.' },
+      swiftWings: { name: 'Swift Wings', desc: 'Move 12% faster and dash 20% sooner.' },
+      heavyNova: { name: 'Heavy Nova', desc: 'Nova hits 50% harder and pushes further.' },
+      goldRush: { name: 'Gold Rush', desc: 'Fallen foes drop 35% more gold.' },
+      longReach: { name: 'Long Reach', desc: 'Your bolts and towers reach 15% further.' },
+      quickChain: { name: 'Quick Chain', desc: 'Chains fade 40% slower.' },
+      towerWall: { name: 'Tower Wall', desc: 'Towers gain 40% more health.' },
+    },
   },
   tips: [
     'Alternate Ice and Fire kills — the chain multiplier is where the score lives.',
@@ -120,7 +166,13 @@ const EN = {
     enemyRanger: 'Ranger',
     enemyCavalry: 'Cavalry',
     enemyDreadnought: 'Dreadnought',
-    enemyWarlord: 'Warlord',
+    enemyWarlord: 'Kharr the Warlord',
+    enemyShieldwall: 'Shieldwall',
+    enemySkirmisher: 'Skirmisher',
+    enemySaboteur: 'Saboteur',
+    enemyHerald: 'Herald',
+    enemyHauler: 'Hauler',
+    enemyGateRam: 'Gate Ram',
   },
   towers: {
     towerFrost: 'Frost Spire',
@@ -197,7 +249,7 @@ export async function loadCopy(locale, packsUrl, fetcher = globalThis.fetch, tim
   if (normalized === 'en' || !packsUrl || typeof fetcher !== 'function') return COPY.en;
   try {
     const response = await fetchLocalePack(packsUrl, fetcher, timeoutMs);
-    if (!response.ok) throw new Error('Eden Siege translations could not be loaded.');
+    if (!response.ok) throw new Error("Velo's Rampart translations could not be loaded.");
     return getCopy(normalized, await response.json());
   } catch {
     return COPY.en;

@@ -1,4 +1,4 @@
-// "Try Eden Siege" prompts for the rest of the site: the featured Arcade
+// "Try Velo's Rampart" prompts for the rest of the site: the featured Arcade
 // banner and a one-time homepage callout.
 //
 // Neither prompt may cost the host page anything it did not ask for: this
@@ -83,7 +83,7 @@ export function mountSiegeFeature(container, { getCopy }) {
   function render() {
     const copy = getCopy() || {};
     kicker.textContent = copy.arcadeSiegeKicker || 'New';
-    title.textContent = copy.arcadeSiegeTitle || 'Eden Siege';
+    title.textContent = copy.arcadeSiegeTitle || "Velo's Rampart";
     desc.textContent = copy.arcadeSiegeDesc || '';
     play.textContent = copy.arcadeSiegePlay || 'Play now';
     dailyLink.textContent = copy.arcadeSiegeDaily || 'Daily Siege';
@@ -103,10 +103,10 @@ export function mountSiegeCallout({ getCopy, storage } = {}) {
   if (calloutDismissed(storage) || document.querySelector('.siege-callout')) return null;
   const copy = getCopy() || {};
   const root = element('aside', 'siege-callout');
-  root.setAttribute('aria-label', copy.siegeCalloutTitle || 'Eden Siege');
+  root.setAttribute('aria-label', copy.siegeCalloutTitle || "Velo's Rampart");
 
   const text = element('div', 'siege-callout-copy');
-  const title = element('strong', 'siege-callout-title', copy.siegeCalloutTitle || 'NEW: Eden Siege — play now');
+  const title = element('strong', 'siege-callout-title', copy.siegeCalloutTitle || "NEW: Velo's Rampart — play now");
   const body = element('span', 'siege-callout-body', copy.siegeCalloutBody || '');
   text.append(title, body);
 
@@ -132,7 +132,7 @@ export function mountSiegeCallout({ getCopy, storage } = {}) {
     body.textContent = next.siegeCalloutBody || body.textContent;
     play.textContent = next.siegeCalloutPlay || play.textContent;
     close.setAttribute('aria-label', next.siegeCalloutDismiss || 'Dismiss');
-    root.setAttribute('aria-label', next.siegeCalloutTitle || 'Eden Siege');
+    root.setAttribute('aria-label', next.siegeCalloutTitle || "Velo's Rampart");
   });
   return root;
 }

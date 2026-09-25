@@ -1,4 +1,4 @@
-// Eden Siege — depth and replay contract.
+// Velo's Rampart — depth and replay contract.
 //
 // Upgrade tiers, enemy modifiers, boss cadence, Velo's dash and ultimate, the
 // tutorial, endless mode, the Daily Siege seed and local progress. Everything

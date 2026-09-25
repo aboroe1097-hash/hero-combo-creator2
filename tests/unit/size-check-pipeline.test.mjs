@@ -41,7 +41,7 @@ test('route JavaScript budgets include scripts and modulepreloads', () => {
   const checkSize = read('scripts/check-size.mjs');
   assert.match(
     checkSize,
-    /routeJsBytes:\s*\{[^}]*'eden-siege\.html':\s*\{\s*desktop:\s*712 \* 1024,\s*mobile:\s*712 \* 1024/su
+    /routeJsBytes:\s*\{[^}]*'eden-siege\.html':\s*\{\s*desktop:\s*738 \* 1024,\s*mobile:\s*738 \* 1024/su
   );
   assert.match(checkSize, /function resolveBuiltRouteJsAssets\(/u);
   assert.match(checkSize, /relValues\.includes\('modulepreload'\)/u);
