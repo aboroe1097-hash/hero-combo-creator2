@@ -1245,7 +1245,7 @@ async function exportPng(button) {
     g.textAlign = 'left';
     drawCanvasFooter(
       g,
-      { ...getExportBranding(), sourceCredits: [] },
+      getExportBranding(),
       {
         x: pad,
         y: footerY,

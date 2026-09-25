@@ -1,5 +1,11 @@
 import { mergeSeededR5Adjustments, normalizeR5Adjustment } from './ocr-adjustments.js';
-import { compactPlayerIdentity, expandDutyRawNames, getDutyCreditedNames } from './ocr-shared.js';
+import {
+  cleanDutyRawName,
+  compactPlayerIdentity,
+  expandDutyRawNames,
+  getDutyCreditedNames,
+  resolveDutyPlayerName,
+} from './ocr-shared.js';
 import {
   getSpecialAccountIdentityKey,
   resolveCanonicalPlayerIdentity,
@@ -588,6 +594,62 @@ export function collectFamilyDutyEntries(dutyRecords = [], familyKey = '') {
   );
 }
 
+// The identities one duty entry is credited to, exactly as the score counts
+// them. The duty debug export's "Scored As" column reads this same function.
+export function dutyEntryScoredIdentities(entry) {
+  const raw = entry?.name || entry?.original || '';
+  const creditedNames = entry?.confirmed
+    ? getDutyCreditedNames(raw, entry.confirmed)
+    : expandDutyRawNames(raw);
+  const seen = new Set();
+  const seenFamilies = new Set();
+  const out = [];
+  creditedNames.forEach((name) => {
+    const identity = resolveWeightedPlayerIdentity(name);
+    if (!identity || seen.has(identity.playerKey)) return;
+    const familyKey = playerFamilyKey(identity.playerKey);
+    // One source cell represents one completed duty. Owner/operator aliases
+    // from the same person (for example Lady Zubbs + Zubbs) must not turn it
+    // into two duties when their accounts are pooled later.
+    if (familyKey && seenFamilies.has(familyKey)) return;
+    seen.add(identity.playerKey);
+    if (familyKey) seenFamilies.add(familyKey);
+    out.push(identity);
+  });
+  return out;
+}
+
+export function dutyEntryScoredNames(entry) {
+  return dutyEntryScoredIdentities(entry).map((identity) => identity.playerName);
+}
+
+// The admin account link that took this entry's credit to its owner, if any:
+// the cell names a linked alt, banner or secondary account and the score
+// credits that account's owner. Null when the credit came from the name
+// itself (an exact, alias or fuzzy match).
+export function dutyEntryAccountLink(entry) {
+  const raw = entry?.name || entry?.original || '';
+  const scored = dutyEntryScoredIdentities(entry);
+  if (!scored.length) return null;
+  const scoredFamilies = new Set(
+    scored.map((identity) => playerFamilyKey(identity.playerKey) || identity.playerKey)
+  );
+  const candidates = [cleanDutyRawName(raw), resolveDutyPlayerName(raw)];
+  for (const candidate of candidates) {
+    const link = resolveAccountLink(candidate);
+    if (!link) continue;
+    const ownerKey = compactPlayerIdentity(link.owner) || link.owner;
+    if (!scoredFamilies.has(playerFamilyKey(ownerKey, false) || ownerKey)) continue;
+    return {
+      account: link.account,
+      owner: link.owner,
+      type: link.type,
+      accountClass: accountLinkClass(link.type),
+    };
+  }
+  return null;
+}
+
 export function buildWeightedDutyCounts(dutyRecords = []) {
   const counts = new Map();
 
@@ -596,23 +658,7 @@ export function buildWeightedDutyCounts(dutyRecords = []) {
     if (!bucket) return;
 
     (Array.isArray(record.entries) ? record.entries : []).forEach((entry) => {
-      const raw = entry?.name || entry?.original || '';
-      const creditedNames = entry?.confirmed
-        ? getDutyCreditedNames(raw, entry.confirmed)
-        : expandDutyRawNames(raw);
-      const seen = new Set();
-      const seenFamilies = new Set();
-
-      creditedNames.forEach((name) => {
-        const identity = resolveWeightedPlayerIdentity(name);
-        if (!identity || seen.has(identity.playerKey)) return;
-        const familyKey = playerFamilyKey(identity.playerKey);
-        // One source cell represents one completed duty. Owner/operator aliases
-        // from the same person (for example Lady Zubbs + Zubbs) must not turn it
-        // into two duties when their accounts are pooled later.
-        if (familyKey && seenFamilies.has(familyKey)) return;
-        seen.add(identity.playerKey);
-        if (familyKey) seenFamilies.add(familyKey);
+      dutyEntryScoredIdentities(entry).forEach((identity) => {
         const row = counts.get(identity.playerKey) || {
           playerKey: identity.playerKey,
           playerName: identity.playerName,

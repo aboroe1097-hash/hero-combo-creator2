@@ -1,16 +1,9 @@
 import { SITE_NAME, SITE_LOGO, SITE_URL } from './seo.js';
 import { APP_VERSION } from './state.js';
 
-export const EXPORT_SOURCE_CREDITS = Object.freeze([
-  'DonPablone',
-  'FedeSack',
-  'Mtness',
-  'Raven',
-  'Cris Minime',
-  'riseofcastles.net community',
-  'Rustablesafe (concepts)',
-]);
-
+// Exports carry no "Sources:" credit line. Branding names the site, version and
+// time; data provenance lives with the data itself (codex provenance, in-page
+// source notes), never in a footer credit.
 export const FORBIDDEN_WATERMARK_TOKENS = Object.freeze(['DONPABLONE']);
 
 function composeDisplayName(siteName) {
@@ -31,7 +24,6 @@ export function getExportBranding(datasetMeta = {}) {
     generatedAt: new Date().toISOString(),
     datasetRevision: revision,
     verificationStatus,
-    sourceCredits: EXPORT_SOURCE_CREDITS,
   });
 }
 
@@ -46,8 +38,13 @@ export function csvFooterLines(branding) {
       `Data revision ${brand.datasetRevision}${brand.verificationStatus ? ` (${brand.verificationStatus})` : ''}`
     );
   }
-  lines.push(`Sources: ${brand.sourceCredits.join(', ')}`);
   return Object.freeze(lines);
+}
+
+// One CSV cell per footer line: the leading "#" keeps spreadsheet users oriented,
+// and the quoting keeps a comma in a line from spilling into a second column.
+export function csvFooterCellLines(branding) {
+  return csvFooterLines(branding).map((line) => `"#${String(line).replace(/"/g, '""')}"`);
 }
 
 export function jsonMetaBlock(branding, schema, schemaVersion) {
@@ -66,7 +63,6 @@ export function jsonMetaBlock(branding, schema, schemaVersion) {
       revision: brand.datasetRevision,
       verificationStatus: brand.verificationStatus,
     }),
-    sources: brand.sourceCredits,
   });
 }
 
@@ -114,18 +110,7 @@ export function drawCanvasFooter(ctx, branding, options = {}) {
   const baseLine2 = brand.datasetRevision
     ? `Data ${brand.datasetRevision}${brand.verificationStatus ? ` · ${brand.verificationStatus}` : ''} · ${brand.generatedAt.slice(0, 10)}`
     : `${brand.generatedAt.slice(0, 10)}`;
-  // An export of the alliance's own records passes no credits and gets no
-  // Sources segment. When the full list does not fit, the line points to the
-  // site instead of crediting whichever name happens to come first.
-  const credits = Array.isArray(brand.sourceCredits) ? brand.sourceCredits : [];
-  let composed = credits.length
-    ? `${baseLine2} · Sources: ${credits.join(', ')} · ${brand.siteUrl}`
-    : `${baseLine2} · ${brand.siteUrl}`;
-  let line2 = truncateCanvasText(ctx, composed, maxWidth);
-  if (!line2.fits && credits.length) {
-    composed = `${baseLine2} · Sources: see ${brand.siteUrl}`;
-    line2 = truncateCanvasText(ctx, composed, maxWidth);
-  }
+  const line2 = truncateCanvasText(ctx, `${baseLine2} · ${brand.siteUrl}`, maxWidth);
   // Larger footer fonts pass their own gap so the two lines never overlap.
   ctx.fillText(line2.text, textX, y + (options.lineGap || 14));
   ctx.restore();

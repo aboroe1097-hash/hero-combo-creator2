@@ -4596,6 +4596,17 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
   flex-wrap: wrap;
 }
 
+#ocrDashboardRoot .dash-conduct-export-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-inline-start: auto;
+}
+
+#ocrDashboardRoot .dash-conduct-export-actions .dash-btn {
+  min-height: 44px;
+}
+
 #ocrDashboardRoot .dash-conduct-list-head h3 {
   margin: 0;
   color: var(--text-primary);

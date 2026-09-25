@@ -435,6 +435,18 @@ function bindComplaintForm(root) {
     }
   });
 
+  // The site-wide "Contact Devs" link lands on #edenX1Complaints: open the
+  // form and put the reader on its first question.
+  root.openComplaintFormFromLink = () => {
+    if (form.hidden) {
+      form.hidden = false;
+      openButton.setAttribute('aria-expanded', 'true');
+      void prefillComplainantName(nameInput);
+    }
+    root.scrollIntoView?.({ block: 'start' });
+    root.querySelector('#edenX1ComplaintCategory')?.focus?.({ preventScroll: true });
+  };
+
   cancelButton?.addEventListener('click', () => {
     form.hidden = true;
     openButton.setAttribute('aria-expanded', 'false');
@@ -520,6 +532,20 @@ export function initEdenComplaints(options = {}) {
   // Revealed only once the wiring is in place, so a module that fails to load
   // leaves no dead button on the page.
   root.hidden = false;
+  openComplaintFormFromHash(root);
+  window.addEventListener?.('hashchange', () => openComplaintFormFromHash(root));
+  return true;
+}
+
+export const COMPLAINT_LINK_HASH = 'edenX1Complaints';
+
+export function complaintLinkRequested(hash = globalThis.location?.hash) {
+  return String(hash || '').replace(/^#/, '') === COMPLAINT_LINK_HASH;
+}
+
+function openComplaintFormFromHash(root) {
+  if (!complaintLinkRequested()) return false;
+  root.openComplaintFormFromLink?.();
   return true;
 }
 

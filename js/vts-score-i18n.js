@@ -581,6 +581,12 @@ const SIGNUP_COPY = Object.freeze({
 // the season-registration wording above where both define a key.
 const COMPETITION_COPY = Object.freeze({
   en: {
+    signupOcrLabel: 'Fill from a screenshot (optional)',
+    signupOcrHint: 'Lord Info → Power screenshot: open Lord Info and scroll to the Power section. PNG, JPEG or WebP; max 10 MB.',
+    signupOcrConfirm: 'I checked every number against my screenshot.',
+    signupOcrConfirmRequired: 'Tick the box to confirm you checked the numbers read from your screenshot.',
+    signupOcrFilled: 'Values filled from your screenshot. Check every number, then save.',
+    signupCommitmentTitle: 'Active times and commitment',
     kicker: 'VTS 1097 · COMPETITION #12',
     title: 'Competition #12 · Pre-season prep',
     intro:
@@ -660,6 +666,12 @@ const COMPETITION_COPY = Object.freeze({
     statusSubmitted: 'Your values were submitted successfully.',
   },
   ar: {
+    signupOcrLabel: 'املأ من لقطة شاشة (اختياري)',
+    signupOcrHint: 'لقطة معلومات اللورد ← القوة: افتح معلومات اللورد ومرّر إلى قسم القوة. PNG أو JPEG أو WebP؛ الحد الأقصى 10 ميغابايت.',
+    signupOcrConfirm: 'راجعت كل رقم مقابل لقطة الشاشة.',
+    signupOcrConfirmRequired: 'ضع علامة للتأكيد أنك راجعت الأرقام المقروءة من لقطة الشاشة.',
+    signupOcrFilled: 'تم ملء القيم من لقطة الشاشة. راجع كل رقم ثم احفظ.',
+    signupCommitmentTitle: 'أوقات النشاط والالتزام',
     kicker: 'VTS 1097 · المسابقة رقم 12',
     title: 'المسابقة رقم 12 · استعداد ما قبل الموسم',
     intro:
@@ -735,6 +747,12 @@ const COMPETITION_COPY = Object.freeze({
     statusSubmitted: 'تم إرسال قيمك بنجاح.',
   },
   es: {
+    signupOcrLabel: 'Rellenar desde una captura (opcional)',
+    signupOcrHint: 'Captura de Info del Señor → Poder: abre Info del Señor y desplázate hasta la sección Poder. PNG, JPEG o WebP; máx. 10 MB.',
+    signupOcrConfirm: 'He comprobado cada número con mi captura.',
+    signupOcrConfirmRequired: 'Marca la casilla para confirmar que comprobaste los números leídos de tu captura.',
+    signupOcrFilled: 'Valores rellenados desde tu captura. Comprueba cada número y guarda.',
+    signupCommitmentTitle: 'Horas activas y compromiso',
     kicker: 'VTS 1097 · COMPETICIÓN N.º 12',
     title: 'Competición n.º 12 · Preparación de pretemporada',
     intro:
@@ -818,6 +836,12 @@ const COMPETITION_COPY = Object.freeze({
     statusSubmitted: 'Tus valores se enviaron correctamente.',
   },
   pt: {
+    signupOcrLabel: 'Preencher a partir de uma captura (opcional)',
+    signupOcrHint: 'Captura de Info do Lorde → Poder: abra Info do Lorde e role até a seção Poder. PNG, JPEG ou WebP; máx. 10 MB.',
+    signupOcrConfirm: 'Conferi cada número com a minha captura.',
+    signupOcrConfirmRequired: 'Marque a caixa para confirmar que conferiu os números lidos da captura.',
+    signupOcrFilled: 'Valores preenchidos a partir da captura. Confira cada número e salve.',
+    signupCommitmentTitle: 'Horários ativos e compromisso',
     kicker: 'VTS 1097 · COMPETIÇÃO Nº 12',
     title: 'Competição nº 12 · Preparação de pré-temporada',
     intro:
@@ -900,6 +924,12 @@ const COMPETITION_COPY = Object.freeze({
     statusSubmitted: 'Seus valores foram enviados com sucesso.',
   },
   fr: {
+    signupOcrLabel: 'Remplir depuis une capture (facultatif)',
+    signupOcrHint: 'Capture Infos du Seigneur → Puissance : ouvrez Infos du Seigneur et faites défiler jusqu’à la section Puissance. PNG, JPEG ou WebP ; 10 Mo max.',
+    signupOcrConfirm: 'J’ai vérifié chaque nombre avec ma capture.',
+    signupOcrConfirmRequired: 'Cochez la case pour confirmer que vous avez vérifié les nombres lus sur votre capture.',
+    signupOcrFilled: 'Valeurs remplies depuis votre capture. Vérifiez chaque nombre, puis enregistrez.',
+    signupCommitmentTitle: 'Horaires actifs et engagement',
     kicker: 'VTS 1097 · COMPÉTITION NO 12',
     title: 'Compétition no 12 · Préparation d’avant-saison',
     intro:
@@ -984,6 +1014,12 @@ const COMPETITION_COPY = Object.freeze({
     statusSubmitted: 'Vos valeurs ont bien été envoyées.',
   },
   de: {
+    signupOcrLabel: 'Aus einem Screenshot ausfüllen (optional)',
+    signupOcrHint: 'Screenshot Lord-Info → Stärke: Öffne Lord-Info und scrolle zum Abschnitt Stärke. PNG, JPEG oder WebP; max. 10 MB.',
+    signupOcrConfirm: 'Ich habe jede Zahl mit meinem Screenshot verglichen.',
+    signupOcrConfirmRequired: 'Setze das Häkchen, um zu bestätigen, dass du die gelesenen Zahlen geprüft hast.',
+    signupOcrFilled: 'Werte aus deinem Screenshot übernommen. Prüfe jede Zahl und speichere dann.',
+    signupCommitmentTitle: 'Aktive Zeiten und Einsatz',
     kicker: 'VTS 1097 · WETTBEWERB NR. 12',
     title: 'Wettbewerb Nr. 12 · Vorbereitung vor der Saison',
     intro:

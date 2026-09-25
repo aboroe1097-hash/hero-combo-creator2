@@ -183,6 +183,10 @@ const es = {
   adminConductUpdate: 'Actualizar Ajuste',
   adminConductCancelEdit: 'Cancelar Edición',
   adminConductRecent: 'Ajustes recientes',
+  adminConductExportPng: 'Exportar imagen',
+  adminConductExportCsv: 'Exportar CSV',
+  adminConductExportTotal: 'Total',
+  adminConductExportEmpty: 'No hay nada que exportar para esta temporada y este filtro.',
   adminConductEmpty:
     'Aun no hay ajustes de puntos extra de esfuerzo de equipo para esta temporada.',
   adminConductNoPlayers: 'Aún no hay jugadores resueltos disponibles.',

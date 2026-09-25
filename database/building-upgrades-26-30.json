@@ -22,7 +22,7 @@
     "Total",
     "Bonus Last Level"
   ],
-  "sourceCaveat": "Community-maintained sheet credited to Raven G. Prerequisite wording and bonuses preserve the source text. Blank level-cost cells remain unknown (null); when every level cell of a row is blank its total is null too, because the sheet's TOTAL formula reports 0 for an empty row (Royal Charcoal Factory). Market level 26 is a listed 0 rather than a blank, so it stays 0. Seven source spellings are corrected for display while sourceName keeps the sheet's own text: Cavalry War Room and Cavalry Enhancement Camp ('Cavalery'), Sentry Tower ('Centry Tower'), Raiders Hall ('Raiders hall'), Alliance Hall ('Aliance Hall'), Distillery ('Distilery') and Workers Guild ('Workers uild'). The sheet's explicit overall TOTAL formula sums O5:O45 and omits the final Market and Institute row totals (1,400 + 14,930); its displayed total 281,102 is therefore 16,330 below the 297,432 sum of listed building totals. Per-level TOTAL formulas are retained as published, including their level-26 extra-count formula. Do not treat the source aggregate as a recomputed sum.",
+  "sourceCaveat": "Community-maintained sheet. Prerequisite wording and bonuses preserve the source text. Blank level-cost cells remain unknown (null); when every level cell of a row is blank its total is null too, because the sheet's TOTAL formula reports 0 for an empty row (Royal Charcoal Factory). Market level 26 is a listed 0 rather than a blank, so it stays 0. Seven source spellings are corrected for display while sourceName keeps the sheet's own text: Cavalry War Room and Cavalry Enhancement Camp ('Cavalery'), Sentry Tower ('Centry Tower'), Raiders Hall ('Raiders hall'), Alliance Hall ('Aliance Hall'), Distillery ('Distilery') and Workers Guild ('Workers uild'). The sheet's explicit overall TOTAL formula sums O5:O45 and omits the final Market and Institute row totals (1,400 + 14,930); its displayed total 281,102 is therefore 16,330 below the 297,432 sum of listed building totals. Per-level TOTAL formulas are retained as published, including their level-26 extra-count formula. Do not treat the source aggregate as a recomputed sum.",
   "buildings": [
     {
       "id": "castle",
@@ -1495,9 +1495,10 @@
     }
   ],
   "castleUpgradeCostSource": {
-    "sourceUrl": "https://tools.riseofcastles.net/castle-upgrade-costs/",
+    "label": "Google Sheet: Castle upgrade costs",
+    "sourceUrl": "https://docs.google.com/spreadsheets/d/1aKQOKMQVMyVAdTnrZO9OpMTr3Mj3x0gHvfRbtS4FMmA/edit?gid=0#gid=0",
     "observedAt": "2026-09-23",
-    "caveat": "Resources are copied from the page's per-level TOTAL COST CT 26–30 sections as direct Castle costs; the separate prerequisite-building resource costs are excluded. ROCAcademy notes its accumulated total figures may vary with current building levels."
+    "caveat": "Resources are the direct Castle costs for levels 26–30 from the Google Sheet; the separate prerequisite-building resource costs are excluded. Accumulated totals may vary with current building levels."
   },
   "castleUpgradeCosts": [
     {

@@ -575,6 +575,10 @@ const it = {
   adminConductUpdate: 'Aggiorna correzione',
   adminConductCancelEdit: 'Annulla modifica',
   adminConductRecent: 'Correzioni recenti',
+  adminConductExportPng: 'Esporta immagine',
+  adminConductExportCsv: 'Esporta CSV',
+  adminConductExportTotal: 'Totale',
+  adminConductExportEmpty: 'Niente da esportare per questa stagione e questo filtro.',
   adminConductEmpty:
     'Non sono ancora presenti correzioni dei punti bonus per l’impegno di squadra in questa stagione.',
   adminConductNoPlayers: 'Non sono ancora disponibili giocatori identificati.',

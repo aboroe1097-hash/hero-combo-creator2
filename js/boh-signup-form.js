@@ -17,6 +17,7 @@ import { getDb, initFirebase } from './firebase.js';
 import {
   BohSignupDocumentError,
   buildBohSignupDocument,
+  mergeRetiredBohSignupFields,
   getBohSignupDocumentPath,
   readBohSignupFormValues,
   readBohSignupSubmission,
@@ -133,7 +134,8 @@ export function createBohSignupSession(options = {}) {
         const revision =
           Number.isInteger(stored?.revision) && stored.revision > 0 ? stored.revision + 1 : 1;
         const document = buildBohSignupDocument({
-          values,
+          // Questions the member form no longer asks keep their stored value.
+          values: mergeRetiredBohSignupFields(values, stored),
           uid,
           seasonId: season,
           status: options2.status || 'submitted',

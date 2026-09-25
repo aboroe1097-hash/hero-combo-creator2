@@ -422,7 +422,7 @@ function renderMoreTools() {
 }
 
 function renderSources() {
-  return `<details class="eden-ops-sources"><summary>${text('sources')}</summary><div class="eden-ops-source-grid">${Object.values(EDEN_OPERATIONS_SOURCES).map((source) => `<a href="${escapeHtml(source.url || '#')}" target="_blank" rel="noreferrer"><strong>${escapeHtml(source.title)}</strong>${source.author ? `<em>${escapeHtml(source.author)}</em>` : ''}<span>${escapeHtml(sourceKindLabel(source.status))}</span></a>`).join('')}</div><ul>${SPECIALTY_DATA_GAPS.map((gap, index) => `<li>${escapeHtml(dataText(`gap.${index}`, gap))}</li>`).join('')}</ul><small>${text('dataset')} ${EDEN_OPERATIONS_DATA_VERSION}</small></details>`;
+  return `<details class="eden-ops-sources"><summary>${text('sources')}</summary><div class="eden-ops-source-grid">${Object.values(EDEN_OPERATIONS_SOURCES).map((source) => `<a href="${escapeHtml(source.url || '#')}" target="_blank" rel="noreferrer"><strong>${escapeHtml(source.title)}</strong><span>${escapeHtml(sourceKindLabel(source.status))}</span></a>`).join('')}</div><ul>${SPECIALTY_DATA_GAPS.map((gap, index) => `<li>${escapeHtml(dataText(`gap.${index}`, gap))}</li>`).join('')}</ul><small>${text('dataset')} ${EDEN_OPERATIONS_DATA_VERSION}</small></details>`;
 }
 
 // Re-rendering replaces the markup, so remember which control had focus and

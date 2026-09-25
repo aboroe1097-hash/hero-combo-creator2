@@ -264,7 +264,6 @@ ${sections.join('\n')}
     )} dataset (revision ${escapeHtml(revision)}${
       branding.verificationStatus ? `, ${escapeHtml(branding.verificationStatus)}` : ''
     }).</li>
-    <li>Sources: ${escapeHtml(branding.sourceCredits.join(', '))}.</li>
     <li>Community data may change with game updates. Verify against the live game before committing resources.</li>
   </ul>
 </div>

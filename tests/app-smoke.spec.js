@@ -6107,6 +6107,26 @@ test.describe('app smoke tabs', () => {
     expect(allDataCsv).toContain('duty_entry');
     expect(allDataCsv).toContain('weighted_contribution');
     expect(allDataCsv).toContain('ex_guild_contribution');
+    expect(allDataCsv).toContain('"Date (ISO)"');
+    expect(allDataCsv).toContain('"export_manifest"');
+    expect(allDataCsv).not.toContain('Sources');
+    expect(allDataCsv).toMatch(/\n"#Generated at [^"\n]+"\n$/);
+
+    await page.locator('#dashExportMenuBtn').click();
+    const dutyDebugDownloadPromise = page.waitForEvent('download');
+    await page.locator('#dashExpDutyDebugCsv').click();
+    const dutyDebugDownload = await dutyDebugDownloadPromise;
+    const dutyDebugCsv = await fs.readFile(await dutyDebugDownload.path(), 'utf8');
+    expect(dutyDebugCsv).toContain('"Scored As"');
+    expect(dutyDebugCsv).toContain('"Alpha","2026-06-25"');
+
+    await page.locator('#dashExportMenuBtn').click();
+    const attackDebugDownloadPromise = page.waitForEvent('download');
+    await page.locator('#dashExpDebugCsv').click();
+    const attackDebugDownload = await attackDebugDownloadPromise;
+    const attackDebugCsv = await fs.readFile(await attackDebugDownload.path(), 'utf8');
+    expect(attackDebugCsv).toContain('"Scored As"');
+    expect(attackDebugCsv).toContain('"admin-export-attack-1"');
 
     await page.locator('#dashExportMenuBtn').click();
     const debugDownloadPromise = page.waitForEvent('download');
@@ -6118,6 +6138,35 @@ test.describe('app smoke tabs', () => {
     expect(debugJson.counts.dutyEntries).toBe(1);
     expect(debugJson.debug.derived.weightedContribution.rows[0].playerName).toBe('Alpha');
     expect(debugJson.debug.localStorage.vts_ocr_dashboard.bytes).toBeGreaterThan(0);
+
+    // R5 Bonus Team Effort Points: grouped PNG export of the season.
+    await page.evaluate(
+      ({ dash, roster }) => {
+        const season = window.__vtsOcrDashboardState.r5Season;
+        window.setOcrDashboardDataForTest(dash, roster, [
+          {
+            id: 'conduct-png-1',
+            playerName: 'Alpha',
+            playerKey: 'alpha',
+            category: 'banner_help',
+            points: 2,
+            season,
+            note: 'Gate, east',
+            createdAt: '2026-06-25T21:00:00.000Z',
+          },
+        ]);
+      },
+      { dash: seededDash, roster: seededRoster }
+    );
+    await page.evaluate(() => window.switchDashSubtab('conduct'));
+    await expect(page.locator('#dashConductExportPngBtn')).toBeVisible();
+    await expect(page.locator('#dashConductExportCsvBtn')).toBeVisible();
+    const conductPngPromise = page.waitForEvent('download');
+    await page.locator('#dashConductExportPngBtn').click();
+    const conductPng = await conductPngPromise;
+    expect(conductPng.suggestedFilename()).toMatch(/^bonus-team-effort-.*\.png$/);
+    const pngBytes = await fs.readFile(await conductPng.path());
+    expect(pngBytes.subarray(1, 4).toString('latin1')).toBe('PNG');
   });
 
   test('admin dashboard persistence compacts player summary for cloud-safe saves', async ({
