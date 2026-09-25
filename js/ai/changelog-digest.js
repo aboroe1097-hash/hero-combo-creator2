@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.6";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.7";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.5.7",
+    "date": "2026-09-25",
+    "highlights": [
+      "Community Hub PDF exports now download directly as PDF or image files, with dark and light themes and controls for content, detail, paper size and orientation. The dense page layouts keep the selected reference material readable and reduce unnecessary pages."
+    ]
+  },
   {
     "version": "16.5.6",
     "date": "2026-09-25",
@@ -103,16 +110,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Superadmins can count one candidate's team votes for another player, such as a banner account's votes for the player who runs it. Totals, the CSV export, and public results all follow the redirect.",
       "The vote admin panel and the Eden X2 page title name the active season instead of always saying Eden X1.",
       "The duty scoring weights panel is a compact table with a points example, and the demolition setting is a clear on/off switch."
-    ]
-  },
-  {
-    "version": "16.0.17",
-    "date": "2026-09-22",
-    "highlights": [
-      "Pather and banner cells now count one duty per player family, so Lady Zubbs and her Zubbs account no longer turn seven duties into ten. The admin list summary follows the same rule.",
-      "Eden X2 management rankings now read the current Google Sheet's `VoteResults` tab. Kiji, Loonly, Redbull, stylized ANGEL, and Victoria/Kika names resolve to their player families.",
-      "Superadmins can choose whether demolition points contribute to dashboard totals while keeping demolition activity visible.",
-      "Superadmins can delete an individual Eden X2 voting ballot from the admin results table. The ballot is removed from totals and a deletion is recorded in the immutable edit history."
     ]
   }
 ].map((release) =>
