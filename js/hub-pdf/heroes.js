@@ -145,6 +145,14 @@ function heroTypeLabel(copy, type) {
   );
 }
 
+/** True when the lane wants a skin on this hero (must or recommended). */
+function comboNeedsSkin(combo, name) {
+  return getComboSkinRequirements(combo).some(
+    (item) =>
+      item.hero === name && (item.requirement === 'must' || item.requirement === 'recommended')
+  );
+}
+
 function skinNeeds(combo, copy) {
   const parts = getComboSkinRequirements(combo)
     .filter((item) => item.requirement === 'must' || item.requirement === 'recommended')
@@ -348,6 +356,11 @@ export function buildHeroesDocument(rawChoices, copy, settings = {}) {
               portraits: combos.map((combo) =>
                 combo.heroes.map((name) => portraitByName.get(name))
               ),
+              // Which heroes need a skin, so the dense sheet marks the portrait
+              // instead of printing a line of text for every lane.
+              skinFlags: combos.map((combo) =>
+                combo.heroes.map((name) => comboNeedsSkin(combo, name))
+              ),
             }
           ),
         ],
@@ -380,7 +393,14 @@ export function buildHeroesDocument(rawChoices, copy, settings = {}) {
             textCol(copy.colData),
           ],
           skinRows,
-          { caption: copy.skinTypeNote }
+          {
+            // The dense sheet draws each skin beside its hero's portrait.
+            presentation: 'hero-skins',
+            portraits: heroes.flatMap((hero) =>
+              (heroSkins[hero.name] || []).map(() => hero.imageUrl ?? null)
+            ),
+            caption: copy.skinTypeNote,
+          }
         ),
       ],
       subsections: [
@@ -394,7 +414,8 @@ export function buildHeroesDocument(rawChoices, copy, settings = {}) {
                 formatItems(tier.star1To2),
                 tier.star2To3 === null ? '—' : formatItems(tier.star2To3),
               ]),
-              { caption: copy.skinCostNote }
+              // A fixed reference table: it prints beside any skins selection.
+              { static: true, caption: copy.skinCostNote }
             ),
           ],
         },
