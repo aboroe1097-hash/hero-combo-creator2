@@ -183,7 +183,14 @@ const LIMITS = {
   // release 11614.1 KiB). Retain ~20 KiB again.
   // Both land in one 16.5.6 release (with the Heroes PDF designs, which sit in
   // the lazy hub-pdf chunk): measured 11637.3 KiB locally; retain ~20 KiB.
-  totalJsBytes: 11700 * 1024,
+  // 16.5.13 Velo tools: get_competition_status, get_building_costs,
+  // get_eden_operations and get_my_competition, their 13-locale copy pack and
+  // the drawer's deadline line. All of it loads only after the drawer opens
+  // (the pack and the deadline line after the assistant itself); the drawer's
+  // first chunk grows by 4.7 KiB. Measured 11736.8 KiB locally (gh-pages 16.5.13
+  // base 11679.4 KiB); the cap moves by that growth and keeps ~20 KiB for CI's
+  // admin-auth injection.
+  totalJsBytes: 11760 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -394,7 +401,12 @@ const LIMITS = {
   // Vite emits admin-export-model-*.js and conduct-adjustment-export-*.js, and
   // the export model's game-time parser splits ocr-time-filter-*.js and
   // game-time-*.js out as shared chunks. No headroom is added.
-  deployFileCount: 814,
+  // 16.5.13 raises the cap by the measured minimum (814 -> 826): the Velo
+  // tools lazy-import the Buildings, Eden Pathing, Operations Lab and
+  // Competition #12 data modules, so each becomes a chunk shared with its
+  // feature instead of being inlined there, and the Velo copy pack, deadline
+  // line and competition status load as chunks of their own. No headroom.
+  deployFileCount: 826,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive

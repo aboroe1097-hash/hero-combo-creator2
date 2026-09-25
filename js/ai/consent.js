@@ -7,6 +7,7 @@ export const AI_PERSONAL_CATEGORIES = Object.freeze([
   'explicit_skins',
   'dm_plan',
   'research_progress',
+  'my_competition',
   'admin_dashboard',
 ]);
 
@@ -15,6 +16,7 @@ export const AI_CATEGORY_TOOL_GROUPS = Object.freeze({
   explicit_skins: 'personal:explicit_skins',
   dm_plan: 'personal:dm_plan',
   research_progress: 'personal:research_progress',
+  my_competition: 'personal:my_competition',
   admin_dashboard: 'private:admin_dashboard',
 });
 
@@ -82,7 +84,9 @@ export function hasRawSavedState(
   storage = globalThis.localStorage,
   runtimeState = globalThis.__vtsHeroComboRuntimeState
 ) {
-  if (category === 'admin_dashboard') return true;
+  // Server-held categories: nothing is saved on this device, and the tool itself
+  // says when the member is signed out or not an admin.
+  if (category === 'admin_dashboard' || category === 'my_competition') return true;
   if (category === 'selected_heroes' && hasLiveSelectedHeroes(runtimeState)) return true;
   const keys = AI_RAW_STATE_KEYS[category] || [];
   try {

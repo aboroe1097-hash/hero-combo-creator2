@@ -55,6 +55,7 @@ export const TOOL_GROUPS = Object.freeze([
   'personal:explicit_skins',
   'personal:dm_plan',
   'personal:research_progress',
+  'personal:my_competition',
   'private:admin_dashboard',
 ]);
 

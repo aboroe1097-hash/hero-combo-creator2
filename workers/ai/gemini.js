@@ -56,7 +56,8 @@ function toolsForGroups(groups) {
   return TOOL_DECLARATIONS.filter(
     ({ name }) =>
       (name !== 'get_material_plan_summary' || set.has('personal:dm_plan')) &&
-      (name !== 'get_admin_context' || set.has('private:admin_dashboard'))
+      (name !== 'get_admin_context' || set.has('private:admin_dashboard')) &&
+      (name !== 'get_my_competition' || set.has('personal:my_competition'))
   );
 }
 

@@ -71,14 +71,13 @@ async function openSeasonView(page, { width = 1280, height = 800 } = {}) {
   );
 }
 
+// The weighted panel can re-render while the page settles, so the card may be
+// missing for a moment; report NaN then and let the polled assertions retry.
 function rewardTableTop(page) {
-  return page.evaluate(() =>
-    Math.round(
-      document
-        .querySelector('#dashWeightedContributionPanel .eden-x1-weighted-card')
-        .getBoundingClientRect().top
-    )
-  );
+  return page.evaluate(() => {
+    const card = document.querySelector('#dashWeightedContributionPanel .eden-x1-weighted-card');
+    return card ? Math.round(card.getBoundingClientRect().top) : Number.NaN;
+  });
 }
 
 // Puts the category cards at `cardTop` px from the top of the viewport.
@@ -96,8 +95,10 @@ test('a category click on a desktop scrolls the table on screen when it is below
   const viewport = page.viewportSize();
   // Cards near the bottom, table below the fold: the old 768px width test
   // left a desktop click here looking like it did nothing.
-  await scrollCardsTo(page, viewport.height - 180);
-  expect(await rewardTableTop(page)).toBeGreaterThan(viewport.height - 120);
+  await expect(async () => {
+    await scrollCardsTo(page, viewport.height - 180);
+    expect(await rewardTableTop(page)).toBeGreaterThan(viewport.height - 120);
+  }).toPass({ timeout: 5000 });
 
   await page.locator('[data-reward-view="contribution"]').click();
   await expect(page.locator('[data-reward-view="contribution"]')).toHaveAttribute(
@@ -124,9 +125,10 @@ test('a category click leaves the page still when the table is already on screen
   page,
 }) => {
   await openSeasonView(page);
-  await scrollCardsTo(page, 40);
-  const before = await rewardTableTop(page);
-  expect(before).toBeLessThan(page.viewportSize().height - 120);
+  await expect(async () => {
+    await scrollCardsTo(page, 40);
+    expect(await rewardTableTop(page)).toBeLessThan(page.viewportSize().height - 120);
+  }).toPass({ timeout: 5000 });
   const scrollBefore = await page.evaluate(() => window.scrollY);
 
   await page.locator('[data-reward-view="support"]').click();

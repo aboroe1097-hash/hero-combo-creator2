@@ -123,10 +123,39 @@ const STATUS_KEYS = Object.freeze({
 });
 
 let activeController = null;
+let veloCopy = null;
+let veloCopyPromise = null;
+
+/** Velo's lazy locale pack; the drawer's first bytes never include it. */
+function loadVeloCopy() {
+  if (!veloCopyPromise) {
+    veloCopyPromise = import('./i18n/velo-copy.js')
+      .then((module) => {
+        veloCopy = module;
+        // Only the pack's own labels change; the transcript is left alone.
+        activeController?.localizeVeloLabels();
+        return module;
+      })
+      .catch(() => {
+        veloCopyPromise = null;
+        return null;
+      });
+  }
+  return veloCopyPromise;
+}
 
 function translate(key, fallback = FALLBACKS[key] || key, variables = {}) {
   const dictionary = translations[currentLanguage] || translations.en || {};
-  let value = dictionary[key] || translations.en?.[key] || fallback;
+  // Velo's own pack (js/i18n/velo-copy.js) wins for its locale, so Croatian
+  // gets its reviewed labels instead of the catalog's English fallback. The
+  // pack loads after the drawer opens (loadVeloCopy); until then the catalog
+  // and the English fallbacks answer.
+  let value =
+    veloCopy?.getVeloCopy(currentLanguage)[key] ||
+    dictionary[key] ||
+    translations.en?.[key] ||
+    veloCopy?.veloCopyText('en', key) ||
+    fallback;
   for (const [name, replacement] of Object.entries(variables)) {
     value = String(value).replaceAll(`{${name}}`, String(replacement));
   }
@@ -145,6 +174,11 @@ function createRequestId() {
 
 const RESEARCH_TOPIC_PATTERN =
   /\b(?:research|technology|tech\s*tree|forschung|recherche|investigaci[oó]n|pesquisa|riset|araştırma)\b|研究|연구|исследов|بحث/iu;
+const COMPETITION_TOPIC_PATTERN =
+  /\b(?:competition|vtsscore|registration|registered|sign[- ]?up|signed up|wettbewerb|comp[ée]tition|competencia|competi[çc][ãa]o|kompetisi|yar[ıi]şma|concorso|anmeldung|inscription|inscripci[óo]n|inscri[çc][ãa]o|pendaftaran|kay[ıi]t|iscrizione)\b|比赛|竞赛|报名|대회|등록|соревнован|конкурс|регистрац|مسابقة|تسجيل/iu;
+// "my", "am I": a question about the member's own registration, not the schedule.
+const FIRST_PERSON_PATTERN =
+  /\b(?:my|mine|am i|i'm|mein(?:e|er|en)?|mon|ma|mes|mi|mis|meu|minha|mio|mia|benim|saya)\b|我的|내|나의|мо[йяеи]|моё|меня|لي|خاص(?:ي|تي)|تسجيلي/iu;
 const PERSONAL_STATUS_PATTERN =
   /\b(?:my|mine|current|saved|progress|status|finished|complete|completed|done|mein(?:e|er|en)?|aktuell|gespeichert|fortschritt|mon|ma|mes|actuel|progr[eè]s|mi|actual|guardad[oa]|meu|minha|atual|progresso|moy|tekush|sohran|benim|mevcut|ilerleme|saya|tersimpan)\b|我的|当前|进度|내|현재|진행|мой|текущ|сохран|لدي|الحالي|التقدم/iu;
 
@@ -163,6 +197,9 @@ export function inferSavedDataCategory(prompt) {
   }
   if (RESEARCH_TOPIC_PATTERN.test(text) && PERSONAL_STATUS_PATTERN.test(text)) {
     return 'research_progress';
+  }
+  if (COMPETITION_TOPIC_PATTERN.test(text) && FIRST_PERSON_PATTERN.test(text)) {
+    return 'my_competition';
   }
   return '';
 }
@@ -220,7 +257,7 @@ function normalizeLocale(value) {
   return AI_SUPPORTED_LOCALES.includes(locale) ? locale : 'en';
 }
 
-// The Worker schema accepts input.activeTab since the b0.4 release; the
+// The Worker schema accepts input.activeTab since the pre-1.0 releases; the
 // deployed Worker must be at least that schema before this ships.
 const SEND_ACTIVE_TAB_CONTEXT = true;
 
@@ -419,7 +456,14 @@ class AiAssistantController {
     }
   }
 
+  localizeVeloLabels() {
+    this.root.querySelectorAll('[data-velo-i18n]').forEach((element) => {
+      element.textContent = translate(element.dataset.veloI18n, element.textContent.trim());
+    });
+  }
+
   refreshLocalizedChrome() {
+    this.localizeVeloLabels();
     this.root.querySelectorAll('[data-ai-key]').forEach((button) => {
       const key = button.dataset.aiKey;
       const fallback = button.dataset.aiPrompt || button.textContent.trim();
@@ -527,7 +571,9 @@ class AiAssistantController {
     }
     let requiredCategories = options.requiredCategories?.length
       ? options.requiredCategories
-      : inferRequiredSavedCategories(prompt);
+      : options.skipInference
+        ? []
+        : inferRequiredSavedCategories(prompt);
     if (
       !requiredCategories.length &&
       this.pendingSetupCategories.size &&
@@ -547,7 +593,7 @@ class AiAssistantController {
       this.openConsent({ category: ungrantedCategory, prompt });
       return;
     }
-    const inferredCategory = inferSavedDataCategory(prompt);
+    const inferredCategory = options.skipInference ? '' : inferSavedDataCategory(prompt);
     if (
       inferredCategory &&
       hasRawSavedState(inferredCategory) &&
@@ -719,6 +765,7 @@ class AiAssistantController {
             allowedToolGroups,
             storage: globalThis.localStorage,
             runtimeState: globalThis.__vtsHeroComboRuntimeState,
+            locale: currentLanguage === 'kr' ? 'ko' : currentLanguage,
           });
           const toolResults = boundAiToolResults(executedToolResults);
           this.activeToolResults.push(...executedToolResults);
@@ -1106,7 +1153,7 @@ class AiAssistantController {
       input.disabled = !available;
       input.checked =
         available &&
-        (preselectAvailable ||
+        ((preselectAvailable && category !== 'my_competition') ||
           this.grants.has(category) ||
           (preselectPreferred && category === preferredCategory));
       option.classList.toggle('ai-consent-option--unavailable', !available);
@@ -1211,7 +1258,13 @@ class AiAssistantController {
     if (action.type === 'navigate') {
       this.navigate(action.tab);
     } else if (action.type === 'navigate-page') {
-      globalThis.location.assign(action.href);
+      // A hub sub-tab on the page already open is a hash change, not a reload.
+      const [page, hash] = String(action.href).split('#');
+      if (page === 'index.html' && hash && typeof globalThis.vtsSwitchTab === 'function') {
+        globalThis.location.hash = hash;
+      } else {
+        globalThis.location.assign(action.href);
+      }
     } else if (action.type === 'use-generator') {
       const current = await readCurrentGeneratorSelection();
       this.confirmMode = 'use-generator';
@@ -1276,6 +1329,20 @@ class AiAssistantController {
   notifyVisibility(isActive) {
     this.tabVisible = Boolean(isActive);
     if (this.tabVisible && this.userNearBottom) this.scrollToLatest();
+    if (this.tabVisible) this.refreshDeadlineReminder().catch(() => {});
+  }
+
+  async refreshDeadlineReminder() {
+    const [{ refreshDeadlineReminder }] = await Promise.all([
+      import('./ai/deadline-reminder.js'),
+      loadVeloCopy(),
+    ]);
+    await refreshDeadlineReminder({
+      header: this.root.querySelector('.ai-header'),
+      language: currentLanguage,
+      translate: (key, variables) => translate(key, undefined, variables),
+      onAsk: (prompt) => this.sendMessage(prompt, { skipInference: true }),
+    });
   }
 
   focusComposer() {
@@ -1287,6 +1354,7 @@ export function initAiAssistant(root = document.getElementById('aiAssistantRoot'
   if (!root) throw new Error('AI Assistant template must load before its module.');
   if (activeController?.root === root) return activeController;
   activeController = new AiAssistantController(root);
+  loadVeloCopy();
   return activeController;
 }
 
@@ -1300,4 +1368,5 @@ export function notifyAiTabVisibility(isActive) {
 
 export function notifyAiLanguageChange() {
   activeController?.refreshLocalizedChrome();
+  if (activeController?.tabVisible) activeController.refreshDeadlineReminder().catch(() => {});
 }

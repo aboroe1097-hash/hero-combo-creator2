@@ -33,6 +33,11 @@ import {
   getToolkitMapAdapter,
   getWhatsNewAdapter,
 } from './tool-adapters-app.js';
+import {
+  getCompetitionStatusAdapter,
+  getMyCompetitionAdapter,
+} from './tool-adapters-competition.js';
+import { getBuildingCostsAdapter, getEdenOperationsAdapter } from './tool-adapters-operations.js';
 import { createToolError, createToolSuccess } from './tool-envelope.js';
 import { AiToolInputError } from './tool-utils.js';
 
@@ -133,6 +138,22 @@ const DEFINITIONS = {
   get_vts_score_mechanics: {
     execute: getVtsScoreMechanicsAdapter,
     requiredGroups: () => [AI_TOOL_GROUPS.STATIC],
+  },
+  get_competition_status: {
+    execute: getCompetitionStatusAdapter,
+    requiredGroups: () => [AI_TOOL_GROUPS.STATIC],
+  },
+  get_building_costs: {
+    execute: getBuildingCostsAdapter,
+    requiredGroups: () => [AI_TOOL_GROUPS.STATIC],
+  },
+  get_eden_operations: {
+    execute: getEdenOperationsAdapter,
+    requiredGroups: () => [AI_TOOL_GROUPS.STATIC],
+  },
+  get_my_competition: {
+    execute: getMyCompetitionAdapter,
+    requiredGroups: () => [AI_TOOL_GROUPS.STATIC, AI_TOOL_GROUPS.MY_COMPETITION],
   },
 };
 
@@ -474,6 +495,48 @@ export const AI_TOOL_DECLARATIONS = Object.freeze([
     name: 'get_vts_score_mechanics',
     description:
       'Read the public VtsScore mechanics: version, power fields (required and optional), and maximum power.',
+    parameters: Object.freeze({ type: 'object', properties: {}, additionalProperties: false }),
+  }),
+  Object.freeze({
+    name: 'get_competition_status',
+    description:
+      'Read the published Competition #12 schedule: the phase now, the next deadline, every phase open/close time in game time (UTC-2) and the viewer local time, and the BoH and Epic Showdown slot catalogs.',
+    parameters: Object.freeze({ type: 'object', properties: {}, additionalProperties: false }),
+  }),
+  Object.freeze({
+    name: 'get_building_costs',
+    description:
+      'Read Castle 26-30 per-level resource costs (kind=castle), one building 26-30 Orichalcum cost and prerequisites (kind=building), or every building total (kind=list). Unknown cells stay unknown.',
+    parameters: Object.freeze({
+      type: 'object',
+      required: ['kind'],
+      properties: {
+        kind: { type: 'string', enum: ['castle', 'building', 'list'] },
+        building: { type: 'string', minLength: 1, maxLength: 60 },
+      },
+      additionalProperties: false,
+    }),
+  }),
+  Object.freeze({
+    name: 'get_eden_operations',
+    description:
+      'Read the Eden Pathing rule (40 tiles per pather, rounded up per started block) or the Operations Lab shared staffing counters with each objective requirement.',
+    parameters: Object.freeze({
+      type: 'object',
+      required: ['kind'],
+      properties: {
+        kind: { type: 'string', enum: ['pathing_rule', 'staffing'] },
+        tiles: { type: 'integer', minimum: 0, maximum: 100000 },
+        structure: { type: 'string', minLength: 1, maxLength: 32 },
+        banner: { type: 'boolean' },
+      },
+      additionalProperties: false,
+    }),
+  }),
+  Object.freeze({
+    name: 'get_my_competition',
+    description:
+      "Read the signed-in member's own Competition #12 registration after explicit consent: filled power fields, ROC level, active times, consent, and their own published growth.",
     parameters: Object.freeze({ type: 'object', properties: {}, additionalProperties: false }),
   }),
 ]);

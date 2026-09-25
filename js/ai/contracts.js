@@ -48,6 +48,7 @@ export const AI_TOOL_GROUPS = Object.freeze({
   EXPLICIT_SKINS: 'personal:explicit_skins',
   DM_PLAN: 'personal:dm_plan',
   RESEARCH_PROGRESS: 'personal:research_progress',
+  MY_COMPETITION: 'personal:my_competition',
   ADMIN_DASHBOARD: 'private:admin_dashboard',
 });
 
@@ -56,6 +57,7 @@ export const AI_CONSENT_CATEGORIES = Object.freeze([
   Object.freeze({ id: 'explicit_skins', toolGroup: AI_TOOL_GROUPS.EXPLICIT_SKINS }),
   Object.freeze({ id: 'dm_plan', toolGroup: AI_TOOL_GROUPS.DM_PLAN }),
   Object.freeze({ id: 'research_progress', toolGroup: AI_TOOL_GROUPS.RESEARCH_PROGRESS }),
+  Object.freeze({ id: 'my_competition', toolGroup: AI_TOOL_GROUPS.MY_COMPETITION }),
   Object.freeze({ id: 'admin_dashboard', toolGroup: AI_TOOL_GROUPS.ADMIN_DASHBOARD }),
 ]);
 
