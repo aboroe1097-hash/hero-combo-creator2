@@ -10,6 +10,7 @@ import {
   getWeightedPlayerFamilyKey,
   normalizeEdenX1ContributionRankingMode,
   normalizeWeightedR5Adjustments,
+  rollUpRowsByFamily,
   sanitizePublicR5Adjustments,
 } from './contribution-weighting.js';
 import {
@@ -1301,42 +1302,33 @@ function getEdenPublicPlayerForKey(playerKey, playerName = '') {
 
 // One top list per duty, so a player who only lays paths is not buried under
 // banner placers (and the other way round).
-function rankedEdenDutyRows(field, limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
-  return currentRows
-    .filter((row) => valueOf(row[field]) > 0)
+// Linked banner and alt accounts count for the player who runs them, so the
+// duty and bonus top lists total each family and show the owner's name.
+function rankedFamilyTotals(valueOfRow, limit) {
+  return rollUpRowsByFamily(currentRows, valueOfRow)
     .sort(
       (a, b) =>
-        valueOf(b[field]) - valueOf(a[field]) ||
-        valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
-        String(a.playerName || '').localeCompare(String(b.playerName || ''))
+        b.total - a.total ||
+        b.weightedScore - a.weightedScore ||
+        String(a.name || '').localeCompare(String(b.name || ''))
     )
-    .slice(0, limit)
-    .map((row) => ({
-      key: row.playerKey || compactPlayerIdentity(row.playerName),
-      name: row.playerName,
-      value: formatScore(valueOf(row[field])),
-    }));
+    .slice(0, limit);
+}
+
+function rankedEdenDutyRows(field, limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
+  return rankedFamilyTotals((row) => valueOf(row[field]), limit).map((entry) => ({
+    key: entry.key,
+    name: entry.name,
+    value: formatScore(entry.total),
+  }));
 }
 
 function rankedEdenR5BonusRows(limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
-  return currentRows
-    .map((row) => ({
-      ...row,
-      r5Bonus: conductBonusValue(row),
-    }))
-    .filter((row) => row.r5Bonus > 0)
-    .sort(
-      (a, b) =>
-        valueOf(b.r5Bonus) - valueOf(a.r5Bonus) ||
-        valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
-        String(a.playerName || '').localeCompare(String(b.playerName || ''))
-    )
-    .slice(0, limit)
-    .map((row) => ({
-      key: row.playerKey || compactPlayerIdentity(row.playerName),
-      name: row.playerName,
-      value: t('edenX1VoteR5BonusValue', { points: formatSignedNumber(row.r5Bonus) }),
-    }));
+  return rankedFamilyTotals(conductBonusValue, limit).map((entry) => ({
+    key: entry.key,
+    name: entry.name,
+    value: t('edenX1VoteR5BonusValue', { points: formatSignedNumber(entry.total) }),
+  }));
 }
 
 function rankedEdenStructureHelpRows(limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
@@ -6916,10 +6908,7 @@ function edenMarqueeStatusState() {
     minutes: pad2(parts.minutes),
     seconds: pad2(parts.seconds),
   };
-  const countdown = tf(
-    parts.days ? 'edenX1VoteCountdownDays' : 'edenX1VoteCountdownClock',
-    vars
-  );
+  const countdown = tf(parts.days ? 'edenX1VoteCountdownDays' : 'edenX1VoteCountdownClock', vars);
   const urgent = parts.remainingSeconds <= 86_400;
   return {
     state: urgent ? 'urgent' : 'open',

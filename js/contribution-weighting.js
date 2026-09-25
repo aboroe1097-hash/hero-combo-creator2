@@ -448,6 +448,45 @@ export function getWeightedPlayerFamilyKey(accountKey) {
   return playerFamilyKey(accountKey);
 }
 
+/**
+ * Totals per player family for a public top list: a linked banner or alt
+ * account adds its value to the player who runs it, and the family is shown
+ * under that player's name. The name comes from the family's own (unlinked)
+ * row when there is one, else from the account link's owner.
+ *
+ * @param {Array} rows weighted rows (playerKey, playerName, weightedScore)
+ * @param {(row) => number} valueOfRow the figure to total
+ * @returns {Array<{ key, name, total, weightedScore }>} unsorted, total > 0 only
+ */
+export function rollUpRowsByFamily(rows = [], valueOfRow = () => 0) {
+  const families = new Map();
+  (Array.isArray(rows) ? rows : []).forEach((row) => {
+    const value = Number(valueOfRow(row)) || 0;
+    const rowKey = row?.playerKey || compactPlayerIdentity(row?.playerName) || '';
+    const familyKey = row?.familyKey || playerFamilyKey(rowKey) || rowKey;
+    if (!familyKey) return;
+    const link = resolveAccountLink(rowKey);
+    let entry = families.get(familyKey);
+    if (!entry) {
+      entry = { key: '', name: '', total: 0, weightedScore: 0, fromOwnRow: false };
+      families.set(familyKey, entry);
+    }
+    entry.total += value;
+    entry.weightedScore = Math.max(entry.weightedScore, Number(row?.weightedScore) || 0);
+    if (!link && !entry.fromOwnRow) {
+      entry.key = rowKey;
+      entry.name = row?.playerName || rowKey;
+      entry.fromOwnRow = true;
+    } else if (!entry.name && link) {
+      entry.name = link.owner;
+      entry.key = compactPlayerIdentity(link.owner) || familyKey;
+    }
+  });
+  return Array.from(families.values())
+    .filter((entry) => entry.total > 0)
+    .map(({ key, name, total, weightedScore }) => ({ key, name, total, weightedScore }));
+}
+
 export function dedupeWeightedRowsByFamily(rows = [], options = {}) {
   const seenFamilies = new Set(
     Array.from(options.reservedFamilyKeys || [], (key) => playerFamilyKey(key)).filter(Boolean)
