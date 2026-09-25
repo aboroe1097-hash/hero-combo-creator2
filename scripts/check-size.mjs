@@ -187,7 +187,11 @@ const LIMITS = {
   // helpers and the lazy css/admin-combos.css) adds its own chunk on top of the
   // existing combos-db chunk, which it reuses rather than duplicating: 11665.9
   // KiB locally; retain ~22 KiB for CI's admin-auth injection.
-  totalJsBytes: 11688 * 1024,
+  // The same tab now runs the whole planner interface rather than a lookalike:
+  // js/combos-planner-ui.js (the mountable tool), js/combo-plan.js (the shared
+  // engine) and css/combos-planner.css, all in the lazy admin graph. Measured
+  // 11698.5 KiB locally; keep ~22 KiB for CI's admin-auth injection.
+  totalJsBytes: 11721 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -400,7 +404,9 @@ const LIMITS = {
   // game-time-*.js out as shared chunks. No headroom is added.
   // The Combos admin tab emits its module and its lazy stylesheet (816 files
   // measured); keep two files of headroom.
-  deployFileCount: 818,
+  // Running the real planner interface there adds its stylesheet chunk and the raw
+  // js/combos-db.js copy the tab rebuilds (818 measured); keep two of headroom.
+  deployFileCount: 820,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive

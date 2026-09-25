@@ -1,325 +1,127 @@
 // js/admin-combos.js
-// Combos admin tab (Beta): the shipped combo ranking plus the new lineups waiting
-// at the end of it, with the same troop / paid / tier filters the local planner
-// uses, and the hero-overlap check that answers "is this lineup already covered?".
+// The VTS Admin host of the Combos planner (Beta). It mounts the same interface the
+// local tool runs — js/combos-planner-ui.js — against the database that ships with
+// the site, so an admin gets the identical tool: filters, the overlap answer while
+// placing, edit mode, and removal.
 //
-// This tab reads js/combos-db.js, which ships with the site, so it cannot place or
-// edit a lineup yet: that still happens in the local planner (npm run combos:plan)
-// and lands as a reviewed commit. The tab exists so an admin can see and audit the
-// live list, and so the next phase has its read side ready.
+// Save cannot change a deployed file from the browser, so it rebuilds
+// js/combos-db.js in place (exactly the text the local planner would write, because
+// both run js/combo-plan.js) and hands that file over for download and the
+// clipboard. Committing it is what publishes the change to players. Lineups added
+// in the tab that were not placed stay in a local draft, the way the local tool
+// keeps them in x8-queue.json.
 
 import { allHeroesData } from './heroes-data.js';
 import { rankedCombos } from './combos-db.js';
-import {
-  hasPaid,
-  matchOf,
-  tierOf,
-  troopIcon,
-  troopOf,
-  TROOP_LABEL,
-} from './combo-lanes.js';
+import { buildComboSource, buildView } from './combo-plan.js';
+import { mountCombosPlanner } from './combos-planner-ui.js';
 
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
+const SOURCE_URL = 'js/combos-db.js';
+const DRAFT_KEY = 'vts_combos_draft_v1';
 
-function heroTable() {
-  const H = {};
-  for (const hero of allHeroesData) {
-    H[hero.name] = { s: hero.season, t: hero.Type, p: hero.State === 'Paid' ? 1 : 0 };
+const HOW_TO = `
+  <ul>
+    <li>This is the same tool as the local planner (<code>npm run combos:plan</code>), pointed at the list that ships in <code>js/combos-db.js</code>.</li>
+    <li>Drag a lineup onto a gap, or press <b>Place</b> and then <b>Place here</b>; while placing, the banner and the rows name the lineups that already share heroes with yours.</li>
+    <li><b>Edit mode</b> renames a lineup's heroes or skin code, reorders a current lineup, and takes one out with a two-step ✕.</li>
+    <li><b>Save</b> rebuilds <code>js/combos-db.js</code> and downloads it. Players keep the current list until that file is committed, which is the step that publishes a change.</li>
+    <li>Lineups you add but do not place stay in this browser as a draft, and are listed again next time you open the tab.</li>
+    <li><b>Skin code</b> is one digit per hero in Front / Middle / Back order: <b>3</b> you must own that hero's skin, <b>2</b> the skin is recommended, <b>1</b> it is optional.</li>
+  </ul>`;
+
+function readDraft() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || '[]');
+    return Array.isArray(raw) ? raw : [];
+  } catch {
+    return [];
   }
-  return H;
 }
 
-/**
- * Splits the shipped ranking the way the planner server does: a lineup is "new"
- * when one of its heroes belongs to the X8 season, and a new lineup sits above the
- * first current lineup that follows it (or at the end when none does). Ids mirror
- * the planner contract (b0… / x0…), so anything copied here matches the planner.
- */
-function readRanking(H) {
-  const isNew = (combo) => combo.heroes.some((name) => H[name] && H[name].s === 'X8');
-  const lastCurrent = rankedCombos.map((combo) => !isNew(combo)).lastIndexOf(true);
-  const current = [];
-  const lanes = [];
-  let pending = [];
-  rankedCombos.forEach((combo, index) => {
-    const lane = { heroes: combo.heroes, skin: combo.skin || '', note: combo.note || '' };
-    if (!isNew(combo)) {
-      const entry = { id: `b${current.length}`, ...lane, rank: current.length + 1 };
-      current.push(entry);
-      pending.forEach((above) => {
-        above.anchor = entry.id;
-        above.rank = entry.rank;
-      });
-      pending = [];
-      return;
-    }
-    const fresh = { id: `x${lanes.length}`, ...lane, ...tierOf(combo.note), anchor: '', rank: 0 };
-    lanes.push(fresh);
-    if (index < lastCurrent) pending.push(fresh);
-  });
-  return {
-    current,
-    placed: lanes.filter((lane) => lane.anchor),
-    atEnd: lanes.filter((lane) => !lane.anchor),
-    all: [...current, ...lanes],
-  };
+function writeDraft(lanes) {
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(lanes));
+  } catch {
+    /* private mode: the draft lives only for this session */
+  }
 }
 
-function heroChips(heroes, H) {
-  return heroes
-    .map((name) => {
-      const hero = H[name] || {};
-      const troop = hero.t || 'All';
-      return (
-        '<span class="ac-hero' +
-        (hero.s === 'X8' ? ' is-new' : '') +
-        '" title="' +
-        escapeHtml(name + ' — ' + (TROOP_LABEL[troop] || troop) + (hero.p ? ', paid hero' : '')) +
-        '"><span class="ac-troop ' +
-        escapeHtml(troop) +
-        '">' +
-        troopIcon(troop, 16) +
-        '</span>' +
-        escapeHtml(name) +
-        '</span>'
-      );
-    })
-    .join('<span class="ac-sep">/</span>');
+/** Hands the rebuilt file to the admin: a download, plus the clipboard when allowed. */
+function handOver(source) {
+  const url = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'combos-db.js';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    // Best effort: the download is the deliverable, the clipboard is a convenience.
+    navigator.clipboard.writeText(source).catch(() => {});
+  }
 }
 
-const badge = (heroes, H) =>
-  hasPaid(heroes, H)
-    ? '<span class="ac-badge paid">Paid</span>'
-    : '<span class="ac-badge free">Free</span>';
-
-const overlapChip = (match) =>
-  match.sameTrio
-    ? '<span class="ac-badge same" title="Already uses these three heroes">same trio</span>'
-    : '<span class="ac-badge match">' + match.shared + ' same</span>';
-
-/**
- * Renders the Combos tab into the provided mount point.
- *
- * @param {HTMLElement} mount The DOM container to render into.
- */
+/** Renders the Combos tool into the provided mount point. */
 export function renderCombos(mount) {
   if (!mount) return;
-  const H = heroTable();
-  const view = readRanking(H);
-  const byId = new Map(view.all.map((lane) => [lane.id, lane]));
-  let selected = null;
+  let state = null;
 
-  mount.innerHTML =
-    '<section class="admin-combos" aria-label="Combos">' +
-    '<header class="ac-head">' +
-    '<h2 class="ac-title">Combos <span class="ac-tag">Beta</span></h2>' +
-    '<p class="ac-copy">The ranking that ships in <code>js/combos-db.js</code>. Placing and editing happen in the local planner (<code>npm run combos:plan</code>) and land as a reviewed commit, so this tab shows the live list and answers whether a new lineup is already covered.</p>' +
-    '<div class="ac-stats" id="acStats"></div>' +
-    '</header>' +
-    '<div class="ac-controls">' +
-    '<input type="search" id="acSearch" class="ac-input" placeholder="Search hero" aria-label="Search lineups by hero">' +
-    '<select id="acTroop" class="ac-input" aria-label="Troop"><option value="">All troops</option><option value="Cavalry">Cavalry</option><option value="Archers">Archers</option><option value="Footmen">Footmen</option><option value="Mixed">Mixed</option></select>' +
-    '<select id="acCost" class="ac-input" aria-label="Paid or free"><option value="">Paid and free</option><option value="free">Free heroes only</option><option value="paid">Has a paid hero</option></select>' +
-    '<select id="acTier" class="ac-input" aria-label="Tier"><option value="">All tiers</option><option value="S">S tier</option><option value="A">A tier</option><option value="B">B tier</option><option value="C">C tier</option><option value="none">No tier yet</option></select>' +
-    '<select id="acSort" class="ac-input" aria-label="Sort new lineups"><option value="position">End order</option><option value="score">Source score</option><option value="tier">Tier</option><option value="name">Name</option></select>' +
-    '<button type="button" class="ac-btn" id="acClear" hidden>Clear filters</button>' +
-    '</div>' +
-    '<p class="ac-summary" id="acSummary"></p>' +
-    '<div class="ac-lists">' +
-    '<section class="ac-panel"><h3>Current lineups</h3><div class="ac-list" id="acCurrent"></div></section>' +
-    '<section class="ac-panel"><h3>New lineups</h3><div class="ac-list" id="acNew"></div></section>' +
-    '</div>' +
-    '<div class="ac-foot">' +
-    '<button type="button" class="ac-btn" id="acCopyCurrent">Copy current list (JSON)</button>' +
-    '<button type="button" class="ac-btn" id="acCopyNew">Copy new lineups (JSON)</button>' +
-    '<span class="ac-note" id="acNote" role="status" aria-live="polite"></span>' +
-    '</div>' +
-    '</section>';
-
-  const $ = (id) => mount.querySelector('#' + id);
-
-  function matches(heroes, tier) {
-    const q = $('acSearch').value.trim().toLowerCase();
-    if (q && !heroes.some((name) => name.toLowerCase().includes(q))) return false;
-    const troop = $('acTroop').value;
-    if (troop && troopOf(heroes, H) !== troop) return false;
-    const cost = $('acCost').value;
-    if (cost === 'paid' && !hasPaid(heroes, H)) return false;
-    if (cost === 'free' && hasPaid(heroes, H)) return false;
-    const wanted = $('acTier').value;
-    if (wanted === 'none' && tier) return false;
-    if (wanted && wanted !== 'none' && tier !== wanted) return false;
-    return true;
+  async function readSource() {
+    const response = await fetch(SOURCE_URL, { cache: 'no-store' });
+    if (!response.ok) throw new Error('could not read ' + SOURCE_URL);
+    return response.text();
   }
 
-  function drawStats() {
-    $('acStats').innerHTML =
-      '<span class="ac-stat"><b>' +
-      view.current.length +
-      '</b> current lineups</span>' +
-      '<span class="ac-stat"><b>' +
-      view.placed.length +
-      '</b> new lineups placed inside</span>' +
-      '<span class="ac-stat"><b>' +
-      view.atEnd.length +
-      '</b> new lineups at the end</span>';
+  function stateFor(source, draft) {
+    const view = buildView({
+      source,
+      combos: rankedCombos,
+      heroTable: allHeroesData,
+      queueLanes: draft,
+    });
+    return {
+      source,
+      view,
+      heroNames: new Set(Object.keys(view.heroes)),
+      isX8Lane: view.isX8Lane,
+    };
   }
 
-  function drawLists() {
-    const current = view.current.filter((lane) => matches(lane.heroes, ''));
-    const fresh = view.atEnd
-      .filter((lane) => matches(lane.heroes, lane.tier))
-      .sort((a, b) => {
-        const sort = $('acSort').value;
-        if (sort === 'name') return a.heroes.join(' ').localeCompare(b.heroes.join(' '));
-        if (sort === 'tier')
-          return (a.tier || 'Z').localeCompare(b.tier || 'Z') || (b.score ?? 0) - (a.score ?? 0);
-        if (sort === 'score') return (b.score ?? -1) - (a.score ?? -1);
-        return view.atEnd.indexOf(a) - view.atEnd.indexOf(b);
-      });
-    $('acClear').hidden = !($('acSearch').value || $('acTroop').value || $('acCost').value || $('acTier').value);
-    $('acSummary').textContent =
-      current.length +
-      ' of ' +
-      view.current.length +
-      ' current · ' +
-      fresh.length +
-      ' of ' +
-      view.atEnd.length +
-      ' new';
-    $('acCurrent').innerHTML = current.length
-      ? current
-          .map(
-            (lane) =>
-              '<div class="ac-row base troop-' +
-              troopOf(lane.heroes, H) +
-              '" data-lane="' +
-              escapeHtml(lane.id) +
-              '"><span class="ac-rank">#' +
-              lane.rank +
-              '</span><span class="ac-lineup">' +
-              heroChips(lane.heroes, H) +
-              (lane.skin ? ' <span class="ac-chip">skin ' + escapeHtml(lane.skin) + '</span>' : '') +
-              '</span><span class="ac-actions">' +
-              badge(lane.heroes, H) +
-              '</span></div>'
-          )
-          .join('')
-      : '<p class="ac-empty">No current lineup matches these filters.</p>';
-    $('acNew').innerHTML = fresh.length
-      ? fresh
-          .map(
-            (lane) =>
-              '<button type="button" class="ac-row new troop-' +
-              troopOf(lane.heroes, H) +
-              (selected === lane.id ? ' selected' : '') +
-              '" data-lane="' +
-              escapeHtml(lane.id) +
-              '" aria-pressed="' +
-              (selected === lane.id ? 'true' : 'false') +
-              '"><span class="ac-rank">' +
-              (lane.anchor ? 'above #' + lane.rank : 'end') +
-              '</span><span class="ac-lineup">' +
-              heroChips(lane.heroes, H) +
-              (lane.skin ? ' <span class="ac-chip">skin ' + escapeHtml(lane.skin) + '</span>' : '') +
-              '</span><span class="ac-actions">' +
-              (lane.tier
-                ? '<span class="ac-chip tier">' +
-                  escapeHtml(lane.tier) +
-                  (lane.score != null ? ' · ' + lane.score : '') +
-                  '</span>'
-                : '') +
-              badge(lane.heroes, H) +
-              '</span></button>'
-          )
-          .join('')
-      : '<p class="ac-empty">No new lineup matches these filters.</p>';
+  async function load() {
+    state = stateFor(await readSource(), readDraft());
+    return state.view;
   }
 
-  /** Marks every lineup that shares heroes with the selected one. */
-  function markOverlaps() {
-    const picked = selected ? byId.get(selected) : null;
-    for (const node of mount.querySelectorAll('[data-lane]')) {
-      const lane = byId.get(node.dataset.lane);
-      node.querySelectorAll('.ac-badge.match, .ac-badge.same').forEach((chip) => chip.remove());
-      node.classList.remove('match1', 'match2', 'same-trio');
-      if (!picked || !lane || lane.id === picked.id) continue;
-      const match = matchOf(lane, picked);
-      if (!match.shared) continue;
-      node.classList.add(match.sameTrio ? 'same-trio' : 'match' + match.shared);
-      const spot = node.querySelector('.ac-actions');
-      if (spot) spot.insertAdjacentHTML('afterbegin', overlapChip(match));
-    }
+  async function save(plan) {
+    if (!state) await load();
+    const source = buildComboSource(state.parsed ?? state.view.parsed, plan, {
+      heroNames: state.heroNames,
+      isX8Lane: state.isX8Lane,
+    });
+    handOver(source);
+    // Placed lineups are in the file now; the rest stay in the draft.
+    const placed = new Set(plan.order.filter((entry) => entry.anchor).map((entry) => entry.id));
+    const keep = (plan.added || []).filter((lane) => !placed.has(lane.id));
+    writeDraft(keep);
+    state = stateFor(source, keep);
+    return state.view;
   }
 
-  function describeSelection() {
-    const note = $('acNote');
-    const picked = selected ? byId.get(selected) : null;
-    if (!picked) {
-      note.textContent = 'Tap a new lineup to see which lineups already share its heroes.';
-      return;
-    }
-    const others = view.all.filter((lane) => lane.id !== picked.id);
-    const trio = others.filter((lane) => matchOf(lane, picked).sameTrio).length;
-    const duo = others.filter((lane) => matchOf(lane, picked).shared === 2).length;
-    const one = others.filter((lane) => matchOf(lane, picked).shared === 1).length;
-    note.textContent =
-      picked.heroes.join(' / ') +
-      ' — ' +
-      (trio ? trio + ' already use the same three heroes; ' : '') +
-      duo +
-      ' share two heroes; ' +
-      one +
-      ' share one.';
-  }
-
-  function draw() {
-    drawStats();
-    drawLists();
-    markOverlaps();
-    describeSelection();
-  }
-
-  for (const id of ['acSearch', 'acTroop', 'acCost', 'acTier', 'acSort'])
-    $(id).addEventListener('input', draw);
-  $('acClear').addEventListener('click', () => {
-    for (const id of ['acSearch', 'acTroop', 'acCost', 'acTier']) $(id).value = '';
-    draw();
+  mountCombosPlanner(mount, {
+    load,
+    save,
+    saveLabel: 'Rebuild combos-db.js',
+    guardUnload: false,
+    storagePrefix: 'vtsCombosAdmin',
+    idleHint: 'Showing the list that ships in js/combos-db.js.',
+    loadedHint: 'Showing the list that ships in js/combos-db.js.',
+    dirtyHint: 'Not saved yet. Press Save to rebuild js/combos-db.js.',
+    savedHint:
+      'Rebuilt js/combos-db.js and downloaded it. Commit that file to publish the change; players keep the current list until then.',
+    loadingHint: 'Loading js/combos-db.js…',
+    loadError: (error) => 'Could not read js/combos-db.js: ' + error.message,
+    howToSummary: 'How this tab works',
+    howToHtml: HOW_TO,
   });
-  mount.addEventListener('click', (event) => {
-    const copy = event.target.closest('#acCopyCurrent, #acCopyNew');
-    if (copy) {
-      const list = copy.id === 'acCopyCurrent' ? view.current : view.atEnd;
-      const json = JSON.stringify(
-        list.map((lane) => ({ heroes: lane.heroes, skin: lane.skin || undefined })),
-        null,
-        2
-      );
-      const note = $('acNote');
-      const done = () => {
-        note.textContent = 'Copied ' + list.length + ' lineups as JSON.';
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(json).then(done, () => {
-          note.textContent = 'Could not reach the clipboard; the list was not copied.';
-        });
-      } else {
-        note.textContent = 'This browser has no clipboard access; the list was not copied.';
-      }
-      return;
-    }
-    const row = event.target.closest('[data-lane]');
-    if (!row) return;
-    selected = selected === row.dataset.lane ? null : row.dataset.lane;
-    draw();
-  });
-
-  draw();
 }

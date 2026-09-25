@@ -368,14 +368,25 @@ test('a placed X8 lane stays above its S0-X2 lineup when that lineup moves', () 
 });
 
 test('every asset the planner page asks for is served by the planner server', async () => {
-  const read = (name) =>
-    readFile(new URL(`../../tools/combos-planner/${name}`, import.meta.url), 'utf8');
-  const html = await read('index.html');
+  const root = new URL('../../', import.meta.url);
+  const read = (rel) => readFile(new URL(rel, root), 'utf8');
+  const html = await read('tools/combos-planner/index.html');
   // Asset URLs carry a ?__STAMP__ the server fills in, so ignore the query here.
   const refs = [...html.matchAll(/(?:src|href)="(\/[^"?]+)(?:\?[^"]*)?"/g)].map((m) => m[1]);
-  assert.ok(refs.length >= 2, `expected the page to link its own assets, saw ${refs.length}`);
+  assert.ok(refs.length >= 3, `expected the page to link its assets, saw ${refs.length}`);
   for (const ref of refs) assert.ok(staticFiles.has(ref), `${ref} is linked but not served`);
-  const app = await read('app.js');
-  for (const [, ref] of app.matchAll(/from '(\/[^']+)'/g))
-    assert.ok(staticFiles.has(ref), `${ref} is imported but not served`);
+  // The host and the shared modules it pulls in: a relative specifier resolves
+  // against the served module's own URL, which is the server root.
+  for (const name of [
+    'tools/combos-planner/host.js',
+    'js/combos-planner-ui.js',
+    'js/combo-lanes.js',
+    'js/combo-plan.js',
+  ]) {
+    const source = await read(name);
+    for (const [, spec] of source.matchAll(/from '([^']+\.js)'/g)) {
+      const url = spec.startsWith('/') ? spec : '/' + spec.slice(2);
+      assert.ok(staticFiles.has(url), `${name} imports ${spec}, which the server does not serve`);
+    }
+  }
 });

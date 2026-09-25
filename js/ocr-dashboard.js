@@ -1134,14 +1134,16 @@ function saveThroneBuffsHistory(record) {
 let combosModulePromise = null;
 
 /**
- * Mounts the Combos tab on first visit. The tab reads the shipped ranking, so it
- * needs nothing from Firestore and can load the moment it is opened.
+ * Mounts the Combos tab on first visit. The tab runs the same planner interface as
+ * the local tool (npm run combos:plan) against the shipped database, so it needs
+ * nothing from Firestore; the planner stylesheet loads with it.
  */
 async function ensureCombosMounted() {
   if (!combosModulePromise) {
     combosModulePromise = Promise.all([
       import('./admin-combos.js'),
       import('../css/admin-combos.css'),
+      import('../css/combos-planner.css'),
     ])
       .then(([module]) => module)
       .catch((error) => {
@@ -1159,7 +1161,7 @@ async function ensureCombosMounted() {
     const mount = $id('dashCombosRoot');
     if (mount) {
       mount.innerHTML = `<div class="dash-empty" role="alert">${esc(
-        'Could not load the combo list. Reload the page and try again.'
+        'Could not load the combos tool. Reload the page and try again.'
       )}</div>`;
     }
   }

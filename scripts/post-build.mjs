@@ -79,6 +79,9 @@ const copyFiles = [
   'js/theme-prepaint.js',
   'js/admin-auth-config.js',
   'js/maintenance-config.js',
+  // The Combos admin tab rebuilds this file in the browser, so the page needs the
+  // raw source next to the bundled copy the rest of the app imports.
+  'js/combos-db.js',
   'js/i18n/standalone-copy.js',
   'js/index-page-enhancements.js',
   'js/loader-v14.js',
@@ -94,6 +97,7 @@ const copyDest = {
   'js/theme-prepaint.js': 'js/theme-prepaint.js',
   'js/admin-auth-config.js': 'js/admin-auth-config.js',
   'js/maintenance-config.js': 'js/maintenance-config.js',
+  'js/combos-db.js': 'js/combos-db.js',
   'js/i18n/standalone-copy.js': 'js/i18n/standalone-copy.js',
   'js/index-page-enhancements.js': 'js/index-page-enhancements.js',
   'js/loader-v14.js': 'js/loader-v14.js',
