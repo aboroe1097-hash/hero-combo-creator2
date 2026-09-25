@@ -24,8 +24,8 @@ test('the live Combos ranking is readable by any visitor and written by a supera
     /match \/combos_plan\/current \{[\s\S]*?\n {4}\}/,
     'combos_plan/current'
   );
-  // Visitors are signed in anonymously by the app, like the Competition #12 schedule.
-  assert.match(block, /allow get: if signedIn\(\);/);
+  // A direct document get is public, while list remains denied.
+  assert.match(block, /allow get: if true;/);
   assert.match(block, /allow list: if false;/);
   assert.match(block, /allow create, update: if isSuperAdmin\(\) && validCombosPlan\(\);/);
   assert.match(block, /allow delete: if false;/);
@@ -65,6 +65,7 @@ test('the emulator script covers reads, the superadmin gate and the validator', 
   const script = readFileSync('scripts/rules-emulator/combos-plan.mjs', 'utf8');
   for (const name of [
     'anonymous visitor reads',
+    'signed-out visitor reads',
     'admin cannot publish',
     'superadmin publishes',
     'extra key refused',

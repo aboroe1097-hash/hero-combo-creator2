@@ -771,20 +771,18 @@ test('provider output is range-bound and cannot expand the public response contr
   assert.equal(normalized.extracted.privateProviderField, undefined);
   assert.equal(normalized.providerMetadata, undefined);
 
-  assert.throws(
-    () =>
-      normalizeBohStatsOcrProviderResponse(
-        providerEnvelope({
-          extracted: {
-            ...JSON.parse(providerEnvelope().choices[0].message.content).extracted,
-            troopPower: '100000000001',
-          },
-        }),
-        { BOH_OCR_MAX_POWER: '100000000000' },
-        'server-id'
-      ),
-    (error) => error?.code === 'invalid_provider_response'
+  const partiallyReadable = normalizeBohStatsOcrProviderResponse(
+    providerEnvelope({
+      extracted: {
+        ...JSON.parse(providerEnvelope().choices[0].message.content).extracted,
+        troopPower: '100000000001',
+      },
+    }),
+    { BOH_OCR_MAX_POWER: '100000000000' },
+    'server-id'
   );
+  assert.equal(partiallyReadable.extracted.troopPower, null);
+  assert.match(partiallyReadable.warnings[0], /some OCR values could not be read/iu);
 });
 
 test('suspicious single-digit extended powers are cleared for manual review', () => {

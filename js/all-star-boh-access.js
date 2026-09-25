@@ -178,6 +178,7 @@ function responseError(response, payload, fallbackCode) {
     'invalid_auth',
     'invalid_json',
     'invalid_request',
+    'invalid_provider_response',
     'method_not_allowed',
     'origin_denied',
     'rate_limited',
