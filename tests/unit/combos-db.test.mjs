@@ -12,9 +12,9 @@ import {
   selectNonOverlappingCombos,
 } from '../../js/combos-db.js';
 
-// X8 (catch-up bracket) heroes are in scope, but only inside the X8 block that ends the
-// database. Its lanes are ordered by the source score recorded in each note, so the block
-// is the one part of the list whose order is evidence-driven rather than curated by hand.
+// X8 lanes (any lane with an X8 hero) are either placed inside the list with the Combos
+// Planner (npm run combos:plan), directly above the S0-X2 lane they outrank, or left in
+// the X8 block that ends the database, ordered by the source score in each note.
 const X8_HEROES = new Set(
   allHeroesData.filter((hero) => hero.season === 'X8').map((hero) => hero.name)
 );
@@ -77,35 +77,35 @@ test('every combo uses known hero names', () => {
   });
 });
 
-test('X8 lanes form the tail block and never renumber the S0-X2 ranks', () => {
-  const firstX8 = rankedCombos.findIndex(usesX8Hero);
+test('only X8 lanes follow the last S0-X2 lane', () => {
   const lastShared = rankedCombos.findLastIndex((combo) => !usesX8Hero(combo));
 
-  assert.ok(firstX8 > 0, 'expected the recovered X8 lanes to be present');
+  assert.ok(rankedCombos.some(usesX8Hero), 'expected the X8 lanes to be present');
   assert.ok(
-    firstX8 > lastShared,
-    `an X8 lane sits above the S0-X2 list at index ${firstX8}, renumbering every rank after it`
-  );
-  assert.ok(
-    rankedCombos.slice(firstX8).every(usesX8Hero),
-    'the tail block mixes X8 lanes with S0-X2 lanes'
+    rankedCombos.slice(lastShared + 1).every(usesX8Hero),
+    'the end block mixes X8 lanes with S0-X2 lanes'
   );
 });
 
-test('every X8 lane records its tier and source score, highest score first', () => {
-  const scores = rankedCombos.filter(usesX8Hero).map((combo) => {
-    const match = /X8 catch-up lane, ([SABC]) tier \(source score (\d+(?:\.\d+)?)\)\.$/.exec(
-      combo.note || ''
+test('catch-up notes record tier and score, and the unplaced X8 block stays in score order', () => {
+  const note = /X8 catch-up lane, ([SABC]) tier \(source score (\d+(?:\.\d+)?)\)\.$/;
+  rankedCombos
+    .filter((combo) => usesX8Hero(combo) && /catch-up/.test(combo.note || ''))
+    .forEach((combo) =>
+      assert.match(combo.note, note, `bad catch-up note on ${combo.heroes.join('|')}`)
     );
-    assert.ok(match, `X8 lane without a tier and score note: ${combo.heroes.join('|')}`);
-    return Number(match[2]);
-  });
 
-  assert.ok(scores.length > 0);
+  const lastShared = rankedCombos.findLastIndex((combo) => !usesX8Hero(combo));
+  const scores = rankedCombos
+    .slice(lastShared + 1)
+    .map((combo) => note.exec(combo.note || ''))
+    .filter(Boolean)
+    .map((match) => Number(match[2]));
+
   assert.deepEqual(
     scores,
     [...scores].sort((a, b) => b - a),
-    'X8 lanes must stay ordered by their source score'
+    'the unplaced X8 block must stay ordered by source score'
   );
 });
 
