@@ -73,6 +73,48 @@
       "campaignWon": "Asedio superado",
       "cardSaved": "Carta guardada"
     },
+    "feats": {
+      "title": "Hazañas",
+      "unlocked": "Hazaña desbloqueada",
+      "progress": "{unlocked} / {total} desbloqueadas",
+      "wingborne": {
+        "name": "Alado",
+        "desc": "Alcanza una cadena de ×50 en una sola partida."
+      },
+      "ashfall": {
+        "name": "Lluvia de ceniza",
+        "desc": "Reduce a cenizas a 100 enemigos."
+      },
+      "coldCalculus": {
+        "name": "Cálculo gélido",
+        "desc": "Gana una partida usando solo el ala de Hielo."
+      },
+      "untouched": {
+        "name": "Intacto",
+        "desc": "Gana con la fortaleza sin un solo rasguño."
+      },
+      "warlordsBane": {
+        "name": "Azote de los señores",
+        "desc": "Derriba a tres señores de la guerra en una sola partida."
+      },
+      "architect": {
+        "name": "Arquitecto",
+        "desc": "Lleva al máximo cada espacio de torre en una sola partida."
+      }
+    },
+    "omens": {
+      "title": "Presagio de oleada",
+      "body": "Elige el presagio que llevará la próxima oleada, o no tomes ninguno.",
+      "skip": "Sin presagio",
+      "ironTide": "Marea de hierro",
+      "ironTideDesc": "Todos los enemigos van acorazados. +60% de oro.",
+      "fogOfWar": "Niebla de guerra",
+      "fogOfWarDesc": "El campo se oscurece. +40% de puntos.",
+      "bloodMoon": "Luna de sangre",
+      "bloodMoonDesc": "Enemigos más rápidos, cadenas más lentas. +50% de puntos.",
+      "mirrorIce": "Hielo espejo",
+      "mirrorIceDesc": "El Hielo apenas muerde. +80% de puntos."
+    },
     "maps": {
       "mapKeepName": "Muralla del Torreón",
       "mapKeepDesc": "Murallas nevadas. Tres puertas, una fortaleza.",
@@ -89,7 +131,13 @@
       "enemyRanger": "Explorador",
       "enemyCavalry": "Caballería",
       "enemyDreadnought": "Acorazado",
-      "enemyWarlord": "Kharr el Señor de la guerra"
+      "enemyWarlord": "Kharr el Señor de la guerra",
+      "enemyShieldwall": "Muro de escudos",
+      "enemySkirmisher": "Escaramuzador",
+      "enemySaboteur": "Saboteador",
+      "enemyHerald": "Heraldo",
+      "enemyHauler": "Acarreador",
+      "enemyGateRam": "Ariete"
     },
     "towers": {
       "towerFrost": "Aguja de Escarcha",
@@ -245,6 +293,48 @@
       "campaignWon": "Cerco concluído",
       "cardSaved": "Carta salva"
     },
+    "feats": {
+      "title": "Feitos",
+      "unlocked": "Feito desbloqueado",
+      "progress": "{unlocked} / {total} desbloqueados",
+      "wingborne": {
+        "name": "Nascido das Asas",
+        "desc": "Alcance uma corrente de ×50 em uma única partida."
+      },
+      "ashfall": {
+        "name": "Chuva de Cinzas",
+        "desc": "Reduza 100 inimigos a cinzas."
+      },
+      "coldCalculus": {
+        "name": "Cálculo Frio",
+        "desc": "Vença uma partida usando apenas a asa de Gelo."
+      },
+      "untouched": {
+        "name": "Intocado",
+        "desc": "Vença com a fortaleza intacta."
+      },
+      "warlordsBane": {
+        "name": "Flagelo dos Senhores",
+        "desc": "Derrube três senhores da guerra em uma única partida."
+      },
+      "architect": {
+        "name": "Arquiteto",
+        "desc": "Maximize cada encaixe de torre em uma única partida."
+      }
+    },
+    "omens": {
+      "title": "Presságio da onda",
+      "body": "Escolha o presságio que a próxima onda carrega, ou não escolha nenhum.",
+      "skip": "Sem presságio",
+      "ironTide": "Maré de Ferro",
+      "ironTideDesc": "Todos os inimigos vêm blindados. +60% de ouro.",
+      "fogOfWar": "Névoa da Guerra",
+      "fogOfWarDesc": "O campo escurece. +40% de pontos.",
+      "bloodMoon": "Lua de Sangue",
+      "bloodMoonDesc": "Inimigos mais rápidos, correntes mais lentas. +50% de pontos.",
+      "mirrorIce": "Gelo Espelhado",
+      "mirrorIceDesc": "O Gelo quase não morde. +80% de pontos."
+    },
     "maps": {
       "mapKeepName": "Muralha do Torreão",
       "mapKeepDesc": "Muralhas nevadas. Três portões, uma fortaleza.",
@@ -261,7 +351,13 @@
       "enemyRanger": "Batedor",
       "enemyCavalry": "Cavalaria",
       "enemyDreadnought": "Encouraçado",
-      "enemyWarlord": "Kharr, o Senhor da guerra"
+      "enemyWarlord": "Kharr, o Senhor da guerra",
+      "enemyShieldwall": "Muralha de Escudos",
+      "enemySkirmisher": "Escaramuçador",
+      "enemySaboteur": "Sabotador",
+      "enemyHerald": "Arauto",
+      "enemyHauler": "Carregador",
+      "enemyGateRam": "Aríete"
     },
     "towers": {
       "towerFrost": "Agulha de Gelo",
@@ -417,6 +513,48 @@
       "campaignWon": "Belagerung geschafft",
       "cardSaved": "Karte gespeichert"
     },
+    "feats": {
+      "title": "Taten",
+      "unlocked": "Tat freigeschaltet",
+      "progress": "{unlocked} / {total} freigeschaltet",
+      "wingborne": {
+        "name": "Flügelgeboren",
+        "desc": "Erreiche eine Kette von ×50 in einem Lauf."
+      },
+      "ashfall": {
+        "name": "Ascheregen",
+        "desc": "Verbrenne 100 Feinde zu Asche."
+      },
+      "coldCalculus": {
+        "name": "Kaltes Kalkül",
+        "desc": "Gewinne einen Lauf nur mit dem Eis-Flügel."
+      },
+      "untouched": {
+        "name": "Unberührt",
+        "desc": "Gewinne mit der Festung bei voller Stärke."
+      },
+      "warlordsBane": {
+        "name": "Schrecken der Kriegsherren",
+        "desc": "Strecke drei Kriegsherren in einem Lauf nieder."
+      },
+      "architect": {
+        "name": "Architekt",
+        "desc": "Bringe in einem Lauf jeden Turmsockel auf die Höchststufe."
+      }
+    },
+    "omens": {
+      "title": "Wellenvorzeichen",
+      "body": "Wähle das Vorzeichen der nächsten Welle oder nimm keines.",
+      "skip": "Kein Vorzeichen",
+      "ironTide": "Eisenflut",
+      "ironTideDesc": "Jeder Feind ist gepanzert. +60% Gold.",
+      "fogOfWar": "Nebel des Krieges",
+      "fogOfWarDesc": "Das Feld verdunkelt sich. +40% Punkte.",
+      "bloodMoon": "Blutmond",
+      "bloodMoonDesc": "Schnellere Feinde, langsamere Ketten. +50% Punkte.",
+      "mirrorIce": "Eisiger Spiegel",
+      "mirrorIceDesc": "Eis beißt kaum noch. +80% Punkte."
+    },
     "maps": {
       "mapKeepName": "Burgwall",
       "mapKeepDesc": "Verschneite Wälle. Drei Tore, eine Festung.",
@@ -433,7 +571,13 @@
       "enemyRanger": "Späher",
       "enemyCavalry": "Kavallerie",
       "enemyDreadnought": "Schlachtschiff",
-      "enemyWarlord": "Kharr der Kriegsherr"
+      "enemyWarlord": "Kharr der Kriegsherr",
+      "enemyShieldwall": "Schildwall",
+      "enemySkirmisher": "Plänkler",
+      "enemySaboteur": "Saboteur",
+      "enemyHerald": "Herold",
+      "enemyHauler": "Schlepper",
+      "enemyGateRam": "Rammbock"
     },
     "towers": {
       "towerFrost": "Frostspitze",
@@ -589,6 +733,48 @@
       "campaignWon": "Siège réussi",
       "cardSaved": "Carte enregistrée"
     },
+    "feats": {
+      "title": "Hauts faits",
+      "unlocked": "Haut fait débloqué",
+      "progress": "{unlocked} / {total} débloqués",
+      "wingborne": {
+        "name": "Né des ailes",
+        "desc": "Atteignez une chaîne de ×50 en une seule partie."
+      },
+      "ashfall": {
+        "name": "Pluie de cendres",
+        "desc": "Réduisez 100 ennemis en cendres."
+      },
+      "coldCalculus": {
+        "name": "Calcul glacial",
+        "desc": "Remportez une partie en n'utilisant que l'aile de Glace."
+      },
+      "untouched": {
+        "name": "Intact",
+        "desc": "Gagnez avec la forteresse à pleine puissance."
+      },
+      "warlordsBane": {
+        "name": "Fléau des seigneurs",
+        "desc": "Abattez trois seigneurs de guerre en une seule partie."
+      },
+      "architect": {
+        "name": "Architecte",
+        "desc": "Amenez chaque emplacement de tour au niveau maximum en une partie."
+      }
+    },
+    "omens": {
+      "title": "Présage de vague",
+      "body": "Choisissez le présage que portera la prochaine vague, ou n'en prenez aucun.",
+      "skip": "Aucun présage",
+      "ironTide": "Marée de fer",
+      "ironTideDesc": "Chaque ennemi est blindé. +60% d'or.",
+      "fogOfWar": "Brouillard de guerre",
+      "fogOfWarDesc": "Le champ s'assombrit. +40% de score.",
+      "bloodMoon": "Lune de sang",
+      "bloodMoonDesc": "Ennemis plus rapides, chaînes plus lentes. +50% de score.",
+      "mirrorIce": "Glace miroir",
+      "mirrorIceDesc": "La Glace ne mord presque plus. +80% de score."
+    },
     "maps": {
       "mapKeepName": "Rempart du Donjon",
       "mapKeepDesc": "Remparts enneigés. Trois portes, une forteresse.",
@@ -605,7 +791,13 @@
       "enemyRanger": "Éclaireur",
       "enemyCavalry": "Cavalerie",
       "enemyDreadnought": "Cuirassé",
-      "enemyWarlord": "Kharr le Seigneur de guerre"
+      "enemyWarlord": "Kharr le Seigneur de guerre",
+      "enemyShieldwall": "Mur de boucliers",
+      "enemySkirmisher": "Tirailleur",
+      "enemySaboteur": "Saboteur",
+      "enemyHerald": "Héraut",
+      "enemyHauler": "Porteur",
+      "enemyGateRam": "Bélier"
     },
     "towers": {
       "towerFrost": "Flèche de Givre",
@@ -761,6 +953,48 @@
       "campaignWon": "Opsada završena",
       "cardSaved": "Kartica spremljena"
     },
+    "feats": {
+      "title": "Podvizi",
+      "unlocked": "Podvig otključan",
+      "progress": "{unlocked} / {total} otključano",
+      "wingborne": {
+        "name": "Krilati",
+        "desc": "Dostigni lanac od ×50 u jednoj igri."
+      },
+      "ashfall": {
+        "name": "Kiša pepela",
+        "desc": "Spali 100 neprijatelja u pepeo."
+      },
+      "coldCalculus": {
+        "name": "Hladni proračun",
+        "desc": "Pobijedi rundu koristeći samo ledeno krilo."
+      },
+      "untouched": {
+        "name": "Nedirnut",
+        "desc": "Pobijedi s tvrđavom na punoj snazi."
+      },
+      "warlordsBane": {
+        "name": "Prokletstvo vojskovođa",
+        "desc": "Obori tri vojskovođe u jednoj igri."
+      },
+      "architect": {
+        "name": "Arhitekt",
+        "desc": "U jednoj igri dovedi svako ležište za kulu do najviše razine."
+      }
+    },
+    "omens": {
+      "title": "Predznak vala",
+      "body": "Odaberi predznak koji nosi sljedeći val ili ne uzmi nijedan.",
+      "skip": "Bez predznaka",
+      "ironTide": "Željezna plima",
+      "ironTideDesc": "Svaki je neprijatelj oklopljen. +60% zlata.",
+      "fogOfWar": "Magla rata",
+      "fogOfWarDesc": "Polje se zamračuje. +40% bodova.",
+      "bloodMoon": "Krvavi mjesec",
+      "bloodMoonDesc": "Brži neprijatelji, sporiji lanci. +50% bodova.",
+      "mirrorIce": "Zrcalni led",
+      "mirrorIceDesc": "Led jedva grize. +80% bodova."
+    },
     "maps": {
       "mapKeepName": "Zid tvrđave",
       "mapKeepDesc": "Snježni bedemi. Troja vrata, jedna tvrđava.",
@@ -777,7 +1011,13 @@
       "enemyRanger": "Izviđač",
       "enemyCavalry": "Konjica",
       "enemyDreadnought": "Bojni brod",
-      "enemyWarlord": "Kharr Vojskovođa"
+      "enemyWarlord": "Kharr Vojskovođa",
+      "enemyShieldwall": "Zid štitova",
+      "enemySkirmisher": "Prepadnik",
+      "enemySaboteur": "Saboter",
+      "enemyHerald": "Glasnik",
+      "enemyHauler": "Nosač",
+      "enemyGateRam": "Ovan"
     },
     "towers": {
       "towerFrost": "Ledeni toranj",
@@ -933,6 +1173,48 @@
       "campaignWon": "Kuşatma tamamlandı",
       "cardSaved": "Kart kaydedildi"
     },
+    "feats": {
+      "title": "Başarımlar",
+      "unlocked": "Başarım açıldı",
+      "progress": "{unlocked} / {total} açıldı",
+      "wingborne": {
+        "name": "Kanatlı",
+        "desc": "Tek koşuda ×50 zincire ulaş."
+      },
+      "ashfall": {
+        "name": "Kül Yağmuru",
+        "desc": "100 düşmanı küle çevir."
+      },
+      "coldCalculus": {
+        "name": "Soğuk Hesap",
+        "desc": "Bir koşuyu yalnızca Buz kanadıyla kazan."
+      },
+      "untouched": {
+        "name": "Dokunulmamış",
+        "desc": "Kaleyi tam güçte tutarak kazan."
+      },
+      "warlordsBane": {
+        "name": "Savaş Lordlarının Kâbusu",
+        "desc": "Tek koşuda üç savaş lordu devir."
+      },
+      "architect": {
+        "name": "Mimar",
+        "desc": "Tek koşuda her kule yuvasını en üst seviyeye çıkar."
+      }
+    },
+    "omens": {
+      "title": "Dalga alameti",
+      "body": "Sonraki dalganın taşıyacağı alameti seç ya da hiçbirini alma.",
+      "skip": "Alamet yok",
+      "ironTide": "Demir Dalgası",
+      "ironTideDesc": "Her düşman zırhlı. +60% altın.",
+      "fogOfWar": "Savaş Sisi",
+      "fogOfWarDesc": "Alan kararır. +40% puan.",
+      "bloodMoon": "Kan Ayı",
+      "bloodMoonDesc": "Daha hızlı düşmanlar, daha yavaş zincirler. +50% puan.",
+      "mirrorIce": "Ayna Buzu",
+      "mirrorIceDesc": "Buz neredeyse işlemez. +80% puan."
+    },
     "maps": {
       "mapKeepName": "Kale Suru",
       "mapKeepDesc": "Karla kaplı surlar. Üç kapı, bir kale.",
@@ -949,7 +1231,13 @@
       "enemyRanger": "Avcı",
       "enemyCavalry": "Süvari",
       "enemyDreadnought": "Zırhlı",
-      "enemyWarlord": "Savaş Lordu Kharr"
+      "enemyWarlord": "Savaş Lordu Kharr",
+      "enemyShieldwall": "Kalkan Duvarı",
+      "enemySkirmisher": "Akıncı",
+      "enemySaboteur": "Sabotajcı",
+      "enemyHerald": "Müjdeci",
+      "enemyHauler": "Yükçü",
+      "enemyGateRam": "Koçbaşı"
     },
     "towers": {
       "towerFrost": "Buz Kulesi",
@@ -1105,6 +1393,48 @@
       "campaignWon": "Осада пройдена",
       "cardSaved": "Карта сохранена"
     },
+    "feats": {
+      "title": "Подвиги",
+      "unlocked": "Подвиг открыт",
+      "progress": "{unlocked} / {total} открыто",
+      "wingborne": {
+        "name": "Крылатый",
+        "desc": "Достигните цепи ×50 за один забег."
+      },
+      "ashfall": {
+        "name": "Пепельный дождь",
+        "desc": "Сожгите 100 врагов в пепел."
+      },
+      "coldCalculus": {
+        "name": "Холодный расчёт",
+        "desc": "Победите, используя только крыло Льда."
+      },
+      "untouched": {
+        "name": "Неприкосновенный",
+        "desc": "Победите с крепостью на полной прочности."
+      },
+      "warlordsBane": {
+        "name": "Гроза воевод",
+        "desc": "Сразите трёх военачальников за один забег."
+      },
+      "architect": {
+        "name": "Зодчий",
+        "desc": "Прокачайте каждое гнездо башни до максимума за один забег."
+      }
+    },
+    "omens": {
+      "title": "Знамение волны",
+      "body": "Выберите знамение для следующей волны или откажитесь от него.",
+      "skip": "Без знамения",
+      "ironTide": "Железный прилив",
+      "ironTideDesc": "Все враги в броне. +60% золота.",
+      "fogOfWar": "Туман войны",
+      "fogOfWarDesc": "Поле погружается во тьму. +40% очков.",
+      "bloodMoon": "Кровавая луна",
+      "bloodMoonDesc": "Враги быстрее, серии медленнее. +50% очков.",
+      "mirrorIce": "Зеркальный лёд",
+      "mirrorIceDesc": "Лёд почти не кусает. +80% очков."
+    },
     "maps": {
       "mapKeepName": "Стена цитадели",
       "mapKeepDesc": "Снежные стены. Трое ворот, одна крепость.",
@@ -1121,7 +1451,13 @@
       "enemyRanger": "Стрелок",
       "enemyCavalry": "Кавалерия",
       "enemyDreadnought": "Дредноут",
-      "enemyWarlord": "Кхарр Воевода"
+      "enemyWarlord": "Кхарр Воевода",
+      "enemyShieldwall": "Стена щитов",
+      "enemySkirmisher": "Застрельщик",
+      "enemySaboteur": "Диверсант",
+      "enemyHerald": "Вестник",
+      "enemyHauler": "Обозник",
+      "enemyGateRam": "Таран"
     },
     "towers": {
       "towerFrost": "Ледяной шпиль",
@@ -1277,6 +1613,48 @@
       "campaignWon": "Pengepungan selesai",
       "cardSaved": "Kartu tersimpan"
     },
+    "feats": {
+      "title": "Prestasi",
+      "unlocked": "Prestasi terbuka",
+      "progress": "{unlocked} / {total} terbuka",
+      "wingborne": {
+        "name": "Berjiwa Sayap",
+        "desc": "Capai rantai ×50 dalam satu permainan."
+      },
+      "ashfall": {
+        "name": "Hujan Abu",
+        "desc": "Bakar 100 musuh menjadi abu."
+      },
+      "coldCalculus": {
+        "name": "Kalkulasi Dingin",
+        "desc": "Menangkan permainan hanya dengan sayap Es."
+      },
+      "untouched": {
+        "name": "Tak Tersentuh",
+        "desc": "Menangkan dengan benteng yang masih utuh."
+      },
+      "warlordsBane": {
+        "name": "Momok Panglima",
+        "desc": "Tumbangkan tiga panglima dalam satu permainan."
+      },
+      "architect": {
+        "name": "Arsitek",
+        "desc": "Maksimalkan setiap soket menara dalam satu permainan."
+      }
+    },
+    "omens": {
+      "title": "Pertanda gelombang",
+      "body": "Pilih pertanda yang dibawa gelombang berikutnya, atau tidak sama sekali.",
+      "skip": "Tanpa pertanda",
+      "ironTide": "Pasang Besi",
+      "ironTideDesc": "Semua musuh berzirah. +60% emas.",
+      "fogOfWar": "Kabut Perang",
+      "fogOfWarDesc": "Medan menjadi gelap. +40% skor.",
+      "bloodMoon": "Bulan Darah",
+      "bloodMoonDesc": "Musuh lebih cepat, rantai lebih lambat. +50% skor.",
+      "mirrorIce": "Es Cermin",
+      "mirrorIceDesc": "Es hampir tak menggigit. +80% skor."
+    },
     "maps": {
       "mapKeepName": "Tembok Benteng",
       "mapKeepDesc": "Tembok bersalju. Tiga gerbang, satu benteng.",
@@ -1293,7 +1671,13 @@
       "enemyRanger": "Penembak",
       "enemyCavalry": "Kavaleri",
       "enemyDreadnought": "Kapal Perang",
-      "enemyWarlord": "Panglima Kharr"
+      "enemyWarlord": "Panglima Kharr",
+      "enemyShieldwall": "Tembok Perisai",
+      "enemySkirmisher": "Penyerang",
+      "enemySaboteur": "Saboteur",
+      "enemyHerald": "Juru Kabar",
+      "enemyHauler": "Pengangkut",
+      "enemyGateRam": "Pendobrak"
     },
     "towers": {
       "towerFrost": "Menara Beku",
@@ -1449,6 +1833,48 @@
       "campaignWon": "攻城战通关",
       "cardSaved": "卡牌已保存"
     },
+    "feats": {
+      "title": "功绩",
+      "unlocked": "功绩解锁",
+      "progress": "已解锁 {unlocked} / {total}",
+      "wingborne": {
+        "name": "羽翼加身",
+        "desc": "单局达成 ×50 连锁。"
+      },
+      "ashfall": {
+        "name": "灰烬降临",
+        "desc": "将 100 名敌人烧成灰烬。"
+      },
+      "coldCalculus": {
+        "name": "冷酷算计",
+        "desc": "仅使用冰翼赢得一局。"
+      },
+      "untouched": {
+        "name": "毫发无伤",
+        "desc": "在要塞满耐久的情况下获胜。"
+      },
+      "warlordsBane": {
+        "name": "督军克星",
+        "desc": "单局击败三名督军。"
+      },
+      "architect": {
+        "name": "建筑师",
+        "desc": "单局将每个塔位升到满级。"
+      }
+    },
+    "omens": {
+      "title": "波次征兆",
+      "body": "选择下一波携带的征兆，或什么都不选。",
+      "skip": "无征兆",
+      "ironTide": "铁潮",
+      "ironTideDesc": "所有敌人身披护甲。+60% 金币。",
+      "fogOfWar": "战争迷雾",
+      "fogOfWarDesc": "战场变暗。+40% 得分。",
+      "bloodMoon": "血月",
+      "bloodMoonDesc": "敌人更快，连锁更慢。+50% 得分。",
+      "mirrorIce": "镜冰",
+      "mirrorIceDesc": "冰几乎失效。+80% 得分。"
+    },
     "maps": {
       "mapKeepName": "堡垒城墙",
       "mapKeepDesc": "覆雪的城墙，三道城门，一座要塞。",
@@ -1465,7 +1891,13 @@
       "enemyRanger": "游骑兵",
       "enemyCavalry": "骑兵",
       "enemyDreadnought": "无畏战舰",
-      "enemyWarlord": "督军卡尔"
+      "enemyWarlord": "督军卡尔",
+      "enemyShieldwall": "盾墙兵",
+      "enemySkirmisher": "散兵",
+      "enemySaboteur": "破坏者",
+      "enemyHerald": "传令官",
+      "enemyHauler": "搬运者",
+      "enemyGateRam": "破门槌"
     },
     "towers": {
       "towerFrost": "寒霜尖塔",
@@ -1621,6 +2053,48 @@
       "campaignWon": "اكتمل الحصار",
       "cardSaved": "تم حفظ البطاقة"
     },
+    "feats": {
+      "title": "إنجازات",
+      "unlocked": "تم فتح إنجاز",
+      "progress": "{unlocked} / {total} مفتوح",
+      "wingborne": {
+        "name": "ذو الجناحين",
+        "desc": "ابلغ سلسلة ×50 في جولة واحدة."
+      },
+      "ashfall": {
+        "name": "تساقط الرماد",
+        "desc": "أحرق 100 عدو حتى يصيروا رمادًا."
+      },
+      "coldCalculus": {
+        "name": "حساب بارد",
+        "desc": "افز بجولة مستخدمًا جناح الجليد فقط."
+      },
+      "untouched": {
+        "name": "لم يُمسّ",
+        "desc": "افز والحصن بكامل قوته."
+      },
+      "warlordsBane": {
+        "name": "كارثة أمراء الحرب",
+        "desc": "أسقط ثلاثة أمراء حرب في جولة واحدة."
+      },
+      "architect": {
+        "name": "المهندس",
+        "desc": "ارفع كل مقبس برج إلى أقصى مستوى في جولة واحدة."
+      }
+    },
+    "omens": {
+      "title": "فأل الموجة",
+      "body": "اختر الفأل الذي تحمله الموجة التالية، أو لا تختر شيئًا.",
+      "skip": "بلا فأل",
+      "ironTide": "مد الحديد",
+      "ironTideDesc": "كل عدو مدرّع. +60% من الذهب.",
+      "fogOfWar": "ضباب الحرب",
+      "fogOfWarDesc": "يُظلم الميدان. +40% من النقاط.",
+      "bloodMoon": "قمر الدم",
+      "bloodMoonDesc": "أعداء أسرع وسلاسل أبطأ. +50% من النقاط.",
+      "mirrorIce": "جليد مرآوي",
+      "mirrorIceDesc": "الجليد بالكاد يؤثر. +80% من النقاط."
+    },
     "maps": {
       "mapKeepName": "سور القلعة",
       "mapKeepDesc": "أسوار مغطاة بالثلج. ثلاث بوابات وحصن واحد.",
@@ -1637,7 +2111,13 @@
       "enemyRanger": "رامٍ",
       "enemyCavalry": "فرسان",
       "enemyDreadnought": "مدرّعة",
-      "enemyWarlord": "أمير الحرب خار"
+      "enemyWarlord": "أمير الحرب خار",
+      "enemyShieldwall": "جدار الدروع",
+      "enemySkirmisher": "مناوش",
+      "enemySaboteur": "مخرّب",
+      "enemyHerald": "مناد",
+      "enemyHauler": "حمّال",
+      "enemyGateRam": "كبش البوابة"
     },
     "towers": {
       "towerFrost": "برج الصقيع",
@@ -1793,6 +2273,48 @@
       "campaignWon": "공성전 완료",
       "cardSaved": "카드 저장됨"
     },
+    "feats": {
+      "title": "업적",
+      "unlocked": "업적 달성",
+      "progress": "{unlocked} / {total} 달성",
+      "wingborne": {
+        "name": "날개 달린 자",
+        "desc": "한 판에서 ×50 연쇄를 달성하세요."
+      },
+      "ashfall": {
+        "name": "잿더미",
+        "desc": "적 100명을 재로 만드세요."
+      },
+      "coldCalculus": {
+        "name": "냉정한 계산",
+        "desc": "얼음 날개만 사용해 한 판을 승리하세요."
+      },
+      "untouched": {
+        "name": "무결",
+        "desc": "요새가 온전한 상태로 승리하세요."
+      },
+      "warlordsBane": {
+        "name": "군주의 재앙",
+        "desc": "한 판에서 군주 셋을 쓰러뜨리세요."
+      },
+      "architect": {
+        "name": "건축가",
+        "desc": "한 판에서 모든 타워 소켓을 최대로 올리세요."
+      }
+    },
+    "omens": {
+      "title": "웨이브 징조",
+      "body": "다음 웨이브가 지닐 징조를 고르세요. 아무것도 고르지 않아도 됩니다.",
+      "skip": "징조 없음",
+      "ironTide": "철의 물결",
+      "ironTideDesc": "모든 적이 중무장합니다. 골드 +60%.",
+      "fogOfWar": "전장의 안개",
+      "fogOfWarDesc": "전장이 어두워집니다. 점수 +40%.",
+      "bloodMoon": "핏빛 달",
+      "bloodMoonDesc": "적은 더 빠르고 연쇄는 더 느립니다. 점수 +50%.",
+      "mirrorIce": "거울 얼음",
+      "mirrorIceDesc": "얼음이 거의 듣지 않습니다. 점수 +80%."
+    },
     "maps": {
       "mapKeepName": "성채 성벽",
       "mapKeepDesc": "눈 덮인 성벽. 세 개의 성문, 하나의 요새.",
@@ -1809,7 +2331,13 @@
       "enemyRanger": "레인저",
       "enemyCavalry": "기병",
       "enemyDreadnought": "드레드노트",
-      "enemyWarlord": "군주 카르"
+      "enemyWarlord": "군주 카르",
+      "enemyShieldwall": "방패벽",
+      "enemySkirmisher": "척후병",
+      "enemySaboteur": "파괴공작원",
+      "enemyHerald": "전령",
+      "enemyHauler": "운반꾼",
+      "enemyGateRam": "공성추"
     },
     "towers": {
       "towerFrost": "서리 첨탑",
@@ -1965,6 +2493,48 @@
       "campaignWon": "Assedio completato",
       "cardSaved": "Carta salvata"
     },
+    "feats": {
+      "title": "Imprese",
+      "unlocked": "Impresa sbloccata",
+      "progress": "{unlocked} / {total} sbloccate",
+      "wingborne": {
+        "name": "Alato",
+        "desc": "Raggiungi una catena di ×50 in una sola partita."
+      },
+      "ashfall": {
+        "name": "Pioggia di cenere",
+        "desc": "Riduci in cenere 100 nemici."
+      },
+      "coldCalculus": {
+        "name": "Calcolo gelido",
+        "desc": "Vinci una partita usando solo l'ala di Ghiaccio."
+      },
+      "untouched": {
+        "name": "Intatto",
+        "desc": "Vinci con la fortezza a piena forza."
+      },
+      "warlordsBane": {
+        "name": "Flagello dei signori",
+        "desc": "Abbatti tre signori della guerra in una sola partita."
+      },
+      "architect": {
+        "name": "Architetto",
+        "desc": "Porta al massimo ogni slot delle torri in una sola partita."
+      }
+    },
+    "omens": {
+      "title": "Presagio dell'ondata",
+      "body": "Scegli il presagio che porterà la prossima ondata, oppure nessuno.",
+      "skip": "Nessun presagio",
+      "ironTide": "Marea di ferro",
+      "ironTideDesc": "Ogni nemico è corazzato. +60% oro.",
+      "fogOfWar": "Nebbia di guerra",
+      "fogOfWarDesc": "Il campo si oscura. +40% di punteggio.",
+      "bloodMoon": "Luna di sangue",
+      "bloodMoonDesc": "Nemici più veloci, catene più lente. +50% di punteggio.",
+      "mirrorIce": "Ghiaccio specchio",
+      "mirrorIceDesc": "Il Ghiaccio morde appena. +80% di punteggio."
+    },
     "maps": {
       "mapKeepName": "Mura del Torrione",
       "mapKeepDesc": "Mura innevate. Tre cancelli, una fortezza.",
@@ -1981,7 +2551,13 @@
       "enemyRanger": "Esploratore",
       "enemyCavalry": "Cavalleria",
       "enemyDreadnought": "Corazzata",
-      "enemyWarlord": "Kharr il Signore della guerra"
+      "enemyWarlord": "Kharr il Signore della guerra",
+      "enemyShieldwall": "Muro di scudi",
+      "enemySkirmisher": "Schermagliatore",
+      "enemySaboteur": "Sabotatore",
+      "enemyHerald": "Araldo",
+      "enemyHauler": "Trasportatore",
+      "enemyGateRam": "Ariete"
     },
     "towers": {
       "towerFrost": "Aguglia del Gelo",

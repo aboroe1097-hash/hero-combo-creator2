@@ -1177,11 +1177,28 @@ export function createRenderer({ canvas, map, themeName = 'dark', quality = 'med
     return true;
   }
 
+  const groundRay = new THREE.Raycaster();
+  const groundNdc = new THREE.Vector2();
+  const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  const groundHit = new THREE.Vector3();
+  // Screen point -> the y = 0 arena plane, for mouse aiming. Null when the ray
+  // misses the plane (aiming at the sky), so the caller keeps its last aim.
+  function groundPoint(clientX, clientY, rect) {
+    groundNdc.set(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -(((clientY - rect.top) / rect.height) * 2 - 1)
+    );
+    groundRay.setFromCamera(groundNdc, camera);
+    if (!groundRay.ray.intersectPlane(groundPlane, groundHit)) return null;
+    return { x: groundHit.x, z: groundHit.z };
+  }
+
   return {
     kind: 'webgl',
     render,
     socketAtScreen,
     project,
+    groundPoint,
     spark,
     setQuality,
     quality: () => (degraded ? 'low' : quality),

@@ -15,11 +15,14 @@ const KEY_MAP = {
   ArrowRight: 'right',
 };
 
-export function createInput({ onPause, onRestart } = {}) {
+export function createInput({ onPause, onRestart, assistAim = false } = {}) {
   const keys = new Set();
   const command = {
     moveX: 0,
     moveZ: 0,
+    aimX: 0,
+    aimZ: 0,
+    assistCone: assistAim,
     attackHeld: false,
     swap: null,
     nova: false,
@@ -27,7 +30,12 @@ export function createInput({ onPause, onRestart } = {}) {
     ult: false,
     start: false,
     restart: false,
+    chooseOmen: null,
   };
+
+  // The mouse pointer, for free aiming. Touch aiming goes through the stick,
+  // and a coarse-pointer device keeps the assist cone unless a mouse moves.
+  const pointer = { x: 0, y: 0, active: false };
 
   // Virtual stick, written by the HUD's pointer handlers.
   const stick = { x: 0, z: 0, active: false };
@@ -37,6 +45,7 @@ export function createInput({ onPause, onRestart } = {}) {
   let queuedDash = false;
   let queuedUlt = false;
   let queuedStart = false;
+  let queuedOmen = null;
   const padLatch = { dash: false, ult: false };
 
   function onKeyDown(event) {
@@ -85,9 +94,19 @@ export function createInput({ onPause, onRestart } = {}) {
     stick.z = 0;
   }
 
+  function onPointerMove(event) {
+    // A mouse aims at a point on the ground; a finger aims by moving, so only
+    // a mouse pointer flips the input into free-aim mode.
+    if (event.pointerType && event.pointerType !== 'mouse') return;
+    pointer.x = event.clientX;
+    pointer.y = event.clientY;
+    pointer.active = true;
+  }
+
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
   window.addEventListener('blur', onBlur);
+  window.addEventListener('pointermove', onPointerMove);
 
   function readGamepad() {
     // Node 20 has no global navigator (the unit tests run there); a browser always does.
@@ -152,6 +171,12 @@ export function createInput({ onPause, onRestart } = {}) {
 
       command.moveX = x;
       command.moveZ = z;
+      // Aim defaults to the direction of travel. game.js overrides it with the
+      // mouse's ground point (and clears the assist cone) when a mouse moved,
+      // so free aim belongs to keyboard/mouse and the cone stays for touch.
+      command.aimX = x;
+      command.aimZ = z;
+      command.assistCone = assistAim;
       command.attackHeld = attack;
       if (queuedSwap) {
         command.swap = queuedSwap;
@@ -163,10 +188,12 @@ export function createInput({ onPause, onRestart } = {}) {
       command.dash = queuedDash;
       command.ult = queuedUlt;
       command.start = queuedStart;
+      command.chooseOmen = queuedOmen;
       queuedNova = false;
       queuedDash = false;
       queuedUlt = false;
       queuedStart = false;
+      queuedOmen = null;
       command.restart = false;
       return command;
     },
@@ -180,6 +207,10 @@ export function createInput({ onPause, onRestart } = {}) {
       stick.x = x;
       stick.z = z;
       stick.active = x !== 0 || z !== 0;
+    },
+    /** Last mouse position in client coordinates, and whether one has moved. */
+    pointer() {
+      return { x: pointer.x, y: pointer.y, active: pointer.active };
     },
     setAttack(held) {
       touchAttack = held;
@@ -196,10 +227,15 @@ export function createInput({ onPause, onRestart } = {}) {
     requestUlt() {
       queuedUlt = true;
     },
+    /** Pick a wave omen (or 'skip'); the simulation validates the id. */
+    requestOmen(id) {
+      queuedOmen = id || null;
+    },
     dispose() {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', onBlur);
+      window.removeEventListener('pointermove', onPointerMove);
     },
   };
 }

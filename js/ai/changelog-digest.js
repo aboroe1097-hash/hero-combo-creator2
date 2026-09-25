@@ -1,10 +1,21 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.9";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.10";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.5.10",
+    "date": "2026-09-25",
+    "highlights": [
+      "**Velo aims where you aim.** Keyboard and mouse players now fire in the direction they aim — the mouse aims at the point under the cursor — instead of the old auto-lock on the nearest enemy. Touch players keep the assist on purpose: shots still bend to a foe inside a narrow cone…",
+      "**Six enemy roles make waves read as armies.** The shieldwall blocks bolts that hit its front but not splash, fire or a flank; the skirmisher kites and shoots; the saboteur hunts your towers and ignores the stronghold while any tower stands; the herald buffs nearby foes; the hau…",
+      "**Wave omens.** From the third wave on (every wave in Endless War), choose the omen the next wave carries, or take none: Iron Tide (every foe armoured, +60% gold), Fog of War (+40% score), Blood Moon (faster foes, slower chains, +50% score) or Mirror Ice (ice barely bites, +80% …",
+      "**Feats.** Six named one-off challenges — Wingborne, Ashfall, Cold Calculus, Untouched, Warlord's Bane and Architect — are tracked in the browser, listed on the title and results cards, and announced the moment one is earned.",
+      "Fixed: on phones under 560 px wide the tower build picker was pushed below the arena and clipped; it now sits above the thumb controls where it belongs."
+    ]
+  },
   {
     "version": "16.5.9",
     "date": "2026-09-25",
@@ -92,18 +103,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-09-24",
     "highlights": [
       "Fixed: the site could fail to open with \"This site can't be reached\" in a browser whose offline cache storage was damaged. The offline helper now treats every cache read and write as optional, so the page always loads from the network when the cache cannot be used, and the fixed…"
-    ]
-  },
-  {
-    "version": "16.5.0",
-    "date": "2026-09-23",
-    "highlights": [
-      "Motion and visual-craft release. Hubs gained a one-shot card entry and a pointer spotlight, tab changes cross-fade the incoming panel where the browser supports View Transitions, and the loader settles once when loading really completes.",
-      "Confirmed actions now get a short celebration: a saved combo, a copied or shared link, and a saved Eden vote. Nothing is celebrated until the existing action has already succeeded, and reduced-motion or Save-Data sessions keep the same success text with no particles.",
-      "The top combo result's shimmer runs twice instead of looping forever, and the open hero detail card follows the pointer with a small capped tilt.",
-      "Heroes: the Atlas gained a season timeline. It lists the canonical hero-release seasons with hero counts that reconcile with the season filter, links each season to its shareable deep link, is a vertical list on phones, and stays readable at 320px, in both themes, and under redu…",
-      "Buildings: added Castle 26–30 direct costs across Orichalcum, gold, food, lumber, charcoal, marble and iron, plus a searchable planner for the 43 buildings and their level costs, prerequisites and final-level bonuses. Missing sheet cells remain unknown, and the sheet's mismatche…",
-      "Room to breathe: removed unused atmosphere utilities and four dead tokens (about 3 KiB of entry CSS) and lowered the entry CSS ceiling by the measured amount."
     ]
   }
 ].map((release) =>

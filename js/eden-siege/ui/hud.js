@@ -99,6 +99,14 @@ export function createHud({ root, copy, heroName }) {
       </div>
     </div>
 
+    <div class="siege-omen" data-hud="omen" role="group" hidden>
+      <div class="siege-omen-head">
+        <strong data-hud="omenTitle"></strong>
+        <span data-hud="omenBody"></span>
+      </div>
+      <div class="siege-omen-options" data-hud="omenOptions"></div>
+    </div>
+
     <p class="siege-hint" data-hud="hint">${copy.hud.controls}</p>
     <div class="siege-toast" data-hud="toast" hidden></div>
 
@@ -120,6 +128,13 @@ export function createHud({ root, copy, heroName }) {
         <p data-hud="overlayBody"></p>
         <div class="siege-chips" data-hud="overlayChips" hidden></div>
         <div class="siege-overlay-stats" data-hud="overlayStats"></div>
+        <div class="siege-feats" data-hud="overlayFeats" hidden>
+          <div class="siege-feats-head">
+            <span class="siege-feats-label" data-hud="featsLabel"></span>
+            <span class="siege-feats-progress" data-hud="featsProgress" hidden></span>
+          </div>
+          <ul class="siege-feat-list" data-hud="featsList"></ul>
+        </div>
         <ol class="siege-history" data-hud="overlayHistory" hidden></ol>
         <div class="siege-overlay-actions" data-hud="overlayActions"></div>
       </div>
@@ -159,6 +174,14 @@ export function createHud({ root, copy, heroName }) {
     overlayStars: ref('overlayStars'),
     overlayChips: ref('overlayChips'),
     overlayHistory: ref('overlayHistory'),
+    overlayFeats: ref('overlayFeats'),
+    featsLabel: ref('featsLabel'),
+    featsProgress: ref('featsProgress'),
+    featsList: ref('featsList'),
+    omen: ref('omen'),
+    omenTitle: ref('omenTitle'),
+    omenBody: ref('omenBody'),
+    omenOptions: ref('omenOptions'),
     bossBar: ref('bossBar'),
     bossFill: ref('bossFill'),
     announce: ref('announce'),
@@ -215,6 +238,7 @@ export function createHud({ root, copy, heroName }) {
     dash: () => {},
     skipTutorial: () => {},
     callWave: () => {},
+    omen: () => {},
   };
 
   nodes.ice.addEventListener('click', () => handlers.swap('ice'));
@@ -293,6 +317,96 @@ export function createHud({ root, copy, heroName }) {
   let lastScore = 0;
   let lastTutorialSignature = '';
 
+  /**
+   * The feat board: { label, progressLabel, items: [{ id?, name, desc, done }] }.
+   * Every row is rendered — the stylesheet caps the visible rows so a longer
+   * list scrolls inside the card, which already scrolls, instead of hiding
+   * feats the player has earned. An item may carry only an id; its name and
+   * description then come from copy.feats.<id>.
+   */
+  function renderFeats(feats) {
+    nodes.featsList.innerHTML = '';
+    nodes.overlayFeats.hidden = !feats;
+    if (!feats) {
+      nodes.featsLabel.textContent = '';
+      nodes.featsProgress.textContent = '';
+      nodes.featsProgress.hidden = true;
+      return;
+    }
+    const label = feats.label || copy.feats?.title || '';
+    nodes.featsLabel.textContent = label;
+    if (label) nodes.overlayFeats.setAttribute('aria-label', label);
+    const progress = feats.progressLabel || '';
+    nodes.featsProgress.textContent = progress;
+    nodes.featsProgress.hidden = !progress;
+    for (const item of Array.isArray(feats.items) ? feats.items : []) {
+      const known = (item.id && copy.feats?.[item.id]) || {};
+      const row = document.createElement('li');
+      row.className = item.done ? 'siege-feat is-done' : 'siege-feat';
+      const glyph = document.createElement('i');
+      glyph.className = 'siege-feat-glyph';
+      glyph.setAttribute('aria-hidden', 'true');
+      if (item.done) glyph.textContent = '✦';
+      const name = document.createElement('strong');
+      name.className = 'siege-feat-name';
+      name.textContent = item.name || known.name || item.id || '';
+      const desc = document.createElement('span');
+      desc.className = 'siege-feat-desc';
+      desc.textContent = item.desc || known.desc || '';
+      row.append(glyph, name, desc);
+      // The lock state is a colour and a glyph; spell it out for readers.
+      if (item.done) {
+        const state = document.createElement('span');
+        state.className = 'siege-feat-state';
+        state.textContent = copy.feats?.unlocked || '';
+        row.appendChild(state);
+      }
+      nodes.featsList.appendChild(row);
+    }
+  }
+
+  function hideOmen() {
+    nodes.omen.hidden = true;
+    nodes.omenOptions.innerHTML = '';
+  }
+
+  /**
+   * The wave omen chooser: { title?, body?, options: [{ id, label, desc, active }] }.
+   * The HUD is a pure view here — a pick only reaches the game through the
+   * `omen` handler registered with on(), never by touching game state.
+   */
+  function showOmen(config = {}) {
+    const options = Array.isArray(config.options) ? config.options : [];
+    // Nothing to choose from: render nothing rather than an empty panel.
+    if (!options.length) {
+      hideOmen();
+      return;
+    }
+    const title = config.title || copy.omens?.title || '';
+    const body = config.body || copy.omens?.body || '';
+    nodes.omenTitle.textContent = title;
+    nodes.omenTitle.hidden = !title;
+    nodes.omenBody.textContent = body;
+    nodes.omenBody.hidden = !body;
+    if (title) nodes.omen.setAttribute('aria-label', title);
+    nodes.omenOptions.innerHTML = '';
+    for (const option of options) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = option.active ? 'siege-omen-btn is-active' : 'siege-omen-btn';
+      const label = document.createElement('strong');
+      label.textContent = option.label || option.id || '';
+      const desc = document.createElement('span');
+      desc.textContent = option.desc || '';
+      desc.hidden = !option.desc;
+      button.append(label, desc);
+      if (option.active) button.setAttribute('aria-pressed', 'true');
+      button.addEventListener('click', () => handlers.omen(option.id));
+      nodes.omenOptions.appendChild(button);
+    }
+    nodes.omen.hidden = false;
+  }
+
   return {
     on(next) {
       Object.assign(handlers, next);
@@ -305,12 +419,14 @@ export function createHud({ root, copy, heroName }) {
       }
       if (state.tutorial?.active) nodes.wave.textContent = copy.hud.training;
       else if (state.endless) nodes.wave.textContent = String(Math.max(1, state.wave));
-      else nodes.wave.textContent = `${Math.min(state.wave || 1, state.wavesTotal)} / ${state.wavesTotal}`;
+      else
+        nodes.wave.textContent = `${Math.min(state.wave || 1, state.wavesTotal)} / ${state.wavesTotal}`;
       if (state.gold !== lastGold) {
         lastGold = state.gold;
         nodes.gold.textContent = Math.round(state.gold);
       }
-      if (meta.best !== undefined) nodes.best.textContent = Math.round(meta.best).toLocaleString('en-US');
+      if (meta.best !== undefined)
+        nodes.best.textContent = Math.round(meta.best).toLocaleString('en-US');
 
       const coreRatio = Math.max(0, state.core.hp / state.core.maxHp);
       nodes.coreFill.style.width = `${(coreRatio * 100).toFixed(1)}%`;
@@ -394,6 +510,8 @@ export function createHud({ root, copy, heroName }) {
     setTouchVisible(visible) {
       nodes.touch.hidden = !visible;
     },
+    showOmen,
+    hideOmen,
     toast(text) {
       nodes.toast.textContent = text;
       nodes.toast.hidden = false;
@@ -416,6 +534,7 @@ export function createHud({ root, copy, heroName }) {
         nodes.overlay.hidden = true;
         nodes.overlayActions.innerHTML = '';
         nodes.overlayStats.innerHTML = '';
+        renderFeats(null);
         return;
       }
       nodes.overlay.hidden = false;
@@ -472,6 +591,7 @@ export function createHud({ root, copy, heroName }) {
         cell.append(label, value);
         nodes.overlayStats.appendChild(cell);
       }
+      renderFeats(config.feats);
       nodes.overlayActions.innerHTML = '';
       for (const action of config.actions || []) {
         const button = document.createElement('button');

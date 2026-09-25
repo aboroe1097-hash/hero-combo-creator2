@@ -29,6 +29,7 @@ import {
   MODIFIERS,
   MODIFIER_ORDER,
   modifierChance,
+  OMENS,
   BOSS,
   TUTORIAL,
   waveAt,
@@ -40,11 +41,21 @@ import { createRng, hashSeed } from '../rng.js';
 const READY_MS = 9000;
 const TOWER_ORDER = ['frost', 'ember'];
 const MAX_TOWER_LEVEL = TOWER_MAX_LEVEL;
+// The touch assist cone, as a cosine: comparing cosines skips the acos in the
+// targeting loop. Free aim (keyboard/mouse) never homes, so this is the only
+// place a bolt is allowed to pick a target for the player.
+const ASSIST_CONE_COS = Math.cos((PLAYER.assistConeDeg * Math.PI) / 180);
+// How close a tower's body sits to its socket, shared by bolt collisions and by
+// the gate ram, which walks up to whatever it is pointed at.
+const TOWER_BODY_RADIUS = 0.8;
 
 function emptyInput() {
   return {
     moveX: 0,
     moveZ: 0,
+    aimX: 0,
+    aimZ: 0,
+    assistCone: false,
     attack: false,
     attackHeld: false,
     swap: null,
@@ -58,13 +69,21 @@ function emptyInput() {
     restart: false,
     continueEndless: false,
     skipTutorial: false,
+    chooseOmen: null,
   };
 }
 
 function emptyTutorial(enabled) {
   const steps = {};
   for (const step of TUTORIAL.steps) steps[step] = false;
-  return { enabled: Boolean(enabled), active: false, done: !enabled, skipped: false, elapsedMs: 0, steps };
+  return {
+    enabled: Boolean(enabled),
+    active: false,
+    done: !enabled,
+    skipped: false,
+    elapsedMs: 0,
+    steps,
+  };
 }
 
 function defaultMods() {
@@ -102,6 +121,9 @@ function emptyStats() {
     dodges: 0,
     bossKills: 0,
     shotsFired: 0,
+    fireShots: 0,
+    iceShots: 0,
+    burnKills: 0,
   };
 }
 
@@ -132,10 +154,24 @@ export function createWorld(options = {}) {
     wavesTotal: WAVES.length,
     waveElement: WAVES[0].element,
     waveIsBoss: false,
+    // The omen governing the wave in progress, and the one chosen for the wave
+    // that has not started yet (both hashed — see snapshotHash).
+    omen: null,
+    pendingOmen: null,
+    // Derived: whether the omen offer should be on screen this build phase.
+    omenOffered: false,
     score: 0,
     combo: { count: 0, mult: 1, timerMs: 0, lastElement: null },
     gold: GOLD.start,
-    core: { x: map.core.x, z: map.core.z, radius: map.core.radius, hp: CORE.maxHp, maxHp: CORE.maxHp, burnMs: 0, flashMs: 0 },
+    core: {
+      x: map.core.x,
+      z: map.core.z,
+      radius: map.core.radius,
+      hp: CORE.maxHp,
+      maxHp: CORE.maxHp,
+      burnMs: 0,
+      flashMs: 0,
+    },
     nova: { charge: 0, ready: false },
     ult: { charge: 0, ready: false, activeMs: 0 },
     tutorial: emptyTutorial(tutorialEnabled),
@@ -162,7 +198,12 @@ export function createWorld(options = {}) {
     },
     units: [],
     towers: [],
-    sockets: map.sockets.map((socket, index) => ({ index, x: socket.x, z: socket.z, occupant: null })),
+    sockets: map.sockets.map((socket, index) => ({
+      index,
+      x: socket.x,
+      z: socket.z,
+      occupant: null,
+    })),
     projectiles: [],
     pickups: [],
     fx: [],
@@ -244,6 +285,28 @@ export function createWorld(options = {}) {
     return MODIFIER_ORDER[rng.int(0, MODIFIER_ORDER.length - 1)];
   }
 
+  // ── wave omens ────────────────────────────────────────────────────────────
+  // The offer is open for the whole build phase before an eligible wave:
+  // campaign play from wave OMENS.fromWave, endless on every wave. Everything
+  // an omen changes is read through omenMod, so the rules stay in balance.js
+  // and a wave in progress can never be read by the wrong one.
+
+  function omenOffered(wave) {
+    return state.endless || wave >= OMENS.fromWave;
+  }
+
+  function omenMod(key, omen = state.omen) {
+    if (!omen) return 1;
+    const def = OMENS[omen];
+    return def && typeof def[key] === 'number' ? def[key] : 1;
+  }
+
+  function chooseOmen(omen) {
+    if (omen !== 'skip' && !OMENS[omen]) return;
+    if (!omenOffered(state.wave + 1)) return;
+    state.pendingOmen = omen === 'skip' ? null : omen;
+  }
+
   function spawnUnit(kind, tier, gateIndex) {
     const gate = map.gates[gateIndex % map.gates.length];
     const kindDef = ENEMY_KINDS[kind];
@@ -255,11 +318,14 @@ export function createWorld(options = {}) {
     // A "mixed" wave rolls each unit's faction; every other wave is single.
     const element =
       state.waveElement === 'mixed' ? (rng.next() < 0.5 ? 'fire' : 'ice') : state.waveElement;
-    const modifier = rollModifier(isBoss);
+    // Iron Tide is the wave where every foe is armoured, warlord included;
+    // otherwise the wave's own modifier roll decides.
+    const modifier = state.omen === 'ironTide' ? OMENS.ironTide.modifier : rollModifier(isBoss);
     const modifierDef = modifier ? MODIFIERS[modifier] : null;
     const hp = scale.hp * hpMult * (modifierDef?.hpMult || 1);
     const shield = modifier === 'shielded' ? hp * MODIFIERS.shielded.shieldRatio : 0;
     const damage = scale.damage * (state.tutorial.active ? TUTORIAL.damageMult : 1);
+    const speed = scale.speed * (modifierDef?.speedMult || 1) * omenMod('speedMult');
     state.units.push({
       id: nextId++,
       kind,
@@ -277,7 +343,13 @@ export function createWorld(options = {}) {
       shield,
       maxShield: shield,
       damage,
-      speed: scale.speed * (modifierDef?.speedMult || 1),
+      speed,
+      // The spawn values are the ones a herald's aura scales from, so an ally
+      // that leaves the banner returns to exactly what it was born with.
+      baseDamage: damage,
+      baseSpeed: speed,
+      auraSpeed: 1,
+      auraDamage: 1,
       score: scale.score * (state.waveIsBoss ? 1.5 : 1) * (modifier ? 1.3 : 1),
       radius: kindDef.radius,
       ranged: kindDef.ranged,
@@ -334,6 +406,11 @@ export function createWorld(options = {}) {
     state.phaseMs = 0;
     state.waveIsBoss = Boolean(wave.boss) && !tutorial.active;
     state.stats.killsThisWave = 0;
+    // The omen chosen during the build phase comes due now. It governs this
+    // wave and only this wave: it is cleared when the wave is cleared.
+    state.omen = state.pendingOmen;
+    state.pendingOmen = null;
+    state.omenOffered = false;
     spawnQueue = [];
     const length = queueGroups(wave);
     if (state.waveIsBoss) {
@@ -343,6 +420,15 @@ export function createWorld(options = {}) {
         gate: rng.int(0, map.gates.length - 1),
         atMs: length * 0.3,
       });
+      // From wave ten on, every warlord brings a battering ram to the gate.
+      if (state.wave >= BOSS.ramFromWave) {
+        spawnQueue.push({
+          kind: BOSS.ramKind,
+          tier: Math.min(4, 1 + bossCycle()),
+          gate: rng.int(0, map.gates.length - 1),
+          atMs: length * 0.5,
+        });
+      }
     }
     spawnQueue.sort((a, b) => a.atMs - b.atMs);
     nextSpawnAtMs = 0;
@@ -354,13 +440,17 @@ export function createWorld(options = {}) {
       endless: state.wave > WAVES.length,
     });
     if (state.waveIsBoss) emit('boss');
+    if (state.omen) emit('omen', { omen: state.omen, wave: state.wave });
   }
 
-  function startBuildPhase() {
+  function startBuildPhase(omen = null) {
     const index = Math.min(state.wave, BUILD_PHASE_MS.length - 1);
     state.phase = 'build';
     state.phaseMs = BUILD_PHASE_MS[index];
-    state.gold += currentWave ? currentWave.reward : 0;
+    // Iron Tide's purse is paid with the reward of the wave it governed, which
+    // is the one that just ended.
+    state.gold += Math.round((currentWave ? currentWave.reward : 0) * omenMod('goldMult', omen));
+    state.omenOffered = omenOffered(state.wave + 1);
     emit('buildPhase', { wave: state.wave + 1 });
   }
 
@@ -382,6 +472,7 @@ export function createWorld(options = {}) {
     state.phaseMs = BUILD_PHASE_MS[0];
     state.gold += TUTORIAL.wave.reward;
     currentWave = WAVES[0];
+    state.omenOffered = omenOffered(state.wave + 1);
     emit('tutorialDone', { skipped });
     emit('buildPhase', { wave: 1 });
   }
@@ -390,6 +481,10 @@ export function createWorld(options = {}) {
     if (state.phase === phase) return;
     state.phase = phase;
     state.phaseMs = 0;
+    // A finished run has no wave in progress, and so no omen over it.
+    state.omen = null;
+    state.pendingOmen = null;
+    state.omenOffered = false;
     if (phase === 'victory') {
       const hpRatio = Math.max(0, state.core.hp / state.core.maxHp);
       state.score += Math.round(hpRatio * SCORE.coreHpBonus);
@@ -457,10 +552,11 @@ export function createWorld(options = {}) {
     const alternating = combo.lastElement && combo.lastElement !== unit.element;
     combo.count += alternating ? 2 : 1;
     combo.lastElement = unit.element;
-    combo.timerMs = COMBO.decayMs;
+    // Blood Moon drags the chain out; everything else keeps the stock timer.
+    combo.timerMs = COMBO.decayMs * omenMod('comboDecayMult');
     combo.mult = Math.min(COMBO.max, 1 + combo.count * COMBO.perKill);
     state.stats.maxChain = Math.max(state.stats.maxChain, combo.count);
-    const gained = Math.round(unit.score * combo.mult);
+    const gained = Math.round(unit.score * combo.mult * omenMod('scoreMult'));
     state.score += gained;
     state.stats.kills += 1;
     state.stats.killsThisWave += 1;
@@ -475,7 +571,11 @@ export function createWorld(options = {}) {
 
   function dropPickup(unit) {
     const faction = FACTIONS[unit.element] || FACTIONS.ice;
-    const value = Math.round((GOLD.byTier[unit.tier] || 3) * mods.gold * (unit.boss ? 10 : 1));
+    // A hauler's cart is worth twice as much as anything else of its tier.
+    const goldMult = ENEMY_KINDS[unit.kind].goldMult || 1;
+    const value = Math.round(
+      (GOLD.byTier[unit.tier] || 3) * mods.gold * (unit.boss ? 10 : 1) * goldMult
+    );
     state.pickups.push({
       id: nextId++,
       x: unit.x,
@@ -493,6 +593,8 @@ export function createWorld(options = {}) {
     const unit = state.units[index];
     const { gained, alternating } = addScoreForKill(unit);
     dropPickup(unit);
+    // Fire's burn is the counter to armour, so it gets its own tally.
+    if (meta.source === 'burn') state.stats.burnKills += 1;
     state.fx.push({
       id: nextId++,
       kind: 'burst',
@@ -581,6 +683,42 @@ export function createWorld(options = {}) {
     }
   }
 
+  // The nearest enemy inside attack range, used only when the caller supplied
+  // no aim at all (see firePlayerBolt).
+  function nearestEnemyInRange(x, z, range) {
+    const rangeSq = range * range;
+    let target = null;
+    let best = rangeSq;
+    for (const unit of state.units) {
+      const dx = unit.x - x;
+      const dz = unit.z - z;
+      const d = dx * dx + dz * dz;
+      if (d >= best) continue;
+      best = d;
+      target = unit;
+    }
+    return target;
+  }
+
+  // The touch assist: the nearest enemy inside a half-angle cone around the aim,
+  // inside attack range. Only the cone picks targets — free aim never homes.
+  function nearestEnemyInCone(x, z, dirX, dirZ, range) {
+    const rangeSq = range * range;
+    let target = null;
+    let best = rangeSq;
+    for (const unit of state.units) {
+      const dx = unit.x - x;
+      const dz = unit.z - z;
+      const d = dx * dx + dz * dz;
+      if (d > best) continue;
+      const distance = Math.sqrt(d);
+      if (distance > 0.0001 && (dx * dirX + dz * dirZ) / distance < ASSIST_CONE_COS) continue;
+      best = d;
+      target = unit;
+    }
+    return target;
+  }
+
   function firePlayerBolt() {
     const player = state.player;
     const element = player.element;
@@ -590,29 +728,42 @@ export function createWorld(options = {}) {
     const damage =
       def.damage *
       (element === 'fire' ? mods.fireDamage : mods.iceDamage) *
+      // Mirror Ice blunts the wing that is not fire.
+      (element === 'ice' ? omenMod('iceDamageMult') : 1) *
       (crit ? CRIT.mult : 1) *
       (ultOn ? ULT.damageMult : 1);
-    const rangeSq = (PLAYER.attackRange * mods.range) ** 2;
+    const range = PLAYER.attackRange * mods.range;
 
-    let target = null;
-    let best = rangeSq;
-    for (const unit of state.units) {
-      const d = distanceSq(unit, player);
-      if (d < best) {
-        best = d;
-        target = unit;
+    // Where the bolt goes. An aim from the caller is fired exactly where it
+    // points — the assist cone is the only thing allowed to pick a target for
+    // it, and a free-aimed bolt never homes. A caller that supplies no aim at
+    // all (a zero vector, which is also the keyboard fallback) still gets the
+    // pre-rework pick: the nearest threat in range, or the hero's own facing
+    // when the road is empty. That keeps untouched callers, and the stored
+    // input traces they replay, playing the same run they always did.
+    let dirX = player.aimX;
+    let dirZ = player.aimZ;
+    const aimLength = Math.hypot(input.aimX, input.aimZ);
+    if (aimLength <= 0.001) {
+      const target = nearestEnemyInRange(player.x, player.z, range);
+      if (target) {
+        dirX = target.x - player.x;
+        dirZ = target.z - player.z;
+        const length = Math.hypot(dirX, dirZ) || 1;
+        dirX /= length;
+        dirZ /= length;
+      }
+    } else if (input.assistCone) {
+      const target = nearestEnemyInCone(player.x, player.z, dirX, dirZ, range);
+      if (target) {
+        dirX = target.x - player.x;
+        dirZ = target.z - player.z;
+        const length = Math.hypot(dirX, dirZ) || 1;
+        dirX /= length;
+        dirZ /= length;
       }
     }
 
-    let dirX = player.aimX;
-    let dirZ = player.aimZ;
-    if (target) {
-      dirX = target.x - player.x;
-      dirZ = target.z - player.z;
-      const length = Math.hypot(dirX, dirZ) || 1;
-      dirX /= length;
-      dirZ /= length;
-    }
     player.attackCdMs = PLAYER.attackCdMs * mods.attackCd * (ultOn ? ULT.attackCdMult : 1);
     state.projectiles.push({
       id: nextId++,
@@ -630,6 +781,8 @@ export function createWorld(options = {}) {
       dual: ultOn,
     });
     state.stats.shotsFired += 1;
+    if (element === 'fire') state.stats.fireShots += 1;
+    else state.stats.iceShots += 1;
     if (crit) state.stats.crits += 1;
     tutorialStep('attack');
     emit('attack', { element, x: player.x, z: player.z, crit, ult: ultOn });
@@ -660,15 +813,17 @@ export function createWorld(options = {}) {
     const dz = target.z - tower.z;
     const length = Math.hypot(dx, dz) || 1;
     tower.angle = Math.atan2(dx, dz);
+    const ice = tower.kind === 'frost';
     state.projectiles.push({
       id: nextId++,
       owner: 'tower',
-      element: tower.kind === 'frost' ? 'ice' : 'fire',
+      element: ice ? 'ice' : 'fire',
       x: tower.x + (dx / length) * 0.6,
       z: tower.z + (dz / length) * 0.6,
       vx: (dx / length) * stats.projectileSpeed,
       vz: (dz / length) * stats.projectileSpeed,
-      damage: stats.damage,
+      // Mirror Ice blunts frost spires as well as the Ice wing.
+      damage: stats.damage * (ice ? omenMod('iceDamageMult') : 1),
       radius: 0.5,
       ttlMs: 1600,
       splash: stats.splash,
@@ -700,7 +855,16 @@ export function createWorld(options = {}) {
       maxHp: def.maxHp,
     });
     state.stats.towersBuilt += 1;
-    state.fx.push({ id: nextId++, kind: 'build', x: socket.x, z: socket.z, element: kind === 'frost' ? 'ice' : 'fire', ttlMs: 620, maxTtlMs: 620, scale: 1.6 });
+    state.fx.push({
+      id: nextId++,
+      kind: 'build',
+      x: socket.x,
+      z: socket.z,
+      element: kind === 'frost' ? 'ice' : 'fire',
+      ttlMs: 620,
+      maxTtlMs: 620,
+      scale: 1.6,
+    });
     tutorialStep('build');
     emit('built', { kind, socket: socketIndex, x: socket.x, z: socket.z });
   }
@@ -718,8 +882,23 @@ export function createWorld(options = {}) {
     tower.hp = towerStats(tower.kind, tower.level).maxHp;
     tower.maxHp = tower.hp;
     state.stats.upgrades += 1;
-    state.fx.push({ id: nextId++, kind: 'build', x: tower.x, z: tower.z, element: tower.kind === 'frost' ? 'ice' : 'fire', ttlMs: 620, maxTtlMs: 620, scale: 1.3 + tower.level * 0.12 });
-    emit('upgraded', { kind: tower.kind, level: tower.level, socket: socketIndex, x: tower.x, z: tower.z });
+    state.fx.push({
+      id: nextId++,
+      kind: 'build',
+      x: tower.x,
+      z: tower.z,
+      element: tower.kind === 'frost' ? 'ice' : 'fire',
+      ttlMs: 620,
+      maxTtlMs: 620,
+      scale: 1.3 + tower.level * 0.12,
+    });
+    emit('upgraded', {
+      kind: tower.kind,
+      level: tower.level,
+      socket: socketIndex,
+      x: tower.x,
+      z: tower.z,
+    });
   }
 
   function damageTower(tower, amount) {
@@ -756,14 +935,24 @@ export function createWorld(options = {}) {
       damageUnit(unit, NOVA.damage, player.element, { burn: false, source: 'nova' });
       applySlow(unit, NOVA.slowMs, 0.4);
       const length = Math.hypot(dx, dz) || 1;
-      const push = unit.boss ? 0.1 : 0.35;
+      // The warlord shrugs the blast off; a gate ram cannot be moved at all.
+      const push = ENEMY_KINDS[unit.kind].knockbackImmune ? 0 : unit.boss ? 0.1 : 0.35;
       unit.x += (dx / length) * NOVA.knockback * push;
       unit.z += (dz / length) * NOVA.knockback * push;
       if (unit.hp <= 0) killUnit(index, player.element, { source: 'nova' });
     }
     state.nova.charge = 0;
     state.nova.ready = false;
-    state.fx.push({ id: nextId++, kind: 'nova', x: player.x, z: player.z, element: player.element, ttlMs: 900, maxTtlMs: 900, scale: NOVA.radius });
+    state.fx.push({
+      id: nextId++,
+      kind: 'nova',
+      x: player.x,
+      z: player.z,
+      element: player.element,
+      ttlMs: 900,
+      maxTtlMs: 900,
+      scale: NOVA.radius,
+    });
     tutorialStep('nova');
     emit('nova', { x: player.x, z: player.z, element: player.element });
   }
@@ -777,7 +966,16 @@ export function createWorld(options = {}) {
     ult.ready = false;
     // The opening roar: a short dual-element shockwave around Velo.
     splashDamage(player.x, player.z, 6, 30, player.element, { dual: true, source: 'ult' });
-    state.fx.push({ id: nextId++, kind: 'nova', x: player.x, z: player.z, element: player.element === 'fire' ? 'ice' : 'fire', ttlMs: 700, maxTtlMs: 700, scale: 6 });
+    state.fx.push({
+      id: nextId++,
+      kind: 'nova',
+      x: player.x,
+      z: player.z,
+      element: player.element === 'fire' ? 'ice' : 'fire',
+      ttlMs: 700,
+      maxTtlMs: 700,
+      scale: 6,
+    });
     emit('ult', { x: player.x, z: player.z, element: player.element });
   }
 
@@ -877,6 +1075,16 @@ export function createWorld(options = {}) {
       resolveObstacles(player, PLAYER.radius);
     }
 
+    // An explicit aim turns the avatar to face it, and holds until the caller
+    // sends another one. Movement is independent: the body keeps travelling the
+    // way the stick points while the hero looks down the crosshair.
+    const aimLength = Math.hypot(input.aimX, input.aimZ);
+    if (aimLength > 0.001) {
+      player.aimX = input.aimX / aimLength;
+      player.aimZ = input.aimZ / aimLength;
+      player.facing = Math.atan2(player.aimX, player.aimZ);
+    }
+
     if ((input.swap === 'ice' || input.swap === 'fire') && input.swap !== player.element) {
       player.element = input.swap;
       tutorialStep('swap');
@@ -924,8 +1132,18 @@ export function createWorld(options = {}) {
       if (distanceSq(tower, slam) <= reach * reach) damageTower(tower, damage);
     }
     const coreReach = slam.radius + state.core.radius;
-    if (distanceSq(state.core, slam) <= coreReach * coreReach) damageCore(damage * 0.4, unit.element);
-    state.fx.push({ id: nextId++, kind: 'slam', x: slam.x, z: slam.z, element: 'fire', ttlMs: 520, maxTtlMs: 520, scale: slam.radius });
+    if (distanceSq(state.core, slam) <= coreReach * coreReach)
+      damageCore(damage * 0.4, unit.element);
+    state.fx.push({
+      id: nextId++,
+      kind: 'slam',
+      x: slam.x,
+      z: slam.z,
+      element: 'fire',
+      ttlMs: 520,
+      maxTtlMs: 520,
+      scale: slam.radius,
+    });
     emit('slam', { x: slam.x, z: slam.z, radius: slam.radius, hitPlayer });
   }
 
@@ -958,12 +1176,47 @@ export function createWorld(options = {}) {
     return true;
   }
 
+  // The herald's banner is a field, not a state change: every step each ally
+  // inside the aura is marked for +25% speed and +25% damage, and the mark is
+  // recomputed from the spawn values so leaving the radius gives them back
+  // exactly. Two heralds do not stack — the shout is one shout. The scratch
+  // array is reused so a step allocates nothing.
+  const heralds = [];
+
+  function updateAuras() {
+    heralds.length = 0;
+    for (const unit of state.units) {
+      if (ENEMY_KINDS[unit.kind].aura) heralds.push(unit);
+    }
+    for (const unit of state.units) {
+      // Seeded on first sight so a hand-built unit (fixtures, tests) works too.
+      if (unit.baseSpeed === undefined) unit.baseSpeed = unit.speed;
+      if (unit.baseDamage === undefined) unit.baseDamage = unit.damage;
+      let speedMult = 1;
+      let damageMult = 1;
+      for (let index = 0; index < heralds.length; index += 1) {
+        const herald = heralds[index];
+        if (herald === unit) continue;
+        const aura = ENEMY_KINDS[herald.kind].aura;
+        if (distanceSq(unit, herald) > aura.radius * aura.radius) continue;
+        if (aura.speedMult > speedMult) speedMult = aura.speedMult;
+        if (aura.damageMult > damageMult) damageMult = aura.damageMult;
+      }
+      unit.auraSpeed = speedMult;
+      unit.auraDamage = damageMult;
+      unit.speed = unit.baseSpeed * speedMult;
+      unit.damage = unit.baseDamage * damageMult;
+    }
+  }
+
   function updateUnits(dtMs) {
     const player = state.player;
     const seconds = dtMs / 1000;
+    updateAuras();
     for (let index = state.units.length - 1; index >= 0; index -= 1) {
       const unit = state.units[index];
       if (!unit) continue;
+      const def = ENEMY_KINDS[unit.kind];
       if (unit.hitFlashMs > 0) unit.hitFlashMs -= dtMs;
       if (unit.burnMs > 0) {
         unit.burnMs -= dtMs;
@@ -984,46 +1237,96 @@ export function createWorld(options = {}) {
 
       // Choose the nearest thing worth hitting: the player if they are close
       // enough to be a threat, a tower in the way, otherwise the stronghold.
-      let target = { x: state.core.x, z: state.core.z, kind: 'core' };
-      let bestDistance = distanceSq(unit, target);
-      if (player.alive) {
-        const playerDistance = distanceSq(unit, player);
-        if (playerDistance < (unit.aggroRadius + 3) ** 2 && playerDistance < bestDistance) {
-          target = { x: player.x, z: player.z, kind: 'player' };
-          bestDistance = playerDistance;
-        }
-      }
-      for (const tower of state.towers) {
-        const towerDistance = distanceSq(unit, tower);
-        if (towerDistance < unit.aggroRadius ** 2 && towerDistance < bestDistance) {
-          target = { x: tower.x, z: tower.z, kind: 'tower', tower };
-          bestDistance = towerDistance;
-        }
-      }
-
-      const dx = target.x - unit.x;
-      const dz = target.z - unit.z;
-      const distance = Math.hypot(dx, dz) || 1;
-      unit.facing = Math.atan2(dx, dz);
-      unit.targetX = target.x;
-      unit.targetZ = target.z;
-      const inRange = distance <= unit.range + unit.radius;
-
-      if (unit.attackCdMs > 0) unit.attackCdMs -= dtMs;
-      if (inRange) {
-        if (unit.attackCdMs <= 0) {
-          unit.attackCdMs = ENEMY_KINDS[unit.kind].attackCdMs;
-          // Ranged units always lob, so their damage can be dodged; melee units
-          // connect immediately with whatever they reached.
-          if (unit.ranged) fireEnemyProjectile(unit);
-          else if (target.kind === 'player') damagePlayer(unit.damage);
-          else if (target.kind === 'core') damageCore(unit.damage, unit.element);
-          else if (target.tower) damageTower(target.tower, unit.damage);
+      // The saboteur is the exception — it walks past the hero to the nearest
+      // standing tower, and only turns on the stronghold when none is left.
+      let targetX = state.core.x;
+      let targetZ = state.core.z;
+      let targetKind = 0; // 0 core, 1 player, 2 tower
+      let targetTower = null;
+      let bestDistance = distanceSq(unit, state.core);
+      if (def.towerHunter) {
+        // The keep is the fallback, not a rival: any standing tower wins.
+        bestDistance = Infinity;
+        for (const tower of state.towers) {
+          const towerDistance = distanceSq(unit, tower);
+          if (towerDistance < bestDistance) {
+            bestDistance = towerDistance;
+            targetX = tower.x;
+            targetZ = tower.z;
+            targetKind = 2;
+            targetTower = tower;
+          }
         }
       } else {
+        if (player.alive) {
+          const playerDistance = distanceSq(unit, player);
+          if (playerDistance < (unit.aggroRadius + 3) ** 2 && playerDistance < bestDistance) {
+            targetX = player.x;
+            targetZ = player.z;
+            targetKind = 1;
+            bestDistance = playerDistance;
+          }
+        }
+        for (const tower of state.towers) {
+          const towerDistance = distanceSq(unit, tower);
+          if (towerDistance < unit.aggroRadius ** 2 && towerDistance < bestDistance) {
+            targetX = tower.x;
+            targetZ = tower.z;
+            targetKind = 2;
+            targetTower = tower;
+            bestDistance = towerDistance;
+          }
+        }
+      }
+
+      const dx = targetX - unit.x;
+      const dz = targetZ - unit.z;
+      const distance = Math.hypot(dx, dz) || 1;
+      unit.facing = Math.atan2(dx, dz);
+      unit.targetX = targetX;
+      unit.targetZ = targetZ;
+      // A gate ram is not stopped by the space between it and its target: it
+      // drives on until it is touching, so it can swing while it walks.
+      const targetRadius =
+        targetKind === 2 ? TOWER_BODY_RADIUS : targetKind === 1 ? PLAYER.radius : state.core.radius;
+      const touching = Boolean(def.ram) && distance <= unit.radius + targetRadius;
+      const inRange = distance <= unit.range + unit.radius || touching;
+
+      if (unit.attackCdMs > 0) unit.attackCdMs -= dtMs;
+      if (inRange && unit.attackCdMs <= 0) {
+        unit.attackCdMs = def.attackCdMs;
+        // Ranged units always lob, so their damage can be dodged; melee units
+        // connect immediately with whatever they reached.
+        if (unit.ranged) fireEnemyProjectile(unit);
+        else if (targetKind === 1) damagePlayer(unit.damage);
+        else if (targetKind === 0)
+          damageCore(unit.damage * (def.coreDamageMult || 1), unit.element);
+        else if (targetTower) damageTower(targetTower, unit.damage);
+      }
+
+      // A skirmisher kites: with the hero inside its kite radius it backs away
+      // while it shoots, and only walks in when there is room to stand. Note
+      // that kiting overrides the usual in-range hold, or a unit whose reach is
+      // longer than its kite radius would never take a step back.
+      let moveX = dx;
+      let moveZ = dz;
+      let kiting = false;
+      if (def.kiteRadius && player.alive) {
+        const awayX = unit.x - player.x;
+        const awayZ = unit.z - player.z;
+        if (awayX * awayX + awayZ * awayZ < def.kiteRadius * def.kiteRadius) {
+          moveX = awayX;
+          moveZ = awayZ;
+          kiting = true;
+        }
+      }
+      // Only ice roots a gate ram; nothing else in the arena makes it pause.
+      const halted = def.ram ? unit.slowMs > 0 || touching : inRange && !kiting;
+      if (!halted) {
+        const length = Math.hypot(moveX, moveZ) || 1;
         const speed = unit.speed * unit.slowFactor;
-        unit.x += (dx / distance) * speed * seconds;
-        unit.z += (dz / distance) * speed * seconds;
+        unit.x += (moveX / length) * speed * seconds;
+        unit.z += (moveZ / length) * speed * seconds;
         // Cheap separation so a pack of units does not collapse into one dot.
         for (const other of state.units) {
           if (other === unit) continue;
@@ -1068,6 +1371,18 @@ export function createWorld(options = {}) {
     }
   }
 
+  // A shieldwall only guards what it faces. The bolt's bearing is taken from
+  // the wall, not from its own velocity, so a shot fired head-on is compared
+  // against the arc the wall is already pointing at the shooter.
+  function blocksBolt(unit, bolt) {
+    const arcDeg = ENEMY_KINDS[unit.kind].blockArcDeg;
+    if (!arcDeg) return false;
+    const bearing = Math.atan2(bolt.x - unit.x, bolt.z - unit.z);
+    let delta = Math.abs(bearing - unit.facing) % (Math.PI * 2);
+    if (delta > Math.PI) delta = Math.PI * 2 - delta;
+    return delta <= (arcDeg * Math.PI) / 180;
+  }
+
   function updateProjectiles(dtMs) {
     const player = state.player;
     for (let index = state.projectiles.length - 1; index >= 0; index -= 1) {
@@ -1101,7 +1416,7 @@ export function createWorld(options = {}) {
           for (const tower of state.towers) {
             const dx = bolt.x - tower.x;
             const dz = bolt.z - tower.z;
-            if (dx * dx + dz * dz <= (0.8 + bolt.radius) ** 2) {
+            if (dx * dx + dz * dz <= (TOWER_BODY_RADIUS + bolt.radius) ** 2) {
               damageTower(tower, bolt.damage);
               consumed = true;
               break;
@@ -1116,6 +1431,20 @@ export function createWorld(options = {}) {
           const dz = bolt.z - unit.z;
           const reach = unit.radius + bolt.radius;
           if (dx * dx + dz * dz > reach * reach) continue;
+          // A shieldwall turns aside a bolt that lands on the arc it faces: the
+          // shot is spent and nothing else happens. Splash, burn ticks, novas
+          // and blades are not stopped this way.
+          if (blocksBolt(unit, bolt)) {
+            emit('blocked', {
+              x: unit.x,
+              z: unit.z,
+              id: unit.id,
+              kind: unit.kind,
+              element: bolt.element,
+            });
+            consumed = true;
+            break;
+          }
           if (bolt.splash > 0) {
             splashDamage(bolt.x, bolt.z, bolt.splash, bolt.damage, bolt.element, options);
           } else {
@@ -1130,10 +1459,7 @@ export function createWorld(options = {}) {
       if (!consumed && bolt.owner !== 'enemy') {
         // Player and tower bolts stop at walls; that keeps the arena readable.
         for (const box of map.obstacles) {
-          if (
-            Math.abs(bolt.x - box.x) < box.w / 2 &&
-            Math.abs(bolt.z - box.z) < box.d / 2
-          ) {
+          if (Math.abs(bolt.x - box.x) < box.w / 2 && Math.abs(bolt.z - box.z) < box.d / 2) {
             consumed = true;
             break;
           }
@@ -1167,7 +1493,14 @@ export function createWorld(options = {}) {
         }
         if (d < PLAYER.radius + 0.75) {
           state.gold += pickup.value;
-          emit('pickup', { value: pickup.value, color: pickup.color, type: pickup.type, total: state.gold, x: pickup.x, z: pickup.z });
+          emit('pickup', {
+            value: pickup.value,
+            color: pickup.color,
+            type: pickup.type,
+            total: state.gold,
+            x: pickup.x,
+            z: pickup.z,
+          });
           state.pickups.splice(index, 1);
           continue;
         }
@@ -1231,14 +1564,20 @@ export function createWorld(options = {}) {
     }
     if (!spawnQueue.length && !state.units.length) {
       state.stats.wavesCleared = state.wave;
-      state.score += currentWave.reward + SCORE.waveClear * state.wave;
+      state.score += Math.round(
+        (currentWave.reward + SCORE.waveClear * state.wave) * omenMod('scoreMult')
+      );
       addUltCharge(ULT.perWave);
       emit('waveCleared', { wave: state.wave, boss: state.waveIsBoss });
+      // An omen governs exactly one wave, so it clears here — and its gold is
+      // paid with this wave's reward in the build phase that follows.
+      const settled = state.omen;
+      state.omen = null;
       if (!state.endless && state.wave >= state.wavesTotal) {
         state.campaignCleared = true;
         endRun('victory');
       } else {
-        startBuildPhase();
+        startBuildPhase(settled);
       }
     }
   }
@@ -1275,6 +1614,9 @@ export function createWorld(options = {}) {
     state.wave = 0;
     state.waveElement = WAVES[0].element;
     state.waveIsBoss = false;
+    state.omen = null;
+    state.pendingOmen = null;
+    state.omenOffered = false;
     state.score = 0;
     state.combo.count = 0;
     state.combo.mult = 1;
@@ -1300,6 +1642,11 @@ export function createWorld(options = {}) {
       hitFlashMs: 0,
       attackCdMs: 0,
       element: hero.element,
+      // The aim is part of the run's starting state: a fresh run must not
+      // inherit the way the last one happened to be facing.
+      aimX: 0,
+      aimZ: -1,
+      facing: Math.PI,
       dashMs: 0,
       dashCdMs: 0,
       iframeMs: 0,
@@ -1329,6 +1676,7 @@ export function createWorld(options = {}) {
     input.swap = null;
     input.continueEndless = false;
     input.skipTutorial = false;
+    input.chooseOmen = null;
   }
 
   function step() {
@@ -1358,6 +1706,7 @@ export function createWorld(options = {}) {
     cadence += 1;
 
     if (input.skipTutorial) finishTutorial(true);
+    if (input.chooseOmen) chooseOmen(input.chooseOmen);
     if (input.buildSocket !== null) buildTower(input.buildSocket, input.buildKind || 'frost');
     if (input.upgradeSocket !== null) upgradeTower(input.upgradeSocket);
     if (input.nova) fireNova();
@@ -1384,6 +1733,8 @@ export function createWorld(options = {}) {
       Math.round(state.score),
       Math.round(state.gold * 100),
       state.wave,
+      state.omen || '-',
+      state.pendingOmen || '-',
       Math.round(state.core.hp * 100),
       Math.round(state.player.x * 1000),
       Math.round(state.player.z * 1000),
@@ -1429,6 +1780,11 @@ export function createWorld(options = {}) {
     setInput(command) {
       if (command.moveX !== undefined) input.moveX = command.moveX;
       if (command.moveZ !== undefined) input.moveZ = command.moveZ;
+      // Aim and the assist flag are held like the stick is: an aim is only
+      // dropped when the caller sends a zero vector or turns the cone off.
+      if (command.aimX !== undefined) input.aimX = command.aimX;
+      if (command.aimZ !== undefined) input.aimZ = command.aimZ;
+      if (command.assistCone !== undefined) input.assistCone = Boolean(command.assistCone);
       if (command.attackHeld !== undefined) input.attackHeld = command.attackHeld;
       if (command.attackHeld === undefined && command.attack !== undefined) {
         input.attackHeld = command.attack;
@@ -1449,6 +1805,9 @@ export function createWorld(options = {}) {
       if (command.restart) input.restart = true;
       if (command.continueEndless) input.continueEndless = true;
       if (command.skipTutorial) input.skipTutorial = true;
+      if (command.chooseOmen !== undefined && command.chooseOmen !== null) {
+        input.chooseOmen = command.chooseOmen;
+      }
     },
     drainEvents() {
       if (!events.length) return events;

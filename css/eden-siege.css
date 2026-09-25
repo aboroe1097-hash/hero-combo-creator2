@@ -1291,12 +1291,13 @@
     font-size: 14px;
   }
 
-  /* Under the stronghold bar sits one panel at a time: the warlord bar and
-     the training checklist during a wave, the build picker between waves.
+  /* Under the stronghold bar sits the wave's panel: the warlord bar and the
+     training checklist during a wave. The build picker is a child of the dock
+     (bottom-anchored), so the dock-relative bottom from the rule above must
+     win — a stage-relative top would put it past the stage and clip it.
      Toasts go just above the thumb controls so they never cover any of them. */
   .siege-bossbar,
-  .siege-tutorial,
-  .siege-build {
+  .siege-tutorial {
     top: 134px;
     bottom: auto;
   }
@@ -1353,4 +1354,274 @@
   background-clip: text;
   color: transparent;
   font-size: clamp(2rem, 7vw, 3rem);
+}
+
+/* ── wave omen chooser ──────────────────────────────────────────────────────
+   A slim panel in the strip between the build picker and the field, so a
+   choice can be made without the chooser sitting over the play field centre.
+   Positioned with logical properties only: dir="rtl" mirrors it with no
+   overrides, and the flex order inside the panel follows the document
+   direction as well. Kept last in the file so its offsets win over the
+   tablet and phone dock layouts above. */
+.siege-omen {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 116px;
+  margin-inline: auto;
+  width: max-content;
+  max-width: min(560px, calc(100% - 20px));
+  display: grid;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 16px;
+  background: rgba(6, 12, 22, 0.84);
+  border: 1px solid rgba(125, 211, 252, 0.28);
+  backdrop-filter: blur(6px);
+  text-align: center;
+}
+
+.siege-omen-head {
+  display: grid;
+  gap: 1px;
+}
+
+.siege-omen-head strong {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-gold, #f5c451);
+}
+
+.siege-omen-head span {
+  font-size: 11px;
+  color: var(--text-muted, #9fb0cc);
+}
+
+.siege-omen-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* 44px minimum hit target; three options fit one row, four wrap to two. */
+.siege-omen-btn {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  flex: 1 1 132px;
+  max-width: 200px;
+  min-height: 44px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.55);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.siege-omen-btn strong {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.siege-omen-btn span {
+  font-size: 10px;
+  line-height: 1.3;
+  color: var(--text-muted, #9fb0cc);
+  overflow-wrap: break-word;
+}
+
+.siege-omen-btn:hover,
+.siege-omen-btn:focus-visible {
+  border-color: var(--accent-cyan, #7dd3fc);
+}
+
+.siege-omen-btn.is-active {
+  border-color: var(--accent-cyan, #7dd3fc);
+  background: rgba(125, 211, 252, 0.16);
+  box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.4);
+}
+
+[data-theme='light'] .siege-omen {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(19, 78, 118, 0.2);
+  color: #101827;
+}
+
+[data-theme='light'] .siege-omen-btn {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.16);
+  color: #0f172a;
+}
+
+[data-theme='light'] .siege-omen-btn span {
+  color: #475569;
+}
+
+[data-theme='light'] .siege-omen-head strong {
+  color: #a16207;
+}
+
+[data-theme='light'] .siege-omen-btn.is-active {
+  background: rgba(125, 211, 252, 0.24);
+}
+
+@media (max-width: 900px) {
+  /* The dock stacks into a column on tablets (build picker lowest, element row
+     above it), so the chooser rides just above the whole dock group. */
+  .siege-omen {
+    bottom: 264px;
+  }
+}
+
+@media (max-width: 560px) {
+  /* Phones keep the build picker in the dock, so the chooser is pinned to the
+     same stage-relative band as the picker, the wave banner (bottom 282px) and
+     the toast (bottom 222px): 8px above the picker's top edge, which stays
+     true at any phone height because all four are bottom-anchored. A very
+     short stage caps the panel and scrolls it, so it can never reach the
+     stronghold bar or the top bar. */
+  .siege-omen {
+    top: auto;
+    bottom: 330px;
+    width: calc(100% - 24px);
+    max-width: calc(100% - 24px);
+    max-height: max(150px, calc(100% - 460px));
+    overflow-y: auto;
+    padding: 6px 8px;
+  }
+
+  .siege-omen-options {
+    gap: 5px;
+  }
+
+  .siege-omen-btn {
+    flex-basis: 44%;
+    max-width: none;
+    padding: 5px 9px;
+  }
+}
+
+/* ── feats in an overlay ────────────────────────────────────────────────────
+   Below the stat grid, above the run history. The list shows six rows and
+   scrolls for any more, rather than hiding feats the player has earned. */
+.siege-feats {
+  margin-bottom: 16px;
+  text-align: start;
+}
+
+.siege-feats-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 10px;
+  margin-bottom: 6px;
+}
+
+.siege-feats-label {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted, #9fb0cc);
+}
+
+.siege-feats-progress {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--accent-gold, #f5c451);
+}
+
+.siege-feat-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+  /* Six rows at the row height and gap below; a longer list scrolls here. */
+  max-height: calc(6 * 48px + 5 * 4px);
+  overflow-y: auto;
+}
+
+.siege-feat {
+  position: relative;
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  align-items: baseline;
+  column-gap: 8px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(15, 23, 42, 0.5);
+  opacity: 0.55;
+  text-align: start;
+}
+
+.siege-feat-glyph {
+  grid-column: 1;
+  font-style: normal;
+  text-align: center;
+  color: var(--accent-gold, #f5c451);
+}
+
+.siege-feat-name {
+  grid-column: 2;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.siege-feat-desc {
+  grid-column: 2;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-muted, #9fb0cc);
+  overflow-wrap: break-word;
+}
+
+.siege-feat.is-done {
+  opacity: 1;
+  border-color: rgba(245, 196, 81, 0.4);
+  background: rgba(245, 196, 81, 0.1);
+  color: inherit;
+}
+
+/* The crown glyph is decorative, so the state is repeated as off-screen text. */
+.siege-feat-state {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+[data-theme='light'] .siege-feat {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #475569;
+}
+
+[data-theme='light'] .siege-feat-desc {
+  color: #64748b;
+}
+
+[data-theme='light'] .siege-feat-glyph {
+  color: #b45309;
+}
+
+[data-theme='light'] .siege-feat.is-done {
+  background: rgba(245, 196, 81, 0.2);
+  border-color: rgba(161, 98, 7, 0.45);
+  color: #101827;
+}
+
+[data-theme='light'] .siege-feats-label {
+  color: #64748b;
+}
+
+[data-theme='light'] .siege-feats-progress {
+  color: #a16207;
 }

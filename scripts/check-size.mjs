@@ -486,7 +486,9 @@ const LIMITS = {
     // 125,788 bytes mobile, including the responsive mobile stylesheet.
     // 16.5.4 fun pass (tower tiers, modes, results screen): 33.5 KiB desktop
     // and 130.2 KiB mobile; retain under 1 KiB.
-    'eden-siege.html': { desktop: 34 * 1024, mobile: 131 * 1024 },
+    // 16.5.10 combat depth (feats panel, wave-omen chooser, phone build-picker
+    // fix): 37.1 KiB desktop and 133.8 KiB mobile; retain about 1 KiB.
+    'eden-siege.html': { desktop: 38 * 1024, mobile: 135 * 1024 },
   },
   // Measured from the same build, including the route entry and both initial
   // three.js / siege chunks and the two standalone scripts: 698,236 bytes.
@@ -496,7 +498,9 @@ const LIMITS = {
     // 16.5.4 fun pass: 711.0 KiB; retain about 1 KiB.
     // 16.5.9 rename + share card: 715.9 KiB; retain about 4 KiB so the R2
     // combat pass can land before its own measured lift is recorded.
-    'eden-siege.html': { desktop: 720 * 1024, mobile: 720 * 1024 },
+    // 16.5.10 combat depth (roles, omens, aim, feats): 729.2 KiB; retain about
+    // 4 KiB for the R3 draft/reactions pass.
+    'eden-siege.html': { desktop: 733 * 1024, mobile: 733 * 1024 },
   },
 };
 

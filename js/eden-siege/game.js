@@ -19,6 +19,7 @@ import { formatCopy } from './data/copy.js';
 import { dailySeed, dailySiegeFor } from './rng.js';
 import { createProgress, summarizeRun } from './progress.js';
 import { shareRun, shareTextFor } from './ui/share-card.js';
+import { FEATS, createFeatStore, newestFeats } from './feats.js';
 
 const TUTORIAL_KEY = 'vts_siege_tutorial_v1';
 const STREAK_THRESHOLDS = [5, 10, 15, 25, 40];
@@ -88,6 +89,7 @@ export async function startSiege({
   const hud = createHud({ root: hudRoot, copy, heroName: world.state.heroName });
   const audio = createAudio();
   const progress = createProgress();
+  const featStore = createFeatStore();
   let best = progress.best(mapId, mode);
   let liteMode = false;
   let motionReduced = Boolean(reducedMotion);
@@ -117,9 +119,15 @@ export async function startSiege({
   }
   renderer.setReducedMotion(motionReduced);
 
+  // ?aim=assist forces the cone (a mouse never takes over), ?aim=free forces
+  // free aim even on a touch screen. Default: assist on a coarse pointer.
+  const aimParam = new URLSearchParams(window.location.search).get('aim');
+  const assistAim = aimParam === 'assist' ? true : aimParam === 'free' ? false : coarsePointer;
   const input = createInput({
     onPause: () => setPaused(!paused),
     onRestart: () => restart(),
+    // Touch keeps the assist cone; keyboard and mouse aim themselves.
+    assistAim,
   });
   hud.setMuted(audio.isMuted());
   hud.setTouchVisible(matchMedia('(hover: none), (max-width: 900px)').matches);
@@ -236,6 +244,47 @@ export async function startSiege({
     return chips;
   }
 
+  // The wave-omen chooser: shown while the simulation says an omen is on
+  // offer for the next wave. The signature keeps the DOM rebuild to changes.
+  let lastOmenSignature = null;
+  function syncOmen() {
+    const state = world.state;
+    const offering = state.phase === 'build' && Boolean(state.omenOffered);
+    const signature = offering ? `${state.wave}:${state.pendingOmen || 'none'}` : 'hidden';
+    if (signature === lastOmenSignature) return;
+    lastOmenSignature = signature;
+    if (!offering) {
+      hud.hideOmen();
+      return;
+    }
+    const armed = state.pendingOmen;
+    hud.showOmen({
+      options: [
+        { id: 'ironTide', label: copy.omens.ironTide, desc: copy.omens.ironTideDesc, active: armed === 'ironTide' },
+        { id: 'fogOfWar', label: copy.omens.fogOfWar, desc: copy.omens.fogOfWarDesc, active: armed === 'fogOfWar' },
+        { id: 'bloodMoon', label: copy.omens.bloodMoon, desc: copy.omens.bloodMoonDesc, active: armed === 'bloodMoon' },
+        { id: 'mirrorIce', label: copy.omens.mirrorIce, desc: copy.omens.mirrorIceDesc, active: armed === 'mirrorIce' },
+        { id: 'skip', label: copy.omens.skip, desc: '', active: !armed },
+      ],
+    });
+  }
+
+  function featsConfig() {
+    const unlocked = new Set(featStore.unlocked());
+    return {
+      label: copy.feats.title,
+      progressLabel: formatCopy(copy.feats.progress, {
+        unlocked: unlocked.size,
+        total: FEATS.length,
+      }),
+      items: FEATS.map((feat) => ({
+        name: copy.feats[feat.id]?.name || feat.id,
+        desc: copy.feats[feat.id]?.desc || '',
+        done: unlocked.has(feat.id),
+      })),
+    };
+  }
+
   function overlayFor(phase) {
     if (phase === 'ready') {
       const seconds = Math.max(1, Math.ceil(world.state.phaseMs / 1000));
@@ -254,6 +303,7 @@ export async function startSiege({
         body,
         stars: progress.stars(mapId, mode),
         chips: readyChips(),
+        feats: featsConfig(),
         stats: [
           { label: copy.hud.best, value: Math.round(best).toLocaleString('en-US') },
           { label: copy.challenge.seed, value: seed },
@@ -315,6 +365,7 @@ export async function startSiege({
       ],
       history,
       historyLabel: copy.results.history,
+      feats: featsConfig(),
       actions,
     };
   }
@@ -427,6 +478,10 @@ export async function startSiege({
     const summary = summarizeRun(world.state);
     lastResult = progress.record(summary);
     best = Math.max(best, lastResult.best || 0);
+    for (const id of newestFeats(summary, featStore)) {
+      const feat = copy.feats[id];
+      if (feat) hud.toast(`${copy.feats.unlocked}: ${feat.name}`);
+    }
   }
 
   function handleEvents(events) {
@@ -472,6 +527,9 @@ export async function startSiege({
           buzz([40, 30, 60]);
           audio.play('bossDown');
           hud.announce(copy.messages.bossDown, 'boss');
+          break;
+        case 'omen':
+          hud.banner(copy.omens[event.omen] || copy.omens.title, 'wave');
           break;
         case 'pickup':
           audio.play('pickup', { step: Math.min(8, world.state.combo.count) });
@@ -638,6 +696,23 @@ export async function startSiege({
     trackPerformance(delta);
 
     const command = input.read();
+    // Mouse aim: the pointer's ground point beats the direction of travel, and
+    // a mouse always means free aim (no assist cone).
+    const pointer = input.pointer();
+    if (assistAim !== true && pointer.active && renderer.groundPoint) {
+      const rect = canvas.getBoundingClientRect();
+      const ground = renderer.groundPoint(pointer.x, pointer.y, rect);
+      if (ground) {
+        const aimX = ground.x - world.state.player.x;
+        const aimZ = ground.z - world.state.player.z;
+        const length = Math.hypot(aimX, aimZ);
+        if (length > 0.001) {
+          command.aimX = aimX / length;
+          command.aimZ = aimZ / length;
+          command.assistCone = false;
+        }
+      }
+    }
     let steps = 0;
     if (hitStopMs > 0) {
       // Hit-stop: hold the simulation briefly. The held time is dropped rather
@@ -667,6 +742,7 @@ export async function startSiege({
       lastPhase = world.state.phase;
       if (lastPhase === 'ready') hud.setOverlay(overlayFor('ready'));
       else if (lastPhase !== 'victory' && lastPhase !== 'defeat') hud.setOverlay(null);
+      syncOmen();
     }
     renderer.render(world.state, delta, accumulator / STEP_MS);
     frames += 1;
@@ -675,6 +751,7 @@ export async function startSiege({
     if (hudClock >= 90) {
       hudClock = 0;
       hud.update(world.state, { best });
+      syncOmen();
     }
 
     if (!isTerminalPhase()) scheduleFrame();
@@ -686,6 +763,7 @@ export async function startSiege({
     nova: () => input.requestNova(),
     ult: () => input.requestUlt(),
     dash: () => input.requestDash(),
+    omen: (id) => input.requestOmen(id),
     skipTutorial: () => {
       world.setInput({ skipTutorial: true });
       markTutorialSeen();
