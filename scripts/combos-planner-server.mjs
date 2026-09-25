@@ -3,11 +3,13 @@
 // Local Combos Planner (npm run combos:plan). Serves tools/combos-planner on
 // 127.0.0.1 and writes js/combos-db.js directly when you press Save.
 //
-// The S0-X2 list is fixed: the planner never reorders it. X8 lanes (any lane
-// with at least one X8 hero) can be placed directly above an S0-X2 lane; the
-// ones left unplaced stay in the X8 catch-up block at the end of the array.
-// Every entry in rankedCombos is one line, so a save moves existing lines
-// verbatim and only writes new lines for lanes added in the planner.
+// The S0-X2 list is fixed by default: the planner reorders it only when the
+// page's edit mode sends a `baseOrder`, and edits a line only when it sends a
+// matching `baseEdits` entry. X8 lanes (any lane with at least one X8 hero) can
+// be placed directly above an S0-X2 lane; the ones left unplaced stay in the X8
+// catch-up block at the end of the array. Every entry in rankedCombos is one
+// line, so a save moves existing lines verbatim and only rewrites a line that an
+// edit changed or that an added lane introduces.
 //
 // tools/combos-planner/x8-queue.json lists new X8 lanes waiting to be placed
 // (for example from in-game screenshots). They show in the planner's list; a
@@ -29,9 +31,11 @@ const MAX_REQUEST_BYTES = 512 * 1024;
 const ARRAY_START = 'export const rankedCombos = [';
 const ENTRY_LINE = /^\s*\{ heroes: .*\},?\s*$/;
 
-const staticFiles = new Map([
+/** Exported so a test can check that every asset the page asks for is served. */
+export const staticFiles = new Map([
   ['/', { file: path.join(toolDir, 'index.html'), type: 'text/html; charset=utf-8' }],
   ['/app.js', { file: path.join(toolDir, 'app.js'), type: 'text/javascript; charset=utf-8' }],
+  ['/lanes.js', { file: path.join(toolDir, 'lanes.js'), type: 'text/javascript; charset=utf-8' }],
   ['/styles.css', { file: path.join(toolDir, 'styles.css'), type: 'text/css; charset=utf-8' }],
 ]);
 
@@ -119,6 +123,50 @@ export function entryLine({ heroes, skin }) {
   return `  { heroes: [${heroes.map(quoteName).join(', ')}]${skin ? `, skin: '${skin}'` : ''} },`;
 }
 
+const NOTE_IN_LINE = /,\s*note:\s*('(?:\\.|[^'])*'|"(?:\\.|[^"])*")/;
+
+/** An edited entry in the file's own style, keeping the note the line already carried. */
+export function editedEntryLine(line, { heroes, skin }) {
+  const note = NOTE_IN_LINE.exec(line);
+  const rebuilt = entryLine({ heroes, skin });
+  return note ? rebuilt.replace(/ \},$/, `, note: ${note[1]} },`) : rebuilt;
+}
+
+/** The S0-X2 order to write: the plan's list of base ids, or the file's own order. */
+export function readBaseOrder(plan, view) {
+  if (!Array.isArray(plan.baseOrder)) return view.base.map((b) => b.id);
+  const ids = plan.baseOrder.map(String);
+  const known = new Set(view.base.map((b) => b.id));
+  if (ids.length !== known.size)
+    throw new Error('baseOrder must list every S0-X2 lineup exactly once');
+  const seen = new Set();
+  for (const id of ids) {
+    if (!known.has(id)) throw new Error(`unknown S0-X2 lineup ${id}`);
+    if (seen.has(id)) throw new Error(`S0-X2 lineup ${id} is listed twice`);
+    seen.add(id);
+  }
+  return ids;
+}
+
+/** Changed S0-X2 lines, keyed by base id. Every edit is checked against the hero list. */
+export function readBaseEdits(plan, { baseIds, heroNames, isX8Lane }) {
+  const edits = new Map();
+  for (const edit of Array.isArray(plan.baseEdits) ? plan.baseEdits : []) {
+    const id = String((edit && edit.id) || '');
+    if (!baseIds.has(id)) throw new Error(`unknown S0-X2 lineup ${id || '(no id)'}`);
+    const heroes = Array.isArray(edit.heroes) ? edit.heroes.map(String) : [];
+    if (heroes.length !== 3 || new Set(heroes).size !== 3)
+      throw new Error('an edited lineup needs three different heroes');
+    for (const name of heroes) if (!heroNames.has(name)) throw new Error(`unknown hero: ${name}`);
+    if (isX8Lane({ heroes }))
+      throw new Error(`${heroes.join(' / ')} uses an X8 hero, so it stays out of the S0-X2 list`);
+    const skin = edit.skin ? String(edit.skin) : '';
+    if (skin && !/^[123]{3}$/.test(skin)) throw new Error('skin code must be three digits of 1-3');
+    edits.set(id, { heroes, skin });
+  }
+  return edits;
+}
+
 /**
  * Rebuild combos-db.js from a plan: `placements` maps an X8 lane id to the base
  * id it sits directly above (in `order`), `added` holds new lanes. Unplaced
@@ -130,7 +178,15 @@ export function buildComboSource(parsed, plan, { heroNames, isX8Lane }) {
   const lanes = new Map(view.x8.map((lane) => [lane.id, lane]));
   const added = Array.isArray(plan.added) ? plan.added : [];
   const keyOf = (combo) => `${combo.heroes.join('|')}#${combo.skin || ''}`;
-  const keys = new Set([...view.base, ...view.x8].map(keyOf));
+  const edits = readBaseEdits(plan, { baseIds, heroNames, isX8Lane });
+  const baseOrder = readBaseOrder(plan, view);
+  const base = view.base.map((b) => {
+    const edit = edits.get(b.id);
+    return edit ? { ...b, ...edit } : b;
+  });
+  const keys = new Set([...base, ...view.x8].map(keyOf));
+  if (keys.size !== base.length + view.x8.length)
+    throw new Error('that edit would make two lineups in combos-db.js identical');
   for (const lane of added) {
     if (!/^n-[a-z0-9_-]{1,200}$/.test(String(lane.id))) throw new Error('bad id for an added lane');
     if (!Array.isArray(lane.heroes) || lane.heroes.length !== 3)
@@ -167,8 +223,11 @@ export function buildComboSource(parsed, plan, { heroNames, isX8Lane }) {
   const placedIds = new Set([...placedAbove.values()].flat());
   // Unplaced new lanes stay in the queue file; only placed ones enter the database.
   const tailLanes = view.x8.map((lane) => lane.id).filter((id) => !placedIds.has(id));
+  const baseLines = parsed.items.filter((item) => item.kind === 'base').map((item) => item.line);
+  // Base lines are held as slot placeholders: a slot keeps its comment lines, and
+  // the plan's order decides which S0-X2 lineup is written into each one.
   const out = [];
-  let baseCount = 0;
+  let slot = 0;
   let textRun = [];
   const lastBase = parsed.items.map((item) => item.kind).lastIndexOf('base');
   parsed.items.forEach((item, index) => {
@@ -177,9 +236,12 @@ export function buildComboSource(parsed, plan, { heroNames, isX8Lane }) {
       return;
     }
     if (item.kind === 'base') {
-      const id = `b${baseCount++}`;
-      for (const laneId of placedAbove.get(id) || []) out.push(lineOf(laneId));
-      out.push(...textRun, item.line);
+      // X8 lanes stay with the lineup they are anchored to wherever the plan moved
+      // it: this slot holds baseOrder[slot], whose lanes are anchored to its own id.
+      const original = Number(String(baseOrder[slot]).slice(1));
+      for (const laneId of placedAbove.get(`b${original}`) || []) out.push(lineOf(laneId));
+      out.push(...textRun, { base: slot });
+      slot += 1;
       textRun = [];
       return;
     }
@@ -196,7 +258,13 @@ export function buildComboSource(parsed, plan, { heroNames, isX8Lane }) {
   }
   for (const id of tailLanes) out.push(lineOf(id));
   out.push(...textRun);
-  return [...parsed.head, ...out, ...parsed.tail].join('\n');
+  const rendered = baseOrder.map((id) => {
+    const original = Number(String(id).slice(1));
+    const edit = edits.get(id);
+    return edit ? editedEntryLine(baseLines[original], edit) : baseLines[original];
+  });
+  const written = out.map((line) => (typeof line === 'string' ? line : rendered[line.base]));
+  return [...parsed.head, ...written, ...parsed.tail].join('\n');
 }
 
 export function laneSlug({ heroes, skin }) {
@@ -305,6 +373,30 @@ async function readBody(req) {
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 
+// Assets are served with a stamp from their own mtimes: a browser that reuses the
+// cached module would otherwise keep running the previous planner after an edit.
+async function assetStamp() {
+  const files = ['index.html', 'app.js', 'lanes.js', 'styles.css'].map((name) =>
+    path.join(toolDir, name)
+  );
+  const times = await Promise.all(
+    files.map((file) =>
+      stat(file).then(
+        (info) => info.mtimeMs,
+        () => 0
+      )
+    )
+  );
+  return String(Math.round(Math.max(...times)));
+}
+
+async function stamped(pathname, body) {
+  const stamp = await assetStamp();
+  if (pathname === '/') return body.replaceAll('__STAMP__', stamp);
+  if (pathname === '/app.js') return body.replace("'/lanes.js'", `'/lanes.js?${stamp}'`);
+  return body;
+}
+
 function send(res, status, body, type = 'application/json; charset=utf-8') {
   res.writeHead(status, { 'content-type': type, 'cache-control': 'no-store' });
   res.end(typeof body === 'string' ? body : JSON.stringify(body));
@@ -314,7 +406,7 @@ async function handle(req, res) {
   const url = new URL(req.url, `http://${HOST}`);
   if (req.method === 'GET' && staticFiles.has(url.pathname)) {
     const { file, type } = staticFiles.get(url.pathname);
-    return send(res, 200, await readFile(file, 'utf8'), type);
+    return send(res, 200, await stamped(url.pathname, await readFile(file, 'utf8')), type);
   }
   if (req.method === 'GET' && url.pathname.startsWith('/images/')) {
     const file = path.resolve(rootDir, `.${decodeURIComponent(url.pathname)}`);

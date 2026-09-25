@@ -6,32 +6,80 @@
 <title>Combos Planner</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/styles.css?__STAMP__">
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>Combos Planner</h1>
-    <p>Edits <code>js/combos-db.js</code> on this computer. The S0–X2 order is fixed; you only place X8 lineups. Drop each one into the gap where it belongs. In the Combo Generator it only appears once its X8 hero is picked, so players still on X2 see nothing change.</p>
-    <div class="stats" id="stats"></div>
-    <div class="savebar"><button type="button" class="primary" id="saveBtn" disabled>Save to combos-db.js</button><button type="button" id="revertBtn" disabled>Discard changes</button><span id="dirty" class="dirty" hidden>Unsaved changes</span></div>
-    <div class="status" id="status" role="status" aria-live="polite">Loading…</div>
+    <div class="topbar">
+      <h1>Combos Planner</h1>
+      <div class="stats" id="stats"></div>
+    </div>
+    <details class="howto">
+      <summary>How placing works</summary>
+      <p>Edits <code>js/combos-db.js</code> on this computer. The S0–X2 order is fixed; you only place X8 lineups. In the Combo Generator a lineup only appears once its X8 hero is picked, so players still on X2 see nothing change.</p>
+      <ul>
+        <li>Drag a lineup onto a gap, or press <b>Place</b> and then <b>Place here</b>.</li>
+        <li><b>▲▼</b> nudges one row; <b>Unplace</b> sends it back to the X8 block at the end.</li>
+        <li>While placing, <b>Place above #</b> drops it at a rank without scrolling.</li>
+        <li>Keyboard: <kbd>Enter</kbd> on a lineup starts placing, <kbd>↑</kbd>/<kbd>↓</kbd> on a placed row nudges it, <kbd>Esc</kbd> cancels.</li>
+        <li>Gold names are the X8 heroes, <span class="chip paid">$</span> marks a paid hero. New lineups from screenshots go in <code>tools/combos-planner/x8-queue.json</code>.</li>
+        <li>The tier and score are the ROC Academy source ranking; they only order the X8 list, so how the game scores a lineup can still change.</li>
+      </ul>
+    </details>
   </header>
-  <div id="banner" class="banner" hidden><span id="bannerText"></span><button type="button" id="cancelPlace">Cancel</button></div>
+
+  <div class="strip" id="strip">
+    <div class="banner" id="banner" hidden>
+      <span id="bannerText"></span>
+      <span class="bannertool">
+        <button type="button" id="showAllRows" hidden>Show every row</button>
+        <label class="rankjump">Place above #<input type="number" id="placeRank" min="1" inputmode="numeric"></label>
+        <button type="button" class="primary" id="placeRankGo">Go</button>
+        <button type="button" id="cancelPlace">Cancel</button>
+      </span>
+    </div>
+    <div class="savebar">
+      <button type="button" class="primary" id="saveBtn" disabled>Save to combos-db.js</button>
+      <button type="button" id="revertBtn" disabled>Discard changes</button>
+      <span id="dirty" class="dirty" hidden>Unsaved changes</span>
+      <span class="status" id="status" role="status" aria-live="polite">Loading…</span>
+    </div>
+  </div>
+
   <div class="grid">
     <aside class="panel tray" aria-labelledby="trayTitle">
-      <h2 id="trayTitle">X8 lineups</h2>
-      <p class="hint">Drag a lineup into the list, or press <b>Place</b> and then tap a gap. Gold names are the X8 heroes; <span class="chip paid">$</span> marks a paid hero. New lineups from screenshots go in <code>tools/combos-planner/x8-queue.json</code>.</p>
-      <div class="controls">
-        <input type="search" id="traySearch" placeholder="Search heroes" aria-label="Search X8 lineups">
-      </div>
-      <div class="seg" role="group" aria-label="Show">
-        <button type="button" data-tray="unplaced" aria-pressed="true">To place</button>
-        <button type="button" data-tray="placed" aria-pressed="false">Placed</button>
-        <button type="button" data-tray="all" aria-pressed="false">All</button>
+      <div class="panelhead">
+        <div class="headrow">
+          <h2 id="trayTitle">X8 lineups</h2>
+          <div class="seg" role="group" aria-label="Show">
+            <button type="button" data-tray="unplaced" aria-pressed="true">To place</button>
+            <button type="button" data-tray="placed" aria-pressed="false">Placed</button>
+            <button type="button" data-tray="all" aria-pressed="false">All</button>
+          </div>
+        </div>
+        <div class="controls">
+          <input type="search" id="traySearch" placeholder="Search hero" aria-label="Search X8 lineups by hero">
+          <select id="trayTroop" aria-label="X8 troop">
+            <option value="">All troops</option><option value="Cavalry">Cavalry</option><option value="Archers">Archers</option><option value="Footmen">Footmen</option><option value="Mixed">Mixed</option>
+          </select>
+          <select id="trayCost" aria-label="X8 paid or free">
+            <option value="">Paid and free</option><option value="free">Free heroes only</option><option value="paid">Has a paid hero</option>
+          </select>
+          <select id="trayTier" aria-label="X8 tier">
+            <option value="">All tiers</option><option value="S">S tier</option><option value="A">A tier</option><option value="B">B tier</option><option value="C">C tier</option><option value="none">No tier yet</option>
+          </select>
+          <select id="traySort" aria-label="Sort X8 lineups" title="Tier and source score come from the ROC Academy list; they only order this list">
+            <option value="new">New first</option><option value="score">Source score</option><option value="tier">Tier</option><option value="name">Name</option><option value="position">Ranking order</option>
+          </select>
+        </div>
+        <div class="countrow">
+          <span class="count" id="trayCount" aria-live="polite"></span>
+          <button type="button" class="link" id="trayClear" hidden>Clear filters</button>
+        </div>
       </div>
       <div class="cards" id="cards"></div>
-      <details>
+      <details class="addbox">
         <summary>Add a lineup</summary>
         <form class="addform" id="addForm" novalidate>
           <input type="text" id="addFront" list="heroNames" placeholder="Front" aria-label="Front hero" autocomplete="off">
@@ -42,30 +90,43 @@
           <p class="hint" id="addMsg"></p>
         </form>
       </details>
-          </aside>
-    <main class="panel" aria-labelledby="listTitle">
-      <h2 id="listTitle">Ranking</h2>
-      <div class="controls">
-        <input type="search" id="listSearch" placeholder="Filter by hero" aria-label="Filter the ranking by hero">
-        <select id="troop" aria-label="Troop">
-          <option value="">All troops</option><option value="Cavalry">Cavalry</option><option value="Archers">Archers</option><option value="Footmen">Footmen</option><option value="Mixed">Mixed</option>
-        </select>
-        <select id="cost" aria-label="Paid or free">
-          <option value="">Paid and free</option><option value="free">Free heroes only</option><option value="paid">Has a paid hero</option>
-        </select>
-        <select id="near" aria-label="Rows shown">
-          <option value="all">Every row</option><option value="near">Only rows near X8 lineups</option>
-        </select>
-      </div>
-      <div class="legend" aria-label="Colour key">
-        <span><i class="swatch troop-Cavalry"></i>Cavalry</span><span><i class="swatch troop-Archers"></i>Archers</span><span><i class="swatch troop-Footmen"></i>Footmen</span><span><i class="swatch troop-Mixed"></i>Mixed</span>
-        <span class="kind paid">Paid</span><span class="kind free">Free</span><span class="kind x8key">X8 lineup</span>
+    </aside>
+    <main class="panel ranking" aria-labelledby="listTitle">
+      <div class="panelhead">
+        <div class="headrow">
+          <h2 id="listTitle">Ranking</h2>
+          <span class="count" id="listCount" aria-live="polite"></span>
+        </div>
+        <div class="controls">
+          <input type="search" id="listSearch" placeholder="Filter by hero" aria-label="Filter the ranking by hero">
+          <select id="troop" aria-label="Troop">
+            <option value="">All troops</option><option value="Cavalry">Cavalry</option><option value="Archers">Archers</option><option value="Footmen">Footmen</option><option value="Mixed">Mixed</option>
+          </select>
+          <select id="cost" aria-label="Paid or free">
+            <option value="">Paid and free</option><option value="free">Free heroes only</option><option value="paid">Has a paid hero</option>
+          </select>
+          <select id="near" aria-label="Rows shown">
+            <option value="all">Every row</option><option value="near">Only rows near X8 lineups</option>
+          </select>
+          <form class="gotobox" id="gotoForm">
+            <input type="number" id="gotoRank" min="1" inputmode="numeric" placeholder="Rank #" aria-label="Go to rank number">
+            <button type="submit">Go</button>
+          </form>
+          <label class="checkline"><input type="checkbox" id="compactRows"> Compact rows</label>
+          <label class="checkline" title="Reorder or rename the S0–X2 lineups"><input type="checkbox" id="editBase"> Edit S0–X2 list</label>
+        </div>
+        <p class="warn" id="editNote" hidden>Edit mode: <b>▲▼</b> reorders an S0–X2 lineup and <b>Edit</b> changes its heroes or skin code. Both change the ranks every player sees.</p>
+        <div class="legend" aria-label="Colour key">
+          <span><i class="swatch troop-Cavalry"></i>Cavalry</span><span><i class="swatch troop-Archers"></i>Archers</span><span><i class="swatch troop-Footmen"></i>Footmen</span><span><i class="swatch troop-Mixed"></i>Mixed</span>
+          <span class="kind paid">Paid</span><span class="kind free">Free</span><span class="kind x8key">X8 lineup</span><span class="kind edited">edited</span>
+          <span class="legendgroup" id="matchLegend" hidden><span class="kind match1">1 same</span><span class="kind match2">2 same</span><span class="kind duplicate">same trio</span><span>shares heroes with the lineup you are placing</span></span>
+        </div>
       </div>
       <div class="list" id="list"></div>
     </main>
   </div>
 </div>
 <datalist id="heroNames"></datalist>
-<script src="/app.js"></script>
+<script type="module" src="/app.js?__STAMP__"></script>
 </body>
 </html>
