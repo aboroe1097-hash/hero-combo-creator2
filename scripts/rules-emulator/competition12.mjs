@@ -5,7 +5,14 @@
 // 1000-expression limit; re-run this after any change to the submission rules.
 import { initializeApp } from 'firebase/app';
 import {
-  connectFirestoreEmulator, doc, getDoc, getFirestore, serverTimestamp, setDoc, Timestamp,
+  connectFirestoreEmulator,
+  doc,
+  getDoc,
+  getFirestore,
+  increment,
+  serverTimestamp,
+  setDoc,
+  Timestamp,
 } from 'firebase/firestore';
 import { buildBohSignupDocument } from '../../js/boh-signup-document.js';
 
@@ -99,5 +106,82 @@ await expectDenied('anonymous visitor cannot read baseline match decisions', () 
 await wipe(); await seedBase(null);
 const legacy = { ...values(), commitment: { availability: 'all', preferredRole: 'offensive', fightingTimeIds: ['+12', '+14'], vts1097Member: true } };
 await expectOk('2026-shape sign-up without a schedule', () => setDoc(doc(m1, subPath('m1')), (() => { const d = buildBohSignupDocument({ uid: 'm1', seasonId: SEASON, values: legacy, requireCompetitionSlots: false, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }); return d; })()));
+// Shared Eden Operations counters: admins write bounded increments and any
+// signed-in member (including an anonymous session) can read the alliance totals.
+await wipe();
+const operationsPath = 'eden_operations/current';
+const counterUpdate = (counts, updatedBy) => ({
+  counts,
+  updatedAt: serverTimestamp(),
+  updatedBy,
+});
+await expectOk('first admin increment creates the shared counter document', () =>
+  setDoc(
+    doc(admin, operationsPath),
+    counterUpdate({ 'gate-1': { attackers: increment(1) } }, 'adm'),
+    { merge: true }
+  )
+);
+await expectOk('anonymous visitor reads the shared counters', () =>
+  getDoc(doc(anon, operationsPath))
+);
+await expectDenied('member cannot change shared counters', () =>
+  setDoc(
+    doc(m1, operationsPath),
+    counterUpdate({ 'gate-1': { attackers: increment(1) } }, 'm1'),
+    { merge: true }
+  )
+);
+await expectDenied('unknown objective is rejected', () =>
+  setDoc(
+    doc(admin, operationsPath),
+    counterUpdate({ 'gate-99': { attackers: increment(1) } }, 'adm'),
+    { merge: true }
+  )
+);
+await expectDenied('counter above 500 is rejected', () =>
+  setDoc(
+    doc(admin, operationsPath),
+    counterUpdate({ 'gate-1': { attackers: 501 } }, 'adm'),
+    { merge: true }
+  )
+);
+await expectDenied('unknown counter fields are rejected', () =>
+  setDoc(
+    doc(admin, operationsPath),
+    counterUpdate({ 'gate-1': { attackers: 1, visitors: 1 } }, 'adm'),
+    { merge: true }
+  )
+);
+await expectOk('concurrent admin increments are applied atomically', () =>
+  Promise.all([
+    setDoc(
+      doc(admin, operationsPath),
+      counterUpdate({ 'gate-1': { attackers: increment(1) } }, 'adm'),
+      { merge: true }
+    ),
+    setDoc(
+      doc(superadmin, operationsPath),
+      counterUpdate({ 'gate-1': { attackers: increment(1) } }, 'sup'),
+      { merge: true }
+    ),
+  ])
+);
+await expectOk('an objective update preserves other counters', () =>
+  setDoc(
+    doc(admin, operationsPath),
+    counterUpdate({ 'city-1': { support: increment(1) } }, 'adm'),
+    { merge: true }
+  )
+);
+const operationsCounts = (await getDoc(doc(admin, operationsPath))).data().counts;
+if (
+  operationsCounts['gate-1']?.attackers !== 3 ||
+  operationsCounts['city-1']?.support !== 1
+) {
+  results.push('FAIL shared increments: concurrent or partial updates lost a counter');
+} else {
+  results.push('PASS shared increments preserve concurrent and unrelated counters');
+}
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

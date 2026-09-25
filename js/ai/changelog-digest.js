@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.7";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.8";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.5.8",
+    "date": "2026-09-25",
+    "highlights": [
+      "Eden Operations Lab counters now sync across members and devices with shared Firestore-backed totals and access rules. Eden Pathing uses the confirmed rule of 40 tiles per pather, with the estimate presented alongside the occupied-tile count."
+    ]
+  },
   {
     "version": "16.5.7",
     "date": "2026-09-25",
@@ -98,18 +105,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Banner, pathing and shield wall cells in the weighted tables show how many of the duties came from alt or banner accounts (for example \"11 · 3 alt\").",
       "The public \"Top names to review\" lists have separate Most Banners Placed and Most Paths & Speed Tiles lists instead of one combined list. On wide screens the six lists sit in two rows of three; on phones they are one swipeable row.",
       "The Eden season page does less work while loading: on a mid-range phone profile, main-thread blocking fell from about 5.8 s to 2.4 s and the weighted table appears about 2 s sooner. Name matching no longer rebuilds its 300-entry alias table or re-checks a whole attack's player l…"
-    ]
-  },
-  {
-    "version": "16.0.18",
-    "date": "2026-09-22",
-    "highlights": [
-      "Voting has short links: roc-vts.com/vote opens the Eden X2 ballot directly, and roc-vts.com/eden opens the season. Inside the site, #vote and #season do the same through the Eden Hub.",
-      "The Eden X2 season summary has a Vote now button while voting is open. On phones the ballot now sits right after the summary instead of below the reward tables, the section chips are one swipeable row, and the reward cards are compact.",
-      "The Eden Hub opens the current season as a full-screen pane, lists Current Season first, keeps the open tab in view on phones, and shows one Velo button instead of two. A shared season link now opens the season instead of Royal Bounty.",
-      "Superadmins can count one candidate's team votes for another player, such as a banner account's votes for the player who runs it. Totals, the CSV export, and public results all follow the redirect.",
-      "The vote admin panel and the Eden X2 page title name the active season instead of always saying Eden X1.",
-      "The duty scoring weights panel is a compact table with a points example, and the demolition setting is a clear on/off switch."
     ]
   }
 ].map((release) =>

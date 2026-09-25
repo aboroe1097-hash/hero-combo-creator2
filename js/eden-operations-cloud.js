@@ -14,6 +14,8 @@
 import {
   EDEN_OPERATIONS_SHARED_CACHE_KEY,
   EDEN_OPERATIONS_SHARED_PATH,
+  isObjectiveKey,
+  MAX_SHARED_ASSIGNED,
   normalizeSharedCounts,
   sharedCountsPayload,
 } from './eden-operations-model.js';
@@ -111,25 +113,56 @@ export function stopSharedCountsSync() {
 }
 
 /**
- * Write the counters back. The write is merged, so one objective's change never
- * clears another objective's numbers, and the document is created by the first
- * click if it does not exist yet.
+ * Apply batched clicks as Firestore increments. Each field changes atomically,
+ * so two admins clicking the same counter cannot overwrite each other's read.
  */
-export async function saveSharedCounts(counts) {
+export async function saveSharedCountDeltas(deltas) {
+  const changes = {};
+  for (const change of Array.isArray(deltas) ? deltas : []) {
+    const { key, side, delta } = change || {};
+    if (
+      !isObjectiveKey(key) ||
+      !['attackers', 'support'].includes(side) ||
+      !Number.isSafeInteger(delta) ||
+      delta === 0
+    ) {
+      return { ok: false, error: 'Invalid counter update' };
+    }
+    changes[key] ||= {};
+    changes[key][side] = (changes[key][side] || 0) + delta;
+    if (Math.abs(changes[key][side]) > MAX_SHARED_ASSIGNED) {
+      return { ok: false, error: 'Counter update exceeds its limit' };
+    }
+  }
+  if (!Object.keys(changes).length) return { ok: false, error: 'No counter updates' };
+
+  const increments = Object.fromEntries(
+    Object.entries(changes).map(([key, sides]) => [
+      key,
+      Object.fromEntries(Object.entries(sides).map(([side, delta]) => [side, delta])),
+    ])
+  );
   try {
     const { firebase, db } = await session();
-    const { doc, serverTimestamp, setDoc } = await loadFirestore();
+    const { doc, getDoc, increment, serverTimestamp, setDoc } = await loadFirestore();
     const ref = doc(db, ...EDEN_OPERATIONS_SHARED_PATH);
+    for (const sides of Object.values(increments)) {
+      for (const [side, delta] of Object.entries(sides)) sides[side] = increment(delta);
+    }
     await setDoc(
       ref,
       {
-        counts: sharedCountsPayload(counts),
+        counts: increments,
         updatedAt: serverTimestamp(),
         updatedBy: firebase.getCurrentUser()?.uid || 'unknown',
       },
       { merge: true }
     );
-    return { ok: true };
+    const snapshot = await getDoc(ref);
+    return {
+      ok: true,
+      counts: normalizeSharedCounts(snapshot.exists() ? snapshot.data().counts : {}),
+    };
   } catch (error) {
     return { ok: false, error: error?.message || 'Save failed' };
   }

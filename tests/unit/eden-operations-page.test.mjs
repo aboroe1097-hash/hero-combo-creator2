@@ -120,16 +120,15 @@ test('the staffing counters are shared through Firestore, not this device', () =
   assert.match(app, /readCachedSharedCounts\(\)/);
   assert.match(app, /sharedCountsFor\(sharedCounts, currentObjectiveKey\(\)\)/);
   assert.doesNotMatch(app, /staffingStatus\(siege, state\.siege\.assigned\)/);
-  assert.match(app, /writeCachedSharedCounts\(sharedCounts\)/);
+  assert.match(app, /writeCachedSharedCounts\(lastSyncedCounts\)/);
 
-  // Writing is optimistic and debounced, and a refused write reverts and speaks.
-  assert.match(
-    app,
-    /applySharedDelta\(sharedCounts, currentObjectiveKey\(\), side, Number\(delta\)\)/
-  );
+  // Writes batch optimistic deltas and apply them atomically after the debounce.
+  assert.match(app, /queueSharedDelta\(key, side, step\)/);
+  assert.match(app, /applySharedDelta\(sharedCounts, key, side, step\)/);
   assert.match(app, /sharedCountsSaveTimer/);
   assert.match(app, /\}, 600\);/);
-  assert.match(app, /sharedCounts = lastSyncedCounts/);
+  assert.match(app, /saveSharedCountDeltas\(deltas\)/);
+  assert.match(app, /sharedCountsSaveInFlight/);
   assert.match(app, /countSaveFailed/);
 
   // Only the claim holder gets the buttons; the sync stops with the page.
@@ -145,11 +144,12 @@ test('the staffing counters are shared through Firestore, not this device', () =
   assert.match(app, /writeEdenOperationsState\(state\)/);
   assert.match(model, /EDEN_OPERATIONS_STORAGE_KEY/);
 
-  // Firebase stays behind the lazy SDK helper, and the write is merged so one
-  // objective never clears another.
+  // Firebase stays behind the lazy SDK helper. Field increments merge without
+  // replacing stale values from another objective or admin.
   assert.match(cloud, /import\('\.\/firebase-sdk\.js'\)/);
   assert.match(cloud, /import\('\.\/firebase\.js'\)/);
   assert.match(cloud, /\{ merge: true \}/);
+  assert.match(cloud, /increment\(delta\)/);
   assert.match(cloud, /serverTimestamp\(\)/);
   assert.match(cloud, /EDEN_OPERATIONS_SHARED_PATH/);
   assert.match(cloud, /updatedBy/);

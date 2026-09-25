@@ -5,6 +5,8 @@
 // compared in a unit test without a DOM. The counters themselves are shared
 // alliance state (see eden-operations-cloud.js); this module only draws them.
 
+import { MAX_SHARED_ASSIGNED } from './eden-operations-model.js';
+
 /** One counter: label, the numbers, and the buttons only an admin gets. */
 export function counterRowHtml({
   side,
@@ -20,7 +22,7 @@ export function counterRowHtml({
   // A viewer without the admin claim still reads the alliance's numbers, but
   // there is nothing to press: no button is rendered at all.
   const controls = canWrite
-    ? `<button type="button" data-ops-count="${side}:-1" aria-label="${escapeHtml(`− ${label}`)}"${value <= 0 ? ' disabled' : ''}>−</button>${output}<button type="button" data-ops-count="${side}:1" aria-label="${escapeHtml(`+ ${label}`)}">+</button>`
+    ? `<button type="button" data-ops-count="${side}:-1" aria-label="${escapeHtml(`− ${label}`)}"${value <= 0 ? ' disabled' : ''}>−</button>${output}<button type="button" data-ops-count="${side}:1" aria-label="${escapeHtml(`+ ${label}`)}"${value >= MAX_SHARED_ASSIGNED ? ' disabled' : ''}>+</button>`
     : output;
   const className = `eden-ops-counter${value >= required ? ' is-met' : ''}${canWrite ? '' : ' is-readonly'}`;
   const controlClass = `eden-ops-counter-controls${canWrite ? '' : ' eden-ops-counter-controls--readonly'}`;

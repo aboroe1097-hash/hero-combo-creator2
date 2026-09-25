@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { counterRowHtml, staffingSectionHtml } from '../../js/eden-operations-counters.js';
+import { MAX_SHARED_ASSIGNED } from '../../js/eden-operations-model.js';
 
 const COPY = Object.freeze({
   attackers: 'Attackers',
@@ -50,6 +51,16 @@ test('an admin gets the two buttons per counter and no read-only note', () => {
   // A counter already at zero cannot go lower.
   const met = build({ attackers: 0, support: 8, missing: 2, ready: false }, true);
   assert.match(met, /data-ops-count="attackers:-1" aria-label="− Attackers" disabled/);
+  const capped = counterRowHtml({
+    side: 'attackers',
+    label: 'Attackers',
+    value: MAX_SHARED_ASSIGNED,
+    required: MAX_SHARED_ASSIGNED + 1,
+    canWrite: true,
+    formatNumber,
+    escapeHtml,
+  });
+  assert.match(capped, /data-ops-count="attackers:1" aria-label="\+ Attackers" disabled/);
 });
 
 test('a counter that meets its requirement is marked, and a ready plan says nothing', () => {

@@ -2,6 +2,10 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.8 - 2026-09-25
+
+- Eden Operations Lab counters now sync across members and devices with shared Firestore-backed totals and access rules. Eden Pathing uses the confirmed rule of 40 tiles per pather, with the estimate presented alongside the occupied-tile count.
+
 ## 16.5.7 - 2026-09-25
 
 - Community Hub PDF exports now download directly as PDF or image files, with dark and light themes and controls for content, detail, paper size and orientation. The dense page layouts keep the selected reference material readable and reduce unnecessary pages.

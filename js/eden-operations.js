@@ -36,10 +36,11 @@ import {
   applySharedDelta,
   objectiveKey,
   sharedCountsFor,
+  MAX_SHARED_ASSIGNED,
 } from './eden-operations-model.js';
 import {
   readCachedSharedCounts,
-  saveSharedCounts,
+  saveSharedCountDeltas,
   startSharedCountsSync,
   stopSharedCountsSync,
   viewerCanWriteSharedCounts,
@@ -87,8 +88,10 @@ let boardOpen = true;
 // reads with no connection. The plan's own fields stay in localStorage.
 let sharedCounts = {};
 let lastSyncedCounts = {};
+let pendingSharedDeltas = {};
 let canWriteSharedCounts = false;
 let sharedCountsSaveTimer = null;
+let sharedCountsSaveInFlight = false;
 
 function readBoardOpen() {
   try {
@@ -440,6 +443,38 @@ function currentObjectiveKey() {
   return objectiveKey(state.siege.structureId, state.siege.banner);
 }
 
+function hasPendingSharedDeltas() {
+  return Object.keys(pendingSharedDeltas).length > 0;
+}
+
+function applyPendingSharedDeltas(counts) {
+  let next = counts;
+  for (const [key, sides] of Object.entries(pendingSharedDeltas)) {
+    for (const [side, delta] of Object.entries(sides)) {
+      next = applySharedDelta(next, key, side, delta);
+    }
+  }
+  return next;
+}
+
+function queueSharedDelta(key, side, delta) {
+  const sides = pendingSharedDeltas[key] || (pendingSharedDeltas[key] = {});
+  const next = (sides[side] || 0) + delta;
+  if (next) sides[side] = next;
+  else delete sides[side];
+  if (Object.keys(sides).length === 0) delete pendingSharedDeltas[key];
+}
+
+function acceptSharedCounts(counts) {
+  // Ignore local optimistic Firestore snapshots during a write. The completed
+  // save reads the authoritative document once its increment is acknowledged.
+  if (counts === undefined || sharedCountsSaveInFlight) return;
+  lastSyncedCounts = counts === null ? {} : counts;
+  writeCachedSharedCounts(lastSyncedCounts);
+  sharedCounts = applyPendingSharedDeltas(lastSyncedCounts);
+  if (booted) render();
+}
+
 /** The counters go out once the clicking stops, not on every press. */
 function scheduleSharedCountsSave() {
   if (sharedCountsSaveTimer) clearTimeout(sharedCountsSaveTimer);
@@ -450,31 +485,37 @@ function scheduleSharedCountsSave() {
 }
 
 async function flushSharedCounts() {
-  const attempt = sharedCounts;
-  const result = await saveSharedCounts(attempt);
-  if (result.ok) {
-    lastSyncedCounts = attempt;
-    writeCachedSharedCounts(attempt);
-    return;
+  if (sharedCountsSaveInFlight || !hasPendingSharedDeltas()) return;
+  const attempt = pendingSharedDeltas;
+  pendingSharedDeltas = {};
+  const deltas = Object.entries(attempt).flatMap(([key, sides]) =>
+    Object.entries(sides).map(([side, delta]) => ({ key, side, delta }))
+  );
+  sharedCountsSaveInFlight = true;
+  let result;
+  try {
+    result = await saveSharedCountDeltas(deltas);
+  } catch (error) {
+    result = { ok: false, error: error?.message || 'Save failed' };
   }
-  // The write was refused: put the numbers back and say so.
-  sharedCounts = lastSyncedCounts;
+  sharedCountsSaveInFlight = false;
+  if (result.ok) {
+    lastSyncedCounts = result.counts;
+    writeCachedSharedCounts(lastSyncedCounts);
+  } else {
+    // A rejected increment did not change Firestore. Refresh any updates that
+    // arrived from another admin while this device was writing.
+    void startSharedCountsSync({ onCounts: acceptSharedCounts });
+    announce(text('countSaveFailed'), 'error');
+  }
+  sharedCounts = applyPendingSharedDeltas(lastSyncedCounts);
   if (booted) render();
-  announce(text('countSaveFailed'), 'error');
+  if (hasPendingSharedDeltas()) scheduleSharedCountsSave();
 }
 
 /** Watch the shared counters, and decide whether this viewer may change them. */
 async function connectSharedCounts() {
-  const result = await startSharedCountsSync({
-    onCounts: (counts) => {
-      // undefined means the sync itself is unavailable: keep showing the cache.
-      if (counts === undefined) return;
-      sharedCounts = counts === null ? {} : counts;
-      lastSyncedCounts = sharedCounts;
-      writeCachedSharedCounts(sharedCounts);
-      if (booted) render();
-    },
-  });
+  const result = await startSharedCountsSync({ onCounts: acceptSharedCounts });
   const canWrite = result.ok ? await viewerCanWriteSharedCounts() : false;
   if (canWrite !== canWriteSharedCounts) {
     canWriteSharedCounts = canWrite;
@@ -817,9 +858,15 @@ function bindEvents() {
       // Read-only viewers never get the buttons; this guards a stale render.
       if (!canWriteSharedCounts) return;
       const [side, delta] = counter.dataset.opsCount.split(':');
+      const key = currentObjectiveKey();
+      const step = Number(delta);
+      const value = sharedCountsFor(sharedCounts, key)[side];
+      if (!Number.isSafeInteger(step) || value + step < 0 || value + step > MAX_SHARED_ASSIGNED) {
+        return;
+      }
       // Optimistic: the alliance's number moves now, the write follows shortly.
-      sharedCounts = applySharedDelta(sharedCounts, currentObjectiveKey(), side, Number(delta));
-      writeCachedSharedCounts(sharedCounts);
+      queueSharedDelta(key, side, step);
+      sharedCounts = applySharedDelta(sharedCounts, key, side, step);
       render();
       scheduleSharedCountsSave();
       return;
@@ -941,6 +988,7 @@ export function initEdenOperations(root = document.getElementById('edenOperation
   boardOpen = readBoardOpen();
   sharedCounts = readCachedSharedCounts();
   lastSyncedCounts = sharedCounts;
+  pendingSharedDeltas = {};
   // Start with the open planner's checklist expanded; the rest stay scannable.
   for (const entry of EDEN_OPERATION_PLAYBOOKS) {
     if (entry.tool === state.activeTool) openSteps.add(entry.id);
