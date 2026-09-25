@@ -1285,7 +1285,15 @@ function normalizeProviderConfidence(value, warnings) {
     ]);
   }
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    bohFail(502, 'invalid_provider_response', 'OCR provider returned invalid confidence data.');
+    // Confidence is advisory: a missing or odd block leaves every field
+    // unscored instead of discarding readable power values.
+    if (value !== undefined && value !== null) {
+      invalidProviderField(warnings, 'OCR provider returned invalid confidence data.');
+    }
+    return Object.fromEntries([
+      ['overall', null],
+      ...BOH_STATS_OCR_FIELDS.map((field) => [field, null]),
+    ]);
   }
   return Object.fromEntries([
     ['overall', normalizeProviderConfidenceValue(value.overall, warnings)],
@@ -1328,34 +1336,59 @@ function normalizeProviderWarnings(value, { tolerateInvalid = false } = {}) {
 
 function providerMessageText(providerEnvelope) {
   const content = providerEnvelope?.choices?.[0]?.message?.content;
+  if (providerEnvelope?.choices?.[0]?.finish_reason === 'length') {
+    console.warn('stats-ocr: provider reply was cut off at max_tokens');
+  }
   if (typeof content === 'string') return content;
   if (Array.isArray(content) && content.length > 0 && content.length <= 8) {
-    const textParts = content.map((part) => {
-      if (!part || typeof part !== 'object' || typeof part.text !== 'string') {
-        bohFail(502, 'invalid_provider_response', 'OCR provider response is malformed.');
-      }
-      return part.text;
-    });
-    return textParts.join('');
+    // Compatible-mode vision models may return several parts; only the text
+    // parts carry the answer, so non-text parts are skipped rather than fatal.
+    const textParts = content
+      .filter((part) => part && typeof part === 'object' && typeof part.text === 'string')
+      .map((part) => part.text);
+    if (textParts.length) return textParts.join('');
   }
+  console.warn('stats-ocr: provider reply has no text content');
   bohFail(502, 'invalid_provider_response', 'OCR provider response is malformed.');
 }
 
-function parseProviderMessageJson(content) {
-  const trimmed = content.trim();
-  const fenced = /^```(?:json)?\s*([\s\S]*?)\s*```$/iu.exec(trimmed);
-  const jsonText = fenced ? fenced[1] : trimmed;
+function tryParseObject(text) {
   try {
-    const parsed = JSON.parse(jsonText);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('invalid');
-    return parsed;
+    const parsed = JSON.parse(text);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
   } catch {
-    bohFail(502, 'invalid_provider_response', 'OCR provider response is malformed.');
+    return null;
   }
+}
+
+// The model is asked for bare JSON but sometimes wraps it: a code fence, a
+// sentence before or after it, or both. Take the outermost {...} span when the
+// whole reply does not parse; anything else is still a malformed reply.
+export function parseProviderMessageJson(content) {
+  const trimmed = String(content || '').trim();
+  const fenced = /```(?:json)?\s*([\s\S]*?)\s*```/iu.exec(trimmed);
+  const candidates = [trimmed];
+  if (fenced) candidates.push(fenced[1]);
+  const start = trimmed.indexOf('{');
+  const end = trimmed.lastIndexOf('}');
+  if (start >= 0 && end > start) candidates.push(trimmed.slice(start, end + 1));
+  for (const candidate of candidates) {
+    const parsed = tryParseObject(candidate);
+    if (parsed) return parsed;
+  }
+  // Length only: the reply text itself may carry a member's name.
+  console.warn(`stats-ocr: provider reply is not JSON (${trimmed.length} chars)`);
+  bohFail(502, 'invalid_provider_response', 'OCR provider response is malformed.');
 }
 
 export function normalizeBohStatsOcrProviderResponse(providerEnvelope, env = {}, requestId = '') {
   const providerPayload = parseProviderMessageJson(providerMessageText(providerEnvelope));
+  if (
+    !providerPayload.extracted &&
+    BOH_STATS_POWER_FIELDS.some((field) => field in providerPayload)
+  ) {
+    providerPayload.extracted = providerPayload;
+  }
   if (
     !providerPayload.extracted ||
     typeof providerPayload.extracted !== 'object' ||

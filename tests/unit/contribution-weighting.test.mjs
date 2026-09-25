@@ -1388,3 +1388,39 @@ test('the multipliers are edited by a superadmin, rescore, and publish with the 
     assert.match(pack, /adminScoringMultipliersHint:/, `${locale} has the multipliers hint`);
   }
 });
+
+test('public top lists roll a linked banner account into the player who runs it', async () => {
+  const { setActivePlayerRegistry } = await import('../../js/player-registry.js');
+  const { rollUpRowsByFamily } = await import('../../js/contribution-weighting.js');
+  const banners = (row) => row.banners || 0;
+  const rows = [
+    { playerKey: 'testowner', playerName: 'TESTOWNER', banners: 4, weightedScore: 10 },
+    { playerKey: 'testownerbanner', playerName: 'Testowner Banner', banners: 12, weightedScore: 2 },
+    { playerKey: 'someoneelse', playerName: 'Someone Else', banners: 5, weightedScore: 3 },
+  ];
+  try {
+    setActivePlayerRegistry({
+      players: [],
+      accountLinks: [{ account: 'Testowner Banner', owner: 'TESTOWNER', type: 'banner' }],
+    });
+    const byName = Object.fromEntries(
+      rollUpRowsByFamily(rows, banners).map((e) => [e.name, e.total])
+    );
+    assert.deepEqual(byName, { TESTOWNER: 16, 'Someone Else': 5 });
+
+    // With no row of its own, the family still shows under the link's owner.
+    const onlyBanner = rollUpRowsByFamily([rows[1]], banners);
+    assert.equal(onlyBanner.length, 1);
+    assert.equal(onlyBanner[0].name, 'TESTOWNER');
+    assert.equal(onlyBanner[0].total, 12);
+
+    // Unlinked, the banner account is its own entry.
+    setActivePlayerRegistry(null);
+    const unlinked = rollUpRowsByFamily(rows, banners)
+      .map((e) => e.name)
+      .sort();
+    assert.deepEqual(unlinked, ['Someone Else', 'TESTOWNER', 'Testowner Banner']);
+  } finally {
+    setActivePlayerRegistry(null);
+  }
+});
