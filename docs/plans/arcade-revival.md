@@ -93,7 +93,9 @@ Rampart); the **wing** combo vocabulary.
 
 **Recommendation: "Velo's Rampart — Ice & Fire Arena".** Keep the subtitle (it carries the element fantasy
 and the current `<title>` already pairs them). The route stays `eden-siege.html` — display name changes
-only, so no links, budgets or service-worker entries move.
+only, so no links, budgets or service-worker entries move. This also satisfies the storefront naming rule
+("Super Chess works; bare Chess doesn't"): a coined proper noun owns the generic word. "Siege" alone is
+unownable; "Velo's Rampart" is ours.
 
 If the owner prefers the mechanics-forward identity, take **Frostfire Rampart**; the rest of this plan is
 name-agnostic.
@@ -112,9 +114,14 @@ plus `scripts/check-size.mjs`). `npm run i18n:check` enforces the 13-locale pari
 1. **A living title scene.** The 'ready' screen becomes a cinematic: slow camera orbit on the rampart, Velo
    idling with scarf and wings moving, snow drifting, banners waving — then the title treatment over it
    (ice/fire split gradient type). The renderer already has every ingredient; this is camera and timing.
-2. **A capsule on the hub.** The featured banner becomes a proper 16:9 capsule card, visually distinct from
-   the five boot cards. Cheapest authentic art: render a still from the game itself (the capture script
-   already exists) and treat it as capsule art.
+2. **A capsule on the hub.** The featured banner becomes a proper capsule card, visually distinct from the
+   five boot cards. Cover craft rules from storefront research: the mascot is the focal element (Velo front
+   and centre), a stylised title font matched to the art — never a raw gameplay screenshot — readable at
+   small sizes (no borders/clutter, title only), and one consistent look across the crops we actually use
+   (16:9 banner, 2:3 card, 1:1 icon). Two proven layouts: left-title/right-character or centre/centre.
+   Refresh art only on major updates. Cheapest authentic art: render a still from the game itself (the
+   capture script already exists) and treat it as capsule art; ideally the title screen's first frame
+   matches the cover so a preview clip could be added later for free.
 3. **World names with flavour.** Towers become "Frost Spire" / "Ember Pyre"; enemies align with the site's
    troop vocabulary (Archer, Cavalry, Dreadnought, and the boss gets a name — e.g. *Warlord Kharr*); modes
    become **The Siege** (campaign), **Endless Siege**, **Daily War**.
@@ -197,6 +204,32 @@ Gust* (knockback), barricade repair, tower re-roll, a carried-over "war chest" b
 **Score as power:** chain 20+ feeds the ult gauge; a perfect wave (no core damage) grants a keystone draft
 pick. The wing vocabulary the boot games trained finally changes the fight.
 
+### 3.2 Mechanics worth stealing (research-backed, mapped to our game)
+
+From studying the arcade/strategy lane (sources in §9):
+
+- **A souls meter** (Mushroom Wars 2): the ultimate charges from *deaths on both sides* — casualties become
+  a resource, and "farm the wave, then unleash" becomes a real beat. Extends the ult gauge we already have
+  into a decision instead of a timer.
+- **Evolve/merge on max level** (Vampire Survivors): a maxed tower plus a paired blessing = an evolved form
+  ("Ballista 3 + Fire Flask = Burning Trebuchet"). This is Pillar B's fusion with a draft hook — the
+  one-more-run engine in one rule.
+- **Elixir tempo ramp** (Clash Royale): a capped regenerating command resource that generates ×2 in the
+  final minute and ×3 in overtime — mathematically guaranteed climaxes in short rounds. Also: destroying an
+  enemy tower *expands your deployable territory* — territory as the reward, not just score. Both fit a
+  3–5 minute siege run exactly.
+- **Protect-the-assets economy** (Bad North): gold comes from what you *save*, not what you kill — and its
+  campaign is a seeded archipelago where you choose the next battle. That is Pillar A's campaign structure,
+  free: map generation is just another seed input to the deterministic sim.
+- **Soft death + milestone unlocks** (diep.io): on defeat recover ~30–50% of the run's progress instead of
+  zero, and gate evolutions at fixed thresholds (level 15/30) as run-shaped goals. Keeps restarts instant.
+- **A pressure timer instead of a clock** (surviv.io's shrinking zone): escalating danger forces the climax
+  — for Pillar A, the assault pushes toward the keep as the zone closes.
+- **Breaches spread** (They Are Billions): a destroyed tower becomes an *enemy* turret — the domino risk
+  makes protecting the line matter and gives the saboteur role real teeth.
+- **Instant re-entry** (.io genre): minimise time between matches; the ready overlay should be one tap deep
+  (already true — keep it true through every redesign).
+
 ---
 
 ## 4. 3D imaging — how the scene stops reading as a hobby build
@@ -224,6 +257,27 @@ which keeps `totalMediaBytes` untouched.
 8. **Cheap depth cues.** Contact shadows under units, height-based fog, emissive rims on tower crystals at
    night. (Shadows already exist per quality tier — extend, don't add cost.)
 
+**The concrete shading recipe** (three.js, verified against current docs and postmortems in §9):
+`MeshToonMaterial` with a 3 px `DataTexture` gradientMap (2–3 hard bands) + `flatShading: true` gives the
+cel look; `MeshMatcapMaterial` is near-free for Velo close-ups (whole ramp baked into one texture, zero
+lights); outlines via `OutlineEffect` or a depth-varying outline pass (uniform wireframe-offset reads as a
+tech demo); a single 32³ LUT post pass unifies the palette of a whole procedural scene; coloured hemisphere
+light (sky tint vs ground tint) instead of white ambient is the classic low-poly-island look; fuse fog
+colour with the sky background to hide draw-distance seams.
+
+**The avoid-list (why hobby three.js scenes look cheap):** white/flat lighting with no coloured ambient; no
+fog so the world just stops; gray default materials and style drift; uncapped `devicePixelRatio` (phones hit
+5 and turn to mush — cap at 2, force 1 on iOS/low-memory); allocations inside the render loop;
+`matrixAutoUpdate` left on for static geometry; huge shadow frusta; adding/removing lights at runtime
+(shader recompiles — toggle intensity instead); Z-fighting on coplanar meshes (offset ~0.001); no sRGB
+output encoding (washed colours).
+
+**Game feel, layer 2–3 primitives per event** (the SNKRX juice postmortem): hit = cone particles (±72° off
+the surface normal) + a 0.15 s white flash (white beats coloured) + a spring scale-pop + a pitch-randomised
+sound (±5% kills repetition fatigue); death = extra particles + shake + flash; squash-stretch on spawn/death;
+damage numbers pop with per-digit rotation; nothing in the game happens silently. Hit-stop with music pitch
+following the slow-mo is the highest impact-per-line feel upgrade there is.
+
 ---
 
 ## 5. Layout and responsiveness
@@ -247,6 +301,13 @@ which keeps `totalMediaBytes` untouched.
 6. **Accessibility floor.** Focus order in overlays, ARIA-live score announcements, reduced-motion keeps
    the game playable (shake/hit-stop already gated), and elements identified by **shape as well as colour**
    (crystal / flame glyphs) for colour-blind players.
+7. **Platform hygiene** (research-backed checklist): `env(safe-area-inset-*)` padding with fallbacks on HUD
+   and sheets; `user-select: none` on the game shell (kills double-tap zoom/text selection); do not bind
+   Escape or Ctrl/Cmd+W; adapt key hints for AZERTY etc.; resume the AudioContext inside a `touchend`
+   gesture (the documented iOS breakage); rotation prompts belong to the portal/platform — never a hard
+   rotate-lock of our own.
+8. **DPR discipline in the renderer.** Cap `devicePixelRatio` at 2; force 1 on iOS and low-memory Android
+   (higher values crash there). Smooth on a 4 GB Chromebook is the realistic floor, not a gaming laptop.
 
 ---
 
@@ -292,5 +353,21 @@ the lobby teaches the domain the Siege then uses. No new mechanics; their ceilin
 
 Code evidence is from `origin/gh-pages` (16.5.6): `js/eden-siege/sim/world.js`, `js/eden-siege/game.js`,
 `js/eden-siege/data/balance.js`, `js/eden-siege/data/maps.js`, `js/eden-siege/engine/renderer.js`,
-`js/eden-siege/data/copy.js`, `js/command-palette.js`, `games/boot/`, `docs/plans/arcade-live-arena.md`.
-External design references gathered for this brainstorm are listed in the PR discussion.
+`js/eden-siege/data/copy.js`, `js/command-palette.js`, `js/siege-promo.js`, `games/boot/`,
+`docs/plans/arcade-live-arena.md`.
+
+External design references consulted for this brainstorm (fetched 2026-09-25):
+
+- three.js craft: https://discoverthreejs.com/tips-and-tricks/ , https://threejs.org/docs/#api/en/materials/MeshToonMaterial ,
+  https://tympanus.net/codrops/2026/04/24/susurrus-crafting-a-cozy-watercolor-world-with-three-js-and-shaders/
+- game loops: https://en.wikipedia.org/wiki/Vampire_Survivors , https://en.wikipedia.org/wiki/Brotato ,
+  https://en.wikipedia.org/wiki/Clash_Royale , https://en.wikipedia.org/wiki/Mushroom_Wars_2 ,
+  https://en.wikipedia.org/wiki/Bad_North , https://en.wikipedia.org/wiki/They_Are_Billions ,
+  https://en.wikipedia.org/wiki/Diep.io , https://en.wikipedia.org/wiki/Surviv.io ,
+  https://en.wikipedia.org/wiki/.io_game , https://www.crazygames.com/game/age-of-war
+- game feel/juice: https://a327ex.com/logs/orblike-snkrx-archeology
+- naming/capsule/presence: https://docs.crazygames.com/requirements/game-covers/ ,
+  https://howtomarketagame.com/2020/10/28/trends-for-steam-capsule-design/ ,
+  https://docs.crazygames.com/requirements/quality/ , https://howtomarketagame.com/2021/05/03/capsule-trends-spring-2021/
+- responsive/platform: https://developer.mozilla.org/en-US/docs/Web/CSS/env ,
+  https://docs.crazygames.com/requirements/technical/
