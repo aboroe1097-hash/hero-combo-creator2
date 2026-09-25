@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="vts-app-version" content="16.5.11" />
+    <meta name="vts-app-version" content="16.5.12" />
     <meta
       name="description"
       content="VTS 1097 Competition #12: register your BoH and Epic Showdown active times, upload your data, and re-upload later to measure your growth."
@@ -11,10 +11,10 @@
     <meta id="themeColorMeta" name="theme-color" content="#08111f" />
     <title>VtsScore · Competition #12</title>
     <link rel="icon" href="images/logo.png" />
-    <link rel="stylesheet" href="css/_tokens.css?v=20260925_140909" />
-    <link rel="stylesheet" href="css/vts-score.css?v=20260925_140909" />
-    <link rel="stylesheet" href="css/account-chip.css?v=20260925_140909" />
-    <script src="js/theme-prepaint.js?v=20260925_140909"></script>
+    <link rel="stylesheet" href="css/_tokens.css?v=20260925_124509" />
+    <link rel="stylesheet" href="css/vts-score.css?v=20260925_124509" />
+    <link rel="stylesheet" href="css/account-chip.css?v=20260925_124509" />
+    <script src="js/theme-prepaint.js?v=20260925_124509"></script>
   </head>
   <body>
     <main id="vtsScoreApp" class="vts-score-shell">
@@ -154,6 +154,49 @@
             <span class="vts-score-step__number" aria-hidden="true">2</span>
             <div>
               <h2 data-vts-i18n="signupPowerTitle">Power numbers</h2>
+              <!-- Optional: read the Lord Info → Power screenshot with the same
+                   secured OCR worker as the score upload. The image is never
+                   stored; the numbers only prefill the editable fields below. -->
+              <div id="vtsScoreSignupOcr" class="vts-score-signup-ocr">
+                <label for="vtsScoreSignupImage" data-vts-i18n="signupOcrLabel">
+                  Fill from a screenshot (optional)
+                </label>
+                <p class="vts-score-field-hint" data-vts-i18n="signupOcrHint">
+                  Lord Info → Power screenshot: open Lord Info and scroll to the Power section.
+                  PNG, JPEG or WebP; max 10 MB.
+                </p>
+                <input
+                  id="vtsScoreSignupImage"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                />
+                <label class="vts-score-consent" for="vtsScoreSignupOcrConsent">
+                  <input id="vtsScoreSignupOcrConsent" type="checkbox" />
+                  <span data-vts-i18n="consent">
+                    I understand the image is sent to the secured OCR service to read visible
+                    numbers. The image itself is not saved.
+                  </span>
+                </label>
+                <button
+                  id="vtsScoreSignupReadButton"
+                  class="vts-score-secondary"
+                  type="button"
+                  data-vts-i18n="readPower"
+                >
+                  Read all power values
+                </button>
+                <div id="vtsScoreSignupOcrReview" class="vts-score-signup-ocr-review" hidden>
+                  <p class="vts-score-field-hint" data-vts-i18n="confirmedHelp">
+                    Check every number against the screenshot and correct any OCR mistakes.
+                  </p>
+                  <label class="vts-score-consent" for="vtsScoreSignupOcrConfirm">
+                    <input id="vtsScoreSignupOcrConfirm" type="checkbox" />
+                    <span data-vts-i18n="signupOcrConfirm"
+                      >I checked every number against my screenshot.</span
+                    >
+                  </label>
+                </div>
+              </div>
               <p data-vts-i18n="signupPowerHint">
                 Copy every value from your power breakdown exactly as the game shows it.
               </p>
@@ -269,49 +312,6 @@
                     data-boh-field="stats.artifactPower"
                   />
                 </label>
-              </div>
-            </div>
-          </div>
-
-          <div class="vts-score-step">
-            <span class="vts-score-step__number" aria-hidden="true">3</span>
-            <div>
-              <h2 data-vts-i18n="signupTroopsTitle">Troops and heroes</h2>
-              <p data-vts-i18n="signupListHint">Separate several values with commas.</p>
-              <div class="vts-score-signup-grid">
-                <label for="vtsScoreSignupT9TroopTypes">
-                  <span data-vts-i18n="signupT9TroopTypes">T9 troop types</span>
-                  <input
-                    id="vtsScoreSignupT9TroopTypes"
-                    type="text"
-                    maxlength="120"
-                    autocomplete="off"
-                    data-boh-field="stats.t9TroopTypes"
-                  />
-                </label>
-                <label for="vtsScoreSignupReadySpeedHeroes">
-                  <span data-vts-i18n="signupReadySpeedHeroes">Ready speed heroes</span>
-                  <input
-                    id="vtsScoreSignupReadySpeedHeroes"
-                    type="text"
-                    maxlength="240"
-                    autocomplete="off"
-                    data-boh-field="stats.readySpeedHeroes"
-                  />
-                </label>
-                <label for="vtsScoreSignupLevel50Heroes">
-                  <span data-vts-i18n="signupLevel50Heroes">Level 50 heroes</span>
-                  <input
-                    id="vtsScoreSignupLevel50Heroes"
-                    type="number"
-                    min="0"
-                    max="500"
-                    step="1"
-                    inputmode="numeric"
-                    autocomplete="off"
-                    data-boh-field="stats.level50HeroCount"
-                  />
-                </label>
                 <label for="vtsScoreSignupRocLevel">
                   <span data-vts-i18n="signupRocLevel">ROC level</span>
                   <input
@@ -330,70 +330,9 @@
           </div>
 
           <div class="vts-score-step">
-            <span class="vts-score-step__number" aria-hidden="true">4</span>
+            <span class="vts-score-step__number" aria-hidden="true">3</span>
             <div>
-              <h2 data-vts-i18n="signupRolesTitle">Roles, active times, and commitment</h2>
-              <div class="vts-score-signup-grid">
-                <label for="vtsScoreSignupPreferredRole">
-                  <span data-vts-i18n="signupPreferredRole">Preferred role</span>
-                  <select id="vtsScoreSignupPreferredRole" data-boh-field="commitment.preferredRole">
-                    <option value="" data-vts-i18n="signupRoleNone">No preference</option>
-                    <option value="offensive" data-vts-i18n="signupRoleOffensive">
-                      Offensive team
-                    </option>
-                    <option value="rune" data-vts-i18n="signupRoleRune">Rune team</option>
-                    <option value="top" data-vts-i18n="signupRoleTop">Top side</option>
-                    <option value="bottom" data-vts-i18n="signupRoleBottom">Bottom side</option>
-                    <option value="backup" data-vts-i18n="signupRoleBackup">Backup</option>
-                    <option value="flexible" data-vts-i18n="signupRoleFlexible">Flexible</option>
-                  </select>
-                </label>
-                <label for="vtsScoreSignupSecondaryRole">
-                  <span data-vts-i18n="signupSecondaryRole">Second role (optional)</span>
-                  <select id="vtsScoreSignupSecondaryRole" data-boh-field="commitment.secondaryRole">
-                    <option value="" data-vts-i18n="signupRoleNone">No preference</option>
-                    <option value="offensive" data-vts-i18n="signupRoleOffensive">
-                      Offensive team
-                    </option>
-                    <option value="rune" data-vts-i18n="signupRoleRune">Rune team</option>
-                    <option value="top" data-vts-i18n="signupRoleTop">Top side</option>
-                    <option value="bottom" data-vts-i18n="signupRoleBottom">Bottom side</option>
-                    <option value="backup" data-vts-i18n="signupRoleBackup">Backup</option>
-                    <option value="flexible" data-vts-i18n="signupRoleFlexible">Flexible</option>
-                  </select>
-                </label>
-                <label for="vtsScoreSignupAvailability">
-                  <span data-vts-i18n="signupAvailability">Availability</span>
-                  <select id="vtsScoreSignupAvailability" data-boh-field="commitment.availability">
-                    <option value="all" data-vts-i18n="signupAvailabilityAll">Every fight</option>
-                    <option value="most" data-vts-i18n="signupAvailabilityMost">Most fights</option>
-                    <option value="backup" data-vts-i18n="signupAvailabilityBackup">
-                      Backup only
-                    </option>
-                  </select>
-                </label>
-                <label for="vtsScoreSignupMember">
-                  <span data-vts-i18n="signupMember">Signed up for VTS 1097</span>
-                  <select
-                    id="vtsScoreSignupMember"
-                    data-boh-boolean="true"
-                    data-boh-field="commitment.vts1097Member"
-                  >
-                    <option value="true" data-vts-i18n="signupYes">Yes</option>
-                    <option value="false" data-vts-i18n="signupNo">No</option>
-                  </select>
-                </label>
-                <label for="vtsScoreSignupContact">
-                  <span data-vts-i18n="signupContact">Contact (optional)</span>
-                  <input
-                    id="vtsScoreSignupContact"
-                    type="text"
-                    maxlength="160"
-                    autocomplete="off"
-                    data-boh-field="commitment.contactNumber"
-                  />
-                </label>
-              </div>
+              <h2 data-vts-i18n="signupCommitmentTitle">Active times and commitment</h2>
               <!-- Ordered slot pickers: each tap appends a slot to the member's
                    preference order; the hidden list input is what the signup
                    document reads ("+20,+8"). -->
@@ -610,7 +549,7 @@
         </p>
       </section>
     </main>
-    <script type="module" src="js/vts-score.js?v=20260925_140909"></script>
+    <script type="module" src="js/vts-score.js?v=20260925_124509"></script>
       <script type="module" src="js/account-chip-bootstrap.js"></script>
   </body>
 </html>

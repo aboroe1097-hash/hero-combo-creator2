@@ -1,4 +1,4 @@
-# RoC VTS Toolkit - VTS 1097 (v16.5.11)
+# RoC VTS Toolkit - VTS 1097 (v16.5.12)
 
 A community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Build hero combinations, inspect skills and research, plan progression and Eden activity, and manage alliance records through dedicated member and administrator tools.
 

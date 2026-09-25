@@ -1,10 +1,19 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.11";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.12";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.5.12",
+    "date": "2026-09-25",
+    "highlights": [
+      "**The War Council.** After the third, sixth and ninth wave — every third wave in Endless War — pick one of three boons for the rest of the run: Ember Heart (fire burns 40% harder), Frost Grip (ice slows bite deeper and hold longer), Swift Wings (faster movement, shorter dash coo…",
+      "**Elemental reactions.** Ice onto a burning foe **shatters** it (bonus damage, armour ignored, the burn is consumed); fire onto a slowed foe **melts** it (double burn, slow cleared); three slows in a row **deep-freeze** a foe in place for a moment; and a burning foe that dies **…",
+      "Wing swaps now sit on a 2.5-second cooldown and the wing buttons dim while it runs, so committing to an element is a decision rather than a toggle."
+    ]
+  },
   {
     "version": "16.5.11",
     "date": "2026-09-25",
@@ -96,18 +105,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Eden's light theme uses darker frost accents, and the vote countdown is translated instead of showing English day/hour abbreviations.",
       "Velo stays clear of phone content while scrolling, returns when users scroll up or focus it, and the install prompt controls meet the 44-pixel touch target.",
       "Velo's Eden guide, scoring and season answers now use the published Eden X2 projection, report requested-season mismatches, and never reuse X1 management-vote data."
-    ]
-  },
-  {
-    "version": "16.5.2",
-    "date": "2026-09-24",
-    "highlights": [
-      "One look across the standalone tools: VtsScore, Downloads, Arcade, Eden, Eden Siege, Specialization Towers and Battle Simulator share the same footer and link set, and VtsScore and Downloads gained the branded bar with Back to tools. Eden's deck button now reads Back to Tools, a…",
-      "More tools lists PDF downloads and Buildings; Buildings opens Planners ▸ Castle directly (#researchTowers?subtab=research&planner=castle).",
-      "Research planner: a full visual pass — sub-tab pills, cards, styled fields, stat tiles for remaining costs, scrollable tables with sticky headers, and a progress bar per path node — for dark and light themes, phones and right-to-left languages.",
-      "Specialization Towers: every node now shows its medal cost from the community workbook for all three troops (735 nodes each), where it used to say the cost was unknown. Repeated node names at different strengths are matched by the strength the workbook states, and five naming di…",
-      "Eden Operations Lab: a task board with six common jobs filtered by season stage and role, a saved three-step checklist per job, one-tap Critical/Essential/Advanced specialty routes, attacker and support counters for the chosen siege objective, links into Eden Map and Loyalty, an…",
-      "Duty list PNGs no longer carry a data-sources line: they are the alliance's own records. Exports whose credit list does not fit now point to the site instead of naming only the first contributor."
     ]
   }
 ].map((release) =>
