@@ -8,7 +8,9 @@ import worker, {
   checkBohStatsOcrRateLimit,
   clearBohStatsOcrRateLimitForTests,
   isSameProjectFirebasePreviewOrigin,
+  bohStatsOcrRetryModel,
   normalizeBohStatsOcrProviderResponse,
+  salvageTruncatedStatsPayload,
   validateBohStatsOcrPayload,
 } from '../../workers/qwen-cors-proxy.js';
 import {
@@ -835,6 +837,104 @@ test('provider JSON wrapped in prose, fences, or content parts is still read', (
         (error) => error.code === 'invalid_provider_response'
       );
     }
+  } finally {
+    console.warn = originalWarn;
+  }
+});
+
+test('a reply cut off at max_tokens keeps the values it finished writing', () => {
+  const originalWarn = console.warn;
+  console.warn = () => {};
+  try {
+    const cutOff =
+      '{"extracted":{"totalCastlePower":436677030,"troopPower":"120,000,000","buildingPower":null,' +
+      '"technologyPower":90000000,"gameName":"ANGEL","artifactPower":1234567890123456789';
+    const envelope = { choices: [{ message: { content: cutOff }, finish_reason: 'length' }] };
+    const normalized = normalizeBohStatsOcrProviderResponse(envelope, {}, 'id');
+    assert.equal(normalized.extracted.totalCastlePower, 436677030);
+    assert.equal(normalized.extracted.troopPower, 120000000);
+    assert.equal(normalized.extracted.technologyPower, 90000000);
+    assert.equal(normalized.extracted.gameName, 'ANGEL');
+    // The cut landed inside this value, so it stays blank for the member.
+    assert.equal(normalized.extracted.artifactPower, null);
+    assert.equal(normalized.confidence.overall, null);
+    assert.ok(normalized.warnings.some((warning) => /only partly read/iu.test(warning)));
+
+    const runawayWarnings =
+      '{"extracted":{"totalCastlePower":5000000,"dragonPower":400000},"confidence":{"overall":0.9},' +
+      '"warnings":["check","check","check","che';
+    const fromWarnings = salvageTruncatedStatsPayload(runawayWarnings);
+    assert.equal(fromWarnings.extracted.totalCastlePower, '5000000');
+    assert.equal(fromWarnings.extracted.dragonPower, '400000');
+
+    assert.equal(salvageTruncatedStatsPayload('{"extracted":{"totalCastlePower":43667'), null);
+    assert.throws(
+      () =>
+        normalizeBohStatsOcrProviderResponse(
+          { choices: [{ message: { content: '{"extracted":{"gameName":"ANGEL",' } }] },
+          {},
+          'id'
+        ),
+      (error) => error.code === 'invalid_provider_response'
+    );
+  } finally {
+    console.warn = originalWarn;
+  }
+});
+
+test('an unusable stats reply is retried once on the fallback model', async () => {
+  assert.equal(
+    bohStatsOcrRetryModel(
+      { DASHSCOPE_FALLBACK_MODELS: 'qwen-vl-plus,qwen-vl-max' },
+      'qwen-vl-plus'
+    ),
+    'qwen-vl-max'
+  );
+  assert.equal(bohStatsOcrRetryModel({}, 'qwen-vl-plus'), '');
+
+  const tokens = await signedTokens();
+  const originalWarn = console.warn;
+  console.warn = () => {};
+  try {
+    await withMockFetch(
+      (url, init) => {
+        const model = JSON.parse(init.body).model;
+        if (model === 'server-owned-boh-model') {
+          return Response.json({
+            choices: [
+              { message: { content: '{"extracted":{"totalCast' }, finish_reason: 'length' },
+            ],
+          });
+        }
+        return Response.json(providerEnvelope());
+      },
+      async (providerCalls) => {
+        const response = await worker.fetch(
+          authorizedRequest(validBody(), tokens),
+          baseEnv({ DASHSCOPE_FALLBACK_MODELS: 'qwen-vl-max' })
+        );
+        const body = await response.json();
+        assert.equal(response.status, 200);
+        assert.equal(body.extracted.totalCastlePower, 123456789);
+        assert.deepEqual(
+          providerCalls.map((call) => JSON.parse(call.init.body).model),
+          ['server-owned-boh-model', 'qwen-vl-max']
+        );
+      }
+    );
+
+    await withMockFetch(
+      () => Response.json({ choices: [{ message: { content: 'no json here' } }] }),
+      async (providerCalls) => {
+        const response = await worker.fetch(
+          authorizedRequest(validBody(), tokens),
+          baseEnv({ DASHSCOPE_FALLBACK_MODELS: 'qwen-vl-max' })
+        );
+        assert.equal(response.status, 502);
+        assert.equal((await response.json()).code, 'invalid_provider_response');
+        assert.equal(providerCalls.length, 2);
+      }
+    );
   } finally {
     console.warn = originalWarn;
   }

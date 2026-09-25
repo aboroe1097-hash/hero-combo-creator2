@@ -2,6 +2,10 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.17 - 2026-09-26
+
+- Registration screenshot OCR still failed for some screenshots because the model kept writing until it hit its length limit, so its reply was cut off mid-way. The OCR Worker now keeps every value the model finished before the cut (the rest stay blank, with a note to check every value), retries once on the fallback model when nothing usable came back, and asks the model for at most three short warnings and nothing outside the JSON. **Redeploy the OCR Worker (`npm run worker:deploy`) after this release.**
+
 ## 16.5.16 - 2026-09-25
 
 - The Eden top lists (Most Banners Placed, march paths, shield walls and Most R5 Bonus Team Effort Points) show a linked banner or alt account under the player who runs it. Its banners, paths, shield walls and bonus points add to the owner's total, so ANGEL appears instead of Angel Banner, the same way scoring already credits the owner.

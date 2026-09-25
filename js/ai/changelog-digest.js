@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.16";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.17";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.5.17",
+    "date": "2026-09-26",
+    "highlights": [
+      "Registration screenshot OCR still failed for some screenshots because the model kept writing until it hit its length limit, so its reply was cut off mid-way. The OCR Worker now keeps every value the model finished before the cut (the rest stay blank, with a note to check every v…"
+    ]
+  },
   {
     "version": "16.5.16",
     "date": "2026-09-25",
@@ -91,13 +98,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-09-25",
     "highlights": [
       "Eden Operations Lab counters now sync across members and devices with shared Firestore-backed totals and access rules. Eden Pathing uses the confirmed rule of 40 tiles per pather, with the estimate presented alongside the occupied-tile count."
-    ]
-  },
-  {
-    "version": "16.5.7",
-    "date": "2026-09-25",
-    "highlights": [
-      "Community Hub PDFs are one simple screen: pick what to include, the detail level and a dark or light theme, then press Download PDF or Download image. Files download directly, with no print dialog, paper-size or orientation settings. Hero sheets are dense, with small portraits a…"
     ]
   }
 ].map((release) =>
