@@ -38,6 +38,7 @@ export function getToolkitMapAdapter(rawArguments) {
       kind: entry.kind,
       hash: entry.hash || null,
       href: entry.href || null,
+      ...(entry.alsoAt ? { alsoAt: [...entry.alsoAt] } : {}),
       summary: entry.summary,
       answers: [...entry.answers],
     }));

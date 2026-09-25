@@ -35,9 +35,14 @@ test('command palette exposes deterministic tool destinations', () => {
     'tabEdenSiege',
     'tabBattleSimulator',
     'tabDownloads',
+    'tabAi',
   ]);
   assert.match(destinations, /name:\s*'manual'[\s\S]*?kind:\s*'tab'/);
   assert.match(destinations, /key:\s*'tabDownloads'[\s\S]*?href:\s*'downloads\.html'/);
+  assert.match(
+    destinations,
+    /key:\s*'tabAi'[\s\S]*?kind:\s*'drawer'[\s\S]*?fallback:\s*'Talk with Velo'/
+  );
   assert.match(
     destinations,
     /key:\s*'tabSpecialization'[\s\S]*?aliasesKey:\s*'tabSpecializationTowersAliases'[\s\S]*?name:\s*'specialization'[\s\S]*?kind:\s*'tab'/
@@ -51,6 +56,20 @@ test('command palette exposes deterministic tool destinations', () => {
   assert.match(
     destinations,
     /key:\s*'tabBattleSimulator'[\s\S]*?href:\s*'battle-simulator\.html'[\s\S]*?kind:\s*'link'/
+  );
+});
+
+test('Talk with Velo opens the AI drawer instead of navigating', () => {
+  const go = between('function go(dest)', 'function isOpen()');
+
+  assert.match(
+    source,
+    /dest\.kind === 'drawer'[\s\S]*?import\('\.\/ai-drawer\.js'\)[\s\S]*?openAiDrawer/
+  );
+  assert.match(go, /close\(\);\s*if \(dest\.kind === 'tab'\)/);
+  assert.match(
+    go,
+    /dest\.kind === 'drawer'[\s\S]*?return;[\s\S]*?window\.location\.href = dest\.href/
   );
 });
 

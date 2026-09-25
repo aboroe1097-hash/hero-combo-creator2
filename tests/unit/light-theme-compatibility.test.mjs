@@ -156,7 +156,7 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   assert.match(sizeCheck, /Specialization Towers, Alliance View, Skin Atlas, and All-Star BoH/);
   assert.match(sizeCheck, /8117\.7 KiB/);
   assert.match(sizeCheck, /1312\.1 KiB/);
-  assert.match(sizeCheck, /totalJsBytes: 11787 \* 1024/);
+  assert.match(sizeCheck, /totalJsBytes: 11845 \* 1024/);
   // 427 since 16.5.0 Phase 0: removing the unconsumed .u-* utilities from
   // atmosphere.css and four dead compatibility tokens from _tokens.css measured
   // 431,155 -> 428,135 bytes, so the ceiling drops by the verified reclaim.
@@ -169,8 +169,8 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   // 16.5.3 adds one measured 518-byte shared locale-pack timeout chunk.
   // 16.5.9: +4 measured chunks for the admin export model, the R5 bonus export
   // and the shared game-time parser; raised by the minimum.
-  // The Combos admin tab (818 files) and live publishing (819) keep two spare.
-  assert.match(sizeCheck, /deployFileCount: 821/);
+  // 16.5.13: +12 measured chunks for the lazy Velo tools, raised by the minimum.
+  assert.match(sizeCheck, /deployFileCount: 833/);
   assert.match(sizeCheck, /'profile\.html': \{ desktop: 25 \* 1024, mobile: 25 \* 1024 \}/);
   assert.match(sizeCheck, /'arcade\.html': \{ desktop: 463 \* 1024, mobile: 585 \* 1024 \}/);
   assert.match(

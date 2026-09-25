@@ -1,4 +1,4 @@
-const SOURCE_LABEL_KEYS = Object.freeze({
+export const SOURCE_LABEL_KEYS = Object.freeze({
   'heroes-db': 'ai.source.heroAtlas',
   'hero-atlas': 'ai.source.heroAtlas',
   'combos-db': 'ai.source.comboRankings',
@@ -13,6 +13,41 @@ const SOURCE_LABEL_KEYS = Object.freeze({
   'research-context': 'ai.source.research',
   'eden-context': 'ai.source.eden',
   'vts-public-player-tags': 'ai.source.vtsPlayers',
+  'competition-schedule': 'ai.source.competition',
+  'my-competition': 'ai.source.myCompetition',
+  'building-upgrades': 'ai.source.buildings',
+  'eden-operations': 'ai.source.edenOperations',
+});
+
+// Every tool's source label, used when a result's sourceId has no entry above.
+// tests/unit/velo-tool-parity.test.mjs keeps this in step with the registry and
+// checks each label in all 13 locales.
+export const TOOL_SOURCE_LABEL_KEYS = Object.freeze({
+  get_hero_details: 'ai.source.heroAtlas',
+  get_vts_player_context: 'ai.source.vtsPlayers',
+  get_vts_guide_context: 'ai.source.guide',
+  get_combo_recommendations: 'ai.source.comboRankings',
+  get_combo_counters: 'ai.source.counters',
+  get_strife_recommendations: 'ai.source.strife',
+  get_material_plan_summary: 'ai.source.materials',
+  calculate_dm_materials: 'ai.source.materials',
+  get_research_context: 'ai.source.research',
+  estimate_research_eta: 'ai.source.research',
+  calculate_eden_loyalty: 'ai.source.eden',
+  calculate_eden_upgrade_materials: 'ai.source.eden',
+  get_eden_context: 'ai.source.eden',
+  get_admin_context: 'ai.source.admin',
+  get_toolkit_map: 'ai.source.toolkit',
+  get_whats_new: 'ai.source.releaseNotes',
+  get_specialization_context: 'ai.source.specialization',
+  get_skin_tier_details: 'ai.source.skinTiers',
+  get_arcade_leaderboard: 'ai.source.arcade',
+  get_all_star_boh_mechanics: 'ai.source.allStarBoh',
+  get_vts_score_mechanics: 'ai.source.vtsScore',
+  get_competition_status: 'ai.source.competition',
+  get_building_costs: 'ai.source.buildings',
+  get_eden_operations: 'ai.source.edenOperations',
+  get_my_competition: 'ai.source.myCompetition',
 });
 
 const SOURCE_LABEL_FALLBACKS = Object.freeze({
@@ -26,10 +61,46 @@ const SOURCE_LABEL_FALLBACKS = Object.freeze({
   'ai.source.vtsPlayers': 'VTS Public Players',
   'ai.source.selectedHeroes': 'Selected Heroes',
   'ai.source.skins': 'Skin Ownership',
+  'ai.source.competition': 'Competition #12 schedule',
+  'ai.source.myCompetition': 'My Competition #12',
+  'ai.source.buildings': 'Buildings planner',
+  'ai.source.edenOperations': 'Eden Operations Lab',
 });
+
+// Real routes for the answer buttons. Index-page targets are hub sub-tabs.
+export const VELO_ACTION_ROUTES = Object.freeze({
+  vtsScore: 'vtsscore.html',
+  buildings: 'index.html#researchTowers?subtab=buildings',
+  edenPathing: 'index.html#edenHub?subtab=pathing',
+  operationsLab: 'index.html#edenHub?subtab=operations',
+  complaints: 'eden-x2.html#edenX1Complaints',
+});
+
+const ROUTE_ACTIONS = Object.freeze({
+  vtsScore: ['ai.action.openVtsScore', 'Open VtsScore'],
+  buildings: ['ai.action.openBuildings', 'Open Buildings planner'],
+  edenPathing: ['ai.action.openEdenPathing', 'Open Eden Pathing'],
+  operationsLab: ['ai.action.openOperationsLab', 'Open Operations Lab'],
+  complaints: ['ai.action.openComplaints', 'Open the complaint form'],
+});
+
+// A toolkit-map answer whose best match is one of these offers its button.
+const TOOLKIT_ROUTE_ACTIONS = Object.freeze({
+  vtsScore: 'vtsScore',
+  buildings: 'buildings',
+  edenPathing: 'edenPathing',
+  edenOperations: 'operationsLab',
+  complaints: 'complaints',
+});
+
+function routeAction(id, translate) {
+  const [key, fallback] = ROUTE_ACTIONS[id];
+  return { type: 'navigate-page', href: VELO_ACTION_ROUTES[id], label: translate(key, fallback) };
+}
 
 function sourceLabelKey(sourceId, tool) {
   if (SOURCE_LABEL_KEYS[sourceId]) return SOURCE_LABEL_KEYS[sourceId];
+  if (TOOL_SOURCE_LABEL_KEYS[tool]) return TOOL_SOURCE_LABEL_KEYS[tool];
   const value = `${sourceId || ''} ${tool || ''}`.toLowerCase();
   if (value.includes('counter')) return 'ai.source.counters';
   if (value.includes('combo')) return 'ai.source.comboRankings';
@@ -97,13 +168,38 @@ export function extractProposedLineup(results) {
   return null;
 }
 
+/** Route buttons for the post-1.0 tools, in the order they should appear. */
+function deriveRouteActions(results) {
+  const ids = [];
+  for (const result of Array.isArray(results) ? results : []) {
+    if (!result?.ok) continue;
+    const name = String(result.name || result.meta?.tool || '');
+    if (name === 'get_competition_status' || name === 'get_my_competition') ids.push('vtsScore');
+    else if (name === 'get_building_costs') ids.push('buildings');
+    else if (name === 'get_eden_operations') {
+      ids.push(result.data?.kind === 'pathing_rule' ? 'edenPathing' : 'operationsLab');
+    } else if (name === 'get_toolkit_map' && !result.data?.noMatch && result.data?.query) {
+      const top = TOOLKIT_ROUTE_ACTIONS[result.data?.tools?.[0]?.id];
+      if (top) ids.push(top);
+    }
+  }
+  return [...new Set(ids)];
+}
+
 export function deriveDeterministicActions(results, translate = (_key, fallback) => fallback) {
-  const actions = [];
+  const routeIds = deriveRouteActions(results);
+  const actions = routeIds.map((id) => routeAction(id, translate));
   const sources = deriveExecutedSources(results, translate);
-  const ids = sources.map((source) => source.sourceId.toLowerCase()).join(' ');
+  // The Operations Lab and Pathing are Eden tools but have their own buttons;
+  // they must not also offer the Eden X1 page.
+  const ids = sources
+    .map((source) => source.sourceId.toLowerCase())
+    .filter((id) => id !== 'eden-operations')
+    .join(' ');
   const tools = (Array.isArray(results) ? results : [])
     .filter((result) => result?.ok)
     .map((result) => String(result.name || result.meta?.tool || '').toLowerCase())
+    .filter((name) => name !== 'get_eden_operations')
     .join(' ');
   const haystack = `${ids} ${tools}`;
 

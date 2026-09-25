@@ -98,8 +98,8 @@ test('the eager launcher stylesheet is available during local Vite development',
   assert.match(viteConfig, /plugins: \[serveAiLauncherCriticalCss\(\)\]/);
 });
 
-test('Velo Beta 0.4 consent settings preserve grants and remain responsive', () => {
-  assert.match(assistantTemplate, /aria-label="Velo Beta 0\.4">Beta 0\.4</);
+test('Velo 1.0 consent settings preserve grants and remain responsive', () => {
+  assert.match(assistantTemplate, /aria-label="Velo 1\.0">Velo 1\.0</);
   assert.match(
     assistantTemplate,
     /id="aiConsentDialog"[\s\S]*aria-labelledby="aiConsentTitle"[\s\S]*aria-describedby="aiConsentDescription"/
@@ -244,6 +244,20 @@ test('Velo branding replaces provider-led assistant chrome with an animated masc
   assert.equal((standaloneLanguageSources.match(/setCurrentLanguage\(lang\)/g) || []).length, 3);
   assert.equal((standaloneLanguageSources.match(/vts:language-change/g) || []).length, 3);
   assert.match(localeSources, /dmPlannerTitle: 'Dragon-Master-Set-Planer'/);
+});
+
+test('Velo 1.0 chrome pins the version badge and phone tap-target fixes', () => {
+  assert.match(assistantCss, /\.ai-version-badge/);
+  assert.doesNotMatch(assistantCss, /\.ai-beta-badge/);
+  assert.match(assistantCss, /\.ai-message-body table \{[\s\S]*?min-width: min\(320px, 100%\)/);
+  assert.match(
+    assistantCss,
+    /@media \(max-width: 620px\)\s*\{[\s\S]*?\.ai-message-copy\s*\{[^}]*?min-height: 44px/
+  );
+  assert.match(
+    assistantCss,
+    /@media \(max-width: 620px\)\s*\{[\s\S]*?\.ai-source-chip\s*\{[^}]*?display: inline-flex[^}]*?align-items: center[^}]*?min-height: 44px/
+  );
 });
 
 test('legacy Bug and Data floating pills are no longer initialized', () => {

@@ -29,9 +29,11 @@ class MemoryStorage {
 
 const staticContext = { allowedToolGroups: [AI_TOOL_GROUPS.STATIC], appVersion: '14.0.0' };
 
-test('tool registry exposes exactly twenty-one frozen, explicitly mapped read-only tools', () => {
-  assert.equal(AI_TOOL_NAMES.length, 21);
-  assert.equal(AI_TOOL_DECLARATIONS.length, 21);
+test('tool registry exposes exactly twenty-five frozen, explicitly mapped read-only tools', () => {
+  // 21 through Velo 1.0, plus get_competition_status, get_building_costs,
+  // get_eden_operations and get_my_competition.
+  assert.equal(AI_TOOL_NAMES.length, 25);
+  assert.equal(AI_TOOL_DECLARATIONS.length, 25);
   assert.equal(Object.isFrozen(AI_TOOL_EXECUTORS), true);
   assert.deepEqual(Object.keys(AI_TOOL_EXECUTORS), AI_TOOL_NAMES);
   assert.equal('eval' in AI_TOOL_EXECUTORS, false);
@@ -45,7 +47,8 @@ test('toolkit map lists every tab with a working deep link and routes queries', 
     assert.ok(tool.id && tool.name && tool.summary, `${tool.id} basic fields`);
     assert.ok(['tab', 'page', 'drawer'].includes(tool.kind));
     if (tool.kind === 'tab') assert.ok(tool.hash, `${tool.id} tab hash`);
-    if (tool.kind === 'page') assert.match(tool.href, /\.html$/u);
+    // A page may deep-link to a section of itself (the complaint form).
+    if (tool.kind === 'page') assert.match(tool.href, /\.html(?:#[A-Za-z][\w-]*)?$/u);
   }
   const spec = await executeAiToolCall(
     { name: 'get_toolkit_map', arguments: { query: 'where do I enter specialization medals' } },

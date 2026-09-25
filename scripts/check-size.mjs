@@ -183,16 +183,17 @@ const LIMITS = {
   // release 11614.1 KiB). Retain ~20 KiB again.
   // Both land in one 16.5.6 release (with the Heroes PDF designs, which sit in
   // the lazy hub-pdf chunk): measured 11637.3 KiB locally; retain ~20 KiB.
-  // The Combos admin tab runs the whole planner interface (js/admin-combos.js,
-  // js/combos-planner-ui.js, js/combo-plan.js, js/combo-lanes.js and their lazy
-  // stylesheets), all in the lazy admin graph: measured 11721.3 KiB on top of
-  // 16.5.12; retain ~22 KiB for CI's admin-auth injection.
-  // The planner's placement workflow (js/combo-workflow.js, js/hero-name-match.js
-  // and the keyboard-first interface) grows that lazy graph: measured 11749.7 KiB;
-  // retain ~22 KiB again.
-  // Live publishing adds js/combos-live.js (with its boot module in the app graph)
-  // and the admin tab's publish path: measured 11764.8 KiB; retain ~22 KiB.
-  totalJsBytes: 11787 * 1024,
+  // 16.5.13 Velo tools: get_competition_status, get_building_costs,
+  // get_eden_operations and get_my_competition, their 13-locale copy pack and
+  // the drawer's deadline line. All of it loads only after the drawer opens
+  // (the pack and the deadline line after the assistant itself); the drawer's
+  // first chunk grows by 4.7 KiB. Measured 11736.8 KiB locally (gh-pages 16.5.13
+  // base 11679.4 KiB); the cap moves by that growth and keeps ~20 KiB for CI's
+  // admin-auth injection.
+  // 16.5.14 Combos planner in VTS Admin (the shared interface, the placement
+  // workflow engine, hero-name matching and the live-publish loader): measured
+  // 11822.5 KiB on top of 16.5.13; retain ~22 KiB for CI's admin-auth injection.
+  totalJsBytes: 11845 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -403,10 +404,14 @@ const LIMITS = {
   // Vite emits admin-export-model-*.js and conduct-adjustment-export-*.js, and
   // the export model's game-time parser splits ocr-time-filter-*.js and
   // game-time-*.js out as shared chunks. No headroom is added.
-  // The Combos admin tab emits its module, its lazy stylesheets and the raw
-  // js/combos-db.js copy the tab rebuilds (818 measured); keep two of headroom.
-  // Live publishing splits one more shared chunk (819 measured); keep two.
-  deployFileCount: 821,
+  // 16.5.13 raises the cap by the measured minimum (814 -> 826): the Velo
+  // tools lazy-import the Buildings, Eden Pathing, Operations Lab and
+  // Competition #12 data modules, so each becomes a chunk shared with its
+  // feature instead of being inlined there, and the Velo copy pack, deadline
+  // line and competition status load as chunks of their own. No headroom.
+  // 16.5.14 Combos planner chunks and the live-publish loader: 831 measured; keep
+  // two of headroom.
+  deployFileCount: 833,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive
