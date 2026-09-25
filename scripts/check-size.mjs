@@ -173,7 +173,11 @@ const LIMITS = {
   // panel), Eden Pathing, the motion P2 modules, the per-hub PDF builders with
   // their 12 lazy locale packs, and the Eden Siege fun pass. Measured
   // 11590.8 KiB locally; retain ~20 KiB for CI's admin-auth injection.
-  totalJsBytes: 11611 * 1024,
+  // 16.5.6: the Competition #12 default schedule, the game/local clock line and
+  // their strings in the 12 admin locale packs, plus the 16.5.6 Velo changelog
+  // digest, add ~10 KiB (gh-pages 16.5.5 measured 11604.0 KiB locally, this
+  // release 11614.1 KiB). Retain ~20 KiB again.
+  totalJsBytes: 11635 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and

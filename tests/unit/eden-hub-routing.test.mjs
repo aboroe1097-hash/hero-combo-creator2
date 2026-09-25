@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { resolveEdenHubInitialRoute } from '../../js/eden-hub-routing.js';
+import {
+  normalizeUnknownEdenHubSubtab,
+  resolveEdenHubInitialRoute,
+} from '../../js/eden-hub-routing.js';
 
 function createHistory(initialUrl, initialState) {
   let url = new URL(initialUrl);
@@ -86,4 +89,29 @@ test('no subtab intent uses the current-season default route', () => {
     useCurrentSeasonDefault: true,
   });
   assert.deepEqual(history.calls, []);
+});
+
+test('an unknown subtab in the hash is normalised to #edenHub', () => {
+  const known = ['map', 'bounty', 'season'];
+  const bogus = createHistory('https://roc-vts.com/#edenHub?subtab=nonsense', { kept: 1 });
+  assert.equal(normalizeUnknownEdenHubSubtab(bogus.hash, known, bogus), true);
+  assert.equal(bogus.hash, '#edenHub');
+  assert.deepEqual(bogus.calls, [{ nextState: { kept: 1 }, title: '', nextUrl: '#edenHub' }]);
+
+  const empty = createHistory('https://roc-vts.com/#edenHub?subtab=', null);
+  assert.equal(normalizeUnknownEdenHubSubtab(empty.hash, known, empty), true);
+  assert.equal(empty.hash, '#edenHub');
+
+  // Known sub-tabs, vote links, the bare route and other routes are untouched.
+  for (const url of [
+    'https://roc-vts.com/#edenHub?subtab=bounty',
+    'https://roc-vts.com/#edenHub?subtab=season&vote=1',
+    'https://roc-vts.com/#edenHub',
+    'https://roc-vts.com/#manual?subtab=nonsense',
+    'https://roc-vts.com/',
+  ]) {
+    const history = createHistory(url, null);
+    assert.equal(normalizeUnknownEdenHubSubtab(history.hash, known, history), false, url);
+    assert.deepEqual(history.calls, [], url);
+  }
 });

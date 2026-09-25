@@ -18,11 +18,14 @@ import { translations } from './translations.js';
 import { currentLanguage } from './state.js';
 import { edenWorkspaceFirestorePath, isPublishedEdenProjection } from './eden-workspaces.js';
 import { mountHubPdfPanel } from './hub-pdf-tab.js';
-import { resolveEdenHubInitialRoute } from './eden-hub-routing.js';
+import {
+  normalizeUnknownEdenHubSubtab,
+  resolveEdenHubInitialRoute,
+} from './eden-hub-routing.js';
 
-const LOYALTY_SRC = 'tabs/loyalty.html?v=20260924_211945';
-const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260924_211945';
-const PLAYBOOK_SRC = 'tabs/eden-playbook.html?v=20260924_211945';
+const LOYALTY_SRC = 'tabs/loyalty.html?v=20260925_072743';
+const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20260925_072743';
+const PLAYBOOK_SRC = 'tabs/eden-playbook.html?v=20260925_072743';
 const PREVIOUS_SRC = 'eden-x1.html?embed=1';
 const SEASON_SRC = 'eden-x2.html?embed=1';
 // How long the hub waits for the season publication check before landing on
@@ -108,7 +111,7 @@ function refreshMapViewport() {
   requestAnimationFrame(() => {
     // Use the same module identity as the planner boot. A different query
     // string creates a second module instance with no canvas state to refresh.
-    import('./eden-map.js?v=20260924_211945')
+    import('./eden-map.js?v=20260925_072743')
       .then((module) => module.refreshEdenMapViewport?.())
       .catch(() => {
         /* Eden map boot reports its own load errors. */
@@ -160,7 +163,7 @@ async function loadLoyalty(root, panel) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
     localizeFragment(panel);
-    const module = await import('./loyalty-spa.js?v=20260924_211945');
+    const module = await import('./loyalty-spa.js?v=20260925_072743');
     module.initLoyaltyCalculator?.();
     loyaltyLoaded = true;
   } catch (error) {
@@ -255,7 +258,7 @@ async function loadBounty(panel) {
     const response = await fetch(BOUNTY_SRC);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
-    const module = await import('./bounty-guide.js?v=20260924_211945');
+    const module = await import('./bounty-guide.js?v=20260925_072743');
     const mount = panel.querySelector('#bountyGuideRoot');
     if (mount) module.renderBountyGuide(mount);
     bountyLoaded = true;
@@ -366,6 +369,14 @@ function rememberSubTabClick(name) {
   }
 }
 
+function clearUnknownSubtabHash() {
+  try {
+    normalizeUnknownEdenHubSubtab(window.location.hash, EDEN_HUB_SUBTABS, window.history);
+  } catch {
+    /* history unavailable */
+  }
+}
+
 export function bootEdenHub() {
   if (booted) return;
   const root = document.getElementById('edenMapRoot');
@@ -432,6 +443,7 @@ export function bootEdenHub() {
   // from someone who had already clicked, which is a worse bug than a brief
   // flash of the wrong tab.
   const requested = readSubtabIntent();
+  clearUnknownSubtabHash();
   // A sub-tab this session clicked is not a request for it: the click only
   // owned the URL. The hub's default stays the current season, so a visit that
   // follows a click still lands there — while a shared link, which carries no
@@ -482,6 +494,7 @@ export function bootEdenHub() {
         }
         return;
       }
+      clearUnknownSubtabHash();
       const hash = window.location.hash.replace(/^#/, '').split('?')[0].toLowerCase();
       // Both the canonical #edenHub and the original #edenMap land on the map.
       if (hash === 'edenmap' || hash === 'edenhub') activateSubTab(root, 'map');

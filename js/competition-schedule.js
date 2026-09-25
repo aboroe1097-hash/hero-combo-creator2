@@ -15,8 +15,10 @@
 // - winners: the computed winners are shown.
 //
 // All instants are stored as absolute times. Admins enter them in game time,
-// which is a fixed UTC+2 (06:00 in Dubai is 00:00 game time, see
-// js/game-time.js).
+// which is a fixed UTC−2: 06:00 in Dubai (UTC+4) is 00:00 game time. The
+// offset comes from js/game-time.js, the same source as the header clock.
+
+import { GAME_TIME_UTC_OFFSET_MINUTES } from './game-time.js';
 
 export const COMPETITION_SCHEDULE_DOC_PATH = 'boh_allstar_competition/current';
 
@@ -47,7 +49,17 @@ export const COMPETITION_PHASES = Object.freeze([
 export const COMPETITION_BOH_SLOTS = Object.freeze(['+8', '+12', '+14', '+20']);
 export const COMPETITION_EPIC_SLOTS = Object.freeze(['+10', '+13', '+16', '+19']);
 
-export const GAME_TIME_UTC_OFFSET = '+02:00';
+export { GAME_TIME_UTC_OFFSET_MINUTES };
+
+function isoOffset(minutes) {
+  const sign = minutes < 0 ? '-' : '+';
+  const abs = Math.abs(minutes);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`;
+}
+
+/** The game-time offset as an ISO 8601 suffix: "-02:00". */
+export const GAME_TIME_UTC_OFFSET = isoOffset(GAME_TIME_UTC_OFFSET_MINUTES);
 
 const GAME_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/u;
 const GAME_TIME_PATTERN = /^\d{2}:\d{2}$/u;
@@ -77,7 +89,7 @@ export function gameTimeToMillis(date, time) {
 /** Epoch milliseconds → { date: 'YYYY-MM-DD', time: 'HH:MM' } in game time. */
 export function millisToGameTime(ms) {
   if (!Number.isFinite(ms)) return { date: '', time: '' };
-  const shifted = new Date(ms + 2 * 60 * 60 * 1000).toISOString();
+  const shifted = new Date(ms + GAME_TIME_UTC_OFFSET_MINUTES * 60 * 1000).toISOString();
   return { date: shifted.slice(0, 10), time: shifted.slice(11, 16) };
 }
 

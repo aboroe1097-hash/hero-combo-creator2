@@ -15,6 +15,7 @@ import {
   normalizeSlotSelection,
   slotToGameClock,
 } from '../../js/competition-schedule.js';
+import { GAME_TIME_UTC_OFFSET_MINUTES, getGameTimeState } from '../../js/game-time.js';
 
 const at = (date, time) => gameTimeToMillis(date, time);
 const RAW = {
@@ -29,14 +30,49 @@ const RAW = {
   winnersEndAt: at('2026-11-11', '08:00'),
 };
 
-test('game time is UTC+2 in both directions', () => {
-  assert.equal(new Date(at('2026-10-01', '08:00')).toISOString(), '2026-10-01T06:00:00.000Z');
+test('game time is UTC−2 in both directions', () => {
+  assert.equal(GAME_TIME_UTC_OFFSET_MINUTES, -120);
+  // 06:00 in Dubai (UTC+4) = 02:00Z = 00:00 game time.
+  assert.equal(new Date(at('2026-10-01', '00:00')).toISOString(), '2026-10-01T02:00:00.000Z');
+  assert.equal(new Date(at('2026-10-01', '08:00')).toISOString(), '2026-10-01T10:00:00.000Z');
+  assert.equal(new Date(at('2026-10-01', '22:00')).toISOString(), '2026-10-02T00:00:00.000Z');
   assert.deepEqual(millisToGameTime(Date.parse('2026-10-01T23:30:00Z')), {
-    date: '2026-10-02',
-    time: '01:30',
+    date: '2026-10-01',
+    time: '21:30',
+  });
+  assert.deepEqual(millisToGameTime(Date.parse('2026-10-02T01:59:00Z')), {
+    date: '2026-10-01',
+    time: '23:59',
   });
   assert.ok(Number.isNaN(at('2026-10-01', '8:00')));
   assert.ok(Number.isNaN(at('', '08:00')));
+});
+
+test('the schedule conversions agree with the header game clock (getGameTimeState)', () => {
+  const instants = [
+    '2026-10-01T00:00:00Z',
+    '2026-10-01T01:59:59Z', // the last second of the previous game day
+    '2026-10-01T02:00:00Z', // game midnight (06:00 in Dubai)
+    '2026-10-01T02:00:01Z',
+    '2026-10-01T13:37:00Z',
+    '2026-10-01T23:30:00Z', // a new UTC day, still the same game day
+    '2026-12-31T22:15:00Z', // across the year boundary: game 20:15 on 31 Dec
+    '2027-01-01T02:00:00Z',
+    '2027-03-28T01:00:00Z', // a European DST switch night; game time has no DST
+  ];
+  for (const iso of instants) {
+    const ms = Date.parse(iso);
+    const clock = getGameTimeState(new Date(ms));
+    const converted = millisToGameTime(ms);
+    assert.equal(converted.date, clock.gameDayKey, `${iso}: game date`);
+    assert.equal(converted.time, clock.formatted, `${iso}: game time`);
+    // Back to the same minute.
+    assert.equal(
+      gameTimeToMillis(converted.date, converted.time),
+      ms - (ms % 60_000),
+      `${iso}: round trip`
+    );
+  }
 });
 
 test('a schedule is accepted only with every instant, in order', () => {

@@ -2013,14 +2013,15 @@
             </div>
             <p id="dashBohSignupsSeason" class="dash-card-subtitle"></p>
             <!-- Competition #12 schedule (superadmin). Seven instants entered in game
-                 time (UTC+2) and written to boh_allstar_competition/current, which
+                 time (UTC−2) and written to boh_allstar_competition/current, which
                  validAllStarBohCompetitionSchedule() pins. The syncCompetitionPhase
                  Function opens and closes registration from it. -->
             <form id="dashCompScheduleForm" class="dash-comp-schedule" data-requires-superadmin hidden novalidate>
               <h3 class="dash-comp-schedule-title" data-i18n="adminCompScheduleTitle">Competition #12 schedule</h3>
               <p class="dash-card-subtitle" data-i18n="adminCompScheduleHelp">
-                Enter every time in game time (UTC+2). Your own local time is shown next to each one.
+                Enter every time in game time (UTC−2). Your own local time is shown next to each one.
               </p>
+              <p id="dashCompScheduleNow" class="dash-comp-schedule-now" dir="auto"></p>
               <p class="dash-comp-schedule-note" data-i18n="adminCompScheduleAutoNote">
                 The site opens and closes registration automatically from this schedule within ~10
                 minutes; the Open switch below is overridden while a schedule exists.
@@ -2043,6 +2044,19 @@
                   <span id="dashCompScheduleSeasonLabel" data-i18n="adminCompScheduleSeasonLabel">Season</span>
                   <output id="dashCompScheduleSeason" class="dash-comp-schedule-season" aria-labelledby="dashCompScheduleSeasonLabel" dir="ltr">—</output>
                 </div>
+              </div>
+              <div class="dash-comp-schedule-default">
+                <label class="dash-boh-signups-field">
+                  <span data-i18n="adminCompScheduleDefaultStart">Start date (game day)</span>
+                  <input id="dashCompScheduleDefaultStart" class="dash-input" type="date" dir="ltr" aria-describedby="dashCompScheduleDefaultHelp" />
+                </label>
+                <button id="dashCompScheduleFillDefault" class="dash-btn" type="button">
+                  <span data-i18n="adminCompScheduleFillDefault">Fill 2-week default</span>
+                </button>
+                <p id="dashCompScheduleDefaultHelp" class="dash-comp-schedule-default-help" data-i18n="adminCompScheduleDefaultHelp">
+                  The default runs 2 weeks from the start date. Every phase opens at 00:00 and closes at
+                  22:00 game time. Check the fields, then press Save schedule; nothing is saved before that.
+                </p>
               </div>
               <div class="dash-comp-schedule-rows">
                 <div class="dash-comp-schedule-row dash-comp-schedule-head">
@@ -2271,7 +2285,7 @@
                 </div>
               </fieldset>
               <p class="dash-card-subtitle dash-boh-signup-wide" data-i18n="adminBohSignupSlotsHelp">
-                Game time (UTC+2). Tap the times in the member's order; tap again to remove one.
+                Game time (UTC−2). Tap the times in the member's order; tap again to remove one.
               </p>
               <label class="dash-boh-signup-wide dash-boh-signups-check">
                 <input type="checkbox" data-boh-field="commitment.publicComparisonConsent" />

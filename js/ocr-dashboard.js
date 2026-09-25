@@ -8621,6 +8621,10 @@ function bindCompetitionScheduleControls(root) {
   if (!form || form.dataset.bound) return;
   form.dataset.bound = '1';
   form.addEventListener('input', () => ensureCompetitionScheduleView().onInput(root));
+  // "Fill 2-week default" only fills the inputs; the admin still presses Save.
+  $id('dashCompScheduleFillDefault')?.addEventListener('click', () =>
+    ensureCompetitionScheduleView().fillDefault(root)
+  );
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const view = ensureCompetitionScheduleView();

@@ -246,7 +246,12 @@ test('the Eden hub lands on the season being played', () => {
   assert.match(hub, /function subTabClickedThisSession\(\)/);
   assert.match(hub, /function rememberSubTabClick\(name\)/);
   assert.match(hub, /rememberSubTabClick\(name\);/);
-  assert.match(hub, /import \{ resolveEdenHubInitialRoute \} from '\.\/eden-hub-routing\.js'/);
+  assert.match(
+    hub,
+    /import \{\s*normalizeUnknownEdenHubSubtab,\s*resolveEdenHubInitialRoute,\s*\} from '\.\/eden-hub-routing\.js'/
+  );
+  // An unknown ?subtab= is cleared from the address bar on boot and on hashchange.
+  assert.equal((hub.match(/clearUnknownSubtabHash\(\);/g) || []).length, 2);
   assert.match(hub, /resolveEdenHubInitialRoute\(\s*requested,\s*clicked,\s*window\.history\s*\)/);
   assert.match(hub, /const SEASON_LINK_TIMEOUT_MS = 8000;/);
   assert.match(

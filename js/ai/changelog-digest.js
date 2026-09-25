@@ -1,10 +1,22 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.5";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.6";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.5.6",
+    "date": "2026-09-25",
+    "highlights": [
+      "Competition #12 now uses the correct game time. Game time is UTC−2 (06:00 in Dubai is 00:00 game time, the same clock as the site header), but the competition schedule, the VTS Admin schedule panel and the member page's phase countdown were using UTC+2, so every competition time…",
+      "The Competition #12 schedule panel can fill a 2-week default. Pick a start date (the next game day by default) and press **Fill 2-week default**: registration runs days 1–2, the final check until the end of day 4, the growth re-upload on days 13–14 and the winners' display on da…",
+      "The schedule panel shows game time next to your own time: each row reads \"Game 2026-10-01 00:00 (UTC−2) · Your time: …\", and a live line shows the current game time and your time.",
+      "The Artifact Power field on the Competition #12 registration form is marked \"(optional)\" like the other optional fields, and accepts the same range as the saved signup (up to 10^15). The OCR review rows keep the plain \"Artifact Power\" label.",
+      "An Eden Hub link with an unknown sub-tab (`#edenHub?subtab=…`) now tidies the address bar to `#edenHub`, matching the landing page it opens.",
+      "The VtsScore page requests its stylesheets and scripts with the same version stamp the offline cache stores. The build left a stale \".3.5\" suffix on those stamps, so the page missed the cache and always went to the network."
+    ]
+  },
   {
     "version": "16.5.5",
     "date": "2026-09-24",
@@ -101,14 +113,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Eden X2 management rankings now read the current Google Sheet's `VoteResults` tab. Kiji, Loonly, Redbull, stylized ANGEL, and Victoria/Kika names resolve to their player families.",
       "Superadmins can choose whether demolition points contribute to dashboard totals while keeping demolition activity visible.",
       "Superadmins can delete an individual Eden X2 voting ballot from the admin results table. The ballot is removed from totals and a deletion is recorded in the immutable edit history."
-    ]
-  },
-  {
-    "version": "16.0.16",
-    "date": "2026-09-18",
-    "highlights": [
-      "Shield Wall lists can now be uploaded as screenshots, the same way Banner and Pather lists are: an Upload Image button, a drop zone and a scanning indicator, in all twelve admin languages. Before this, Shield Wall only took typed or pasted names.",
-      "Shift headings in a Shield Wall list (\"Morning\", \"Evening:\", \"Night\", \"Shift 2\") now become the row's group instead of being read as a player called \"Morning\". A player on both shifts keeps a row, and a Shield Wall credit, for each one. The image reader was also told to keep tho…"
     ]
   }
 ].map((release) =>
