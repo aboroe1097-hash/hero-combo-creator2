@@ -18,6 +18,8 @@ import { STEP_MS, MAX_STEPS_PER_FRAME, TOWERS, TOWER_MAX_LEVEL } from './data/ba
 import { formatCopy } from './data/copy.js';
 import { dailySeed, dailySiegeFor } from './rng.js';
 import { createProgress, summarizeRun } from './progress.js';
+import { shareRun, shareTextFor } from './ui/share-card.js';
+import { FEATS, createFeatStore, newestFeats } from './feats.js';
 
 const TUTORIAL_KEY = 'vts_siege_tutorial_v1';
 const STREAK_THRESHOLDS = [5, 10, 15, 25, 40];
@@ -87,6 +89,7 @@ export async function startSiege({
   const hud = createHud({ root: hudRoot, copy, heroName: world.state.heroName });
   const audio = createAudio();
   const progress = createProgress();
+  const featStore = createFeatStore();
   let best = progress.best(mapId, mode);
   let liteMode = false;
   let motionReduced = Boolean(reducedMotion);
@@ -116,9 +119,15 @@ export async function startSiege({
   }
   renderer.setReducedMotion(motionReduced);
 
+  // ?aim=assist forces the cone (a mouse never takes over), ?aim=free forces
+  // free aim even on a touch screen. Default: assist on a coarse pointer.
+  const aimParam = new URLSearchParams(window.location.search).get('aim');
+  const assistAim = aimParam === 'assist' ? true : aimParam === 'free' ? false : coarsePointer;
   const input = createInput({
     onPause: () => setPaused(!paused),
     onRestart: () => restart(),
+    // Touch keeps the assist cone; keyboard and mouse aim themselves.
+    assistAim,
   });
   hud.setMuted(audio.isMuted());
   hud.setTouchVisible(matchMedia('(hover: none), (max-width: 900px)').matches);
@@ -235,6 +244,68 @@ export async function startSiege({
     return chips;
   }
 
+  // One choice panel, two kinds of choice: the War Council draft takes the
+  // panel first (it only appears after waves 3/6/9), then the wave omen gets
+  // it — so a build phase that offers both still asks one question at a time.
+  // The signature keeps the DOM rebuild to actual changes.
+  let lastChoiceSignature = null;
+  let choiceMode = null;
+  function syncChoice() {
+    const state = world.state;
+    const inBuild = state.phase === 'build';
+    const draft = inBuild && Boolean(state.draftOffered);
+    const omen = inBuild && Boolean(state.omenOffered);
+    const mode = draft ? 'draft' : omen ? 'omen' : null;
+    const armed = draft ? state.pendingBoon : state.pendingOmen;
+    const signature = mode ? `${mode}:${state.wave}:${armed || 'none'}` : 'hidden';
+    if (signature === lastChoiceSignature) return;
+    lastChoiceSignature = signature;
+    if (!mode) {
+      choiceMode = null;
+      hud.hideOmen();
+      return;
+    }
+    choiceMode = mode;
+    if (mode === 'draft') {
+      hud.showOmen({
+        title: copy.draft.title,
+        body: copy.draft.body,
+        options: (state.draftOptions || []).map((id) => ({
+          id,
+          label: copy.draft.boons[id]?.name || id,
+          desc: copy.draft.boons[id]?.desc || '',
+          active: state.pendingBoon === id,
+        })),
+      });
+      return;
+    }
+    hud.showOmen({
+      options: [
+        { id: 'ironTide', label: copy.omens.ironTide, desc: copy.omens.ironTideDesc, active: armed === 'ironTide' },
+        { id: 'fogOfWar', label: copy.omens.fogOfWar, desc: copy.omens.fogOfWarDesc, active: armed === 'fogOfWar' },
+        { id: 'bloodMoon', label: copy.omens.bloodMoon, desc: copy.omens.bloodMoonDesc, active: armed === 'bloodMoon' },
+        { id: 'mirrorIce', label: copy.omens.mirrorIce, desc: copy.omens.mirrorIceDesc, active: armed === 'mirrorIce' },
+        { id: 'skip', label: copy.omens.skip, desc: '', active: !armed },
+      ],
+    });
+  }
+
+  function featsConfig() {
+    const unlocked = new Set(featStore.unlocked());
+    return {
+      label: copy.feats.title,
+      progressLabel: formatCopy(copy.feats.progress, {
+        unlocked: unlocked.size,
+        total: FEATS.length,
+      }),
+      items: FEATS.map((feat) => ({
+        name: copy.feats[feat.id]?.name || feat.id,
+        desc: copy.feats[feat.id]?.desc || '',
+        done: unlocked.has(feat.id),
+      })),
+    };
+  }
+
   function overlayFor(phase) {
     if (phase === 'ready') {
       const seconds = Math.max(1, Math.ceil(world.state.phaseMs / 1000));
@@ -244,12 +315,16 @@ export async function startSiege({
           ? formatCopy(copy.modes.dailyDesc, { date: today.stamp })
           : mode === 'endless'
             ? copy.modes.endlessDesc
-            : formatCopy(copy.phases.readyBody, { seconds });
+            : `${copy.game.tagline} ${formatCopy(copy.phases.readyBody, { seconds })}`;
       return {
-        title: mode === 'campaign' ? copy.phases.readyTitle : copy.modes[mode],
+        // The ready screen doubles as the title screen: the game's name over
+        // the living scene, with the mode described underneath.
+        title: copy.game.title,
+        big: true,
         body,
         stars: progress.stars(mapId, mode),
         chips: readyChips(),
+        feats: featsConfig(),
         stats: [
           { label: copy.hud.best, value: Math.round(best).toLocaleString('en-US') },
           { label: copy.challenge.seed, value: seed },
@@ -311,6 +386,7 @@ export async function startSiege({
       ],
       history,
       historyLabel: copy.results.history,
+      feats: featsConfig(),
       actions,
     };
   }
@@ -354,16 +430,36 @@ export async function startSiege({
 
   async function share() {
     const state = world.state;
-    const modeLabel = copy.modes[mode] || '';
-    const stars = lastResult ? `${'★'.repeat(lastResult.stars)}${'☆'.repeat(3 - lastResult.stars)} ` : '';
-    const text = `${copy.game.title} — ${modeLabel} · ${world.map.nameKey ? copy.maps[world.map.nameKey] : ''} · ${stars}${Math.round(
-      state.score
-    ).toLocaleString('en-US')} · ${copy.hud.wave} ${state.stats.wavesCleared} · VTS 1097`;
+    const data = {
+      title: copy.game.title,
+      kicker: copy.game.kicker,
+      modeLabel: copy.modes[mode] || '',
+      mapLabel: world.map.nameKey ? copy.maps[world.map.nameKey] : '',
+      stars: lastResult ? lastResult.stars : undefined,
+      score: Math.round(state.score),
+      scoreLabel: copy.results.score,
+      waveLabel: copy.hud.wave,
+      wavesCleared: state.endless
+        ? String(state.stats.wavesCleared)
+        : `${state.stats.wavesCleared} / ${state.wavesTotal}`,
+      seed,
+      footer: 'VTS 1097 · roc-vts.com',
+    };
+    // The share line is a bonus; the card is the share.
     try {
-      await navigator.clipboard.writeText(text);
-      hud.toast(copy.results.copied);
+      await navigator.clipboard.writeText(shareTextFor(data));
     } catch {
-      hud.toast(text);
+      /* clipboard is optional */
+    }
+    try {
+      const outcome = await shareRun(data, {
+        canvasFactory: () => document.createElement('canvas'),
+        navigator,
+        document,
+      });
+      if (outcome === 'saved') hud.toast(copy.results.cardSaved);
+    } catch {
+      hud.toast(shareTextFor(data));
     }
   }
 
@@ -403,6 +499,10 @@ export async function startSiege({
     const summary = summarizeRun(world.state);
     lastResult = progress.record(summary);
     best = Math.max(best, lastResult.best || 0);
+    for (const id of newestFeats(summary, featStore)) {
+      const feat = copy.feats[id];
+      if (feat) hud.toast(`${copy.feats.unlocked}: ${feat.name}`);
+    }
   }
 
   function handleEvents(events) {
@@ -448,6 +548,13 @@ export async function startSiege({
           buzz([40, 30, 60]);
           audio.play('bossDown');
           hud.announce(copy.messages.bossDown, 'boss');
+          break;
+        case 'omen':
+          hud.banner(copy.omens[event.omen] || copy.omens.title, 'wave');
+          break;
+        case 'reaction':
+          hud.announce(copy.reactions[event.reaction] || '', `reaction-${event.reaction}`);
+          audio.play('crit');
           break;
         case 'pickup':
           audio.play('pickup', { step: Math.min(8, world.state.combo.count) });
@@ -614,6 +721,23 @@ export async function startSiege({
     trackPerformance(delta);
 
     const command = input.read();
+    // Mouse aim: the pointer's ground point beats the direction of travel, and
+    // a mouse always means free aim (no assist cone).
+    const pointer = input.pointer();
+    if (assistAim !== true && pointer.active && renderer.groundPoint) {
+      const rect = canvas.getBoundingClientRect();
+      const ground = renderer.groundPoint(pointer.x, pointer.y, rect);
+      if (ground) {
+        const aimX = ground.x - world.state.player.x;
+        const aimZ = ground.z - world.state.player.z;
+        const length = Math.hypot(aimX, aimZ);
+        if (length > 0.001) {
+          command.aimX = aimX / length;
+          command.aimZ = aimZ / length;
+          command.assistCone = false;
+        }
+      }
+    }
     let steps = 0;
     if (hitStopMs > 0) {
       // Hit-stop: hold the simulation briefly. The held time is dropped rather
@@ -643,6 +767,7 @@ export async function startSiege({
       lastPhase = world.state.phase;
       if (lastPhase === 'ready') hud.setOverlay(overlayFor('ready'));
       else if (lastPhase !== 'victory' && lastPhase !== 'defeat') hud.setOverlay(null);
+      syncChoice();
     }
     renderer.render(world.state, delta, accumulator / STEP_MS);
     frames += 1;
@@ -651,6 +776,8 @@ export async function startSiege({
     if (hudClock >= 90) {
       hudClock = 0;
       hud.update(world.state, { best });
+      syncChoice();
+      hud.setSwapReady?.(!(world.state.player.swapCdMs > 0));
     }
 
     if (!isTerminalPhase()) scheduleFrame();
@@ -662,6 +789,10 @@ export async function startSiege({
     nova: () => input.requestNova(),
     ult: () => input.requestUlt(),
     dash: () => input.requestDash(),
+    omen: (id) => {
+      if (choiceMode === 'draft') input.requestBoon(id);
+      else input.requestOmen(id);
+    },
     skipTutorial: () => {
       world.setInput({ skipTutorial: true });
       markTutorialSeen();

@@ -31,22 +31,30 @@ export function starsFor(summary) {
 }
 
 export function summarizeRun(state, extra = {}) {
+  // A run whose sim never filled these fields still summarizes: the numbers the
+  // feats read fall back to zero and an unbuilt map counts as no sockets.
+  const stats = state.stats || {};
   return {
     at: extra.at || new Date().toISOString(),
     mapId: state.mapId,
     mode: state.mode,
     seed: state.seed,
     score: Math.round(state.score),
-    wavesCleared: state.stats.wavesCleared,
-    kills: state.stats.kills,
-    maxChain: state.stats.maxChain,
-    towersBuilt: state.stats.towersBuilt,
-    damageTaken: Math.round(state.stats.damageTaken),
-    bossKills: state.stats.bossKills,
+    wavesCleared: stats.wavesCleared,
+    kills: stats.kills,
+    maxChain: stats.maxChain,
+    towersBuilt: stats.towersBuilt,
+    damageTaken: Math.round(stats.damageTaken),
+    bossKills: stats.bossKills,
     timeMs: Math.round(state.timeMs),
     campaignCleared: Boolean(state.campaignCleared),
     victory: state.phase === 'victory',
     coreRatio: Math.max(0, state.core.hp / state.core.maxHp),
+    burnKills: stats.burnKills || 0,
+    fireShots: stats.fireShots || 0,
+    iceShots: stats.iceShots || 0,
+    towersMaxed: (state.towers || []).filter((t) => t.level >= (extra.towerMaxLevel || 5)).length,
+    socketsTotal: (state.sockets || []).length,
   };
 }
 

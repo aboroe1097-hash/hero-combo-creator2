@@ -1,10 +1,40 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.9";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.12";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.5.12",
+    "date": "2026-09-25",
+    "highlights": [
+      "**The War Council.** After the third, sixth and ninth wave — every third wave in Endless War — pick one of three boons for the rest of the run: Ember Heart (fire burns 40% harder), Frost Grip (ice slows bite deeper and hold longer), Swift Wings (faster movement, shorter dash coo…",
+      "**Elemental reactions.** Ice onto a burning foe **shatters** it (bonus damage, armour ignored, the burn is consumed); fire onto a slowed foe **melts** it (double burn, slow cleared); three slows in a row **deep-freeze** a foe in place for a moment; and a burning foe that dies **…",
+      "Wing swaps now sit on a 2.5-second cooldown and the wing buttons dim while it runs, so committing to an element is a decision rather than a toggle."
+    ]
+  },
+  {
+    "version": "16.5.11",
+    "date": "2026-09-25",
+    "highlights": [
+      "**Velo aims where you aim.** Keyboard and mouse players now fire in the direction they aim — the mouse aims at the point under the cursor — instead of the old auto-lock on the nearest enemy. Touch players keep the assist on purpose: shots still bend to a foe inside a narrow cone…",
+      "**Six enemy roles make waves read as armies.** The shieldwall blocks bolts that hit its front but not splash, fire or a flank; the skirmisher kites and shoots; the saboteur hunts your towers and ignores the stronghold while any tower stands; the herald buffs nearby foes; the hau…",
+      "**Wave omens.** From the third wave on (every wave in Endless War), choose the omen the next wave carries, or take none: Iron Tide (every foe armoured, +60% gold), Fog of War (+40% score), Blood Moon (faster foes, slower chains, +50% score) or Mirror Ice (ice barely bites, +80% …",
+      "**Feats.** Six named one-off challenges — Wingborne, Ashfall, Cold Calculus, Untouched, Warlord's Bane and Architect — are tracked in the browser, listed on the title and results cards, and announced the moment one is earned.",
+      "Fixed: on phones under 560 px wide the tower build picker was pushed below the arena and clipped; it now sits above the thumb controls where it belongs."
+    ]
+  },
+  {
+    "version": "16.5.10",
+    "date": "2026-09-25",
+    "highlights": [
+      "The arcade's real-time game is now **Velo's Rampart** — renamed from Eden Siege everywhere it appears, in all 13 languages, so it no longer reads like one of the Eden tools beside Eden Hub and Eden Map. The address stays `eden-siege.html`, so old links keep working. The mode chi…",
+      "The game's ready screen is a living title scene: a slow camera drift over the rampart while Velo waits, with the game title over it. Reduced-motion players get the same scene without the drift.",
+      "**Share run** now makes a share card image — score, stars, wave, seed and a drawn Velo emblem — offered to the phone's share sheet where available and downloaded as a PNG otherwise. The share line still goes to the clipboard.",
+      "The arcade's next releases are planned in `docs/plans/arcade-revival.md`: aim rework with touch assist, enemy roles and wave modifiers, the pick-1-of-3 draft with elemental reactions, hero lineups from the real combo data, ghost replays and share links, the Alliance Daily league…"
+    ]
+  },
   {
     "version": "16.5.9",
     "date": "2026-09-25",
@@ -75,37 +105,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Eden's light theme uses darker frost accents, and the vote countdown is translated instead of showing English day/hour abbreviations.",
       "Velo stays clear of phone content while scrolling, returns when users scroll up or focus it, and the install prompt controls meet the 44-pixel touch target.",
       "Velo's Eden guide, scoring and season answers now use the published Eden X2 projection, report requested-season mismatches, and never reuse X1 management-vote data."
-    ]
-  },
-  {
-    "version": "16.5.2",
-    "date": "2026-09-24",
-    "highlights": [
-      "One look across the standalone tools: VtsScore, Downloads, Arcade, Eden, Eden Siege, Specialization Towers and Battle Simulator share the same footer and link set, and VtsScore and Downloads gained the branded bar with Back to tools. Eden's deck button now reads Back to Tools, a…",
-      "More tools lists PDF downloads and Buildings; Buildings opens Planners ▸ Castle directly (#researchTowers?subtab=research&planner=castle).",
-      "Research planner: a full visual pass — sub-tab pills, cards, styled fields, stat tiles for remaining costs, scrollable tables with sticky headers, and a progress bar per path node — for dark and light themes, phones and right-to-left languages.",
-      "Specialization Towers: every node now shows its medal cost from the community workbook for all three troops (735 nodes each), where it used to say the cost was unknown. Repeated node names at different strengths are matched by the strength the workbook states, and five naming di…",
-      "Eden Operations Lab: a task board with six common jobs filtered by season stage and role, a saved three-step checklist per job, one-tap Critical/Essential/Advanced specialty routes, attacker and support counters for the chosen siege objective, links into Eden Map and Loyalty, an…",
-      "Duty list PNGs no longer carry a data-sources line: they are the alliance's own records. Exports whose credit list does not fit now point to the site instead of naming only the first contributor."
-    ]
-  },
-  {
-    "version": "16.5.1",
-    "date": "2026-09-24",
-    "highlights": [
-      "Fixed: the site could fail to open with \"This site can't be reached\" in a browser whose offline cache storage was damaged. The offline helper now treats every cache read and write as optional, so the page always loads from the network when the cache cannot be used, and the fixed…"
-    ]
-  },
-  {
-    "version": "16.5.0",
-    "date": "2026-09-23",
-    "highlights": [
-      "Motion and visual-craft release. Hubs gained a one-shot card entry and a pointer spotlight, tab changes cross-fade the incoming panel where the browser supports View Transitions, and the loader settles once when loading really completes.",
-      "Confirmed actions now get a short celebration: a saved combo, a copied or shared link, and a saved Eden vote. Nothing is celebrated until the existing action has already succeeded, and reduced-motion or Save-Data sessions keep the same success text with no particles.",
-      "The top combo result's shimmer runs twice instead of looping forever, and the open hero detail card follows the pointer with a small capped tilt.",
-      "Heroes: the Atlas gained a season timeline. It lists the canonical hero-release seasons with hero counts that reconcile with the season filter, links each season to its shareable deep link, is a vertical list on phones, and stays readable at 320px, in both themes, and under redu…",
-      "Buildings: added Castle 26–30 direct costs across Orichalcum, gold, food, lumber, charcoal, marble and iron, plus a searchable planner for the 43 buildings and their level costs, prerequisites and final-level bonuses. Missing sheet cells remain unknown, and the sheet's mismatche…",
-      "Room to breathe: removed unused atmosphere utilities and four dead tokens (about 3 KiB of entry CSS) and lowered the entry CSS ceiling by the measured amount."
     ]
   }
 ].map((release) =>
