@@ -39,7 +39,7 @@ async function openEdenComplaints(page, options = {}) {
     localStorage.setItem('vts_theme', 'dark');
   });
 
-  await page.goto('/eden-x2.html', { waitUntil: 'domcontentloaded' });
+  await page.goto(`/eden-x2.html${options.hash || ''}`, { waitUntil: 'domcontentloaded' });
   // The module reveals the section only once its handlers are bound, so this
   // doubles as the "the module loaded" assertion.
   await expect
@@ -125,4 +125,14 @@ test('the filing copy follows the page language', async ({ page }) => {
     'aria-label',
     'Форма проблем и жалоб для руководства альянса'
   );
+});
+
+test('the Contact Devs link lands on the complaint form already open', async ({ page }) => {
+  const outbound = await openEdenComplaints(page, { hash: '#edenX1Complaints' });
+  await expect(page.locator('#edenX1ComplaintForm')).toBeVisible();
+  await expect(page.locator('#edenX1ComplaintOpen')).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('#edenX1ComplaintCategory')).toBeFocused();
+  const contact = page.locator('footer a', { hasText: 'Contact Devs' }).first();
+  await expect(contact).toHaveAttribute('href', 'eden-x2.html#edenX1Complaints');
+  expect(outbound).toEqual([]);
 });

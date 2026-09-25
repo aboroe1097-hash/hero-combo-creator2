@@ -1,8 +1,10 @@
 import './dom-stub.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { renderDocument } from '../../scripts/pdf/lib/layout.mjs';
 import {
   assertNoForbiddenWatermarks,
+  csvFooterCellLines,
   csvFooterLines,
   drawCanvasFooter,
   getExportBranding,
@@ -41,31 +43,54 @@ test('branding composes display name from seo.js constants', () => {
   assert.match(brand.appVersion, /^\d+\.\d+\.\d+$/);
 });
 
-test('credit footers include every credited source by name', () => {
-  const brand = getExportBranding();
+const FORMER_CREDITS = [
+  'DonPablone',
+  'FedeSack',
+  'Mtness',
+  'Raven',
+  'Cris Minime',
+  'riseofcastles.net community',
+  'Rustablesafe (concepts)',
+];
+
+test('csv footers name the site and time but carry no Sources credit line', () => {
+  const brand = getExportBranding({ revision: 'r4', verificationStatus: 'current' });
   const footers = csvFooterLines(brand);
   const joined = footers.join('\n');
-  for (const credit of [
-    'DonPablone',
-    'FedeSack',
-    'Mtness',
-    'Raven',
-    'Cris Minime',
-    'riseofcastles.net community',
-    'Rustablesafe (concepts)',
-  ]) {
-    assert.ok(joined.includes(credit), `footer must credit ${credit}`);
-  }
   assert.ok(joined.includes(brand.displayName));
   assert.ok(joined.includes(brand.appVersion));
+  assert.ok(footers.some((line) => line === `Generated at ${brand.generatedAt}`));
+  assert.doesNotMatch(joined, /Sources/i);
+  FORMER_CREDITS.forEach((credit) => assert.ok(!joined.includes(credit), credit));
+  assert.equal('sourceCredits' in brand, false);
 });
 
-test('json meta block carries schema, app, dataset and sources', () => {
+test('csv footer cell lines are each one quoted cell', () => {
+  const lines = csvFooterCellLines({
+    ...getExportBranding(),
+    datasetRevision: 'a,b "c"',
+  });
+  lines.forEach((line) => assert.match(line, /^"#(?:[^"]|"")*"$/));
+  assert.ok(lines.some((line) => line.includes('a,b ""c""')));
+});
+
+test('json meta block carries schema, app and dataset but no sources credit', () => {
   const meta = jsonMetaBlock(getExportBranding({ revision: 'r4' }), 'roc-vts.planner', 1);
   assert.equal(meta.schema, 'roc-vts.planner');
   assert.equal(meta.schemaVersion, 1);
   assert.equal(meta.dataset.revision, 'r4');
-  assert.equal(meta.sources.length, 7);
+  assert.equal('sources' in meta, false);
+});
+
+test('the community PDF layout prints no Sources credit line', () => {
+  const html = renderDocument({
+    branding: getExportBranding({ revision: 'r4' }),
+    title: 'Test',
+    sections: [],
+  });
+  assert.doesNotMatch(html, /Sources/);
+  FORMER_CREDITS.forEach((credit) => assert.ok(!html.includes(credit), credit));
+  assert.match(html, /About this data/);
 });
 
 test('watermark assertion rejects DONPABLONE but allows legitimate L96 attribution', () => {
@@ -74,7 +99,7 @@ test('watermark assertion rejects DONPABLONE but allows legitimate L96 attributi
   assert.equal(assertNoForbiddenWatermarks('Source: L96 research notes'), true);
 });
 
-test('canvas footer fits wide canvases and credits sources', () => {
+test('canvas footer fits wide canvases and draws no Sources credit', () => {
   const ctx = fakeCtx();
   const brand = getExportBranding();
   const fits = drawCanvasFooter(ctx, brand, { x: 28, y: 100, width: 1200 });
@@ -82,7 +107,8 @@ test('canvas footer fits wide canvases and credits sources', () => {
   const text = ctx.calls.map((call) => call.text).join('\n');
   assert.ok(text.includes(brand.displayName));
   assert.ok(text.includes(brand.appVersion));
-  assert.ok(text.includes('Sources:'));
+  assert.ok(text.includes(brand.siteUrl));
+  assert.doesNotMatch(text, /Sources/);
 });
 
 test('canvas footer truncates instead of overflowing narrow canvases', () => {
@@ -94,22 +120,22 @@ test('canvas footer truncates instead of overflowing narrow canvases', () => {
   assert.ok(line2.endsWith('…'));
 });
 
-test('canvas footer omits the Sources segment when an export passes no credits', () => {
-  const ctx = fakeCtx();
-  const brand = { ...getExportBranding(), sourceCredits: [] };
-  drawCanvasFooter(ctx, brand, { x: 28, y: 100, width: 1200 });
-  const text = ctx.calls.map((call) => call.text).join('\n');
-  assert.ok(!text.includes('Sources:'));
-  assert.ok(!text.includes('DonPablone'));
-  assert.ok(text.includes(brand.siteUrl));
-});
-
-test('a footer too narrow for every credit never singles out one name', () => {
-  const ctx = fakeCtx();
-  const brand = getExportBranding();
-  drawCanvasFooter(ctx, brand, { x: 28, y: 100, width: 520 });
-  const line2 = ctx.calls[1].text;
-  assert.ok(!line2.includes('DonPablone'), line2);
+test('canvas footer ignores a legacy sourceCredits field', () => {
+  for (const width of [1200, 520, 100]) {
+    const ctx = fakeCtx();
+    drawCanvasFooter(
+      ctx,
+      { ...getExportBranding(), sourceCredits: FORMER_CREDITS },
+      {
+        x: 28,
+        y: 100,
+        width,
+      }
+    );
+    const text = ctx.calls.map((call) => call.text).join('\n');
+    assert.doesNotMatch(text, /Sources/);
+    assert.ok(!text.includes('DonPablone'), text);
+  }
 });
 
 test('truncateCanvasText reports the fits contract', () => {

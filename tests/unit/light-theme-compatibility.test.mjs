@@ -167,7 +167,9 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   // the member route, the admin dashboard and the AI public-data adapter emits
   // two chunks no single route owned before (measured 733 files, three spare).
   // 16.5.3 adds one measured 518-byte shared locale-pack timeout chunk.
-  assert.match(sizeCheck, /deployFileCount: 810/);
+  // 16.5.9: +4 measured chunks for the admin export model, the R5 bonus export
+  // and the shared game-time parser; raised by the minimum.
+  assert.match(sizeCheck, /deployFileCount: 814/);
   assert.match(sizeCheck, /'profile\.html': \{ desktop: 25 \* 1024, mobile: 25 \* 1024 \}/);
   assert.match(sizeCheck, /'arcade\.html': \{ desktop: 463 \* 1024, mobile: 585 \* 1024 \}/);
   assert.match(

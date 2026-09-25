@@ -110,7 +110,7 @@ export async function researchCosts() {
     verificationStatus: provenance.verificationStatus,
     title: 'Research costs by tree',
     subtitle:
-      'Every research node with its medal ladder, gem cost and research time, grouped by tree. Credit: Raven G, Ash Roe and the riseofcastles.net community.',
+      'Every research node with its medal ladder, gem cost and research time, grouped by tree.',
     meta: [
       { label: 'Trees', value: String(trees.length) },
       { label: 'Nodes', value: String(dataset.rows.length) },

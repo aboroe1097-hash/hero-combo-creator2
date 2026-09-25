@@ -385,7 +385,7 @@ test('Eden Pathing is a lazy, enabled Eden Hub sub-tool', () => {
   assert.match(ops, /href="#edenHub\?subtab=pathing"/);
   assert.doesNotMatch(ops, /is-soon/);
   assert.match(app, /import '\.\.\/css\/eden-pathing\.css'/);
-  assert.match(app, /sourceCredits: \[\]/);
+  assert.doesNotMatch(app, /sourceCredits/);
   assert.match(app, /drawCanvasFooter/);
   // The route engine is the Eden Map's, not a copy.
   assert.match(app, /findRoute/);
