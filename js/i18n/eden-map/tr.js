@@ -102,7 +102,8 @@ export default {
     subTabPrevious: 'Önceki sezonlar · {previousSeason}',
     subTabPathing: 'Eden Rota Planı',
     subTabPathingDesc: 'Dağ ara noktalarıyla A→B kapı rotaları planla ve PNG olarak dışa aktar.',
-    pathingIntro: 'A noktasından B noktasına kapılar ve dağ geçitleri üzerinden sefer rotaları planla, ardından ekibin için PNG dışa aktar.',
+    pathingIntro:
+      'A noktasından B noktasına kapılar ve dağ geçitleri üzerinden sefer rotaları planla, ardından ekibin için PNG dışa aktar.',
     pathingPlan: 'Plan',
     pathingPlanName: 'Plan adı',
     pathingDefaultPlan: 'Eden planı {n}',
@@ -122,7 +123,8 @@ export default {
     pathingModeEnd: 'Hedef (B)',
     pathingHintStart: 'Başlangıcı (A) ayarlamak için bir yapıya veya boş araziye dokun.',
     pathingHintEnd: 'Seferin bittiği yere dokun (B).',
-    pathingHintWaypoint: 'İçinden geçmek için bir kapıya, dağ geçidi eklemek için boş araziye dokun.',
+    pathingHintWaypoint:
+      'İçinden geçmek için bir kapıya, dağ geçidi eklemek için boş araziye dokun.',
     pathingSearch: 'Yapı veya koordinat ara',
     pathingSearchPh: 'Kapı, kasaba, başkent veya 800:800',
     pathingNoResults: 'Eşleşen yapı yok.',
@@ -140,9 +142,10 @@ export default {
     pathingLegTiles: '≈ {tiles} kare',
     pathingLegTilesWalked: '≈ {tiles} kare (geçilen: {walked})',
     pathingTotalTiles: 'Toplam ≈ {tiles} kare',
-    pathingPathers: 'Tahmini pather: ≈ {count} (pather başına {each} kare varsayımıyla)',
+    pathingPathers: 'Pather: {count} (pather başına {each} kare)',
     pathingRepeatTiles: 'İki kez geçilen kare: {tiles}',
-    pathingBlocked: 'Bir bölüm geçilmez arazi tarafından engelleniyor, bu yüzden düz çizgi gösteriliyor. Etrafından dolaşmak için bir dağ geçidi ekle.',
+    pathingBlocked:
+      'Bir bölüm geçilmez arazi tarafından engelleniyor, bu yüzden düz çizgi gösteriliyor. Etrafından dolaşmak için bir dağ geçidi ekle.',
     pathingRouting: 'Rota hesaplanıyor…',
     pathingNeedTwo: 'Rotayı çizmek için bir hedef (B) ekle.',
     pathingStopAdded: '{stop} eklendi.',
@@ -157,11 +160,13 @@ export default {
     pathingZoomIn: 'Yakınlaştır',
     pathingZoomOut: 'Uzaklaştır',
     pathingFit: 'Haritayı sığdır',
-    pathingMapLabel: 'Eden rota haritası. Kaydırmak için sürükle veya ok tuşlarını kullan; yakınlaştırmak için iki parmakla sıkıştır, tekerleği kaydır ya da + ve − tuşlarına bas; durak eklemek için dokun.',
+    pathingMapLabel:
+      'Eden rota haritası. Kaydırmak için sürükle veya ok tuşlarını kullan; yakınlaştırmak için iki parmakla sıkıştır, tekerleği kaydır ya da + ve − tuşlarına bas; durak eklemek için dokun.',
     pathingGate: 'Kapı',
     pathingImpassable: 'Geçilmez',
     pathingControls: 'Rota kontrolleri',
-    pathingStorageOff: 'Bu tarayıcı kaydetmeyi engelliyor. Planı saklamak için “Bağlantıyı paylaş” seçeneğini kullan.',
+    pathingStorageOff:
+      'Bu tarayıcı kaydetmeyi engelliyor. Planı saklamak için “Bağlantıyı paylaş” seçeneğini kullan.',
     routePlayback: 'Rota oynatma',
     routePlay: 'Oynat',
     routePause: 'Duraklat',

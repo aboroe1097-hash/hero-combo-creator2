@@ -121,6 +121,8 @@ export default Object.freeze({
   emptyTitle: '没有匹配的行动',
   assigned: '已报名',
   staffMissing: '还需 {count} 名玩家',
+  countsReadOnly: '共享计数 · 修改需要管理员登录和网络连接',
+  countSaveFailed: '共享计数未能保存，你的修改已还原。',
   'op.specialty-build.title': '专精配置',
   'op.material-budget.title': '材料预算',
   'op.hold-tile.title': '更高地块',

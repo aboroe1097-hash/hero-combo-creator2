@@ -125,6 +125,8 @@ export default Object.freeze({
   emptyTitle: 'No operation matches',
   assigned: 'Signed up',
   staffMissing: '{count} more players needed',
+  countsReadOnly: 'Shared counts · changing them needs an admin sign-in and a connection',
+  countSaveFailed: 'The shared counts did not save. Your change was reverted.',
   'op.specialty-build.title': 'Specialty build',
   'op.material-budget.title': 'Material budget',
   'op.hold-tile.title': 'Higher tile tier',

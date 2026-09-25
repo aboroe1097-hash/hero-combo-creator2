@@ -125,6 +125,9 @@ export default Object.freeze({
   emptyTitle: 'Keine passende Operation',
   assigned: 'Angemeldet',
   staffMissing: 'Noch {count} Spieler nötig',
+  countsReadOnly: 'Geteilte Zahlen · Änderungen brauchen eine Admin-Anmeldung und eine Verbindung',
+  countSaveFailed:
+    'Die geteilten Zahlen wurden nicht gespeichert. Deine Änderung wurde zurückgenommen.',
   'op.specialty-build.title': 'Spezialisierung',
   'op.material-budget.title': 'Materialbudget',
   'op.hold-tile.title': 'Höhere Feldstufe',

@@ -123,6 +123,8 @@ export default Object.freeze({
   emptyTitle: '일치하는 작전이 없습니다',
   assigned: '참가 인원',
   staffMissing: '{count}명 더 필요',
+  countsReadOnly: '공유 집계 · 변경하려면 관리자 로그인과 연결이 필요합니다',
+  countSaveFailed: '공유 집계가 저장되지 않았습니다. 변경 사항을 되돌렸습니다.',
   'op.specialty-build.title': '전문화 빌드',
   'op.material-budget.title': '재료 예산',
   'op.hold-tile.title': '더 높은 타일',

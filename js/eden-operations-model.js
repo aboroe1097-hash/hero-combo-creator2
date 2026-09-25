@@ -70,9 +70,7 @@ function integer(value, min, max, fallback) {
 }
 
 const CHECKLIST_KEYS = new Set(
-  EDEN_OPERATION_PLAYBOOKS.flatMap((entry) =>
-    entry.steps.map((_, index) => `${entry.id}.${index}`)
-  )
+  EDEN_OPERATION_PLAYBOOKS.flatMap((entry) => entry.steps.map((_, index) => `${entry.id}.${index}`))
 );
 
 function normalizeChecklist(value) {
@@ -161,12 +159,7 @@ export function normalizeEdenOperationsState(value = {}) {
     },
     siege: {
       campLevels: campLevels.map((level) => integer(level, 0, 20, 1)),
-      specialtyRank: integer(
-        source.siege?.specialtyRank,
-        0,
-        20,
-        defaultState.siege.specialtyRank
-      ),
+      specialtyRank: integer(source.siege?.specialtyRank, 0, 20, defaultState.siege.specialtyRank),
       targetTileLevel: integer(
         source.siege?.targetTileLevel,
         1,
@@ -274,15 +267,12 @@ export function calculateTrainingComparison(settings = {}) {
 }
 
 export function calculateBuildingUpgrade(settings = {}) {
-  const buildingId = BUILDING_UPGRADE_COSTS[settings.buildingId]
-    ? settings.buildingId
-    : 'workshop';
+  const buildingId = BUILDING_UPGRADE_COSTS[settings.buildingId] ? settings.buildingId : 'workshop';
   const costs = BUILDING_UPGRADE_COSTS[buildingId];
   const currentLevel = integer(settings.currentLevel, 1, 20, 1);
   const targetLevel = integer(settings.targetLevel, 1, 20, 20);
   const discount =
-    BUILDING_DISCOUNTS.find((entry) => entry.id === settings.discountId) ??
-    BUILDING_DISCOUNTS[0];
+    BUILDING_DISCOUNTS.find((entry) => entry.id === settings.discountId) ?? BUILDING_DISCOUNTS[0];
   const start = Math.min(currentLevel, targetLevel);
   const end = Math.max(currentLevel, targetLevel);
   const rows = [];
@@ -368,8 +358,7 @@ export function calculateCampUpgradeOrder(settings = {}) {
 }
 
 export function getSiegePlan(structureId, banner = false) {
-  const structure =
-    EDEN_STRUCTURES.find((entry) => entry.id === structureId) ?? EDEN_STRUCTURES[0];
+  const structure = EDEN_STRUCTURES.find((entry) => entry.id === structureId) ?? EDEN_STRUCTURES[0];
   return {
     structure,
     banner: Boolean(banner),
@@ -464,8 +453,10 @@ function bytesToBase64(bytes) {
 }
 
 function base64ToBytes(value) {
-  const padded = value.replaceAll('-', '+').replaceAll('_', '/') + '==='.slice((value.length + 3) % 4);
-  const binary = typeof atob === 'function' ? atob(padded) : Buffer.from(padded, 'base64').toString('binary');
+  const padded =
+    value.replaceAll('-', '+').replaceAll('_', '/') + '==='.slice((value.length + 3) % 4);
+  const binary =
+    typeof atob === 'function' ? atob(padded) : Buffer.from(padded, 'base64').toString('binary');
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
 
@@ -481,4 +472,92 @@ export function decodeEdenOperationsState(value) {
 
 export function trainingBenchmarkPresets() {
   return SPECIALTY_BONUS_PRESETS;
+}
+
+// ---------------------------------------------------------------------------
+// Shared staffing counters (Firestore: eden_operations/current)
+//
+// The assigned-player counters used to live only in this device's localStorage.
+// They are alliance business, so they moved to one shared document: any signed-in
+// member reads it, an admin writes it, and the rules validate the shape. The
+// helpers below are pure, so a value is normalized and bounded before it reaches
+// Firestore or a screen, and the same bounds are mirrored in firestore.rules.
+
+export const EDEN_OPERATIONS_SHARED_PATH = Object.freeze(['eden_operations', 'current']);
+/** Both sides of the wire agree on these bounds: the model and the rules. */
+export const MAX_SHARED_ASSIGNED = 500;
+export const MAX_SHARED_OBJECTIVES = 40;
+export const EDEN_OPERATIONS_SHARED_CACHE_KEY = 'vts_eden_operations_counts_v1';
+
+const SHARED_SIDES = Object.freeze(['attackers', 'support']);
+const OBJECTIVE_IDS = new Set(EDEN_STRUCTURES.map((entry) => entry.id));
+const OBJECTIVE_KEY_PATTERN = /^[a-z0-9-]{1,32}(:banner)?$/;
+
+/** The key one objective's counters live under: the structure, and its banner variant. */
+export function objectiveKey(structureId, banner = false) {
+  const id = OBJECTIVE_IDS.has(structureId) ? structureId : EDEN_STRUCTURES[0].id;
+  return `${id}${banner ? ':banner' : ''}`;
+}
+
+/** True when a key names an objective this build knows about. */
+export function isObjectiveKey(key) {
+  if (typeof key !== 'string' || !OBJECTIVE_KEY_PATTERN.test(key)) return false;
+  return OBJECTIVE_IDS.has(key.replace(/:banner$/, ''));
+}
+
+/** Counts that came from Firestore, the cache or an older build, made safe. */
+export function normalizeSharedCounts(raw) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const counts = {};
+  for (const [key, value] of Object.entries(source)) {
+    if (!isObjectiveKey(key) || !value || typeof value !== 'object') continue;
+    counts[key] = {
+      attackers: integer(value.attackers, 0, MAX_SHARED_ASSIGNED, 0),
+      support: integer(value.support, 0, MAX_SHARED_ASSIGNED, 0),
+    };
+    if (Object.keys(counts).length >= MAX_SHARED_OBJECTIVES) break;
+  }
+  return counts;
+}
+
+/** One objective's counters; zeroes until the alliance counts it. */
+export function sharedCountsFor(counts, key) {
+  const entry = counts && typeof counts === 'object' ? counts[key] : null;
+  return {
+    attackers: integer(entry?.attackers, 0, MAX_SHARED_ASSIGNED, 0),
+    support: integer(entry?.support, 0, MAX_SHARED_ASSIGNED, 0),
+  };
+}
+
+/** A copy with one side of one objective set, clamped to the shared bounds. */
+export function withSharedCount(counts, key, side, value) {
+  const normalized = normalizeSharedCounts(counts);
+  if (!isObjectiveKey(key) || !SHARED_SIDES.includes(side)) return normalized;
+  return {
+    ...normalized,
+    [key]: {
+      ...sharedCountsFor(normalized, key),
+      [side]: integer(value, 0, MAX_SHARED_ASSIGNED, 0),
+    },
+  };
+}
+
+/** The counters after a click: the current value plus the button's delta. */
+export function applySharedDelta(counts, key, side, delta) {
+  const current = sharedCountsFor(counts, key);
+  return withSharedCount(counts, key, side, current[side] + Number(delta || 0));
+}
+
+/** The write payload the rules accept: known keys, bounded integers, no extras. */
+export function sharedCountsPayload(counts) {
+  const payload = {};
+  for (const [key, value] of Object.entries(normalizeSharedCounts(counts))) {
+    payload[key] = { attackers: value.attackers, support: value.support };
+  }
+  return payload;
+}
+
+/** Every objective key this build can write; firestore.rules lists the same set. */
+export function sharedObjectiveKeys() {
+  return EDEN_STRUCTURES.flatMap((entry) => [entry.id, `${entry.id}:banner`]);
 }

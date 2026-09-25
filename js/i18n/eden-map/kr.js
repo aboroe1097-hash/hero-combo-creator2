@@ -102,7 +102,8 @@ export default {
     subTabPrevious: '이전 시즌 · {previousSeason}',
     subTabPathing: '에덴 경로',
     subTabPathingDesc: '산악 경유지를 포함한 A→B 관문 경로를 계획하고 PNG로 내보냅니다.',
-    pathingIntro: '관문과 산악 통로를 거쳐 A에서 B까지 행군 경로를 계획하고 팀과 공유할 PNG로 내보내세요.',
+    pathingIntro:
+      '관문과 산악 통로를 거쳐 A에서 B까지 행군 경로를 계획하고 팀과 공유할 PNG로 내보내세요.',
     pathingPlan: '계획',
     pathingPlanName: '계획 이름',
     pathingDefaultPlan: '에덴 계획 {n}',
@@ -122,7 +123,8 @@ export default {
     pathingModeEnd: '목적지 (B)',
     pathingHintStart: '건물이나 빈 땅을 탭해 출발지(A)를 설정하세요.',
     pathingHintEnd: '행군이 끝나는 곳을 탭하세요 (B).',
-    pathingHintWaypoint: '관문을 탭하면 그 관문을 거쳐 가고, 빈 땅을 탭하면 산악 통로가 추가됩니다.',
+    pathingHintWaypoint:
+      '관문을 탭하면 그 관문을 거쳐 가고, 빈 땅을 탭하면 산악 통로가 추가됩니다.',
     pathingSearch: '건물 또는 좌표 찾기',
     pathingSearchPh: '관문, 도시, 수도 또는 800:800',
     pathingNoResults: '일치하는 건물이 없습니다.',
@@ -140,9 +142,10 @@ export default {
     pathingLegTiles: '≈ {tiles}칸',
     pathingLegTilesWalked: '≈ {tiles}칸 ({walked}칸 이동)',
     pathingTotalTiles: '총 ≈ {tiles}칸',
-    pathingPathers: '예상 pather: ≈ {count}명 (1명당 {each}칸 가정)',
+    pathingPathers: 'pather: {count}명 (1명당 {each}칸)',
     pathingRepeatTiles: '두 번 지나간 칸: {tiles}',
-    pathingBlocked: '통과할 수 없는 지형에 막힌 구간이 있어 직선으로 표시됩니다. 우회하려면 산악 통로를 추가하세요.',
+    pathingBlocked:
+      '통과할 수 없는 지형에 막힌 구간이 있어 직선으로 표시됩니다. 우회하려면 산악 통로를 추가하세요.',
     pathingRouting: '경로 계산 중…',
     pathingNeedTwo: '경로를 그리려면 목적지(B)를 추가하세요.',
     pathingStopAdded: '{stop} 추가됨.',
@@ -157,7 +160,8 @@ export default {
     pathingZoomIn: '확대',
     pathingZoomOut: '축소',
     pathingFit: '지도 맞춤',
-    pathingMapLabel: '에덴 경로 지도. 드래그하거나 방향키로 이동하고, 핀치·스크롤 또는 +와 − 키로 확대/축소하며, 탭해서 지점을 추가합니다.',
+    pathingMapLabel:
+      '에덴 경로 지도. 드래그하거나 방향키로 이동하고, 핀치·스크롤 또는 +와 − 키로 확대/축소하며, 탭해서 지점을 추가합니다.',
     pathingGate: '관문',
     pathingImpassable: '통과 불가',
     pathingControls: '경로 설정',
