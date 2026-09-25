@@ -107,11 +107,14 @@ test('every phase has its name, "now" line and notice in the VtsScore catalogue'
   }
 });
 
-test('game time is UTC+2 and the countdown never goes negative', () => {
+test('game time is UTC−2 and the countdown never goes negative', () => {
   const ms = gameTimeToMillis('2026-10-05', '20:00');
   assert.equal(formatGameTime(ms, 'en'), '05 Oct 20:00');
   assert.equal(formatGameTime(gameTimeToMillis('2026-10-06', '00:30'), 'en'), '06 Oct 00:30');
-  assert.equal(formatLocalTime(ms, 'en', 'UTC'), 'Mon 05 Oct 18:00');
+  assert.equal(formatLocalTime(ms, 'en', 'UTC'), 'Mon 05 Oct 22:00');
+  // 00:00 game time = 02:00Z (06:00 in Dubai).
+  assert.equal(formatGameTime(Date.parse('2026-10-06T02:00:00Z'), 'en'), '06 Oct 00:00');
+  assert.equal(formatGameTime(Date.parse('2026-10-06T01:59:00Z'), 'en'), '05 Oct 23:59');
   assert.equal(formatGameTime(NaN), '');
 
   assert.deepEqual(splitCountdown(((2 * 24 + 4) * 3600 + 12 * 60 + 9) * 1000), {

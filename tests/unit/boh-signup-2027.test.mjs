@@ -24,7 +24,7 @@ import {
   validateBohSignupDocument,
   writeBohSignupFormValues,
 } from '../../js/boh-signup-document.js';
-import { VTS_SCORE_COPY_KEYS } from '../../js/vts-score-i18n.js';
+import { VTS_SCORE_COPY_KEYS, VTS_SCORE_LANGUAGES } from '../../js/vts-score-i18n.js';
 import {
   availableLanguages,
   loadTranslationsForLanguage,
@@ -453,7 +453,9 @@ test('the registration form collects Artifact Power, and Towers is named on the 
   const artifact = page.match(/<label for="vtsScoreSignupArtifactPower">[\s\S]*?<\/label>/);
   assert.ok(artifact, 'the artifact power field is on the page');
   assert.match(artifact[0], /data-boh-field="stats\.artifactPower"/);
-  assert.match(artifact[0], /data-vts-i18n="fieldArtifactPower"/);
+  // The sign-up label carries the "(optional)" marker; the OCR review rows keep
+  // the plain fieldArtifactPower label through POWER_FIELD_I18N.
+  assert.match(artifact[0], /data-vts-i18n="signupArtifactPower"/);
   assert.doesNotMatch(artifact[0], /\brequired\b/);
 
   // Filled back from a saved signup, which walks the declared paths.
@@ -468,11 +470,30 @@ test('the registration form collects Artifact Power, and Towers is named on the 
   assert.doesNotMatch(requiredBlock[1], /artifactPower/);
   assert.match(requiredBlock[1], /'unitSpecialtyPower'/);
 
-  // The specialty row names Towers, in every page locale, and nowhere is it
-  // still the bare label.
+  // The specialty row names Towers, in every page locale, with that locale's
+  // own word for Towers (not just any parenthetical).
   const specialty = copy.match(/fieldUnitSpecialtyPower: '[^']+'/g) || [];
   assert.equal(specialty.length, 6, 'six page locales carry the label');
-  for (const line of specialty) assert.match(line, /\(/);
+  const breakdown = copy.slice(
+    copy.indexOf('const FULL_BREAKDOWN_COPY'),
+    copy.indexOf('const SIGNUP_COPY')
+  );
+  const towersByLocale = {
+    en: 'Towers',
+    ar: 'الأبراج',
+    es: 'Torres',
+    pt: 'Torres',
+    fr: 'Tours',
+    de: 'Türme',
+  };
+  assert.deepEqual(Object.keys(towersByLocale).sort(), [...VTS_SCORE_LANGUAGES].sort());
+  for (const [locale, towers] of Object.entries(towersByLocale)) {
+    const block = breakdown.match(new RegExp(`\\n  ${locale}: \\{([\\s\\S]*?)\\n  \\}`))?.[1];
+    assert.ok(block, `${locale} breakdown copy`);
+    const label = block.match(/fieldUnitSpecialtyPower: '([^']+)'/)?.[1];
+    assert.ok(label, `${locale}.fieldUnitSpecialtyPower`);
+    assert.ok(label.endsWith(`(${towers})`), `${locale}: "${label}" names ${towers}`);
+  }
 });
 
 test('optional Artifact Power stays absent when blank and round-trips when filled', () => {

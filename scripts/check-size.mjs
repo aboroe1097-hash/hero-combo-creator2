@@ -177,7 +177,13 @@ const LIMITS = {
   // carrying the tier and source score it was ranked by (+1.3 KiB gzip, ~7 KiB
   // built). CI measured 11612.1 KiB; retain ~20 KiB for CI's admin-auth
   // injection.
-  totalJsBytes: 11633 * 1024,
+  // 16.5.6: the Competition #12 default schedule, the game/local clock line and
+  // their strings in the 12 admin locale packs, plus the 16.5.6 Velo changelog
+  // digest, add ~10 KiB (gh-pages 16.5.5 measured 11604.0 KiB locally, this
+  // release 11614.1 KiB). Retain ~20 KiB again.
+  // Both land in one 16.5.6 release (with the Heroes PDF designs, which sit in
+  // the lazy hub-pdf chunk): measured 11637.3 KiB locally; retain ~20 KiB.
+  totalJsBytes: 11658 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and

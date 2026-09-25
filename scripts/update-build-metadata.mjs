@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { OPTIONAL_STAMP_SOURCE, restampAll } from './lib/build-stamps.mjs';
+
 const root = path.resolve(import.meta.dirname, '..');
 const buildVersion = process.env.BUILD_VERSION || makeBuildVersion();
 const cacheVersion = `vts-${buildVersion.replace(/_/g, '-')}`;
@@ -73,19 +75,20 @@ function writeText(file, text) {
 function updateCacheBusters() {
   for (const file of entryHtmlFiles) {
     if (!fs.existsSync(path.join(root, file))) continue;
-    let html = readText(file)
-      .replace(/\?v=[0-9A-Za-z_-]+/g, `?v=${buildVersion}`)
-      .replace(
-        /(src="js\/(?:app|admin-page)\.js)(?:\?v=[0-9A-Za-z_-]+)?"/g,
-        `$1?v=${buildVersion}"`
-      );
+    let html = restampAll(readText(file), buildVersion).replace(
+      new RegExp(String.raw`(src="js\/(?:app|admin-page)\.js)${OPTIONAL_STAMP_SOURCE}"`, 'g'),
+      `$1?v=${buildVersion}"`
+    );
     if (
       file === 'downloads.html' ||
       file === 'eden-siege.html' ||
       file === 'specialization-towers.html'
     ) {
       html = html.replace(
-        /((?:href|src)="(?:css|js)\/[^"?#]+\.(?:css|js))(?:\?v=[0-9A-Za-z_-]+)?"/g,
+        new RegExp(
+          String.raw`((?:href|src)="(?:css|js)\/[^"?#]+\.(?:css|js))${OPTIONAL_STAMP_SOURCE}"`,
+          'g'
+        ),
         `$1?v=${buildVersion}"`
       );
     }
@@ -96,8 +99,14 @@ function updateCacheBusters() {
   if (fs.existsSync(adminPagePath)) {
     const adminPage = fs
       .readFileSync(adminPagePath, 'utf8')
-      .replace(/ocr-dashboard\.js(?:\?v=[0-9A-Za-z_-]+)?/g, `ocr-dashboard.js?v=${buildVersion}`)
-      .replace(/tabs\/admin\.html(?:\?v=[0-9A-Za-z_-]+)?/g, `tabs/admin.html?v=${buildVersion}`);
+      .replace(
+        new RegExp(String.raw`ocr-dashboard\.js${OPTIONAL_STAMP_SOURCE}`, 'g'),
+        `ocr-dashboard.js?v=${buildVersion}`
+      )
+      .replace(
+        new RegExp(String.raw`tabs\/admin\.html${OPTIONAL_STAMP_SOURCE}`, 'g'),
+        `tabs/admin.html?v=${buildVersion}`
+      );
     fs.writeFileSync(adminPagePath, adminPage);
   }
 
@@ -106,7 +115,10 @@ function updateCacheBusters() {
     const appJs = fs
       .readFileSync(appJsPath, 'utf8')
       .replace(
-        /((?:app-hero-atlas|app-research|app-artifact|eden-map|eden-hub|app-strife|app-export|arcade-spa|loyalty-spa|youtube-v14)\.js)(?:\?v=[0-9A-Za-z_-]+)?/g,
+        new RegExp(
+          String.raw`((?:app-hero-atlas|app-research|app-artifact|eden-map|eden-hub|app-strife|app-export|arcade-spa|loyalty-spa|youtube-v14)\.js)${OPTIONAL_STAMP_SOURCE}`,
+          'g'
+        ),
         `$1?v=${buildVersion}`
       );
     fs.writeFileSync(appJsPath, appJs);
@@ -119,9 +131,7 @@ function updateCacheBusters() {
   // the map viewport refresh.
   const edenHubPath = path.join(root, 'js', 'eden-hub.js');
   if (fs.existsSync(edenHubPath)) {
-    const edenHub = fs
-      .readFileSync(edenHubPath, 'utf8')
-      .replace(/\?v=[0-9A-Za-z_-]+/g, `?v=${buildVersion}`);
+    const edenHub = restampAll(fs.readFileSync(edenHubPath, 'utf8'), buildVersion);
     fs.writeFileSync(edenHubPath, edenHub);
   }
 }

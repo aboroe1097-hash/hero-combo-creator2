@@ -10,6 +10,8 @@ import {
   COMPETITION_SCHEDULE_DOC_PATH,
   COMPETITION_SCHEDULE_KEYS,
   gameTimeToMillis,
+  getCompetitionPhase,
+  normalizeCompetitionSchedule,
 } from '../../js/competition-schedule.js';
 import {
   COMPETITION_DEFAULT_TITLE,
@@ -18,11 +20,16 @@ import {
   COMPETITION_SCHEDULE_FIELDS,
   COMPETITION_SCHEDULE_ORDER,
   COMPETITION_SEASON_ID,
+  addGameDays,
   buildCompetitionSchedulePayload,
+  buildDefaultCompetitionSchedule,
   buildCompetitionSeasonStart,
   buildCompetitionTimeline,
   competitionScheduleToFormValues,
   describeCompetitionScheduleError,
+  formatScheduleNowLine,
+  formatScheduleRowHint,
+  nextGameDay,
   renderCompetitionTimeline,
   saveCompetitionSchedule,
   validateCompetitionScheduleForm,
@@ -79,7 +86,7 @@ test('form values become a normalized schedule in game time', () => {
   assert.equal(result.ok, true);
   assert.equal(result.schedule.seasonId, COMPETITION_SEASON_ID);
   assert.equal(result.schedule.title, 'Competition #12');
-  assert.equal(result.schedule.opensAt, Date.parse('2026-10-01T18:00:00Z'));
+  assert.equal(result.schedule.opensAt, Date.parse('2026-10-01T22:00:00Z'));
   assert.equal(result.schedule.winnersEndAt, gameTimeToMillis('2026-11-11', '12:00'));
 
   // An empty title falls back to the default rather than being stored blank.
@@ -307,6 +314,10 @@ test('every panel string is translated in the eleven full admin packs', () => {
     'adminCompScheduleTimeLabel',
     'adminCompScheduleLocalLabel',
     'adminCompScheduleLocal',
+    'adminCompScheduleNow',
+    'adminCompScheduleDefaultStart',
+    'adminCompScheduleFillDefault',
+    'adminCompScheduleDefaultHelp',
     'adminCompScheduleSave',
     'adminCompScheduleSaving',
     'adminCompScheduleSaved',
@@ -337,4 +348,96 @@ test('every panel string is translated in the eleven full admin packs', () => {
   for (const locale of ['en', 'ar', 'de', 'es', 'fr', 'id', 'it', 'kr', 'pt', 'ru', 'tr', 'zh']) {
     assert.match(translations[locale].adminCompScheduleLegacyWarning, /season-2026/);
   }
+});
+
+const HOUR = 60 * 60 * 1000;
+const DAY = 24 * HOUR;
+
+test('the 2-week default: every phase opens at +0 and closes at +22 game time', () => {
+  const built = buildDefaultCompetitionSchedule('2026-10-01');
+  assert.equal(built.startDate, '2026-10-01');
+  assert.deepEqual(built.instants, {
+    opensAt: { date: '2026-10-01', time: '00:00' },
+    phase1ClosesAt: { date: '2026-10-02', time: '22:00' },
+    deadlineAt: { date: '2026-10-04', time: '22:00' },
+    reuploadOpensAt: { date: '2026-10-13', time: '00:00' },
+    reuploadClosesAt: { date: '2026-10-14', time: '22:00' },
+    winnersStartAt: { date: '2026-10-15', time: '00:00' },
+    winnersEndAt: { date: '2026-10-16', time: '22:00' },
+  });
+  const opens = ['opensAt', 'reuploadOpensAt', 'winnersStartAt'];
+  for (const key of COMPETITION_SCHEDULE_KEYS) {
+    assert.equal(built.instants[key].time, opens.includes(key) ? '00:00' : '22:00', key);
+  }
+  const ms = Object.fromEntries(
+    COMPETITION_SCHEDULE_KEYS.map((key) => [
+      key,
+      gameTimeToMillis(built.instants[key].date, built.instants[key].time),
+    ])
+  );
+  // 00:00 game time on the start date = 02:00Z (06:00 in Dubai).
+  assert.equal(ms.opensAt, Date.parse('2026-10-01T02:00:00Z'));
+  // 14 game days from sign-up to the re-upload close (day 0 … day 13, 22:00).
+  assert.equal(ms.reuploadClosesAt - ms.opensAt, 14 * DAY - 2 * HOUR);
+  // Each 2-day phase: 00:00 on day N to 22:00 on day N+1.
+  assert.equal(ms.phase1ClosesAt - ms.opensAt, 2 * DAY - 2 * HOUR);
+  assert.equal(ms.deadlineAt - ms.phase1ClosesAt, 2 * DAY);
+  assert.equal(ms.reuploadClosesAt - ms.reuploadOpensAt, 2 * DAY - 2 * HOUR);
+  assert.equal(ms.winnersEndAt - ms.winnersStartAt, 2 * DAY - 2 * HOUR);
+
+  // Valid under the shared model and the panel's validation.
+  const schedule = normalizeCompetitionSchedule({ seasonId: COMPETITION_SEASON_ID, ...ms });
+  assert.ok(schedule, 'normalizeCompetitionSchedule accepts the default');
+  const form = validateCompetitionScheduleForm({
+    title: 'Competition #12',
+    seasonId: COMPETITION_SEASON_ID,
+    instants: built.instants,
+  });
+  assert.equal(form.ok, true);
+  // The 2-hour gaps after a 22:00 close fall in the gap phases.
+  assert.equal(getCompetitionPhase(schedule, ms.deadlineAt + HOUR), 'waiting');
+  assert.equal(getCompetitionPhase(schedule, ms.reuploadClosesAt + HOUR), 'resultsPending');
+  assert.equal(getCompetitionPhase(schedule, ms.winnersStartAt), 'winners');
+});
+
+test('the default starts on the next game day and crosses months and years', () => {
+  // 01:00Z is still 23:00 game time on 30 Sep, so the next game day is 1 Oct.
+  const late = Date.parse('2026-10-01T01:00:00Z');
+  assert.equal(nextGameDay(late), '2026-10-01');
+  assert.equal(buildDefaultCompetitionSchedule('', { nowMs: late }).startDate, '2026-10-01');
+  assert.equal(buildDefaultCompetitionSchedule(undefined, { nowMs: late }).startDate, '2026-10-01');
+  // From 02:00Z it is game day 1 Oct, so the next one is 2 Oct.
+  assert.equal(nextGameDay(Date.parse('2026-10-01T02:00:00Z')), '2026-10-02');
+
+  const yearEnd = buildDefaultCompetitionSchedule('2026-12-25');
+  assert.equal(yearEnd.instants.reuploadClosesAt.date, '2027-01-07');
+  assert.equal(yearEnd.instants.winnersEndAt.date, '2027-01-09');
+  assert.equal(addGameDays('2028-02-28', 1), '2028-02-29');
+  assert.equal(addGameDays('2026-02-31', 1), '');
+  assert.equal(buildDefaultCompetitionSchedule('2026-13-01'), null);
+  assert.equal(buildDefaultCompetitionSchedule('not a date'), null);
+});
+
+test('row hints and the live line show game time (UTC−2) next to the viewer’s time', () => {
+  const strip = (value) => value.replace(/[\u2066-\u2069]/g, '');
+  const ms = Date.parse('2026-10-01T02:00:00Z');
+  const hint = strip(formatScheduleRowHint(ms, fallbackT, { locale: 'en', timeZone: 'UTC' }));
+  assert.match(hint, /^Game 2026-10-01 00:00 \(UTC\u22122\) · Your time: /);
+  assert.match(hint, /2:00/);
+  const line = strip(
+    formatScheduleNowLine(Date.parse('2026-10-01T14:05:00Z'), fallbackT, {
+      locale: 'en',
+      timeZone: 'Asia/Dubai',
+    })
+  );
+  assert.equal(line, 'Now: game 12:05 (UTC\u22122) · your time 18:05');
+});
+
+test('the panel offers the 2-week default without saving it', () => {
+  const admin = readFileSync('tabs/admin.html', 'utf8');
+  assert.match(admin, /id="dashCompScheduleDefaultStart" class="dash-input" type="date"/);
+  assert.match(admin, /id="dashCompScheduleFillDefault" class="dash-btn" type="button"/);
+  assert.match(admin, /id="dashCompScheduleNow"/);
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+  assert.match(dashboard, /dashCompScheduleFillDefault[\s\S]{0,120}fillDefault\(root\)/);
 });

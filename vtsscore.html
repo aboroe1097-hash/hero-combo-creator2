@@ -11,10 +11,10 @@
     <meta id="themeColorMeta" name="theme-color" content="#08111f" />
     <title>VtsScore · Competition #12</title>
     <link rel="icon" href="images/logo.png" />
-    <link rel="stylesheet" href="css/_tokens.css?v=20260924_223223.3.5" />
-    <link rel="stylesheet" href="css/vts-score.css?v=20260924_223223.3.5" />
-    <link rel="stylesheet" href="css/account-chip.css?v=20260924_223223" />
-    <script src="js/theme-prepaint.js?v=20260924_223223.3.5"></script>
+    <link rel="stylesheet" href="css/_tokens.css?v=20260925_073732" />
+    <link rel="stylesheet" href="css/vts-score.css?v=20260925_073732" />
+    <link rel="stylesheet" href="css/account-chip.css?v=20260925_073732" />
+    <script src="js/theme-prepaint.js?v=20260925_073732"></script>
   </head>
   <body>
     <main id="vtsScoreApp" class="vts-score-shell">
@@ -56,7 +56,7 @@
           </p>
         </div>
         <!-- The live schedule: phase, what members can do now, and a countdown
-             to the phase end in game time (UTC+2) and local time. Filled from
+             to the phase end in game time (UTC−2) and local time. Filled from
              boh_allstar_competition/current once the page has signed in. -->
         <section
           id="vtsScoreSchedule"
@@ -257,12 +257,12 @@
                   />
                 </label>
                 <label for="vtsScoreSignupArtifactPower">
-                  <span data-vts-i18n="fieldArtifactPower">Artifact Power</span>
+                  <span data-vts-i18n="signupArtifactPower">Artifact Power (optional)</span>
                   <input
                     id="vtsScoreSignupArtifactPower"
                     type="number"
                     min="0"
-                    max="100000000000"
+                    max="1000000000000000"
                     step="1"
                     inputmode="numeric"
                     autocomplete="off"
@@ -610,7 +610,7 @@
         </p>
       </section>
     </main>
-    <script type="module" src="js/vts-score.js?v=20260924_223223.3.5"></script>
+    <script type="module" src="js/vts-score.js?v=20260925_073732"></script>
       <script type="module" src="js/account-chip-bootstrap.js"></script>
   </body>
 </html>

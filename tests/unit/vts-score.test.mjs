@@ -123,3 +123,41 @@ test('VtsScore ranks close signup names and emits a strict full-breakdown OCR pa
   });
   assert.doesNotMatch(JSON.stringify(payload), /image|base64|screenshot/i);
 });
+
+test('the optional Artifact Power sign-up field is marked optional and accepts the rules range', () => {
+  const page = readFileSync('vtsscore.html', 'utf8');
+  const field = page.match(/<label for="vtsScoreSignupArtifactPower">[\s\S]*?<\/label>/)?.[0];
+  assert.ok(field, 'the Artifact Power sign-up field exists');
+  assert.match(field, /data-vts-i18n="signupArtifactPower">Artifact Power \(optional\)</);
+  assert.match(field, /min="0"/);
+  // MAX_POWER_DOCUMENT_VALUE (js/boh-signup-document.js) and firestore.rules: 0..1e15.
+  assert.match(field, new RegExp(`max="${10 ** 15}"`));
+  assert.doesNotMatch(field, /\brequired\b/);
+  assert.match(
+    readFileSync('js/boh-signup-document.js', 'utf8'),
+    /MAX_POWER_DOCUMENT_VALUE = 10 \*\* 15;/
+  );
+  assert.match(
+    readFileSync('firestore.rules', 'utf8'),
+    /validAllStarBohNullableInt\(stats\.artifactPower, 0, 1000000000000000\)/
+  );
+
+  // The OCR review rows keep the plain label (POWER_FIELD_I18N shares fieldArtifactPower).
+  assert.match(readFileSync('js/vts-score.js', 'utf8'), /artifactPower: 'fieldArtifactPower'/);
+  const source = readFileSync('js/vts-score-i18n.js', 'utf8');
+  for (const [language, marker] of [
+    ['en', /signupArtifactPower: 'Artifact Power \(optional\)'/],
+    ['ar', /signupArtifactPower: '[^']+\(اختياري\)'/],
+    ['es', /signupArtifactPower: '[^']+\(opcional\)'/],
+    ['pt', /signupArtifactPower: '[^']+\(opcional\)'/],
+    ['fr', /signupArtifactPower: '[^']+\(facultatif\)'/],
+    ['de', /signupArtifactPower: '[^']+\(optional\)'/],
+  ]) {
+    assert.match(source, marker, language);
+  }
+  assert.ok(VTS_SCORE_COPY_KEYS.includes('signupArtifactPower'));
+  assert.doesNotMatch(
+    source,
+    /fieldArtifactPower: '[^']*\((optional|opcional|facultatif|اختياري)\)'/
+  );
+});
