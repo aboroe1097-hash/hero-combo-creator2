@@ -11,10 +11,12 @@
 
 /**
  * High-tier combos database sorted by strategic meta-ranking.
- * The S0-X2 list comes first and is the shared ranking: every lane there is fieldable
- * without an X8 hero. Lanes that need an X8 hero live in the X8 catch-up block at the
- * end, ordered by their own source score, so a lane most readers cannot field never
- * renumbers the S0-X2 ranks above it.
+ * The S0-X2 lanes are the shared ranking: every one is fieldable without an X8 hero,
+ * and their order never changes. A lane that needs an X8 hero is either placed directly
+ * above the S0-X2 lane it outranks (with the Combos Planner, npm run combos:plan) or left
+ * in the X8 catch-up block at the end, ordered by its source score. The Combo Generator
+ * only ranks lanes whose heroes a player owns, so X8 lanes change nothing for a player
+ * without X8 heroes.
  * @type {ComboEntry[]}
  */
 export const rankedCombos = [
@@ -243,8 +245,8 @@ export const rankedCombos = [
   // Lanes that need at least one X8 hero, from the name-matched X8 availability set
   // (rocacademy free/no-skin export, matched to canonical hero names, 2026-07-25).
   // Highest source score first; each note records the lane's tier and score there.
-  // Appended after the S0-X2 list on purpose: rank is array position, so putting these
-  // ahead of the shared list would renumber every S0-X2 lane and every counter badge.
+  // These are the X8 lanes not placed yet. Place one with the Combos Planner
+  // (npm run combos:plan) and it moves up the list to its position.
 
   { heroes: ['Alexander', 'Ragnar', 'Theodora'], note: 'X8 catch-up lane, S tier (source score 340.6).' },
   { heroes: ['Warden', 'Ramses II', 'Beowulf'], note: 'X8 catch-up lane, S tier (source score 328.7).' },
