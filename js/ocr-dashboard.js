@@ -164,6 +164,7 @@ import {
   loadCompetitionGrowthSnapshot,
   loadVtsScoreSnapshot,
   publishCompetitionGrowthBoard,
+  VTS_SCORE_FUNCTION_ENDPOINT,
   saveCompetitionMatchDecisions,
 } from './vts-score-store.js';
 import {
@@ -8357,6 +8358,7 @@ function ensureVtsScoreView() {
       load: () => loadCompetitionGrowthSnapshot(),
       saveDecisions: saveCompetitionMatchDecisions,
       publish: publishCompetitionGrowthBoard,
+      buildOnServer: buildCompetitionBoardOnServer,
       canPublish: () => dashSuperAdmin === true,
     },
   });
@@ -8529,7 +8531,17 @@ function renderBohSignupsPanel() {
   void loadBohSignupsAdmin();
 }
 
-async function submitBohSignupAdminRequest(payload) {
+function submitBohSignupAdminRequest(payload) {
+  return postAdminFunction(BOH_SIGNUP_ADMIN_ENDPOINT, payload, 'signup_failed');
+}
+
+// Builds and publishes the Competition #12 growth board in the vtsScore
+// function (superadmin; the function checks the claim itself).
+function buildCompetitionBoardOnServer() {
+  return postAdminFunction(VTS_SCORE_FUNCTION_ENDPOINT, { action: 'buildBoard' }, 'board_failed');
+}
+
+async function postAdminFunction(endpoint, payload, fallbackCode) {
   const user = state.adminUser;
   if (!user?.getIdToken)
     throw Object.assign(new Error('admin_required'), { code: 'admin_required' });
@@ -8538,7 +8550,7 @@ async function submitBohSignupAdminRequest(payload) {
     user.getIdToken(),
     getFirebaseAppCheckToken(),
   ]);
-  const response = await fetch(BOH_SIGNUP_ADMIN_ENDPOINT, {
+  const response = await fetch(endpoint, {
     method: 'POST',
     mode: 'cors',
     cache: 'no-store',
@@ -8552,7 +8564,7 @@ async function submitBohSignupAdminRequest(payload) {
   });
   const body = await response.json().catch(() => null);
   if (!response.ok) {
-    throw Object.assign(new Error(body?.error || 'signup_failed'), {
+    throw Object.assign(new Error(body?.error || fallbackCode), {
       code: body?.error || 'service_unavailable',
       status: response.status,
     });

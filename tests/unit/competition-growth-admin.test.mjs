@@ -112,3 +112,67 @@ test('only saved, confirmed matches reach the published board', async () => {
   assert.equal(published.at(-1).rows[0].growthPct, 50);
   delete globalThis.window;
 });
+
+test('the server build button asks first, calls the function, reloads, and reports the result', async () => {
+  let loads = 0;
+  const calls = [];
+  const statuses = [];
+  let confirmAnswer = false;
+  globalThis.window = { confirm: () => confirmAnswer };
+  const section = createCompetitionGrowthSection({
+    t: (key, vars = {}) => `${key}${Object.keys(vars).length ? JSON.stringify(vars) : ''}`,
+    num: (value) => String(value),
+    signed: (value) => String(value),
+    canPublish: () => true,
+    setStatus: (message, type) => statuses.push([message, type]),
+    load: async () => {
+      loads += 1;
+      return snapshot();
+    },
+    saveDecisions: async () => {},
+    publish: async () => {},
+    buildOnServer: async () => {
+      calls.push('build');
+      return { board: { publicRows: 4, players: 9, needsDecision: 2 } };
+    },
+  });
+  const host = fakeHost();
+  section.mount(host);
+  await settle();
+  const serverButton = () =>
+    host.buttons.find((button) => button.tag.includes('data-comp12-server'));
+  assert.ok(serverButton());
+
+  serverButton().click();
+  await settle();
+  assert.deepEqual(calls, []);
+
+  confirmAnswer = true;
+  host.buttons.length = 0;
+  section.mount(host);
+  serverButton().click();
+  await settle();
+  await settle();
+  assert.deepEqual(calls, ['build']);
+  assert.equal(loads, 2);
+  assert.deepEqual(statuses.at(-1), [
+    'c12ServerBuilt{"rows":4,"players":9,"pending":2}',
+    'success',
+  ]);
+  delete globalThis.window;
+});
+
+test('a member without publish rights sees no server build button', async () => {
+  const section = createCompetitionGrowthSection({
+    t: (key) => key,
+    num: String,
+    signed: String,
+    canPublish: () => false,
+    load: async () => snapshot(),
+    buildOnServer: async () => ({}),
+  });
+  const host = fakeHost();
+  section.mount(host);
+  await settle();
+  assert.doesNotMatch(host.innerHTML, /data-comp12-server/);
+});

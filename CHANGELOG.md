@@ -2,6 +2,11 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.19 - 2026-09-26
+
+- The Competition #12 growth board can be built on the server. In VTS Admin → VtsScore, "Build and publish on server" (superadmin) has the vtsScore function build the board from the season's sign-ups and re-uploads plus every earlier VtsScore season, and publish it straight away. The same build runs on its own once, within ten minutes of the re-upload window closing; it never replaces a board already published for the season after the window closed.
+- Each player's baseline is their latest upload from any earlier VtsScore season. It is matched automatically when their exact name (ignoring case, spacing and the "(VTS)" prefix) belongs to one account; a name shared by two accounts, or claimed by two players, uses sign-up stats until a superadmin saves a decision, and a saved decision always wins. Otherwise the baseline is the sign-up stats. A baseline from a season other than 2026 shows as "Earlier VtsScore" on the board and in VTS Admin. The "Publish growth board" button keeps its current rules. **Deploy the vtsScore and syncCompetitionPhase functions after this release.**
+
 ## 16.5.18 - 2026-09-26
 
 - Registration screenshot OCR now tries DeepSeek (`deepseek-flash`, the V4.1 Flash model that reads images, with thinking turned off) first when the OCR Worker has a `DEEPSEEK_API_KEY`. Qwen stays as the fallback: `qwen-vl-plus`, then `qwen-vl-max`. It moves to the next model when one fails, times out or gives an unusable reply, and only while the next try still fits inside the page's 90 s wait. Without the key, or with `BOH_DEEPSEEK_OCR=off`, OCR works exactly as in 16.5.17. The same checks, blank-on-doubt values and review warnings apply whichever model answers. **Add the key with `npx wrangler secret put DEEPSEEK_API_KEY --name delicate-term-725f`, then redeploy the OCR Worker (`npm run worker:deploy`).**

@@ -137,6 +137,12 @@ export async function saveCompetitionMatchDecisions(seasonId, decisions) {
   });
 }
 
+// The vtsScore Cloud Function (functions/src/vts-score.js). The same URL as
+// VTS_SCORE_ENDPOINT in js/all-star-boh-access.js, repeated so the admin bundle
+// does not pull the member access module in for one string (a test keeps them equal).
+export const VTS_SCORE_FUNCTION_ENDPOINT =
+  'https://us-central1-abocombo.cloudfunctions.net/vtsScore';
+
 /** Publishes the public growth board projection (superadmin). */
 export async function publishCompetitionGrowthBoard(projection) {
   const season = normalizeVtsScoreSeasonId(projection?.seasonId);

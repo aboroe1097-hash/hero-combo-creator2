@@ -390,3 +390,11 @@ test('rows without an earlier upload fall back to sign-up stats', () => {
   assert.equal(rows[0].baselineSource, 'signup');
   assert.equal(rows[0].growthPct, 20);
 });
+
+test('the admin endpoint for the board build is the member vtsScore endpoint', async () => {
+  const { VTS_SCORE_ENDPOINT } = await import('../../js/all-star-boh-access.js');
+  const source = await import('node:fs').then((fs) =>
+    fs.readFileSync('js/vts-score-store.js', 'utf8')
+  );
+  assert.ok(source.includes(`'${VTS_SCORE_ENDPOINT}'`));
+});

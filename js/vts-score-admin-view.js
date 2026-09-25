@@ -122,9 +122,11 @@ export function createCompetitionGrowthSection(options = {}) {
     return `<tr><td>${row.rank ? `${row.rank}${row.tied ? '=' : ''}` : '—'}</td><th scope="row"><strong>${esc(row.gameName)}</strong>${reason ? `<br><span class="vts-admin-muted">${esc(t(reason))}</span>` : ''}</th><td><span class="vts-admin-chip">${esc(
       row.baselineSource === 'vtsscore-2026'
         ? t('c12SourceVtsScore')
-        : row.baselineSource
-          ? t('adminVtsScoreBaselineShort')
-          : '—'
+        : row.baselineSource === 'vtsscore-prior'
+          ? t('c12SourceVtsScorePrior')
+          : row.baselineSource
+            ? t('adminVtsScoreBaselineShort')
+            : '—'
     )}</span></td><td>${matchCell(row)}</td><td>${esc(total.baseline === null ? '—' : num(total.baseline))}</td><td>${esc(total.final === null ? '—' : num(total.final))}</td><td data-growth="${growthTone(row.growthAbs)}">${esc(signed(row.growthAbs))}</td><td data-growth="${growthTone(row.growthPct)}">${esc(pct)}</td><td>${esc(t(row.consent ? 'adminYes' : 'adminNo'))}</td></tr>`;
   }
 
@@ -145,6 +147,9 @@ export function createCompetitionGrowthSection(options = {}) {
       ).length;
       if (canEdit()) {
         actions = `<button type="button" class="dash-btn" data-comp12-save ${state.dirty ? '' : 'disabled'}>${esc(t('c12Save'))}</button><button type="button" class="dash-btn dash-btn-primary" data-comp12-publish ${ranked.length && !state.dirty ? '' : 'disabled'}>${esc(t('c12Publish'))}</button>`;
+        if (typeof options.buildOnServer === 'function') {
+          actions += `<button type="button" class="dash-btn" data-comp12-server ${state.dirty ? 'disabled' : ''}>${esc(t('c12ServerBuild'))}</button>`;
+        }
       }
       const heads = [
         'adminThRank',
@@ -168,8 +173,8 @@ export function createCompetitionGrowthSection(options = {}) {
 
   async function run(action) {
     try {
-      await action();
-      setStatus(t('c12Done'), 'success');
+      const message = await action();
+      setStatus(typeof message === 'string' ? message : t('c12Done'), 'success');
     } catch {
       setStatus(t('c12Failed'), 'error');
     }
@@ -193,6 +198,24 @@ export function createCompetitionGrowthSection(options = {}) {
     void run(() => options.publish(projection));
   }
 
+  // The vtsScore function builds the board from every record (each player's
+  // latest earlier VtsScore upload, unique exact names matched automatically,
+  // saved decisions first) and publishes it; the table here is then reloaded.
+  function buildOnServer() {
+    if (state.dirty) return;
+    if (!window.confirm(t('c12ServerBuildAsk'))) return;
+    void run(async () => {
+      const result = await options.buildOnServer();
+      const board = result?.board || {};
+      await load();
+      return t('c12ServerBuilt', {
+        rows: Number(board.publicRows) || 0,
+        players: Number(board.players) || 0,
+        pending: Number(board.needsDecision) || 0,
+      });
+    });
+  }
+
   function decide(uid, decision) {
     state.draft = { ...state.draft, [uid]: decision };
     state.dirty = true;
@@ -208,6 +231,7 @@ export function createCompetitionGrowthSection(options = {}) {
     if (!canEdit()) return;
     on('[data-comp12-save]', () => void saveDecisions());
     on('[data-comp12-publish]', publish);
+    on('[data-comp12-server]', buildOnServer);
     on('[data-comp12-uid]', (data) =>
       decide(data.comp12Uid, {
         decision: data.comp12Candidate ? 'vtsscore' : 'signup',
