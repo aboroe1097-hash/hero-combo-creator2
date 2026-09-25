@@ -139,6 +139,13 @@ const DESTS = [
     fallback: 'Community Downloads',
     kw: 'downloads download pdf export print research costs specialisation medals eden tables dragon master roster',
   },
+  {
+    key: 'tabAi',
+    name: 'velo',
+    kind: 'drawer',
+    fallback: 'Talk with Velo',
+    kw: 'velo assistant ai chat help ask question strategy advice',
+  },
 ];
 
 function currentLang() {
@@ -311,6 +318,13 @@ function go(dest) {
     } else {
       window.location.hash = `#${dest.name}`;
     }
+  } else if (dest.kind === 'drawer') {
+    import('./ai-drawer.js')
+      .then((module) => module.openAiDrawer())
+      .catch((error) => {
+        console.error('Velo drawer failed to load', error);
+      });
+    return;
   } else {
     window.location.href = dest.href;
   }

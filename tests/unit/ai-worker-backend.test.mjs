@@ -51,7 +51,8 @@ test('Gemini public API request omits Enterprise-only safety settings', () => {
   assert.match(request.system_instruction, /do not confuse\nAbo with the current user/);
   assert.match(request.system_instruction, /helmet is visibly separate from your scales/);
   assert.match(request.system_instruction, /Never claim that you do not\nwear a helmet/);
-  assert.match(request.system_instruction, /Velo b0\.4/);
+  assert.match(request.system_instruction, /Velo 1\.0/);
+  assert.doesNotMatch(request.system_instruction, /Velo b0\.4/);
   assert.match(request.system_instruction, /CHARACTER LORE \(REACTIVE ONLY\)/);
   assert.match(request.system_instruction, /Mention\nthe helmet only when the user brings it up/);
   assert.doesNotMatch(request.system_instruction, /HELMET HELP RITUAL/);
@@ -225,7 +226,7 @@ test('Gemini tool contract supports Mary formations and public VTS player lookup
   );
 });
 
-test('Velo b0.4 exposes the new public tools and validates their contracts', () => {
+test('Velo 1.0 exposes the public tools and validates their contracts', () => {
   const request = buildGeminiRequest({
     model: 'gemini-3.5-flash',
     providerInput: [{ type: 'user_input', content: [{ type: 'text', text: 'Arcade?' }] }],

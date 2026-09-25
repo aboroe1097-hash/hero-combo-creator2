@@ -1,10 +1,33 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.6";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.9";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.5.9",
+    "date": "2026-09-25",
+    "highlights": [
+      "Velo graduates to **Velo 1.0**. The chat header's \"Beta 0.4\" badge becomes a plain \"Velo 1.0\" version mark in every language — a version number needs no translation — and the internal b0.4 build number is retired from the assistant's own answers, the toolkit map, and the system …",
+      "The command palette (Ctrl/Cmd+K) now finds **Talk with Velo** and opens the assistant drawer from there through the same lazy loader the floating launcher uses, so no page pays for the drawer until someone asks for it. Closing the drawer returns keyboard focus to the palette tri…",
+      "The chat's copy button and source chips reach the 44-pixel touch target on phones instead of 32-pixel rows that were hard to hit, and answer tables no longer force sideways scrolling on 320-pixel screens — a narrow table now shrinks with its wrapper while wide answers keep their…"
+    ]
+  },
+  {
+    "version": "16.5.8",
+    "date": "2026-09-25",
+    "highlights": [
+      "Eden Operations Lab counters now sync across members and devices with shared Firestore-backed totals and access rules. Eden Pathing uses the confirmed rule of 40 tiles per pather, with the estimate presented alongside the occupied-tile count."
+    ]
+  },
+  {
+    "version": "16.5.7",
+    "date": "2026-09-25",
+    "highlights": [
+      "Community Hub PDFs are one simple screen: pick what to include, the detail level and a dark or light theme, then press Download PDF or Download image. Files download directly, with no print dialog, paper-size or orientation settings. Hero sheets are dense, with small portraits a…"
+    ]
+  },
   {
     "version": "16.5.6",
     "date": "2026-09-25",
@@ -80,39 +103,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Heroes: the Atlas gained a season timeline. It lists the canonical hero-release seasons with hero counts that reconcile with the season filter, links each season to its shareable deep link, is a vertical list on phones, and stays readable at 320px, in both themes, and under redu…",
       "Buildings: added Castle 26–30 direct costs across Orichalcum, gold, food, lumber, charcoal, marble and iron, plus a searchable planner for the 43 buildings and their level costs, prerequisites and final-level bonuses. Missing sheet cells remain unknown, and the sheet's mismatche…",
       "Room to breathe: removed unused atmosphere utilities and four dead tokens (about 3 KiB of entry CSS) and lowered the entry CSS ceiling by the measured amount."
-    ]
-  },
-  {
-    "version": "16.0.19",
-    "date": "2026-09-23",
-    "highlights": [
-      "Every player in the weighted tables opens a season view, in VTS Admin (Dashboard and Contributions) and on the public Eden page, including players with no structure hits. It shows the final rank, weighted score and reward, a bar of what the score is made of, the itemised score, …",
-      "The score breakdown (the weighted score popover and the season view) lists each duty type separately for main and alt / banner accounts, with the count, weight and points behind it (for example \"4 × weight 3 × 10,000 = 120,000\"), shows how the demolition points were counted or t…",
-      "Banner, pathing and shield wall cells in the weighted tables show how many of the duties came from alt or banner accounts (for example \"11 · 3 alt\").",
-      "The public \"Top names to review\" lists have separate Most Banners Placed and Most Paths & Speed Tiles lists instead of one combined list. On wide screens the six lists sit in two rows of three; on phones they are one swipeable row.",
-      "The Eden season page does less work while loading: on a mid-range phone profile, main-thread blocking fell from about 5.8 s to 2.4 s and the weighted table appears about 2 s sooner. Name matching no longer rebuilds its 300-entry alias table or re-checks a whole attack's player l…"
-    ]
-  },
-  {
-    "version": "16.0.18",
-    "date": "2026-09-22",
-    "highlights": [
-      "Voting has short links: roc-vts.com/vote opens the Eden X2 ballot directly, and roc-vts.com/eden opens the season. Inside the site, #vote and #season do the same through the Eden Hub.",
-      "The Eden X2 season summary has a Vote now button while voting is open. On phones the ballot now sits right after the summary instead of below the reward tables, the section chips are one swipeable row, and the reward cards are compact.",
-      "The Eden Hub opens the current season as a full-screen pane, lists Current Season first, keeps the open tab in view on phones, and shows one Velo button instead of two. A shared season link now opens the season instead of Royal Bounty.",
-      "Superadmins can count one candidate's team votes for another player, such as a banner account's votes for the player who runs it. Totals, the CSV export, and public results all follow the redirect.",
-      "The vote admin panel and the Eden X2 page title name the active season instead of always saying Eden X1.",
-      "The duty scoring weights panel is a compact table with a points example, and the demolition setting is a clear on/off switch."
-    ]
-  },
-  {
-    "version": "16.0.17",
-    "date": "2026-09-22",
-    "highlights": [
-      "Pather and banner cells now count one duty per player family, so Lady Zubbs and her Zubbs account no longer turn seven duties into ten. The admin list summary follows the same rule.",
-      "Eden X2 management rankings now read the current Google Sheet's `VoteResults` tab. Kiji, Loonly, Redbull, stylized ANGEL, and Victoria/Kika names resolve to their player families.",
-      "Superadmins can choose whether demolition points contribute to dashboard totals while keeping demolition activity visible.",
-      "Superadmins can delete an individual Eden X2 voting ballot from the admin results table. The ballot is removed from totals and a deletion is recorded in the immutable edit history."
     ]
   }
 ].map((release) =>

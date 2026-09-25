@@ -206,9 +206,9 @@ const entries = [
     name: 'Talk with Velo',
     kind: 'drawer',
     summary:
-      'This assistant (build Velo b0.4), opened from the floating launcher. Velo gives answer-first, read-only help from app data and curated VTS guide knowledge in all eleven app languages.',
+      'This assistant (build Velo 1.0), opened from the floating launcher or the command palette. Velo gives answer-first, read-only help from app data and curated VTS guide knowledge in all eleven app languages.',
     answers: ['What can Velo do?', 'What Velo version is this?'],
-    keywords: ['velo', 'assistant', 'ai', 'chat', 'help', 'version', 'b0.4'],
+    keywords: ['velo', 'assistant', 'ai', 'chat', 'help', 'version', '1.0'],
   },
 ];
 

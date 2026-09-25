@@ -63,7 +63,7 @@
   gap: 0.45rem;
   min-width: 0;
 }
-.ai-beta-badge {
+.ai-version-badge {
   display: inline-flex;
   align-items: center;
   min-height: 1.25rem;
@@ -314,7 +314,7 @@
 }
 .ai-message-body table {
   width: 100%;
-  min-width: 320px;
+  min-width: min(320px, 100%);
   border-collapse: collapse;
   font-size: 0.78rem;
   line-height: 1.45;
@@ -405,6 +405,17 @@
   border-radius: 999px;
   border: 1px solid var(--ai-hairline);
   color: var(--ai-text-dim);
+}
+/* Phone tap targets: answer copy and source chips stay finger-friendly. */
+@media (max-width: 620px) {
+  .ai-message-copy {
+    min-height: 44px;
+  }
+  .ai-source-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
 }
 .ai-followups {
   display: flex;

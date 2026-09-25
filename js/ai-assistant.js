@@ -220,7 +220,7 @@ function normalizeLocale(value) {
   return AI_SUPPORTED_LOCALES.includes(locale) ? locale : 'en';
 }
 
-// The Worker schema accepts input.activeTab since the b0.4 release; the
+// The Worker schema accepts input.activeTab since the pre-1.0 releases; the
 // deployed Worker must be at least that schema before this ships.
 const SEND_ACTIVE_TAB_CONTEXT = true;
 

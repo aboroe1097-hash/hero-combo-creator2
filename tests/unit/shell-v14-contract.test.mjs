@@ -16,10 +16,11 @@ const edenHubTemplate = readFileSync('tabs/eden-map.html', 'utf8');
 
 const countId = (id) => (index.match(new RegExp(`id="${id}"`, 'g')) || []).length;
 
-test('Velo frontend badge matches the deployed b0.4 prompt contract', () => {
-  assert.match(aiAssistantTemplate, /aria-label="Velo Beta 0\.4">Beta 0\.4</);
-  assert.doesNotMatch(aiAssistantTemplate, /Beta 0\.1/);
-  assert.match(veloPrompt, /Velo b0\.4/);
+test('Velo frontend badge matches the deployed 1.0 prompt contract', () => {
+  assert.match(aiAssistantTemplate, /aria-label="Velo 1\.0">Velo 1\.0</);
+  assert.doesNotMatch(aiAssistantTemplate, /Beta 0\.4/);
+  assert.doesNotMatch(veloPrompt, /Velo b0\.4/);
+  assert.match(veloPrompt, /Velo 1\.0/);
 });
 
 test('v14 shell assets load last without replacing established tool ids', () => {

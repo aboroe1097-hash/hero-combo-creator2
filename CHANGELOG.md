@@ -2,6 +2,20 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.9 - 2026-09-25
+
+- Velo graduates to **Velo 1.0**. The chat header's "Beta 0.4" badge becomes a plain "Velo 1.0" version mark in every language — a version number needs no translation — and the internal b0.4 build number is retired from the assistant's own answers, the toolkit map, and the system prompt, so asking "what version is this?" gets 1.0 everywhere. **Action for the owner:** run `npm run worker:deploy` — the wording the AI uses about itself lives in the Cloudflare Worker's system prompt, and until that redeploy Velo still calls itself b0.4 in chat even though the site chrome says 1.0.
+- The command palette (Ctrl/Cmd+K) now finds **Talk with Velo** and opens the assistant drawer from there through the same lazy loader the floating launcher uses, so no page pays for the drawer until someone asks for it. Closing the drawer returns keyboard focus to the palette trigger. The label was already translated in every language and had no consumer; now it does.
+- The chat's copy button and source chips reach the 44-pixel touch target on phones instead of 32-pixel rows that were hard to hit, and answer tables no longer force sideways scrolling on 320-pixel screens — a narrow table now shrinks with its wrapper while wide answers keep their scroll. Both fixes are checked in a real browser at 320px and 390px.
+
+## 16.5.8 - 2026-09-25
+
+- Eden Operations Lab counters now sync across members and devices with shared Firestore-backed totals and access rules. Eden Pathing uses the confirmed rule of 40 tiles per pather, with the estimate presented alongside the occupied-tile count.
+
+## 16.5.7 - 2026-09-25
+
+- Community Hub PDFs are one simple screen: pick what to include, the detail level and a dark or light theme, then press Download PDF or Download image. Files download directly, with no print dialog, paper-size or orientation settings. Hero sheets are dense, with small portraits and four combos a row, so all seasons and troops at 10 combos per troop fit in 5 pages instead of 14.
+
 ## 16.5.6 - 2026-09-25
 
 - Heroes PDFs now offer three designs — Dark Dashboard, Midnight Briefing and Compact Reference — with landscape defaults, the VTS crest and wordmark in the header, real hero portraits in the top-combo lineups and beside every roster row, troop-coloured group headings, rank badges and a tighter layout that keeps the document to fewer pages. Troop groups with no qualifying combos are left out instead of printing as empty tables, and every value stays in the document as selectable, searchable text.
