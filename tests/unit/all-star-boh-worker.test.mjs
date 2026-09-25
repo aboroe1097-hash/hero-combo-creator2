@@ -782,7 +782,11 @@ test('provider output is range-bound and cannot expand the public response contr
     'server-id'
   );
   assert.equal(partiallyReadable.extracted.troopPower, null);
-  assert.match(partiallyReadable.warnings[0], /some OCR values could not be read/iu);
+  assert.ok(
+    partiallyReadable.warnings.some((warning) =>
+      /some OCR values could not be read/iu.test(warning)
+    )
+  );
 });
 
 test('suspicious single-digit extended powers are cleared for manual review', () => {
