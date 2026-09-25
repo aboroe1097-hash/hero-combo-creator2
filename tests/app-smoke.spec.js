@@ -1724,7 +1724,9 @@ test.describe('app smoke tabs', () => {
     );
   });
 
-  test('Velo stays above the phone nav and hides while the player scrolls down', async ({ page }) => {
+  test('Velo stays above the phone nav and hides while the player scrolls down', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await openApp(page);
     await page.locator('[data-hub-subtab="manual"]').click();
@@ -6167,6 +6169,43 @@ test.describe('app smoke tabs', () => {
     expect(conductPng.suggestedFilename()).toMatch(/^bonus-team-effort-.*\.png$/);
     const pngBytes = await fs.readFile(await conductPng.path());
     expect(pngBytes.subarray(1, 4).toString('latin1')).toBe('PNG');
+  });
+
+  test('account links rows can be edited in place', async ({ page }) => {
+    await page.route('https://firestore.googleapis.com/**', (route) => route.abort());
+    await openAdmin(page);
+    await openLocalAdminDashboard(page);
+    await page.waitForFunction(() => typeof window.switchDashSubtab === 'function');
+    await page.evaluate(() => window.switchDashSubtab('accounts'));
+    const root = page.locator('#dashAccountsRoot');
+    const addForm = root.locator('[data-account-links-form]');
+    await expect(addForm).toBeVisible();
+    await addForm.locator('[data-account-link-account]').fill('Heron Banner');
+    await addForm.locator('[data-account-link-owner]').fill('Heron');
+    await addForm.locator('button[type="submit"]').click();
+    const row = root.locator('.dash-account-links-list li', { hasText: 'Heron Banner' });
+    await expect(row).toContainText('Heron');
+
+    await row.locator('[data-account-link-edit]').click();
+    const editor = row.locator('[data-account-link-editor]');
+    await expect(editor).toBeVisible();
+    await expect(editor.locator('[data-account-link-edit-owner]')).toBeFocused();
+    // A self-link is refused with the row still open.
+    await editor.locator('[data-account-link-edit-owner]').fill('Heron Banner');
+    await editor.locator('button[type="submit"]').click();
+    await expect(editor.locator('[data-account-link-edit-error]')).toBeVisible();
+    await editor.locator('[data-account-link-edit-owner]').fill('Finch');
+    await editor.locator('[data-account-link-edit-type]').selectOption('secondary');
+    await editor.locator('button[type="submit"]').click();
+
+    const updated = root.locator('.dash-account-links-list li', { hasText: 'Heron Banner' });
+    await expect(updated.locator('[data-account-link-editor]')).toHaveCount(0);
+    await expect(updated).toContainText('Finch');
+    await expect(updated.locator('.dash-duty-account-chip')).toHaveText(/Secondary/i);
+    await expect(updated.locator('[data-account-link-edit]')).toHaveAttribute(
+      'data-type',
+      'secondary'
+    );
   });
 
   test('admin dashboard persistence compacts player summary for cloud-safe saves', async ({

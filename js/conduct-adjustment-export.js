@@ -290,7 +290,7 @@ export async function downloadConductExportCsv(model) {
   const { csvFooterCellLines, getExportBranding } = await import('./export-branding.js');
   const csv = buildConductExportCsv(model, csvFooterCellLines(getExportBranding()));
   downloadBlob(
-    new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8;' }),
+    new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' }),
     conductExportFileName(model, 'csv')
   );
 }

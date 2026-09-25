@@ -546,6 +546,22 @@ export function complaintLinkRequested(hash = globalThis.location?.hash) {
 function openComplaintFormFromHash(root) {
   if (!complaintLinkRequested()) return false;
   root.openComplaintFormFromLink?.();
+  // The Eden page is still booting when the module runs, and its loading
+  // screen keeps the form out of reach. Once the boot clears it, put the
+  // reader back on the form unless they have already moved elsewhere.
+  const body = document.body;
+  if (body?.classList?.contains('eden-x1-loading') && typeof MutationObserver === 'function') {
+    const observer = new MutationObserver(() => {
+      if (body.classList.contains('eden-x1-loading')) return;
+      observer.disconnect();
+      const active = document.activeElement;
+      if (!active || active === body || root.contains(active)) {
+        root.openComplaintFormFromLink?.();
+      }
+    });
+    observer.observe(body, { attributes: true, attributeFilter: ['class'] });
+    setTimeout(() => observer.disconnect(), 30000);
+  }
   return true;
 }
 

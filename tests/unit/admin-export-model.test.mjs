@@ -45,7 +45,7 @@ function parseCsv(text) {
   let row = [];
   let cell = '';
   let quoted = false;
-  const input = text.replace(/^﻿/, '');
+  const input = text.replace(/^\uFEFF/, '');
   for (let i = 0; i < input.length; i += 1) {
     const char = input[i];
     if (quoted) {
@@ -450,4 +450,65 @@ test('a duty row credited through an account link reads "linked", not "likely"',
   } finally {
     localStorageData.delete(PLAYER_REGISTRY_KEY);
   }
+});
+
+test('"Immortal" duty rows score for the blaze banner 2 account, as the owner answered', async () => {
+  const { resolveConfirmedPlayerAlias } = await import('../../js/vts-player-aliases.js');
+  localStorageData.delete(PLAYER_REGISTRY_KEY);
+  try {
+    // Both links in the owner's registry point the same way as the alias group:
+    // q. Immortal is blaze banner 2, a banner of BL&23.
+    writeStoredPlayerRegistry({
+      players: [],
+      accountLinks: [
+        { account: 'Immortal-banner', owner: 'q. Immortal', type: 'banner' },
+        { account: 'blaze banner 2', owner: 'BL&23', type: 'banner' },
+      ],
+    });
+    assert.equal(resolveConfirmedPlayerAlias('Immortal'), 'blaze banner 2');
+    assert.equal(resolveConfirmedPlayerAlias('q.Immortal'), 'blaze banner 2');
+    // The reviewer's no-space confirmation no longer scores to a phantom account.
+    assert.deepEqual(dutyEntryScoredNames({ name: 'Immortal', confirmed: 'q.Immortal' }), [
+      'blaze banner 2',
+    ]);
+    // Exact alias only: a longer unrelated name is not pulled in.
+    assert.equal(resolveConfirmedPlayerAlias('Immortal Pete'), '');
+  } finally {
+    localStorageData.delete(PLAYER_REGISTRY_KEY);
+  }
+});
+
+test('editing an account link renames, re-owns and retypes it in place', async () => {
+  const { editAccountLink } = await import('../../js/player-registry.js');
+  const links = [
+    { account: 'Heron Banner', owner: 'Heron', type: 'banner' },
+    { account: 'Wren Alt', owner: 'Wren', type: 'alt' },
+  ];
+  const edited = editAccountLink(links, 'Heron Banner', {
+    account: 'Heron Banner 2',
+    owner: 'Finch',
+    type: 'secondary',
+  });
+  assert.deepEqual(edited.links, [
+    { account: 'Heron Banner 2', owner: 'Finch', type: 'secondary' },
+    { account: 'Wren Alt', owner: 'Wren', type: 'alt' },
+  ]);
+  assert.equal(
+    editAccountLink(links, 'Heron Banner', { account: 'Wren Alt', owner: 'Finch' }).error,
+    'duplicate'
+  );
+  assert.equal(
+    editAccountLink(links, 'Heron Banner', { account: 'Finch', owner: 'finch' }).error,
+    'self'
+  );
+  assert.equal(
+    editAccountLink(links, 'Heron Banner', { account: '', owner: 'X' }).error,
+    'required'
+  );
+  // Same name, new owner: not a duplicate of itself.
+  assert.equal(
+    editAccountLink(links, 'Heron Banner', { account: 'Heron Banner', owner: 'Finch' }).links[0]
+      .owner,
+    'Finch'
+  );
 });

@@ -289,7 +289,7 @@ export function writeBohSignupFormValues(root, signup = {}) {
 }
 
 /* ------------------------------------------------------------------ *
- * Retired member-form questions (16.5.7)
+ * Retired member-form questions (16.5.9)
  *
  * Competition #12's form no longer asks for T9 troop types, ready speed
  * heroes, level 50 heroes, preferred/second role, availability, VTS 1097

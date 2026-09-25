@@ -8925,6 +8925,14 @@ function buildWeightedContributionCsvRows() {
   );
 }
 
+function pickScoringSettingsForExport({
+  includeDemolitionPoints,
+  contributionWeight,
+  formPointWeight,
+}) {
+  return { includeDemolitionPoints, contributionWeight, formPointWeight };
+}
+
 // Everything the dashboard holds for the all-data export, read from state.
 // `loaded` marks the tab-loaded datasets the export could not include.
 function collectAdminExportData() {
@@ -8959,11 +8967,10 @@ function collectAdminExportData() {
     weightedRows: buildWeightedContributionCsvRows(),
     playerRegistry: normalizePlayerRegistry(state.playerRegistry || readStoredPlayerRegistry()),
     conductSuggestions: state.conductSuggestions,
+    // Read-only copy of the scoring settings for the export, not a scoring site.
     dutySettings: {
       weights: state.dutyPointWeights || {},
-      includeDemolitionPoints: state.includeDemolitionPoints,
-      contributionWeight: state.contributionWeight,
-      formPointWeight: state.formPointWeight,
+      ...pickScoringSettingsForExport(state),
     },
     rewardSettings: state.rewardSettings,
     voteSettings: state.edenX1VoteSettings,

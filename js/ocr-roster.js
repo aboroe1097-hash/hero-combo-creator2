@@ -99,6 +99,7 @@ import {
   ACCOUNT_LINK_TYPES,
   compactRegistryName,
   isMainAccount,
+  editAccountLink,
   normalizeAccountLinks,
   normalizeMainAccounts,
   normalizePlayerRegistry,
@@ -3194,6 +3195,7 @@ function renderAccountLinksCard(options = {}) {
             .map(
               (link) => `<li>
           <span class="dash-account-link-names"><strong>${esc(link.account)}</strong><span aria-hidden="true">→</span><span>${esc(link.owner)}</span><span class="dash-duty-account-chip" data-account="banner" data-saved="1">${esc(typeLabel(link.type))}</span></span>
+          <button type="button" class="dash-btn dash-btn-xs" data-account-link-edit data-account="${esc(link.account)}" data-owner="${esc(link.owner)}" data-type="${esc(link.type)}" aria-label="${esc(adminT('adminAccountLinksEditFor', { account: link.account }))}">${esc(adminT('adminAccountLinksEdit'))}</button>
           <button type="button" class="dash-btn dash-btn-xs" data-account-link-remove data-account="${esc(link.account)}" aria-label="${esc(adminT('adminAccountLinksRemoveFor', { account: link.account }))}">${esc(adminT('adminAccountLinksRemove'))}</button>
         </li>`
             )
@@ -3244,6 +3246,70 @@ export function collectAccountLinkSuggestionAdditions(suggestions, editedRows, e
   return additions;
 }
 
+const ACCOUNT_LINK_EDIT_ERRORS = Object.freeze({
+  required: 'adminAccountLinksErrRequired',
+  self: 'adminAccountLinksErrSelf',
+  duplicate: 'adminAccountLinksErrDuplicate',
+});
+
+function listIdFor(host) {
+  return host.querySelector('[data-account-link-owner]')?.getAttribute('list') || '';
+}
+
+function closeAccountLinkEditor(row) {
+  if (!row) return;
+  row.querySelector('[data-account-link-editor]')?.remove();
+  row
+    .querySelectorAll('.dash-account-link-names, [data-account-link-edit], [data-account-link-remove]')
+    .forEach((node) => {
+      node.style.display = '';
+    });
+}
+
+// Inline edit of one saved link: account name, "Runs it" (with the same name
+// suggestions as the add form) and type. Save goes through saveAccountLinks,
+// the path add and remove use, so storage, cloud sync and rescoring match.
+function openAccountLinkEditor(row, data, listId) {
+  if (!row || row.querySelector('[data-account-link-editor]')) return;
+  const type = ACCOUNT_LINK_TYPES.includes(data.type) ? data.type : 'banner';
+  const typeOptions = [
+    ['banner', 'adminDutyAccountBanner'],
+    ['alt', 'adminAccountLinksAlt'],
+    ['secondary', 'adminAccountLinksSecondary'],
+  ]
+    .map(
+      ([value, key]) =>
+        `<option value="${value}"${value === type ? ' selected' : ''}>${esc(adminT(key))}</option>`
+    )
+    .join('');
+  const form = document.createElement('form');
+  form.className = 'dash-account-links-form dash-account-link-editor';
+  form.dataset.accountLinkEditor = '1';
+  form.dataset.original = data.account || '';
+  form.noValidate = true;
+  form.innerHTML = `
+    <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminAccountLinksAccount'))}</span><input type="text" data-account-link-edit-account autocomplete="off" required value="${esc(data.account || '')}"></label>
+    <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminAccountLinksOwner'))}</span><input type="text"${listId ? ` list="${esc(listId)}"` : ''} data-account-link-edit-owner autocomplete="off" required value="${esc(data.owner || '')}"></label>
+    <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyAccountType'))}</span><select data-account-link-edit-type>${typeOptions}</select></label>
+    <button type="submit" class="dash-btn dash-btn-xs dash-btn-primary">${esc(adminT('adminAccountLinksSave'))}</button>
+    <button type="button" class="dash-btn dash-btn-xs" data-account-link-edit-cancel>${esc(adminT('adminCancel'))}</button>
+    <p class="dash-form-hint dash-account-link-edit-error" data-account-link-edit-error role="alert" hidden></p>`;
+  // Inline styles, so the dash-btn display rules cannot keep them showing.
+  row
+    .querySelectorAll('.dash-account-link-names, [data-account-link-edit], [data-account-link-remove]')
+    .forEach((node) => {
+      node.style.display = 'none';
+    });
+  form.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    closeAccountLinkEditor(row);
+    row.querySelector('[data-account-link-edit]')?.focus();
+  });
+  row.append(form);
+  form.querySelector('[data-account-link-edit-owner]')?.focus();
+}
+
 function bindAccountLinksHost(host) {
   if (host.dataset.accountLinksBound === '1') return;
   host.dataset.accountLinksBound = '1';
@@ -3265,6 +3331,28 @@ function bindAccountLinksHost(host) {
         [...others, { alias, canonical, createdAt: new Date().toISOString() }],
         host
       );
+      return;
+    }
+    const editor = event.target.closest('[data-account-link-editor]');
+    if (editor) {
+      event.preventDefault();
+      const result = editAccountLink(currentAccountLinks(), editor.dataset.original || '', {
+        account: editor.querySelector('[data-account-link-edit-account]')?.value || '',
+        owner: editor.querySelector('[data-account-link-edit-owner]')?.value || '',
+        type: editor.querySelector('[data-account-link-edit-type]')?.value || 'banner',
+      });
+      const error = editor.querySelector('[data-account-link-edit-error]');
+      if (result.error) {
+        if (error) {
+          error.textContent = adminT(ACCOUNT_LINK_EDIT_ERRORS[result.error], {
+            account: editor.querySelector('[data-account-link-edit-account]')?.value.trim() || '',
+          });
+          error.hidden = false;
+        }
+        editor.querySelector('[data-account-link-edit-account]')?.focus();
+        return;
+      }
+      void saveAccountLinks(result.links, host);
       return;
     }
     const form = event.target.closest('[data-account-links-form]');
@@ -3325,6 +3413,18 @@ function bindAccountLinksHost(host) {
         ownerInput.value = edited ? edited.owner : prefill.dataset.owner || '';
         ownerInput.focus();
       }
+      return;
+    }
+    const edit = event.target.closest('[data-account-link-edit]');
+    if (edit) {
+      openAccountLinkEditor(edit.closest('li'), edit.dataset, listIdFor(host));
+      return;
+    }
+    const cancelEdit = event.target.closest('[data-account-link-edit-cancel]');
+    if (cancelEdit) {
+      const row = cancelEdit.closest('li');
+      closeAccountLinkEditor(row);
+      row?.querySelector('[data-account-link-edit]')?.focus();
       return;
     }
     const remove = event.target.closest('[data-account-link-remove]');
