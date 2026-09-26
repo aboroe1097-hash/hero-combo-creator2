@@ -407,13 +407,26 @@ export async function bootVtsScore(options = {}) {
   // Dead-troops helper: counts what dead troops return once they heal and adds
   // that power on top of the entered Troop Power and Total. The counts survive
   // re-renders, so re-reading a screenshot or switching language keeps them.
-  const deadTroopState = {
-    enabled: false,
-    unit: 'thousands',
-    counts: new Map(),
-    activeKey: '',
-  };
+  const deadTroopState = { enabled: false, unit: 'thousands', counts: new Map() };
   const deadTroopsMount = element('vtsScoreDeadTroops');
+
+  // The game marks each troop type with its own crest; these stand in for the
+  // real artwork, which drops in through assets/troops/<type>.png.
+  const DEAD_TROOP_GLYPHS = {
+    cavalry:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v7a4 4 0 0 0 8 0V3"/><path d="M8 6h8"/></svg>',
+    footmen:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v11"/><path d="M8 7h8"/><path d="M9 13l3 8 3-8"/></svg>',
+    archers:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>',
+  };
+
+  function deadTroopGlyph(className) {
+    const span = document.createElement('span');
+    span.className = 'vts-score-dead-troops__glyph';
+    span.innerHTML = DEAD_TROOP_GLYPHS[className] || DEAD_TROOP_GLYPHS.footmen;
+    return span;
+  }
 
   function deadTroopEl(tag, className, text) {
     const node = document.createElement(tag);
@@ -542,33 +555,7 @@ export async function bootVtsScore(options = {}) {
     }
     box.append(unitRow);
 
-    // Quick fill: add a common scoop to whichever tier field has focus.
-    const quickRow = deadTroopEl('div', 'vts-score-dead-troops__quick');
-    quickRow.setAttribute('role', 'group');
-    quickRow.id = 'vtsScoreDeadTroopQuick';
-    for (const step of [0.5, 1, 5, 10, 20]) {
-      const chip = deadTroopEl('button', 'vts-score-dead-troops__quick-chip', `+${step}`);
-      chip.type = 'button';
-      chip.addEventListener('click', () => {
-        const key = deadTroopState.activeKey;
-        if (!key) return;
-        const input = grid.querySelector(`[data-dead-troop-count="${key}"]`);
-        if (!input) return;
-        const current = Number(input.value) || 0;
-        const next = Math.round((current + step) * 100) / 100;
-        input.value = String(next);
-        deadTroopState.counts.set(key, input.value);
-        updateDeadTroopReadouts();
-      });
-      quickRow.append(chip);
-    }
-    box.append(quickRow);
-
     const grid = deadTroopEl('div', 'vts-score-dead-troops__grid');
-    grid.addEventListener('focusin', (event) => {
-      const field = event.target?.dataset?.deadTroopCount;
-      if (field) deadTroopState.activeKey = field;
-    });
     grid.hidden = !deadTroopState.enabled;
     grid.classList.toggle('is-open', deadTroopState.enabled);
     // One column per tier, one row per troop type: read the game screen down
@@ -593,7 +580,7 @@ export async function bootVtsScore(options = {}) {
       classIcon.loading = 'lazy';
       classIcon.decoding = 'async';
       classIcon.src = `assets/troops/${className}.png`;
-      classIcon.addEventListener('error', () => classIcon.remove());
+      classIcon.addEventListener('error', () => classIcon.replaceWith(deadTroopGlyph(className)));
       rowHead.append(
         classIcon,
         deadTroopEl(
@@ -642,7 +629,21 @@ export async function bootVtsScore(options = {}) {
         });
         const power = deadTroopEl('small', 'vts-score-dead-troops__row-power');
         power.dataset.deadTroopPower = '';
-        cell.append(head, name, input, power);
+        // Each field carries its own quick adds, so a count can go in without
+        // tapping back and forth to a shared row.
+        const quick = deadTroopEl('span', 'vts-score-dead-troops__cell-quick');
+        for (const step of [0.5, 1, 5, 10, 20]) {
+          const chip = deadTroopEl('button', 'vts-score-dead-troops__quick-chip', `+${step}`);
+          chip.type = 'button';
+          chip.addEventListener('click', () => {
+            const next = Math.round(((Number(input.value) || 0) + step) * 100) / 100;
+            input.value = String(next);
+            deadTroopState.counts.set(`${className}:${variant}`, input.value);
+            updateDeadTroopReadouts();
+          });
+          quick.append(chip);
+        }
+        cell.append(head, name, input, power, quick);
         grid.append(cell);
       }
     }

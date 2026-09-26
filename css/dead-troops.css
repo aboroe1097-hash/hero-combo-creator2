@@ -195,6 +195,31 @@
   }
 }
 
+.vts-score-dead-troops__cell-quick {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+}
+
+.vts-score-dead-troops__cell-quick .vts-score-dead-troops__quick-chip {
+  padding: 0.15rem 0.4rem;
+  font-size: 0.72rem;
+  line-height: 1.1;
+}
+
+.vts-score-dead-troops__glyph {
+  display: inline-flex;
+  width: 1.4rem;
+  height: 1.4rem;
+  opacity: 0.9;
+}
+
+.vts-score-dead-troops__glyph svg {
+  width: 100%;
+  height: 100%;
+}
+
 .vts-score-dead-troops__quick {
   display: flex;
   flex-wrap: wrap;
