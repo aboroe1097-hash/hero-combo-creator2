@@ -38,10 +38,26 @@ const COPY = Object.freeze({
   }),
 });
 
-export const DOWNLOADS_LOCALES = Object.freeze(["en","es","pt","de","fr","hr","tr","ru","id","zh","ar","kr","it"]);
+export const DOWNLOADS_LOCALES = Object.freeze([
+  'en',
+  'es',
+  'pt',
+  'de',
+  'fr',
+  'hr',
+  'tr',
+  'ru',
+  'id',
+  'zh',
+  'ar',
+  'kr',
+  'it',
+]);
 
 function normalizeLocale(locale = 'en') {
-  const primary = String(locale || 'en').toLowerCase().split('-')[0];
+  const primary = String(locale || 'en')
+    .toLowerCase()
+    .split('-')[0];
   const normalized = primary === 'ko' ? 'kr' : primary;
   return DOWNLOADS_LOCALES.includes(normalized) ? normalized : 'en';
 }

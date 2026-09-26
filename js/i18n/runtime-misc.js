@@ -71,7 +71,8 @@ const COPY = Object.freeze({
     adminLoadFailed:
       'Admin-Dashboard konnte nicht geladen werden. Aktualisiere die Seite und versuche es erneut.',
     adminLoadRetry: 'Erneut versuchen',
-    edenHubLoadFailed: '{tab} konnte nicht geladen werden. Aktualisiere die Seite und versuche es erneut.',
+    edenHubLoadFailed:
+      '{tab} konnte nicht geladen werden. Aktualisiere die Seite und versuche es erneut.',
     edenPlaybookPoisonRow10: '2,501 · Ziel +2',
     edenPlaybookPoisonRow11: '3,101 · Ziel +8',
     edenPlaybookPoisonRow12a: '3,701 · Ziel Tag 1 +22',
@@ -155,7 +156,8 @@ const COPY = Object.freeze({
     edenPlaybookPoisonRow10: '2,501 · target +2',
     edenPlaybookPoisonRow11: '3,101 · target +8',
     edenPlaybookPoisonRow12a: '3,701 · target Hari 1 +22',
-    edenPlaybookPoisonRow12b: '4,201 · 4,100 adalah 54% dan bekerja dengan baik · target Hari 2 +12',
+    edenPlaybookPoisonRow12b:
+      '4,201 · 4,100 adalah 54% dan bekerja dengan baik · target Hari 2 +12',
     edenPlaybookPoisonRow18: '6,700 · Hari 12',
   }),
   it: Object.freeze({

@@ -21,9 +21,11 @@ const hr = Object.freeze({
   edenX1HeatmapScrollHint: 'Pomiči tipkama ← i →.',
   tabManual: 'Ručni sastavljač',
   tabGenerator: 'Generator kombinacija',
-  tabCodex: "Tablice heroja",
-  researchMissingLayout: "Popis čvorova: raspored i preduvjeti nisu provjereni. Razine se mogu mijenjati bez pretpostavljenih uvjeta otključavanja.",
-  researchCostDiscrepancy: "Neslaganje izvora: troškovi razina iznose {calculated} ratnih oznaka, a objavljeni zbroj {published}. Procjene koriste troškove razina do provjere.",
+  tabCodex: 'Tablice heroja',
+  researchMissingLayout:
+    'Popis čvorova: raspored i preduvjeti nisu provjereni. Razine se mogu mijenjati bez pretpostavljenih uvjeta otključavanja.',
+  researchCostDiscrepancy:
+    'Neslaganje izvora: troškovi razina iznose {calculated} ratnih oznaka, a objavljeni zbroj {published}. Procjene koriste troškove razina do provjere.',
   tabYouTube: 'YouTube',
   tabHeroes: 'Atlas heroja',
   tabHeroesCombos: 'Heroes & Combos Hub',
@@ -151,7 +153,8 @@ const hr = Object.freeze({
   badgeBeta: 'BETA',
   edenPlaybookKicker: 'EDEN PRIRUČNIK ODANOSTI',
   edenPlaybookTitle: 'Rasti brzo, tjedan po tjedan',
-  edenPlaybookIntro: 'Jednostavan interaktivni put od dana pripreme do viših polja, jače odanosti i tvoje uloge u savezu.',
+  edenPlaybookIntro:
+    'Jednostavan interaktivni put od dana pripreme do viših polja, jače odanosti i tvoje uloge u savezu.',
   edenPlaybookTagInteractive: 'Interaktivno',
   edenPlaybookTagMobile: 'Spremno za mobitel',
   edenPlaybookTagRoutes: 'Izvorne rute',
@@ -165,7 +168,8 @@ const hr = Object.freeze({
   edenPlaybookViewTipsHint: 'Strategije po temi i ulozi',
   edenPlaybookSpecKicker: 'REFERENTNI VODIČ SPECIJALIZACIJE',
   edenPlaybookSpecTitle: 'Odaberi rutu koja odgovara današnjem zadatku',
-  edenPlaybookSpecDesc: 'Ostani u izgradnji rasta odanosti tijekom uvodnih tjedana, a zatim se prebaci za koordinirane savezne ciljeve.',
+  edenPlaybookSpecDesc:
+    'Ostani u izgradnji rasta odanosti tijekom uvodnih tjedana, a zatim se prebaci za koordinirane savezne ciljeve.',
   edenPlaybookRolesAria: 'Uloge edenskih specijalizacija',
   edenPlaybookRoleDemolitionHead: '💥 31 Plava',
   edenPlaybookRoleDemolitionTitle: 'Demolicija',
@@ -197,26 +201,31 @@ const hr = Object.freeze({
   edenPlaybookRoleHonorLi4: 'Honor nagrada: jednom dnevno',
   edenPlaybookRoleTilingHead: '🌿 40 Zelena',
   edenPlaybookRoleTilingTitle: 'Honor zauzimanjem polja',
-  edenPlaybookRoleTilingDesc: 'Zarađuj stalan Honor zauzimanjem polja umjesto nadogradnjom struktura.',
+  edenPlaybookRoleTilingDesc:
+    'Zarađuj stalan Honor zauzimanjem polja umjesto nadogradnjom struktura.',
   edenPlaybookRoleTilingLi1: 'Dobar uz manje bodova specijalizacije',
   edenPlaybookRoleTilingLi2: 'Dobar prije borbenih ili demolicijskih uloga',
   edenPlaybookRoleTilingLi3: 'Jednostavan i ujednačen rast Honora',
   edenPlaybookRoleFortHead: '🏰 24 Plava',
   edenPlaybookRoleFortTitle: 'Otključavanje tvrđave',
-  edenPlaybookRoleFortDesc: 'Otključaj dodatne Jurišne i Čuvarske tvrđave za više dnevnih nadogradnji.',
+  edenPlaybookRoleFortDesc:
+    'Otključaj dodatne Jurišne i Čuvarske tvrđave za više dnevnih nadogradnji.',
   edenPlaybookRoleFortLi1: 'Koristan za borce i lovce na zasluge',
   edenPlaybookRoleFortLi2: 'Sagradi svaku tvrđavu prije resetiranja',
-  edenPlaybookRoleFortLi3: 'Oni koji ne troše mogu preskočiti dodatne i iskoristiti besplatni reset na otvaranju',
+  edenPlaybookRoleFortLi3:
+    'Oni koji ne troše mogu preskočiti dodatne i iskoristiti besplatni reset na otvaranju',
   edenPlaybookJumpKicker: 'CILJEVI ODANOSTI',
   edenPlaybookJumpTitle: 'Tri skoka prihoda',
-  edenPlaybookJumpDesc: 'Daj prednost ovim graničnim točkama kada odlučuješ isplati li se još jedno teško polje po cijenu vojske.',
+  edenPlaybookJumpDesc:
+    'Daj prednost ovim graničnim točkama kada odlučuješ isplati li se još jedno teško polje po cijenu vojske.',
   edenPlaybookJump9Title: 'Lv. 9',
   edenPlaybookJump9Income: '900 prihoda',
   edenPlaybookJump12Title: 'Lv. 12',
   edenPlaybookJump12Income: '1,200 prihoda',
   edenPlaybookJump16Title: 'Lv. 16',
   edenPlaybookJump16Income: '1,600 prihoda',
-  edenPlaybookJumpRule: 'DrThunderovo pravilo: ako možeš forsirati jedan od ovih skokova — čak i uz velike rane gubitke — dodatni prihod može ubrzati sve što slijedi.',
+  edenPlaybookJumpRule:
+    'DrThunderovo pravilo: ako možeš forsirati jedan od ovih skokova — čak i uz velike rane gubitke — dodatni prihod može ubrzati sve što slijedi.',
   edenPlaybookTableAria: 'Tablica prihoda polja i ciljeva otrovne štete po DrThunderu',
   edenPlaybookTableCaption: 'Ciljevi prihoda polja i otrovne štete',
   edenPlaybookTableTile: 'Razina polja',
@@ -225,7 +234,8 @@ const hr = Object.freeze({
   edenPlaybookTablePoison50: 'Cilj otrovne štete: 50%',
   edenPlaybookPoisonKicker: '☠️ OTROVNA ŠTETA I STRATEGIJA HEROJA',
   edenPlaybookPoisonTitle: 'Veliki rani gubici i dalje mogu otključati brži rast',
-  edenPlaybookPoisonIntro: 'Polja često možeš zauzeti uz 97% otrovne štete. To će ubiti mnogo postrojbi, ali takva razmjena može biti isplativa na početku. Ispod 50% zauzimanje polja postaje puno lakše.',
+  edenPlaybookPoisonIntro:
+    'Polja često možeš zauzeti uz 97% otrovne štete. To će ubiti mnogo postrojbi, ali takva razmjena može biti isplativa na početku. Ispod 50% zauzimanje polja postaje puno lakše.',
   edenPlaybookPoisonHeroesTitle: 'Najbolji heroji za otrovna polja',
   edenPlaybookPoisonHero1: 'Immortal',
   edenPlaybookPoisonHero1Hint: 'Čudovište u ranim Eden sezonama',
@@ -233,17 +243,22 @@ const hr = Object.freeze({
   edenPlaybookPoisonHero2Hint: 'Preporučen; nije prikazan u primjeru',
   edenPlaybookPoisonHero3: 'Beast Queen',
   edenPlaybookPoisonHero3Hint: 'Najbolji izbor za otrovna polja u mnogim sezonama',
-  edenPlaybookPoisonWarning: '⚠️ Ne popunjavaj svoje legije. Manji broj postrojbi smanjuje troškove liječenja i održava tvoje heroje aktivnima za više udara.',
-  edenPlaybookPoisonImgAlt: 'Legija na otrovnom polju u igri koja prikazuje Immortala i dva prateća heroja s manjim odredima postrojbi',
-  edenPlaybookPoisonFigCaption: 'Primjer formacije u igri. Zamijeni srednjeg heroja s Rozen Blade kada je dostupan.',
+  edenPlaybookPoisonWarning:
+    '⚠️ Ne popunjavaj svoje legije. Manji broj postrojbi smanjuje troškove liječenja i održava tvoje heroje aktivnima za više udara.',
+  edenPlaybookPoisonImgAlt:
+    'Legija na otrovnom polju u igri koja prikazuje Immortala i dva prateća heroja s manjim odredima postrojbi',
+  edenPlaybookPoisonFigCaption:
+    'Primjer formacije u igri. Zamijeni srednjeg heroja s Rozen Blade kada je dostupan.',
   edenPlaybookTroopSetupTitle: '💡 Primjeri rasporeda postrojbi',
   edenPlaybookRatioStrong: 'Jak račun',
   edenPlaybookRatioWeaker: 'Slabiji račun · možda treba 2–3 udara',
   edenPlaybookRatioRisky: 'Rizičan raspored',
-  edenPlaybookRatioTip: 'Zadrži odred prvog heroja otprilike dvostruko veći od ostalih za najbolje rezultate.',
+  edenPlaybookRatioTip:
+    'Zadrži odred prvog heroja otprilike dvostruko veći od ostalih za najbolje rezultate.',
   edenPlaybookFooter: 'Izvorna strategija i snimke zaslona:',
   edenPlaybookFooterSource: 'Thunder Loyalty Playbook, stu. 2025.',
-  edenPlaybookFooterNote: 'Prilagodi vrijeme svojoj sezoni, uputama saveza, bodovima specijalizacije, postrojbama i dostupnosti resetiranja.',
+  edenPlaybookFooterNote:
+    'Prilagodi vrijeme svojoj sezoni, uputama saveza, bodovima specijalizacije, postrojbama i dostupnosti resetiranja.',
   edenPlaybookFocusKicker: 'TVOJ TRENUTAČNI FOKUS',
   edenPlaybookWhyTitle: 'Zašto je ova faza važna',
   edenPlaybookWatchTitle: 'Pazi',
@@ -252,42 +267,60 @@ const hr = Object.freeze({
   edenPlaybookDay0GreenAlt: 'Raspored bodova specijalizacije Dan 0 Zelena lijevo',
   edenPlaybookDay0GreenCaption: 'Dan 0 Zelena lijevo: ruta za izgradnju Honora i dnevni Honor.',
   edenPlaybookDay0BlueAlt: 'Raspored bodova specijalizacije Dan 0 Plava dolje za sve tvrđave',
-  edenPlaybookDay0BlueCaption: 'Dan 0 Plava dolje: otključaj i postavi sve četiri tvrđave prije resetiranja.',
+  edenPlaybookDay0BlueCaption:
+    'Dan 0 Plava dolje: otključaj i postavi sve četiri tvrđave prije resetiranja.',
   edenPlaybookDay0Label: 'Dan 0',
   edenPlaybookDay0Title: 'Pripremi se prije resetiranja',
-  edenPlaybookDay0Why: 'Zelena lijevo pretvara višak bodova u rani Honor, dok Plava dolje otključava liniju tvrđava prije početnog naleta.',
-  edenPlaybookDay0Watch: 'Dovrši obje rute i postavi svaku tvrđavu prije nego što promijeniš raspored.',
-  edenPlaybookDay0Task1: 'Iskoristi osnovno resetiranje od 7 dana za rano otvaranje pristupa tvrđavama.',
+  edenPlaybookDay0Why:
+    'Zelena lijevo pretvara višak bodova u rani Honor, dok Plava dolje otključava liniju tvrđava prije početnog naleta.',
+  edenPlaybookDay0Watch:
+    'Dovrši obje rute i postavi svaku tvrđavu prije nego što promijeniš raspored.',
+  edenPlaybookDay0Task1:
+    'Iskoristi osnovno resetiranje od 7 dana za rano otvaranje pristupa tvrđavama.',
   edenPlaybookDay0Task2: 'Slijedi Zelenu lijevo za Honor zgrade i dnevnu vještinu Honora.',
-  edenPlaybookDay0Task3: 'Slijedi Plavu dolje dovoljno daleko da otključaš i postaviš sve četiri tvrđave.',
+  edenPlaybookDay0Task3:
+    'Slijedi Plavu dolje dovoljno daleko da otključaš i postaviš sve četiri tvrđave.',
   edenPlaybookDay0Task4: 'Aktiviraj dnevnu vještinu Honora.',
   edenPlaybookDay1Label: 'Dan 1',
   edenPlaybookDay1Title: 'Gradi, uđi, zatim forsiraj prihod',
-  edenPlaybookDay1Why: 'Bojišnice pretvaraju pohranjene materijale u Honor; Plava desno zatim pretvara odanost u prvi veliki skok prihoda.',
-  edenPlaybookDay1Watch: 'Ne gradi toliko dugo da se redovi obrade zaustave ili da se polja Lv. 9 odgode.',
-  edenPlaybookDay1Task1: 'Pokreni Honor bonuse i Honor karticu; otvori pohranjene građevne materijale.',
+  edenPlaybookDay1Why:
+    'Bojišnice pretvaraju pohranjene materijale u Honor; Plava desno zatim pretvara odanost u prvi veliki skok prihoda.',
+  edenPlaybookDay1Watch:
+    'Ne gradi toliko dugo da se redovi obrade zaustave ili da se polja Lv. 9 odgode.',
+  edenPlaybookDay1Task1:
+    'Pokreni Honor bonuse i Honor karticu; otvori pohranjene građevne materijale.',
   edenPlaybookDay1Task2: 'Sagradi tvrđave na Lv. 1 i bojišnice prema 12 / 11 / 11 / 11.',
-  edenPlaybookDay1Task3: 'Uđi u Eden, resetiraj na 47 bodova na Plavoj desno, forsiraj polja Lv. 8 pa Lv. 9.',
-  edenPlaybookDay1Task4: 'Drži redove obrade aktivnima; napuni ih jednom tijekom sna ako je moguće.',
+  edenPlaybookDay1Task3:
+    'Uđi u Eden, resetiraj na 47 bodova na Plavoj desno, forsiraj polja Lv. 8 pa Lv. 9.',
+  edenPlaybookDay1Task4:
+    'Drži redove obrade aktivnima; napuni ih jednom tijekom sna ako je moguće.',
   edenPlaybookDay2Label: 'Dan 2',
   edenPlaybookDay2Title: 'Forsiraj ključni skok na Lv. 12',
-  edenPlaybookDay2Why: 'Prihod raste s 1,000 na Lv. 11 na 1,200 na Lv. 12 — jedan od najvećih skokova u tablici.',
-  edenPlaybookDay2Watch: 'Veliki rani gubici od otrova mogu uspjeti, ali sačuvaj dovoljno postrojbi za ciljeve saveza.',
+  edenPlaybookDay2Why:
+    'Prihod raste s 1,000 na Lv. 11 na 1,200 na Lv. 12 — jedan od najvećih skokova u tablici.',
+  edenPlaybookDay2Watch:
+    'Veliki rani gubici od otrova mogu uspjeti, ali sačuvaj dovoljno postrojbi za ciljeve saveza.',
   edenPlaybookDay2Task1: 'Sudjeluj u demoliciji struktura bez usporavanja rasta odanosti.',
   edenPlaybookDay2Task2: 'Ako je Lv. 12 blizu, daj mu prednost pred dodatnim zgradama.',
   edenPlaybookDay2Task3: 'Lv. 12 ključni je rani skok: 1,200 prihoda i korisne središnje praznine.',
   edenPlaybookWeek1Label: 'Tjedan 1',
   edenPlaybookWeek1Title: 'Uravnoteži prihod i obradu',
-  edenPlaybookWeek1Why: 'Prihod bez obrade stvara zaostatak; obrada bez visokih polja izgladnjuje redove.',
-  edenPlaybookWeek1Watch: 'Provjeri dostupna resetiranja i raspored saveza prije prebacivanja s Plave desno na Plavu lijevo.',
+  edenPlaybookWeek1Why:
+    'Prihod bez obrade stvara zaostatak; obrada bez visokih polja izgladnjuje redove.',
+  edenPlaybookWeek1Watch:
+    'Provjeri dostupna resetiranja i raspored saveza prije prebacivanja s Plave desno na Plavu lijevo.',
   edenPlaybookWeek1ToolLabel: '🔄 Uravnoteživanje prihoda i proizvodnje',
-  edenPlaybookWeek1ToolDesc: 'Otvori naš alat Eden odanosti za usporedbu odanosti, prihoda i obrade.',
-  edenPlaybookWeek1Task1: 'Plava desno pomaže doseći viša polja; svaki čvor odanosti vrijedi oko 300.',
-  edenPlaybookWeek1Task2: 'Kada se materijali nagomilaju, resetiraj na Plavu lijevo za brzinu obrade.',
+  edenPlaybookWeek1ToolDesc:
+    'Otvori naš alat Eden odanosti za usporedbu odanosti, prihoda i obrade.',
+  edenPlaybookWeek1Task1:
+    'Plava desno pomaže doseći viša polja; svaki čvor odanosti vrijedi oko 300.',
+  edenPlaybookWeek1Task2:
+    'Kada se materijali nagomilaju, resetiraj na Plavu lijevo za brzinu obrade.',
   edenPlaybookWeek1Task3: 'Ciljaj Farm, Marble i Ale za nadogradnje Coalition Base Campa.',
   edenPlaybookRoleLabel: 'Izgradnja uloge',
   edenPlaybookRoleTitle: 'Prebaci se kada je odanost stabilna',
-  edenPlaybookRoleWhy: 'Kada je odanost stabilna, bodovi specijalizacije mogu služiti savezu umjesto samo osobnom rastu.',
+  edenPlaybookRoleWhy:
+    'Kada je odanost stabilna, bodovi specijalizacije mogu služiti savezu umjesto samo osobnom rastu.',
   edenPlaybookRoleWatch: 'Koordiniraj cooldowne Zastave i demolicije — nemoj ih aktivirati sam.',
   edenPlaybookRoleTask1: 'Demolicija: 31 Plava boda; opcionalne aktivne vještine demolicije.',
   edenPlaybookRoleTask2: 'Zastava: 47 Crvena boda za staninu saveza i bonuse demolicije.',

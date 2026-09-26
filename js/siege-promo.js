@@ -1,5 +1,6 @@
-// "Try Velo's Rampart" prompts for the rest of the site: the featured Arcade
-// banner and a one-time homepage callout.
+// Prompts for the rest of the site: the featured Arcade banner for Velo's
+// Rampart, and a one-time homepage callout that sends members to the Eden
+// page to vote for the best members.
 //
 // Neither prompt may cost the host page anything it did not ask for: this
 // module never imports the game (anything under js/eden-siege/ is bundled into
@@ -17,6 +18,7 @@ import {
 export { CALLOUT_KEY, CALLOUT_VERSION, calloutDismissed, dismissCallout } from './siege-daily.js';
 
 const SIEGE_URL = '/eden-siege.html';
+const EDEN_URL = '/eden-x2.html';
 
 function dailyNote(copy, date = new Date()) {
   const today = dailySiegeFor(date);
@@ -69,7 +71,7 @@ export function mountSiegeFeature(container, { getCopy }) {
 
   const actions = element('div', 'siege-feature-actions');
   const play = element('a', 'siege-feature-play');
-  play.href = SIEGE_URL;
+  play.href = EDEN_URL;
   play.dataset.i18n = 'arcadeSiegePlay';
   const dailyLink = element('a', 'siege-feature-daily-link');
   dailyLink.href = `${SIEGE_URL}?mode=daily`;
@@ -103,10 +105,14 @@ export function mountSiegeCallout({ getCopy, storage } = {}) {
   if (calloutDismissed(storage) || document.querySelector('.siege-callout')) return null;
   const copy = getCopy() || {};
   const root = element('aside', 'siege-callout');
-  root.setAttribute('aria-label', copy.siegeCalloutTitle || "Velo's Rampart");
+  root.setAttribute('aria-label', copy.siegeCalloutTitle || 'Vote for the best members');
 
   const text = element('div', 'siege-callout-copy');
-  const title = element('strong', 'siege-callout-title', copy.siegeCalloutTitle || "NEW: Velo's Rampart — play now");
+  const title = element(
+    'strong',
+    'siege-callout-title',
+    copy.siegeCalloutTitle || 'Vote for the best members'
+  );
   const body = element('span', 'siege-callout-body', copy.siegeCalloutBody || '');
   text.append(title, body);
 
@@ -132,7 +138,7 @@ export function mountSiegeCallout({ getCopy, storage } = {}) {
     body.textContent = next.siegeCalloutBody || body.textContent;
     play.textContent = next.siegeCalloutPlay || play.textContent;
     close.setAttribute('aria-label', next.siegeCalloutDismiss || 'Dismiss');
-    root.setAttribute('aria-label', next.siegeCalloutTitle || "Velo's Rampart");
+    root.setAttribute('aria-label', next.siegeCalloutTitle || 'Vote for the best members');
   });
   return root;
 }
