@@ -151,6 +151,17 @@ test.describe("Velo's Rampart", () => {
     await page.waitForTimeout(4000);
     await page.keyboard.press('KeyE');
     await page.waitForTimeout(2500);
+    // The daily seed decides how far away wave one spawns, and a slow CI
+    // runner reaches less game time in the same wall-clock window (the
+    // 2026-09-26 seed got its first kill only near 13 s of game time locally
+    // and none within the window on CI). Keep engaging until the first kill
+    // instead of judging a fixed window; a run that never kills still fails.
+    await expect
+      .poll(() => page.evaluate(() => window.__EDEN_SIEGE__.scene().stats.kills), {
+        message: 'engaging wave one kills something',
+        timeout: 20000,
+      })
+      .toBeGreaterThan(0);
     await page.keyboard.up('KeyW');
     await page.keyboard.up('Space');
 
