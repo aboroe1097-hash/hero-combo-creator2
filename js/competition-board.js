@@ -63,7 +63,7 @@ export const COMPETITION_BOARD_COPY_EN = Object.freeze({
     'Only players who agreed to a public comparison appear here. Everyone else stays off the board.',
   competitionBoardNotRanked:
     '{count} players are not ranked: they have no valid re-upload in the window.',
-  competitionBoardEmpty: 'The growth board has not been published yet.',
+  competitionBoardEmpty: 'The growth board will appear after the re-upload window closes.',
   competitionBoardNoOptInResults: 'No opted-in re-uploads are ready yet.',
   competitionBoardNoResults: 'No player matches your search.',
   competitionBoardValuesPrivate: 'Values private',
@@ -108,7 +108,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
       'يظهر هنا فقط اللاعبون الذين وافقوا على المقارنة العلنية. ولا تظهر بيانات الآخرين.',
     competitionBoardNotRanked:
       '{count} لاعبين غير مصنَّفين: ليس لديهم إعادة رفع صالحة ضمن النافذة.',
-    competitionBoardEmpty: 'لم تُنشر لوحة النمو بعد.',
+    competitionBoardEmpty: 'ستظهر لوحة النمو بعد إغلاق فترة إعادة الرفع.',
     competitionBoardNoOptInResults: 'لا توجد بعد عمليات إعادة رفع جاهزة للمشاركة علنًا.',
     competitionBoardNoResults: 'لا يوجد لاعب يطابق بحثك.',
     competitionBoardValuesPrivate: 'القيم خاصة',
@@ -150,7 +150,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
       'Solo aparecen los jugadores que aceptaron la comparación pública. Los demás no figuran en la tabla.',
     competitionBoardNotRanked:
       '{count} jugadores no están clasificados: no tienen una nueva subida válida dentro del plazo.',
-    competitionBoardEmpty: 'La tabla de crecimiento aún no se ha publicado.',
+    competitionBoardEmpty: 'La tabla de crecimiento aparecerá al cerrar el plazo de nuevas subidas.',
     competitionBoardNoOptInResults: 'Aún no hay nuevas subidas públicas listas.',
     competitionBoardNoResults: 'Ningún jugador coincide con tu búsqueda.',
     competitionBoardValuesPrivate: 'Valores privados',
@@ -192,7 +192,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
       'Só aparecem os jogadores que aceitaram a comparação pública. Os demais ficam fora do quadro.',
     competitionBoardNotRanked:
       '{count} jogadores não estão classificados: não têm um novo envio válido dentro da janela.',
-    competitionBoardEmpty: 'O quadro de crescimento ainda não foi publicado.',
+    competitionBoardEmpty: 'O quadro de crescimento aparecerá após o fim do prazo de novos envios.',
     competitionBoardNoOptInResults: 'Ainda não há novos envios públicos prontos.',
     competitionBoardNoResults: 'Nenhum jogador corresponde à sua busca.',
     competitionBoardValuesPrivate: 'Valores privados',
@@ -234,7 +234,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
       'Seuls les joueurs ayant accepté la comparaison publique apparaissent ici. Les autres restent hors du tableau.',
     competitionBoardNotRanked:
       '{count} joueurs ne sont pas classés : ils n’ont pas de nouvel envoi valide dans la fenêtre.',
-    competitionBoardEmpty: 'Le tableau de croissance n’a pas encore été publié.',
+    competitionBoardEmpty: 'Le tableau de croissance apparaîtra après la clôture des nouveaux envois.',
     competitionBoardNoOptInResults: 'Aucun nouvel envoi public n’est encore prêt.',
     competitionBoardNoResults: 'Aucun joueur ne correspond à votre recherche.',
     competitionBoardValuesPrivate: 'Valeurs privées',
@@ -276,7 +276,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
       'Hier erscheinen nur Spieler, die dem öffentlichen Vergleich zugestimmt haben. Alle anderen bleiben außerhalb der Tafel.',
     competitionBoardNotRanked:
       '{count} Spieler sind nicht gewertet: Sie haben keinen gültigen erneuten Upload im Zeitfenster.',
-    competitionBoardEmpty: 'Die Wachstumstafel wurde noch nicht veröffentlicht.',
+    competitionBoardEmpty: 'Die Wachstumstafel erscheint nach dem Ende des erneuten Uploads.',
     competitionBoardNoOptInResults: 'Noch liegen keine öffentlichen erneuten Uploads vor.',
     competitionBoardNoResults: 'Kein Spieler passt zu deiner Suche.',
     competitionBoardValuesPrivate: 'Werte privat',

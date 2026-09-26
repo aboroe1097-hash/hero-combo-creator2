@@ -109,10 +109,10 @@ test('Arabic renders right-to-left with the Arabic copy', () => {
   assert.match(html, /الفائزون/);
 });
 
-test('an unpublished board shows the empty state', () => {
+test('a board without results shows the empty state', () => {
   for (const projection of [null, {}, { rows: [], winners: [] }]) {
     const html = board.buildCompetitionBoardHtml(projection, { locale: 'es' });
-    assert.match(html, /La tabla de crecimiento aún no se ha publicado/);
+    assert.match(html, /La tabla de crecimiento aparecerá/);
     assert.doesNotMatch(html, /<table/);
   }
 });
@@ -227,7 +227,7 @@ test('renderCompetitionBoard wires search and sorting without touching Firebase'
   assert.equal(container.sorts[1].attributes['aria-pressed'], 'true');
   assert.equal(container.sorts[0].attributes['aria-pressed'], 'false');
   handle.update(null);
-  assert.match(container.innerHTML, /has not been published yet/);
+  assert.match(container.innerHTML, /will appear after the re-upload window closes/);
 });
 
 test('loadCompetitionBoard reads the published board document', async () => {
