@@ -23,17 +23,19 @@
   display: grid;
   gap: 0.55rem;
 }
+/* Phones: one compact line per tier, so fifteen entries fill as fast as the
+   desktop table. 16px inputs stop iOS zooming the page on focus. */
 .vts-score-dead-troops__class {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.45rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.4rem;
 }
 .vts-score-dead-troops__class-name {
   grid-column: 1 / -1;
 }
 .vts-score-dead-troops__cell {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr) minmax(4.5rem, 7rem);
   gap: 0.25rem 0.45rem;
   align-items: center;
   border: 1px solid var(--vts-score-border, rgba(148, 163, 184, 0.25));
@@ -42,8 +44,10 @@
   min-width: 0;
 }
 .vts-score-dead-troops__cell input {
-  grid-column: 1 / -1;
+  grid-column: 3;
   width: 100%;
+  min-width: 0;
+  font-size: 1rem;
 }
 .vts-score-dead-troops__badge {
   display: inline-flex;
@@ -80,4 +84,137 @@
   .vts-score-dead-troops__class {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+}
+
+.vts-score-dead-troops__head {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.vts-score-dead-troops__icon {
+  width: 1.9rem;
+  height: 1.9rem;
+  object-fit: cover;
+  border-radius: 0.4rem;
+}
+
+/* The grid uncovers rather than snapping open when the toggle turns on. */
+.vts-score-dead-troops__grid {
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.vts-score-dead-troops__grid[hidden] {
+  opacity: 0;
+}
+
+.vts-score-dead-troops__grid.is-open {
+  opacity: 1;
+  transform: none;
+}
+
+.vts-score-dead-troops__grid:not(.is-open) {
+  transform: translateY(-0.25rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vts-score-dead-troops__grid {
+    transition: none;
+  }
+}
+
+[data-theme='light'] .vts-score-dead-troops__box {
+  border-color: rgba(15, 23, 42, 0.18);
+  background: rgba(15, 23, 42, 0.02);
+}
+
+[data-theme='light'] .vts-score-dead-troops__cell {
+  border-color: rgba(15, 23, 42, 0.16);
+}
+
+[data-theme='light'] .vts-score-dead-troops__unit-option,
+[data-theme='light'] .vts-score-dead-troops__toggle {
+  color: inherit;
+}
+
+/* Easy fill: tier columns, one row per troop type. */
+.vts-score-dead-troops__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  align-items: end;
+}
+
+.vts-score-dead-troops__row-head {
+  grid-column: 1 / -1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.vts-score-dead-troops__col-head {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .vts-score-dead-troops__row {
+    grid-template-columns: minmax(6.5rem, auto) repeat(5, minmax(0, 1fr));
+  }
+
+  .vts-score-dead-troops__row--head .vts-score-dead-troops__col-head {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    opacity: 0.85;
+  }
+
+  .vts-score-dead-troops__row-head {
+    grid-column: auto;
+  }
+
+  /* The column header carries the tier, so the in-cell label is noise. */
+  .vts-score-dead-troops__variant {
+    display: none;
+  }
+
+  .vts-score-dead-troops__cell {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
+    gap: 0.3rem;
+  }
+
+  .vts-score-dead-troops__cell input {
+    grid-column: 1;
+  }
+
+  .vts-score-dead-troops__row-power {
+    grid-column: 1;
+    font-size: 0.75rem;
+  }
+}
+
+.vts-score-dead-troops__quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.vts-score-dead-troops__quick-chip {
+  padding: 0.3rem 0.65rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+  background: transparent;
+  color: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vts-score-dead-troops__quick-chip:active {
+  background: rgba(148, 163, 184, 0.22);
+}
+
+[data-theme='light'] .vts-score-dead-troops__quick-chip {
+  border-color: rgba(15, 23, 42, 0.25);
 }
