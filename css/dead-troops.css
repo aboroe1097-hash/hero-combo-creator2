@@ -1,245 +1,234 @@
-/* Dead-troops helper (16.6.1): counts what dead troops return once healed. */
+/* Optional dead-troops entry, loaded only with the power review. */
 .vts-score-dead-troops__box {
-  border: 1px solid var(--vts-score-border, rgba(148, 163, 184, 0.35));
-  border-radius: 0.65rem;
-  padding: 0.75rem;
-  margin: 0.75rem 0;
-  display: grid;
-  gap: 0.65rem;
+  min-width: 0;
+  margin: 18px 0 0;
+  padding: 16px;
+  border: 1px solid var(--vts-border);
+  border-radius: 16px;
+  background: var(--vts-surface-soft);
 }
-.vts-score-dead-troops__toggle,
-.vts-score-dead-troops__unit-option {
-  display: inline-flex;
+.vts-score-dead-troops__box legend {
+  padding: 0 6px;
+  color: var(--vts-text);
+  font-weight: 800;
+}
+.vts-score-dead-troops__toggle {
+  display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 10px;
+  min-height: 38px;
+  color: var(--vts-text);
+  font-weight: 700;
+  cursor: pointer;
+}
+.vts-score-dead-troops__toggle input,
+.vts-score-dead-troops__unit-option input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--vts-accent);
+}
+.vts-score-dead-troops__grid {
+  display: grid;
+  gap: 14px;
+  padding-top: 14px;
+}
+.vts-score-dead-troops__grid[hidden],
+.vts-score-dead-troops__panel[hidden] {
+  display: none;
 }
 .vts-score-dead-troops__unit {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.65rem;
+  gap: 8px;
 }
-.vts-score-dead-troops__grid {
-  display: grid;
-  gap: 0.55rem;
-}
-/* Phones: one compact line per tier, so fifteen entries fill as fast as the
-   desktop table. 16px inputs stop iOS zooming the page on focus. */
-.vts-score-dead-troops__class {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.4rem;
-}
-.vts-score-dead-troops__class-name {
-  grid-column: 1 / -1;
-}
-.vts-score-dead-troops__cell {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) minmax(4.5rem, 7rem);
-  gap: 0.25rem 0.45rem;
-  align-items: center;
-  border: 1px solid var(--vts-score-border, rgba(148, 163, 184, 0.25));
-  border-radius: 0.5rem;
-  padding: 0.45rem;
-  min-width: 0;
-}
-.vts-score-dead-troops__cell input {
-  grid-column: 3;
+.vts-score-dead-troops__unit-label {
   width: 100%;
-  min-width: 0;
-  font-size: 1rem;
-}
-.vts-score-dead-troops__badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2.1rem;
-  padding: 0.1rem 0.35rem;
-  border-radius: 0.45rem;
+  color: var(--vts-muted);
+  font-size: 0.82rem;
   font-weight: 700;
-  font-size: 0.78rem;
-  color: #3f2d12;
-  background: linear-gradient(180deg, #e5e7eb, #c8ccd4);
 }
-.vts-score-dead-troops__badge.is-enhanced {
-  color: #3b2a06;
-  background: linear-gradient(180deg, #ffe9a8, #e8c25a);
-}
-.vts-score-dead-troops__variant {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  font-size: 0.85rem;
-}
-.vts-score-dead-troops__row-power {
-  grid-column: 1 / -1;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-.vts-score-dead-troops__total,
-.vts-score-dead-troops__preview {
-  margin: 0;
-  font-variant-numeric: tabular-nums;
-}
-@media (min-width: 640px) {
-  .vts-score-dead-troops__class {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-.vts-score-dead-troops__head {
+.vts-score-dead-troops__unit-option {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 7px;
+  min-height: 38px;
+  padding: 6px 10px;
+  border: 1px solid var(--vts-border);
+  border-radius: 9px;
+  cursor: pointer;
 }
-
-.vts-score-dead-troops__icon {
-  width: 1.9rem;
-  height: 1.9rem;
-  object-fit: cover;
-  border-radius: 0.4rem;
+.vts-score-dead-troops__unit-option:has(input:checked) {
+  border-color: var(--vts-accent);
+  background: rgb(34 211 238 / 10%);
 }
-
-/* The grid uncovers rather than snapping open when the toggle turns on. */
-.vts-score-dead-troops__grid {
-  transition:
-    opacity 0.18s ease,
-    transform 0.18s ease;
-}
-
-.vts-score-dead-troops__grid[hidden] {
-  opacity: 0;
-}
-
-.vts-score-dead-troops__grid.is-open {
-  opacity: 1;
-  transform: none;
-}
-
-.vts-score-dead-troops__grid:not(.is-open) {
-  transform: translateY(-0.25rem);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .vts-score-dead-troops__grid {
-    transition: none;
-  }
-}
-
-[data-theme='light'] .vts-score-dead-troops__box {
-  border-color: rgba(15, 23, 42, 0.18);
-  background: rgba(15, 23, 42, 0.02);
-}
-
-[data-theme='light'] .vts-score-dead-troops__cell {
-  border-color: rgba(15, 23, 42, 0.16);
-}
-
-[data-theme='light'] .vts-score-dead-troops__unit-option,
-[data-theme='light'] .vts-score-dead-troops__toggle {
-  color: inherit;
-}
-
-/* Easy fill: tier columns, one row per troop type. */
-.vts-score-dead-troops__row {
+.vts-score-dead-troops__tabs {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.45rem;
-  align-items: end;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
 }
-
-.vts-score-dead-troops__row-head {
-  grid-column: 1 / -1;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.vts-score-dead-troops__col-head {
-  display: none;
-}
-
-@media (min-width: 640px) {
-  .vts-score-dead-troops__row {
-    grid-template-columns: minmax(6.5rem, auto) repeat(5, minmax(0, 1fr));
-  }
-
-  .vts-score-dead-troops__row--head .vts-score-dead-troops__col-head {
-    display: block;
-    font-size: 0.78rem;
-    font-weight: 600;
-    opacity: 0.85;
-  }
-
-  .vts-score-dead-troops__row-head {
-    grid-column: auto;
-  }
-
-  /* The column header carries the tier, so the in-cell label is noise. */
-  .vts-score-dead-troops__variant {
-    display: none;
-  }
-
-  .vts-score-dead-troops__cell {
-    grid-template-columns: minmax(0, 1fr);
-    justify-items: stretch;
-    gap: 0.3rem;
-  }
-
-  .vts-score-dead-troops__cell input {
-    grid-column: 1;
-  }
-
-  .vts-score-dead-troops__row-power {
-    grid-column: 1;
-    font-size: 0.75rem;
-  }
-}
-
-.vts-score-dead-troops__cell-quick {
-  grid-column: 1 / -1;
+.vts-score-dead-troops__tab {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.2rem;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 7px;
+  min-width: 0;
+  min-height: 58px;
+  padding: 8px 5px;
+  border: 1px solid var(--vts-border);
+  border-radius: 10px;
+  background: var(--vts-surface-solid);
+  color: var(--vts-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
 }
-
-.vts-score-dead-troops__cell-quick .vts-score-dead-troops__quick-chip {
-  padding: 0.15rem 0.4rem;
-  font-size: 0.72rem;
-  line-height: 1.1;
+.vts-score-dead-troops__tab[aria-pressed='true'] {
+  border-color: var(--vts-accent);
+  background: rgb(34 211 238 / 11%);
+  color: var(--vts-text);
+  box-shadow: inset 0 -2px var(--vts-accent);
 }
-
 .vts-score-dead-troops__glyph {
   display: inline-flex;
-  width: 1.4rem;
-  height: 1.4rem;
-  opacity: 0.9;
+  flex: 0 0 25px;
+  width: 25px;
+  height: 25px;
+  color: var(--vts-warning);
 }
-
 .vts-score-dead-troops__glyph svg {
   width: 100%;
   height: 100%;
 }
-
-.vts-score-dead-troops__quick {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
+.vts-score-dead-troops__tab-count {
+  flex-basis: 100%;
+  color: var(--vts-subtle);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
 }
-
-.vts-score-dead-troops__quick-chip {
-  padding: 0.3rem 0.65rem;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  border-radius: 9999px;
-  background: transparent;
-  color: inherit;
-  font-weight: 600;
+.vts-score-dead-troops__panel {
+  display: grid;
+  gap: 7px;
+}
+.vts-score-dead-troops__cell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(100px, 128px);
+  align-items: center;
+  gap: 2px 8px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--vts-border);
+  border-radius: 10px;
+  background: var(--vts-surface-solid);
+}
+.vts-score-dead-troops__cell-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
   cursor: pointer;
 }
-
-.vts-score-dead-troops__quick-chip:active {
-  background: rgba(148, 163, 184, 0.22);
+.vts-score-dead-troops__badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  justify-content: center;
+  min-width: 34px;
+  padding: 3px 5px;
+  border-radius: 5px;
+  background: #cbd5e1;
+  color: #263242;
+  font-size: 0.7rem;
+  font-weight: 800;
 }
-
-[data-theme='light'] .vts-score-dead-troops__quick-chip {
-  border-color: rgba(15, 23, 42, 0.25);
+.vts-score-dead-troops__badge.is-enhanced {
+  background: #f2c869;
+  color: #3b2a06;
+}
+.vts-score-dead-troops__variant {
+  min-width: 0;
+  color: var(--vts-text);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+.vts-score-dead-troops__entry {
+  position: relative;
+  min-width: 0;
+}
+.vts-score-dead-troops__entry input {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  padding: 7px 9px;
+  padding-inline-end: 27px;
+  border: 1px solid var(--vts-border-strong);
+  border-radius: 8px;
+  background: var(--vts-surface-soft);
+  color: var(--vts-text);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+.vts-score-dead-troops__entry:has(.vts-score-dead-troops__suffix:empty) input {
+  padding-inline-end: 9px;
+}
+.vts-score-dead-troops__entry input:focus-visible,
+.vts-score-dead-troops__tab:focus-visible,
+.vts-score-dead-troops__unit-option:focus-within,
+.vts-score-dead-troops__toggle:focus-within {
+  outline: 2px solid var(--vts-focus);
+  outline-offset: 2px;
+}
+.vts-score-dead-troops__suffix {
+  position: absolute;
+  inset-inline-end: 10px;
+  top: 50%;
+  color: var(--vts-subtle);
+  font-size: 0.75rem;
+  font-weight: 800;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+.vts-score-dead-troops__row-power {
+  grid-column: 1 / -1;
+  color: var(--vts-subtle);
+  font-size: 0.73rem;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+.vts-score-dead-troops__row-power:empty {
+  display: none;
+}
+.vts-score-dead-troops__summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--vts-accent);
+  border-radius: 10px;
+  background: rgb(34 211 238 / 10%);
+  font-weight: 700;
+}
+.vts-score-dead-troops__total {
+  color: var(--vts-accent);
+  font-size: 1.18rem;
+  font-variant-numeric: tabular-nums;
+}
+.vts-score-dead-troops__explanation,
+.vts-score-dead-troops__preview {
+  margin: 0;
+  color: var(--vts-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 380px) {
+  .vts-score-dead-troops__box {
+    padding: 12px;
+  }
+  .vts-score-dead-troops__tab {
+    font-size: 0.76rem;
+  }
 }
