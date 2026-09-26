@@ -4,7 +4,7 @@
 // get_competition_status reads only what the signed-out VtsScore page reads.
 // get_my_competition reads only documents the member's own Firebase account may
 // read under firestore.rules — their member grant, their own sign-up, and the
-// public growth-board projection — and returns nothing about other members:
+// live public growth-board projection — and returns nothing about other members:
 // board rows exist only for players who consented to a public comparison, and
 // this adapter only ever looks for the member's own row.
 import {
@@ -18,6 +18,7 @@ import {
   COMPETITION_EPIC_SLOTS,
   slotToGameClock,
 } from '../competition-schedule.js';
+import { VTS_SCORE_ENDPOINT } from '../all-star-boh-access.js';
 import { AiToolInputError, rejectUnknownArguments, requirePlainArguments } from './tool-utils.js';
 
 export const MY_COMPETITION_SOURCE_ID = 'my-competition';
@@ -36,7 +37,6 @@ const POWER_FIELDS = Object.freeze([
 const REQUIRED_POWER_FIELDS = Object.freeze(POWER_FIELDS.slice(0, 7));
 const SEASON_PATTERN = /^[a-z0-9_-]{1,80}$/iu;
 const GRANTS_COLLECTION = 'boh_allstar_member_grants';
-const BOARD_DOC_PATH = 'boh_allstar_competition/board';
 
 function nowFrom(context) {
   return Number.isFinite(context.nowMs) ? context.nowMs : Date.now();
@@ -153,27 +153,27 @@ export function summarizeOwnSignup(raw) {
   };
 }
 
-/** The member's own place on the published board, and nothing else from it. */
+/** The member's own place on the public board, and nothing else from it. */
 export function findOwnBoardEntry(board, { seasonId, gameName, consent }) {
   if (!board || typeof board !== 'object') {
-    return { published: false, note: 'The growth board has not been published yet.' };
+    return { available: false, note: 'The Growth Board is not available yet.' };
   }
   if (String(board.seasonId || '') !== seasonId) {
-    return { published: false, note: 'The published growth board belongs to another season.' };
+    return { available: false, note: 'The Growth Board belongs to another season.' };
   }
   const key = nameKey(gameName);
   const rows = Array.isArray(board.rows) ? board.rows : [];
   const winners = Array.isArray(board.winners) ? board.winners : [];
   const row = key ? rows.find((entry) => nameKey(entry?.gameName) === key) : null;
   const winner = key ? winners.find((entry) => nameKey(entry?.gameName) === key) : null;
-  const published = {
-    published: true,
-    publishedAt: typeof board.publishedAt === 'string' ? board.publishedAt : null,
+  const available = {
+    available: true,
+    updatedAt: typeof (board.updatedAt || board.publishedAt) === 'string' ? board.updatedAt || board.publishedAt : null,
     winnerRank: winner ? Number(winner.rank) || null : null,
   };
   if (row && consent) {
     return {
-      ...published,
+      ...available,
       listed: true,
       rank: Number(row.rank) || null,
       baselineSource: ['vtsscore-2026', 'signup'].includes(row.baselineSource)
@@ -184,15 +184,38 @@ export function findOwnBoardEntry(board, { seasonId, gameName, consent }) {
     };
   }
   return {
-    ...published,
+    ...available,
     listed: false,
     note: consent
-      ? 'Not on the published board: the board lists ranked players with a valid re-upload in the window.'
-      : 'Your values are private: you did not agree to a public comparison, so the board never lists your numbers.',
+      ? 'Not listed yet: a valid re-upload within the window is required.'
+      : 'Your values stay private while public sharing is off.',
   };
 }
 
-async function defaultReadMyCompetition() {
+async function readPublicGrowthBoard(fetchImpl = globalThis.fetch) {
+  if (typeof fetchImpl !== 'function') throw new Error('Public board fetch is unavailable.');
+  const response = await fetchImpl(`${VTS_SCORE_ENDPOINT}?view=competition-growth`, {
+    method: 'GET',
+    mode: 'cors',
+    cache: 'no-store',
+    credentials: 'omit',
+    headers: { Accept: 'application/json' },
+  });
+  if (!response?.ok) throw new Error('The public growth board could not be read.');
+  const payload = await response.json();
+  if (
+    payload?.schemaVersion !== 1 ||
+    (payload.board !== null &&
+      (!payload.board ||
+        typeof payload.board !== 'object' ||
+        !Array.isArray(payload.board.rows)))
+  ) {
+    throw new Error('The public growth board response is invalid.');
+  }
+  return payload.board;
+}
+
+async function defaultReadMyCompetition(context = {}) {
   const [firebase, { importFirestore }] = await Promise.all([
     import('../firebase.js'),
     import('../firebase-sdk.js'),
@@ -215,7 +238,7 @@ async function defaultReadMyCompetition() {
     user: { uid: user.uid },
     readGrant: () => readDoc(`${GRANTS_COLLECTION}/${user.uid}`),
     readSignup: (seasonId) => readDoc(`boh_allstar/${seasonId}/submissions/${user.uid}`),
-    readBoard: () => readDoc(BOARD_DOC_PATH),
+    readBoard: () => readPublicGrowthBoard(context.fetch || globalThis.fetch),
   };
 }
 
@@ -247,7 +270,7 @@ export async function getMyCompetitionAdapter(rawArguments, context = {}) {
   const nowMs = nowFrom(context);
   let session;
   try {
-    session = await (context.readMyCompetition || defaultReadMyCompetition)();
+    session = await (context.readMyCompetition || defaultReadMyCompetition)(context);
   } catch {
     throw new AiToolInputError(
       'data_unavailable',
@@ -312,7 +335,7 @@ export async function getMyCompetitionAdapter(rawArguments, context = {}) {
       warnings: [
         "This is the signed-in member's own registration only; never compare it with another member's private values.",
         'Power values are not repeated here: only which fields are filled. The member can review exact values on VtsScore.',
-        'baselineSource and growth are known only once a superadmin publishes the growth board.',
+        'Baseline source and growth are available when the live Growth Board is ready.',
       ],
     },
   };

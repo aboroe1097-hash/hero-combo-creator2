@@ -160,13 +160,7 @@ import {
   updateLocalR5Adjustment,
 } from './ocr-adjustments.js';
 import { createVtsScoreAdminView } from './vts-score-admin-view.js';
-import {
-  loadCompetitionGrowthSnapshot,
-  loadVtsScoreSnapshot,
-  publishCompetitionGrowthBoard,
-  VTS_SCORE_FUNCTION_ENDPOINT,
-  saveCompetitionMatchDecisions,
-} from './vts-score-store.js';
+import { loadCompetitionGrowthSnapshot, loadVtsScoreSnapshot } from './vts-score-store.js';
 import {
   BOH_SIGNUP_ADMIN_ENDPOINT,
   BOH_SIGNUP_CONFIG_PATH,
@@ -8353,13 +8347,8 @@ function ensureVtsScoreView() {
     },
     locale: () => getDashboardLang(),
     setStatus: (message, type) => setVtsScoreStatus(message, type),
-    // Competition #12 growth: firestore.rules keep both writes superadmin-only.
     growth: {
       load: () => loadCompetitionGrowthSnapshot(),
-      saveDecisions: saveCompetitionMatchDecisions,
-      publish: publishCompetitionGrowthBoard,
-      buildOnServer: buildCompetitionBoardOnServer,
-      canPublish: () => dashSuperAdmin === true,
     },
   });
   return vtsScoreView;
@@ -8533,12 +8522,6 @@ function renderBohSignupsPanel() {
 
 function submitBohSignupAdminRequest(payload) {
   return postAdminFunction(BOH_SIGNUP_ADMIN_ENDPOINT, payload, 'signup_failed');
-}
-
-// Builds and publishes the Competition #12 growth board in the vtsScore
-// function (superadmin; the function checks the claim itself).
-function buildCompetitionBoardOnServer() {
-  return postAdminFunction(VTS_SCORE_FUNCTION_ENDPOINT, { action: 'buildBoard' }, 'board_failed');
 }
 
 async function postAdminFunction(endpoint, payload, fallbackCode) {

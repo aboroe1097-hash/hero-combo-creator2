@@ -304,8 +304,10 @@ export function createAllStarBohAccessClient(options = {}) {
         referrerPolicy: 'no-referrer',
         headers: {
           Accept: 'application/json',
-          Authorization: `Bearer ${credentials.idToken}`,
-          'X-Firebase-AppCheck': credentials.appCheckToken,
+          ...(credentials?.idToken ? { Authorization: `Bearer ${credentials.idToken}` } : {}),
+          ...(credentials?.appCheckToken
+            ? { 'X-Firebase-AppCheck': credentials.appCheckToken }
+            : {}),
           ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
         },
         ...(hasBody ? { body: requestOptions.body } : {}),
@@ -473,6 +475,55 @@ export function createAllStarBohAccessClient(options = {}) {
     return Object.freeze({ seasonId: grant.seasonId, players: Object.freeze(players) });
   }
 
+  async function getCompetitionGrowthBoard() {
+    const response = await requestJson(
+      `${scoreEndpoint}?view=competition-growth`,
+      { method: 'GET' },
+      {},
+      options.scoreTimeoutMs || SCORE_TIMEOUT_MS,
+      'score_failed'
+    );
+    const seasonId = normalizeSeason(response?.seasonId);
+    const board = response?.board;
+    if (
+      response?.schemaVersion !== 1 ||
+      (response?.seasonId && !seasonId) ||
+      (board !== null &&
+        (!board ||
+          typeof board !== 'object' ||
+          board.seasonId !== seasonId ||
+          !Array.isArray(board.rows) ||
+          board.rows.length > 200 ||
+          !Array.isArray(board.winners) ||
+          board.winners.length > 20))
+    ) {
+      throw accessError('invalid_response', 'The competition growth board is invalid.');
+    }
+    return Object.freeze({ seasonId, board: board || null });
+  }
+
+  async function getPreviousComparisonStatus(gameName) {
+    const user = await resolveUser();
+    const grant = await getAccessGrant({ minimumRemainingSeconds: 5 });
+    if (!grant) throw accessError('access_expired', 'Member access has expired.');
+    const credentials = await requestCredentials(user, false);
+    const response = await requestJson(
+      `${scoreEndpoint}?view=previous-comparison&name=${encodeURIComponent(String(gameName || '').slice(0, 160))}`,
+      { method: 'GET' },
+      credentials,
+      options.scoreTimeoutMs || SCORE_TIMEOUT_MS,
+      'score_failed'
+    );
+    if (
+      response?.schemaVersion !== 1 ||
+      normalizeSeason(response.seasonId) !== grant.seasonId ||
+      typeof response.ready !== 'boolean'
+    ) {
+      throw accessError('invalid_response', 'The previous comparison status is invalid.');
+    }
+    return Object.freeze({ seasonId: grant.seasonId, ready: response.ready });
+  }
+
   async function submitVtsScore(payload) {
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
       throw accessError('invalid_score_request', 'The VtsScore submission is invalid.');
@@ -529,6 +580,8 @@ export function createAllStarBohAccessClient(options = {}) {
     process: processOcr,
     processOcr,
     getVtsScorePlayers,
+    getCompetitionGrowthBoard,
+    getPreviousComparisonStatus,
     submitVtsScore,
     destroy,
   });

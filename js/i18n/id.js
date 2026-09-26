@@ -3674,7 +3674,7 @@ Object.assign(id, {
   adminVtsScoreExportFailed: 'Gambar tidak dapat dibuat.',
   adminVtsScoreExportDone: 'Gambar papan pemimpin diunduh.',
   c12Title: 'Pertumbuhan Kompetisi #12',
-  c12Hint: 'Diurutkan menurut % pertumbuhan Total Power. Baseline VtsScore 2026 hanya dipakai setelah superadmin mengonfirmasi kecocokan.',
+  c12Hint: 'Pratinjau 2026 hanya-baca, diurutkan menurut % pertumbuhan Total Power. Papan publik mencocokkan musim sebelumnya secara otomatis.',
   c12NotRanked: 'Tidak berperingkat',
   c12ToReview: 'Perlu ditinjau',
   c12Match: 'Kecocokan 2026',

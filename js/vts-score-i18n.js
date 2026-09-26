@@ -598,8 +598,12 @@ const COMPETITION_COPY = Object.freeze({
     slotGameTimeShort: 'game time',
     slotChosenLabel: '{label}, choice {rank}',
     slotNotChosenLabel: '{label}, not chosen',
-    publicConsent: 'Show my values and growth to alliance members on the growth board',
-    publicConsentHelp: 'Off by default; you can change it later.',
+    publicConsent: 'Show my values and growth on the public Growth Board',
+    publicConsentHelp: 'Off by default. Turn it on only if you want your results visible to everyone.',
+    previousComparisonReadyPublic:
+      'Your previous-season data is ready. After you upload your current stats, your comparison will appear on the Growth Board below.',
+    previousComparisonReadyPrivate:
+      'Your previous-season data is ready. It stays private unless you opt in to the public Growth Board.',
     phaseNameUnconfigured: 'Schedule to be announced',
     phaseNameUpcoming: 'Coming soon',
     phaseNameRegistration: 'Registration open',
@@ -637,7 +641,7 @@ const COMPETITION_COPY = Object.freeze({
     submitReupload: 'Submit growth re-upload',
     savedReupload: 'GROWTH RE-UPLOAD SAVED',
     growthBoardKicker: 'GROWTH BOARD',
-    growthBoardPending: 'The growth board appears here once results are published.',
+    growthBoardPending: 'The opt-in Growth Board refreshes automatically when results are ready.',
     statusEnterPin: 'Enter the VTS member PIN to continue.',
     statusChecking: 'Checking member access…',
     statusUnlocking: 'Unlocking…',
@@ -682,8 +686,12 @@ const COMPETITION_COPY = Object.freeze({
     slotGameTimeShort: 'بتوقيت اللعبة',
     slotChosenLabel: '{label}، الاختيار {rank}',
     slotNotChosenLabel: '{label}، غير مختار',
-    publicConsent: 'اعرض قيمي ونموّي لأعضاء التحالف في لوحة النمو',
-    publicConsentHelp: 'غير مفعّل افتراضيًا؛ يمكنك تغييره لاحقًا.',
+    publicConsent: 'اعرض قيمي ونموّي على لوحة النمو العامة',
+    publicConsentHelp: 'غير مفعّل افتراضيًا. فعّله فقط إذا أردت أن تظهر نتائجك للجميع.',
+    previousComparisonReadyPublic:
+      'بياناتك من الموسم السابق جاهزة. بعد رفع قيمك الحالية، ستظهر مقارنتك على لوحة النمو أدناه.',
+    previousComparisonReadyPrivate:
+      'بياناتك من الموسم السابق جاهزة. ستبقى خاصة ما لم تختر مشاركة النتائج على لوحة النمو العامة.',
     phaseNameUnconfigured: 'سيُعلن الجدول لاحقًا',
     phaseNameUpcoming: 'قريبًا',
     phaseNameRegistration: 'التسجيل مفتوح',
@@ -719,7 +727,7 @@ const COMPETITION_COPY = Object.freeze({
     submitReupload: 'إرسال رفع قياس النمو',
     savedReupload: 'تم حفظ رفع قياس النمو',
     growthBoardKicker: 'لوحة النمو',
-    growthBoardPending: 'تظهر لوحة النمو هنا بعد نشر النتائج.',
+    growthBoardPending: 'تُحدَّث لوحة النمو للموافقين تلقائيًا عند جاهزية النتائج.',
     statusEnterPin: 'أدخل رمز PIN لأعضاء VTS للمتابعة.',
     statusChecking: 'جارٍ التحقق من صلاحية العضو…',
     statusUnlocking: 'جارٍ الفتح…',
@@ -766,9 +774,12 @@ const COMPETITION_COPY = Object.freeze({
     slotGameTimeShort: 'hora del juego',
     slotChosenLabel: '{label}, opción {rank}',
     slotNotChosenLabel: '{label}, no elegida',
-    publicConsent:
-      'Mostrar mis valores y mi crecimiento a los miembros de la alianza en el tablero de crecimiento',
-    publicConsentHelp: 'Desactivado por defecto; puedes cambiarlo después.',
+    publicConsent: 'Mostrar mis valores y mi crecimiento en el tablero público de crecimiento',
+    publicConsentHelp: 'Desactivado por defecto. Actívalo solo si quieres que todos vean tus resultados.',
+    previousComparisonReadyPublic:
+      'Tus datos de la temporada anterior están listos. Tras subir tus estadísticas actuales, la comparación aparecerá abajo.',
+    previousComparisonReadyPrivate:
+      'Tus datos de la temporada anterior están listos. Seguirán siendo privados si no aceptas aparecer en el tablero público.',
     phaseNameUnconfigured: 'Calendario por anunciar',
     phaseNameUpcoming: 'Próximamente',
     phaseNameRegistration: 'Registro abierto',
@@ -809,7 +820,7 @@ const COMPETITION_COPY = Object.freeze({
     savedReupload: 'NUEVA SUBIDA GUARDADA',
     growthBoardKicker: 'TABLERO DE CRECIMIENTO',
     growthBoardPending:
-      'El tablero de crecimiento aparece aquí cuando se publiquen los resultados.',
+      'El tablero público de quienes dieron su consentimiento se actualiza automáticamente cuando haya resultados.',
     statusEnterPin: 'Introduce el PIN de miembro VTS para continuar.',
     statusChecking: 'Comprobando el acceso de miembro…',
     statusUnlocking: 'Desbloqueando…',
@@ -856,9 +867,12 @@ const COMPETITION_COPY = Object.freeze({
     slotGameTimeShort: 'horário do jogo',
     slotChosenLabel: '{label}, opção {rank}',
     slotNotChosenLabel: '{label}, não escolhido',
-    publicConsent:
-      'Mostrar meus valores e meu crescimento aos membros da aliança no painel de crescimento',
-    publicConsentHelp: 'Desativado por padrão; você pode mudar depois.',
+    publicConsent: 'Mostrar meus valores e meu crescimento no painel público de crescimento',
+    publicConsentHelp: 'Desativado por padrão. Ative somente se quiser que todos vejam seus resultados.',
+    previousComparisonReadyPublic:
+      'Seus dados da temporada anterior estão prontos. Depois de enviar os valores atuais, a comparação aparecerá abaixo.',
+    previousComparisonReadyPrivate:
+      'Seus dados da temporada anterior estão prontos. Eles continuarão privados se você não optar pelo painel público.',
     phaseNameUnconfigured: 'Calendário a anunciar',
     phaseNameUpcoming: 'Em breve',
     phaseNameRegistration: 'Inscrições abertas',
@@ -898,7 +912,7 @@ const COMPETITION_COPY = Object.freeze({
     savedReupload: 'NOVO ENVIO SALVO',
     growthBoardKicker: 'PAINEL DE CRESCIMENTO',
     growthBoardPending:
-      'O painel de crescimento aparece aqui quando os resultados forem publicados.',
+      'O painel público de crescimento atualiza automaticamente quando os resultados estiverem prontos.',
     statusEnterPin: 'Digite o PIN de membro VTS para continuar.',
     statusChecking: 'Verificando o acesso de membro…',
     statusUnlocking: 'Desbloqueando…',
@@ -945,9 +959,12 @@ const COMPETITION_COPY = Object.freeze({
     slotGameTimeShort: 'heure du jeu',
     slotChosenLabel: '{label}, choix {rank}',
     slotNotChosenLabel: '{label}, non choisi',
-    publicConsent:
-      'Montrer mes valeurs et ma progression aux membres de l’alliance sur le tableau de progression',
-    publicConsentHelp: 'Désactivé par défaut ; modifiable plus tard.',
+    publicConsent: 'Afficher mes valeurs et ma progression sur le tableau public de croissance',
+    publicConsentHelp: 'Désactivé par défaut. Activez-le uniquement si vous voulez rendre vos résultats publics.',
+    previousComparisonReadyPublic:
+      'Vos données de la saison précédente sont prêtes. Après l’envoi de vos valeurs actuelles, votre comparaison apparaîtra ci-dessous.',
+    previousComparisonReadyPrivate:
+      'Vos données de la saison précédente sont prêtes. Elles resteront privées sans votre accord pour le tableau public.',
     phaseNameUnconfigured: 'Calendrier à venir',
     phaseNameUpcoming: 'Bientôt',
     phaseNameRegistration: 'Inscriptions ouvertes',
@@ -989,7 +1006,8 @@ const COMPETITION_COPY = Object.freeze({
     submitReupload: 'Envoyer le nouvel envoi',
     savedReupload: 'NOUVEL ENVOI ENREGISTRÉ',
     growthBoardKicker: 'TABLEAU DE PROGRESSION',
-    growthBoardPending: 'Le tableau de progression s’affiche ici une fois les résultats publiés.',
+    growthBoardPending:
+      'Le tableau public des membres consentants se met à jour automatiquement quand les résultats sont prêts.',
     statusEnterPin: 'Saisissez le code PIN membre VTS pour continuer.',
     statusChecking: 'Vérification de l’accès membre…',
     statusUnlocking: 'Déverrouillage…',
@@ -1036,9 +1054,12 @@ const COMPETITION_COPY = Object.freeze({
     slotGameTimeShort: 'Spielzeit',
     slotChosenLabel: '{label}, Wahl {rank}',
     slotNotChosenLabel: '{label}, nicht gewählt',
-    publicConsent:
-      'Meine Werte und mein Wachstum den Allianzmitgliedern auf der Wachstumstafel zeigen',
-    publicConsentHelp: 'Standardmäßig aus; später änderbar.',
+    publicConsent: 'Meine Werte und mein Wachstum auf der öffentlichen Wachstumstafel zeigen',
+    publicConsentHelp: 'Standardmäßig aus. Nur aktivieren, wenn deine Ergebnisse für alle sichtbar sein sollen.',
+    previousComparisonReadyPublic:
+      'Deine Daten aus der letzten Saison sind bereit. Nach dem Upload deiner aktuellen Werte erscheint dein Vergleich unten.',
+    previousComparisonReadyPrivate:
+      'Deine Daten aus der letzten Saison sind bereit. Ohne Zustimmung zur öffentlichen Tafel bleiben sie privat.',
     phaseNameUnconfigured: 'Zeitplan folgt',
     phaseNameUpcoming: 'Demnächst',
     phaseNameRegistration: 'Anmeldung offen',
@@ -1079,7 +1100,7 @@ const COMPETITION_COPY = Object.freeze({
     savedReupload: 'WACHSTUMS-UPLOAD GESPEICHERT',
     growthBoardKicker: 'WACHSTUMSTAFEL',
     growthBoardPending:
-      'Die Wachstumstafel erscheint hier, sobald die Ergebnisse veröffentlicht sind.',
+      'Die öffentliche Wachstumstafel aktualisiert sich automatisch, sobald Ergebnisse bereitstehen.',
     statusEnterPin: 'Gib die VTS-Mitglieder-PIN ein, um fortzufahren.',
     statusChecking: 'Mitgliederzugang wird geprüft…',
     statusUnlocking: 'Wird freigeschaltet…',

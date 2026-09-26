@@ -16,6 +16,7 @@ import {
   initFirebase,
 } from './firebase.js';
 import { createVtsScoreI18n } from './vts-score-i18n.js';
+import { competitionExactNameKey } from './competition-growth.js';
 import { buildSignupOcrAudit, mapOcrReviewToSignupFields } from './vts-score-signup-ocr.js';
 import {
   buildVtsScoreSubmission,
@@ -235,6 +236,11 @@ export async function bootVtsScore(options = {}) {
     phase: 'unconfigured',
     pickers: {},
     countdownTimer: 0,
+    previousComparisonReady: false,
+    previousComparisonCheckedKey: '',
+    previousComparisonLoading: false,
+    previousComparisonTimer: 0,
+    growthBoardRefreshTimer: 0,
   };
   const now = () => (typeof options.now === 'function' ? options.now() : Date.now());
   const pinPanel = element('vtsScoreGate');
@@ -242,6 +248,7 @@ export async function bootVtsScore(options = {}) {
   const signupSuccess = element('vtsScoreSignupSuccess');
   const signupForm = element('vtsScoreSignupForm');
   const signupNameInput = signupForm?.querySelector('[data-boh-field="gameName"]');
+  const signupPublicConsent = element('vtsScoreSignupPublicConsent');
   const signupButton = element('vtsScoreSignupSubmit');
   const scorePanel = element('vtsScoreWorkspace');
   const pinForm = element('vtsScorePinForm');
@@ -253,8 +260,67 @@ export async function bootVtsScore(options = {}) {
   const playerInput = element('vtsScorePlayer');
   const playerResults = element('vtsScorePlayerResults');
   let signupNameTouched = false;
+  function savedComparisonKey() {
+    const name = competitionExactNameKey(signupNameInput?.value);
+    const savedName = competitionExactNameKey(state.signup?.gameName);
+    if (
+      state.signup?.status !== 'submitted' ||
+      state.signup?.commitment?.publicComparisonConsent !== true ||
+      signupPublicConsent?.checked !== true ||
+      !name ||
+      name !== savedName
+    ) {
+      return '';
+    }
+    return `${state.signup.revision || 0}:${name}`;
+  }
+  function renderPreviousComparisonHint() {
+    const hint = element('vtsScoreComparisonHint');
+    if (!hint) return;
+    if (!savedComparisonKey() || state.previousComparisonCheckedKey !== savedComparisonKey() || !state.previousComparisonReady) {
+      setHidden(hint, true);
+      return;
+    }
+    hint.textContent = i18n.text('previousComparisonReadyPublic');
+    setHidden(hint, false);
+  }
+
+  async function checkPreviousComparison() {
+    const key = savedComparisonKey();
+    if (
+      !key ||
+      state.previousComparisonCheckedKey === key ||
+      state.previousComparisonLoading ||
+      !state.client ||
+      !state.grant
+    ) {
+      renderPreviousComparisonHint();
+      return;
+    }
+    state.previousComparisonLoading = true;
+    try {
+      const result = await state.client.getPreviousComparisonStatus(signupNameInput.value);
+      if (savedComparisonKey() !== key) return;
+      state.previousComparisonReady = result.ready;
+      state.previousComparisonCheckedKey = key;
+      renderPreviousComparisonHint();
+    } catch {
+      // The comparison hint is optional and must never block registration.
+    } finally {
+      state.previousComparisonLoading = false;
+    }
+  }
+
   signupNameInput?.addEventListener('input', () => {
     signupNameTouched = true;
+    renderPreviousComparisonHint();
+    if (!savedComparisonKey()) return;
+    clearTimeout(state.previousComparisonTimer);
+    state.previousComparisonTimer = setTimeout(() => void checkPreviousComparison(), 350);
+  });
+  signupPublicConsent?.addEventListener('change', () => {
+    renderPreviousComparisonHint();
+    if (savedComparisonKey()) void checkPreviousComparison();
   });
 
   function powerInput(field) {
@@ -538,43 +604,67 @@ export async function bootVtsScore(options = {}) {
     if (boardVisible) void mountGrowthBoard();
   }
 
-  // Keep the board mount point visible throughout the season. If the published
-  // board is not available yet, leave its pending message in place and retry
-  // when the competition reaches results.
+  // The public board is calculated from live opt-in data and refreshed while
+  // results are visible; no admin publish action or cached Firestore document.
   let growthBoard = null;
   async function mountGrowthBoard({ rerender = false } = {}) {
     const section = element('vtsScoreGrowthBoard');
     if (!section) return;
-    try {
-      const retryPublishedBoard =
-        growthBoard &&
-        !growthBoard.loading &&
-        !growthBoard.projection &&
-        ['resultsPending', 'winners'].includes(state.phase);
-      if (!growthBoard || retryPublishedBoard) {
-        growthBoard = { loading: true };
-        const board = await import('./competition-board.js');
-        const projection = await withTimeout(
-          board.loadCompetitionBoard(await loadBohSignupFirestore()),
-          SCHEDULE_READ_TIMEOUT_MS
-        );
-        growthBoard = { board, projection };
-        rerender = true;
+    if (growthBoard?.loading) return;
+    const currentTime = now();
+    if (growthBoard && currentTime < growthBoard.nextRefreshAt) {
+      if (rerender && growthBoard.projection) {
+        const mount = section.querySelector('[data-growth-board-mount]');
+        if (mount) {
+          growthBoard.board.renderCompetitionBoard(mount, growthBoard.projection, {
+            locale: i18n.language,
+          });
+        }
       }
-      if (!rerender || !growthBoard.projection) return;
+      return;
+    }
+    growthBoard = { ...(growthBoard || {}), loading: true };
+    try {
+      const board = await import('./competition-board.js');
+      const response = await withTimeout(
+        state.client.getCompetitionGrowthBoard(),
+        SCHEDULE_READ_TIMEOUT_MS
+      );
+      const projection = board.normalizeCompetitionBoard(response.board);
+      growthBoard = {
+        board,
+        projection,
+        loading: false,
+        nextRefreshAt: now() + 60_000,
+      };
       let mount = section.querySelector('[data-growth-board-mount]');
       if (!mount) {
         mount = document.createElement('div');
         mount.dataset.growthBoardMount = '';
         section.append(mount);
       }
-      section.querySelector('[data-vts-i18n="growthBoardPending"]')?.setAttribute('hidden', '');
-      growthBoard.board.renderCompetitionBoard(mount, growthBoard.projection, {
-        locale: i18n.language,
-      });
+      const pending = section.querySelector('[data-vts-i18n="growthBoardPending"]');
+      if (projection) {
+        setHidden(pending, true);
+        board.renderCompetitionBoard(mount, projection, { locale: i18n.language });
+      } else {
+        setHidden(pending, false);
+        mount.replaceChildren();
+      }
     } catch (error) {
       console.warn('VtsScore growth board unavailable', error);
-      growthBoard = null;
+      growthBoard = { loading: false, projection: null, nextRefreshAt: now() + 30_000 };
+    } finally {
+      clearTimeout(state.growthBoardRefreshTimer);
+      state.growthBoardRefreshTimer = setTimeout(() => {
+        if (
+          document.visibilityState !== 'hidden' &&
+          ['resultsPending', 'winners'].includes(state.phase) &&
+          !section.hidden
+        ) {
+          void mountGrowthBoard();
+        }
+      }, 60_000);
     }
   }
 
@@ -663,6 +753,7 @@ export async function bootVtsScore(options = {}) {
   }
 
   element('vtsScoreLanguage')?.addEventListener('change', () => {
+    renderPreviousComparisonHint();
     if (growthBoard?.projection) void mountGrowthBoard({ rerender: true });
     for (const picker of Object.values(state.pickers)) picker.render();
     renderSchedule();
@@ -693,6 +784,8 @@ export async function bootVtsScore(options = {}) {
       setStatus(signupErrorMessage(error), 'error');
     }
     state.signup = existing;
+    state.previousComparisonReady = false;
+    state.previousComparisonCheckedKey = '';
     renderSignupState();
     if (existing) {
       state.signupSession.fillForm(signupPanel, existing);
@@ -715,6 +808,8 @@ export async function bootVtsScore(options = {}) {
         // Profile autofill is best-effort; it must never block a registration.
       }
     }
+    renderPreviousComparisonHint();
+    void checkPreviousComparison();
   }
 
   /** The season badge and the state line, both re-rendered on a language change. */
@@ -746,7 +841,6 @@ export async function bootVtsScore(options = {}) {
   const initialUser = await (options.ensureAnonymousAuth || ensureAnonymousAuth)();
   if (!initialUser?.uid) throw new Error('Secure member sign-in is unavailable.');
   state.authUser = initialUser;
-  await loadSchedule();
   state.client = (options.createAccessClient || createAllStarBohAccessClient)({
     getUser: async () => {
       const currentUser =
@@ -756,6 +850,7 @@ export async function bootVtsScore(options = {}) {
     getAppCheckToken: options.getAppCheckToken || getFirebaseAppCheckToken,
     fetch: options.fetch,
   });
+  await loadSchedule();
 
   pinForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -886,7 +981,11 @@ export async function bootVtsScore(options = {}) {
       if (signupImage) signupImage.value = '';
       state.signupFile = null;
       state.signup = saved;
+      state.previousComparisonCheckedKey = '';
+      state.previousComparisonReady = false;
       renderSignupState();
+      renderPreviousComparisonHint();
+      void checkPreviousComparison();
       element('vtsScoreSignupSuccessName').textContent = saved.gameName || '';
       element('vtsScoreSignupSuccessRevision').textContent = String(saved.revision || 1);
       setHidden(signupSuccess, false);
@@ -990,6 +1089,8 @@ export async function bootVtsScore(options = {}) {
   return Object.freeze({
     destroy() {
       clearInterval(state.countdownTimer);
+      clearTimeout(state.previousComparisonTimer);
+      clearTimeout(state.growthBoardRefreshTimer);
       state.client?.destroy?.();
       state.file = null;
       state.review = null;

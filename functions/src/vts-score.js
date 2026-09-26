@@ -6,7 +6,14 @@ import {
   getAllStarBohGrantPath,
   isAllowedAllStarBohOrigin,
 } from './all-star-boh-auth.js';
-import { CompetitionBoardError, publishCompetitionBoard } from './competition-board.js';
+import {
+  CompetitionBoardError,
+  buildCompetitionBoardFromInputs,
+  buildServerGrowthRows,
+  competitionExactNameKey,
+  readCompetitionBoardHead,
+  readCompetitionBoardInputs,
+} from './competition-board.js';
 import {
   COMPETITION_SCHEDULE_DOC_PATH,
   getCompetitionPhase,
@@ -69,6 +76,22 @@ function requestHeader(request, name) {
   const value = request?.headers?.[name.toLowerCase()] ?? request?.headers?.[name];
   if (Array.isArray(value)) return value.join(',');
   return value === undefined || value === null ? '' : String(value);
+}
+
+function requestQuery(request, name) {
+  const direct = request?.query?.[name];
+  if (typeof direct === 'string') return direct;
+  if (Array.isArray(direct) && typeof direct[0] === 'string') return direct[0];
+  try {
+    return (
+      new URL(
+        String(request?.originalUrl || request?.url || '/'),
+        'https://local.invalid'
+      ).searchParams.get(name) || ''
+    );
+  } catch {
+    return '';
+  }
 }
 
 function setHeader(response, name, value) {
@@ -306,18 +329,6 @@ function readVtsScoreBody(request) {
   return body;
 }
 
-// A superadmin's "build and publish the growth board" request is exactly
-// {"action": "buildBoard"}; anything else is a member's score upload.
-function isBuildBoardRequest(body) {
-  return (
-    body &&
-    typeof body === 'object' &&
-    !Array.isArray(body) &&
-    body.action === 'buildBoard' &&
-    Object.keys(body).length === 1
-  );
-}
-
 function readScoreRequestBody(body) {
   return Object.prototype.hasOwnProperty.call(body || {}, 'powerValues')
     ? readCurrentVtsScoreRequest(body)
@@ -398,6 +409,45 @@ async function listPlayers(dependencies, uid) {
     )
     .slice(0, VTS_SCORE_MAX_PLAYERS);
   return { seasonId, players };
+}
+
+async function loadCompetitionGrowthBoard(dependencies) {
+  const head = await readCompetitionBoardHead(dependencies.db);
+  const phase = head.schedule
+    ? getCompetitionPhase(head.schedule, dependencies.now())
+    : 'unconfigured';
+  if (!['resultsPending', 'winners'].includes(phase)) {
+    return { schemaVersion: 1, seasonId: head.seasonId, board: null };
+  }
+  const inputs = await readCompetitionBoardInputs(dependencies.db, head);
+  const { board } = buildCompetitionBoardFromInputs(inputs, { nowMs: dependencies.now() });
+  return { schemaVersion: 1, seasonId: head.seasonId, board };
+}
+
+async function getPreviousComparisonStatus(dependencies, uid, enteredName) {
+  const seasonId = await getGrant(dependencies, uid);
+  const current = await dependencies.db.doc(`boh_allstar/${seasonId}/submissions/${uid}`).get();
+  const saved = snapshotData(current);
+  const savedName = competitionExactNameKey(saved?.gameName);
+  if (
+    saved?.status !== 'submitted' ||
+    saved?.commitment?.publicComparisonConsent !== true ||
+    !savedName ||
+    savedName !== competitionExactNameKey(enteredName)
+  ) {
+    return { schemaVersion: 1, seasonId, ready: false };
+  }
+  const inputs = await readCompetitionBoardInputs(dependencies.db);
+  if (inputs.seasonId !== seasonId) return { schemaVersion: 1, seasonId, ready: false };
+  const row = buildServerGrowthRows(inputs).find((item) => item.submissionUid === uid);
+  return {
+    schemaVersion: 1,
+    seasonId,
+    ready:
+      row?.consent === true &&
+      competitionExactNameKey(row.gameName) === savedName &&
+      (row.match?.how === 'uid' || row.match?.how === 'exact-name'),
+  };
 }
 
 // Competition #12: once a schedule exists for the season, final values are
@@ -503,8 +553,22 @@ export function createVtsScoreHandler(dependencies) {
       return sendJson(response, 405, { error: 'method_not_allowed' });
     }
     try {
+      if (method === 'GET' && requestQuery(request, 'view') === 'competition-growth') {
+        return sendJson(response, 200, await loadCompetitionGrowthBoard(runtime));
+      }
       const identity = await verifyRequestIdentity(request, runtime);
       const uid = identity.uid;
+      if (method === 'GET' && requestQuery(request, 'view') === 'previous-comparison') {
+        return sendJson(
+          response,
+          200,
+          await getPreviousComparisonStatus(
+            runtime,
+            uid,
+            requestQuery(request, 'name').slice(0, 160)
+          )
+        );
+      }
       if (method === 'GET') {
         const result = await listPlayers(runtime, uid);
         return sendJson(response, 200, {
@@ -514,15 +578,6 @@ export function createVtsScoreHandler(dependencies) {
         });
       }
       const body = readVtsScoreBody(request);
-      if (isBuildBoardRequest(body)) {
-        // The exact claim isSuperAdmin() reads in firestore.rules: publishing
-        // the board is the same power the VTS Admin publish button has.
-        if (identity.superadmin !== true) {
-          throw new VtsScoreError(403, 'superadmin_required', 'Superadmin access is required.');
-        }
-        const summary = await publishCompetitionBoard(runtime, { updatedBy: uid });
-        return sendJson(response, 200, { schemaVersion: VTS_SCORE_SCHEMA_VERSION, board: summary });
-      }
       const score = await saveScore(runtime, uid, readScoreRequestBody(body));
       return sendJson(response, 200, {
         schemaVersion: VTS_SCORE_SCHEMA_VERSION,

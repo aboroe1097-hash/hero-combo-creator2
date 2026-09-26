@@ -51,7 +51,7 @@ export function slotRank(order, slot) {
  * - upload: 'final' (today's final-score upload), 'reupload' (the same
  *   workspace as the growth re-upload) or 'none'.
  * - notice: an i18n key for the phase note under the form, or ''.
- * - growthBoard: the published board mount point stays visible in every phase.
+ * - growthBoard: the live public board mount point stays visible through results.
  */
 export function getCompetitionPageState(phase, { hasSignup = false } = {}) {
   const readonly = hasSignup ? 'readonly' : 'hidden';

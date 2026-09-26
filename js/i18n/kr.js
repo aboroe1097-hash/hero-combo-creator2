@@ -2171,7 +2171,7 @@ const kr = {
   adminVtsScoreExportFailed: '이미지를 만들 수 없습니다.',
   adminVtsScoreExportDone: '순위표 이미지를 다운로드했습니다.',
   c12Title: '대회 #12 성장',
-  c12Hint: '총 전투력 성장률(%) 순위입니다. 2026 VtsScore 기준값은 슈퍼관리자가 매칭을 확인한 후에만 사용됩니다.',
+  c12Hint: '총 전투력 성장률(%)로 정렬된 2026 읽기 전용 미리보기입니다. 공개 보드는 이전 시즌을 자동으로 연결합니다.',
   c12NotRanked: '순위 없음',
   c12ToReview: '검토 필요',
   c12Match: '2026 매칭',

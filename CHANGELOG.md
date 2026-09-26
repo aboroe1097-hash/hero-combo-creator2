@@ -2,6 +2,11 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.5.20 - 2026-09-26
+
+- Competition #12 now builds the public growth board directly from saved registrations and current and earlier VtsScore uploads whenever results are available. No admin publish or scheduled board write is needed. Only submitted registrations whose members opted into public sharing appear, and their ranks are recalculated among those members. Legacy published board and manual match documents are no longer readable from the client.
+- Previous scores match the same account first. Otherwise, an exact game name is accepted only when it belongs to one earlier account and one current member; ambiguous names use registration stats. A saved, consenting member with a safe prior match sees a friendly comparison-ready hint below the game name. **Deploy the vtsScore function and Firestore rules after this release.** The OCR Worker is unchanged.
+
 ## 16.5.19 - 2026-09-26
 
 - The Competition #12 growth board can be built on the server. In VTS Admin → VtsScore, "Build and publish on server" (superadmin) has the vtsScore function build the board from the season's sign-ups and re-uploads plus every earlier VtsScore season, and publish it straight away. The same build runs on its own once, within ten minutes of the re-upload window closing; it never replaces a board already published for the season after the window closed.

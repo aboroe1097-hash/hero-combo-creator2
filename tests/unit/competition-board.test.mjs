@@ -279,7 +279,7 @@ test('a projection built by competition-growth renders without leaking private v
   });
   const projection = growth.buildGrowthBoardProjection(rows, { seasonId: 'competition-12' });
   const html = board.buildCompetitionBoardHtml(projection, { locale: 'en' });
-  assert.match(html, /Hidden/);
+  assert.doesNotMatch(html, /Hidden/);
   assert.doesNotMatch(html, /9,875,543|9875543|987,554|98,754/);
 });
 

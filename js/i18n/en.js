@@ -439,7 +439,7 @@ const en = {
   adminVtsScoreExportFailed: 'Could not build the image.',
   adminVtsScoreExportDone: 'Leader board image downloaded.',
   c12Title: 'Competition #12 growth',
-  c12Hint: 'Ranked by Total Power growth %. A 2026 VtsScore baseline is used only after a superadmin confirms the match.',
+  c12Hint: 'Read-only 2026 preview ranked by Total Power growth %. The public board matches prior seasons automatically.',
   c12NotRanked: 'Not ranked',
   c12ToReview: 'To review',
   c12Match: '2026 match',

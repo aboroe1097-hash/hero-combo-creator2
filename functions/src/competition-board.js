@@ -1,22 +1,14 @@
 // Competition #12 growth board, built on the server.
 //
-// The board used to be built only in a superadmin's browser (VTS Admin,
-// js/competition-growth.js) and written from there. This module builds the same
-// public projection from the records in Firestore, so the vtsScore function can
-// build and publish it on a superadmin's request, and the phase job can publish
-// it on its own once the re-upload window closes.
+// The vtsScore Function builds the consent-filtered public projection directly
+// from current records whenever the board is requested.
 //
 // Owner decisions (2026-09-26):
 //   - Baseline: each player's LATEST VtsScore upload from ANY earlier season,
 //     else their Competition #12 sign-up stats.
-//   - Matching: an exact name match (ignoring case, spacing and the "(VTS)"
-//     prefix) is used automatically when it is unique. A name shared by two
-//     uploads in the newest season that has it, or claimed by two players, is
-//     ambiguous and needs a superadmin decision in boh_allstar_competition/
-//     matches; until then that player uses sign-up stats. A recorded decision
-//     always wins: 'signup' keeps sign-up stats, 'vtsscore' with a
-//     matchedSubmissionUid uses that account's latest earlier upload.
-//   - Publishing: written directly to boh_allstar_competition/board.
+//   - Matching: the same account UID wins; otherwise a unique exact game name
+//     (ignoring case, spacing and the "(VTS)" prefix) is used. An ambiguous
+//     name uses sign-up stats.
 //
 // computeGrowthRow(), rankCompetitionGrowth() and buildGrowthBoardProjection()
 // are copies of js/competition-growth.js (the Functions package cannot import
@@ -28,12 +20,9 @@
 import {
   ALL_STAR_BOH_CONFIG_DOC_PATH,
   COMPETITION_SCHEDULE_DOC_PATH,
-  getCompetitionPhase,
   normalizeCompetitionSchedule,
 } from './competition-phase.js';
 
-export const COMPETITION_BOARD_DOC_PATH = 'boh_allstar_competition/board';
-export const COMPETITION_MATCHES_DOC_PATH = 'boh_allstar_competition/matches';
 export const COMPETITION_BOARD_SCHEMA_VERSION = 1;
 export const COMPETITION_BOARD_MAX_ROWS = 200;
 export const COMPETITION_BOARD_MAX_WINNERS = 20;
@@ -43,9 +32,6 @@ export const COMPETITION_LEGACY_BASELINE_SEASON = 'season-2026';
 const MAX_PRIOR_SEASONS = 20;
 const MAX_RECORDS_PER_SEASON = 500;
 const SEASON_PATTERN = /^[A-Za-z0-9_-]{1,80}$/u;
-// Phases in which the job may publish on its own: after the re-upload window,
-// never once the season is closed (so an old season is never rebuilt).
-const AUTO_BUILD_PHASES = new Set(['resultsPending', 'winners']);
 
 export const COMPETITION_GROWTH_FIELDS = Object.freeze([
   'totalCastlePower',
@@ -178,12 +164,8 @@ export function buildPriorSeasonBaselineIndex(priorSeasons = []) {
   }
   const byName = new Map();
   for (const [key, list] of grouped) {
-    // The newest season that has this name decides; a name shared there by
-    // two different accounts is ambiguous. Older seasons only add candidates.
-    const newestSeason = list[0].seasonId;
-    const accounts = new Set(
-      list.filter((upload) => upload.seasonId === newestSeason).map((u) => u.submissionUid)
-    );
+    // A name used by two accounts in any prior season is not a safe match.
+    const accounts = new Set(list.map((upload) => upload.submissionUid));
     const candidates = [];
     const seen = new Set();
     for (const upload of list) {
@@ -204,25 +186,17 @@ export function buildPriorSeasonBaselineIndex(priorSeasons = []) {
  * The baseline one player is measured from.
  * @returns {{values: object|null, source: string|null, seasonId: string|null, match: object}}
  */
-export function resolveServerBaseline(player, { index, contestedKeys, confirmation } = {}) {
+export function resolveServerBaseline(player, { index, contestedKeys } = {}) {
   const key = competitionExactNameKey(player?.gameName);
   const entry = key ? index?.byName?.get(key) || null : null;
   const contested = contestedKeys instanceof Set && contestedKeys.has(key);
-  const decision = cleanText(confirmation?.decision);
-  const confirmedUid = cleanText(confirmation?.matchedSubmissionUid);
-  let chosen = null;
-  let how = 'none';
-  if (decision === 'vtsscore' && confirmedUid) {
-    chosen = index?.byUid?.get(confirmedUid) || null;
-    how = chosen ? 'confirmed' : 'none';
-  } else if (decision !== 'signup' && entry?.status === 'unique' && !contested) {
-    chosen = entry.candidate;
-    how = 'auto';
-  }
+  const sameAccount = index?.byUid?.get(recordUid(player)) || null;
+  const exactName = entry?.status === 'unique' && !contested ? entry.candidate : null;
+  const chosen = sameAccount || exactName;
   const match = {
-    status: !entry ? 'none' : entry.status === 'unique' && !contested ? 'matched' : 'ambiguous',
-    decision: decision === 'vtsscore' || decision === 'signup' ? decision : 'pending',
-    how,
+    status: chosen ? 'matched' : entry ? 'ambiguous' : 'none',
+    decision: chosen ? 'vtsscore' : 'signup',
+    how: sameAccount ? 'uid' : exactName ? 'exact-name' : 'none',
   };
   if (chosen) {
     return {
@@ -300,7 +274,6 @@ export function buildServerGrowthRows({
   submissions = [],
   raceScores = [],
   priorSeasons = [],
-  confirmations = {},
   window = null,
 } = {}) {
   const players = (Array.isArray(submissions) ? submissions : []).filter(
@@ -316,7 +289,6 @@ export function buildServerGrowthRows({
     const baseline = resolveServerBaseline(player, {
       index,
       contestedKeys,
-      confirmation: confirmations?.[submissionUid] || null,
     });
     return computeGrowthRow(player, {
       baseline,
@@ -375,6 +347,8 @@ export function buildGrowthBoardProjection(input, options = {}) {
   const ranking = Array.isArray(input) ? rankCompetitionGrowth(input) : input;
   const ranked = Array.isArray(ranking?.ranked) ? ranking.ranked : [];
   const notRanked = Array.isArray(ranking?.notRanked) ? ranking.notRanked : [];
+  const publicRanking = rankCompetitionGrowth(ranked.filter((row) => row.consent === true));
+  const publicNotRanked = notRanked.filter((row) => row.consent === true);
   const winnerCount = Math.max(
     1,
     Math.trunc(Number(options.winnerCount) || COMPETITION_WINNER_COUNT)
@@ -383,31 +357,28 @@ export function buildGrowthBoardProjection(input, options = {}) {
     growthPct: round(row.growthPct, 4),
     growthAbs: round(row.growthAbs, 0),
   });
-  const rows = ranked
-    .filter((row) => row.consent === true)
-    .slice(0, COMPETITION_BOARD_MAX_ROWS)
-    .map((row) => {
-      const fields = {};
-      for (const field of COMPETITION_GROWTH_FIELDS) {
-        const entry = row.fields?.[field];
-        if (!Number.isFinite(entry?.abs)) continue;
-        fields[field] = { abs: round(entry.abs, 0), pct: round(entry.pct, 4) };
-      }
-      return {
-        rank: row.rank,
-        gameName: row.gameName,
-        baselineSource: row.baselineSource,
-        ...publicGrowth(row),
-        fields,
-      };
-    });
-  const winners = ranked
+  const rows = publicRanking.ranked.slice(0, COMPETITION_BOARD_MAX_ROWS).map((row) => {
+    const fields = {};
+    for (const field of COMPETITION_GROWTH_FIELDS) {
+      const entry = row.fields?.[field];
+      if (!Number.isFinite(entry?.abs)) continue;
+      fields[field] = { abs: round(entry.abs, 0), pct: round(entry.pct, 4) };
+    }
+    return {
+      rank: row.rank,
+      gameName: row.gameName,
+      baselineSource: row.baselineSource,
+      ...publicGrowth(row),
+      fields,
+    };
+  });
+  const winners = publicRanking.ranked
     .filter((row) => row.rank <= winnerCount)
     .slice(0, COMPETITION_BOARD_MAX_WINNERS)
     .map((row) => ({
       rank: row.rank,
       gameName: row.gameName,
-      ...(row.consent === true ? publicGrowth(row) : {}),
+      ...publicGrowth(row),
     }));
   return {
     schemaVersion: COMPETITION_BOARD_SCHEMA_VERSION,
@@ -415,7 +386,7 @@ export function buildGrowthBoardProjection(input, options = {}) {
     publishedAt: cleanText(options.publishedAt) || new Date().toISOString(),
     rows,
     winners,
-    notRanked: notRanked.length,
+    notRanked: publicNotRanked.length,
   };
 }
 
@@ -431,12 +402,11 @@ function docsWithId(snapshot) {
     .map((doc) => ({ ...(doc.data?.() || {}), id: doc.id }));
 }
 
-/** The three small documents that decide whether a build is due. */
-async function readCompetitionBoardHead(db) {
-  const [configSnapshot, scheduleSnapshot, boardSnapshot] = await Promise.all([
+/** The active season and schedule for the live board. */
+export async function readCompetitionBoardHead(db) {
+  const [configSnapshot, scheduleSnapshot] = await Promise.all([
     db.doc(ALL_STAR_BOH_CONFIG_DOC_PATH).get(),
     db.doc(COMPETITION_SCHEDULE_DOC_PATH).get(),
-    db.doc(COMPETITION_BOARD_DOC_PATH).get(),
   ]);
   const seasonId = cleanText(snapshotData(configSnapshot)?.activeSeason);
   if (!SEASON_PATTERN.test(seasonId)) {
@@ -446,30 +416,22 @@ async function readCompetitionBoardHead(db) {
   return {
     seasonId,
     schedule: schedule && schedule.seasonId === seasonId ? schedule : null,
-    board: snapshotData(boardSnapshot),
   };
 }
 
 /**
  * Reads everything the board needs from Firestore (Admin SDK shape).
- * @returns {Promise<{seasonId, schedule, board, submissions, raceScores, priorSeasons, confirmations}>}
+ * @returns {Promise<{seasonId, schedule, submissions, raceScores, priorSeasons}>}
  */
 export async function readCompetitionBoardInputs(db, head = null) {
   const top = head || (await readCompetitionBoardHead(db));
   const { seasonId } = top;
-  const [matchesSnapshot, seasonRefs] = await Promise.all([
-    db.doc(COMPETITION_MATCHES_DOC_PATH).get(),
-    db.collection('boh_allstar').listDocuments(),
-  ]);
-  const matches = snapshotData(matchesSnapshot);
-  const confirmations =
-    matches?.seasonId === seasonId && matches?.decisions && typeof matches.decisions === 'object'
-      ? matches.decisions
-      : {};
+  const seasonRefs = await db.collection('boh_allstar').listDocuments();
   const priorIds = seasonRefs
     .map((ref) => ref.id)
     .filter((id) => id !== seasonId && SEASON_PATTERN.test(id))
     .sort()
+    .reverse()
     .slice(0, MAX_PRIOR_SEASONS);
   const [submissions, raceScores, ...priorScores] = await Promise.all([
     db.collection(`boh_allstar/${seasonId}/submissions`).get(),
@@ -484,7 +446,6 @@ export async function readCompetitionBoardInputs(db, head = null) {
       seasonId: id,
       raceScores: docsWithId(priorScores[index]),
     })),
-    confirmations,
   };
 }
 
@@ -494,7 +455,6 @@ export function buildCompetitionBoardFromInputs(inputs, { nowMs = Date.now() } =
     submissions: inputs.submissions,
     raceScores: inputs.raceScores,
     priorSeasons: inputs.priorSeasons,
-    confirmations: inputs.confirmations,
     window: inputs.schedule,
   });
   const ranking = rankCompetitionGrowth(rows);
@@ -503,10 +463,8 @@ export function buildCompetitionBoardFromInputs(inputs, { nowMs = Date.now() } =
     publishedAt: new Date(nowMs).toISOString(),
   });
   const sources = { signup: 0, 'vtsscore-2026': 0, 'vtsscore-prior': 0 };
-  let needsDecision = 0;
   for (const row of rows) {
     if (row.baselineSource && row.baselineSource in sources) sources[row.baselineSource] += 1;
-    if (row.match?.status === 'ambiguous' && row.match?.decision === 'pending') needsDecision += 1;
   }
   return {
     board,
@@ -518,55 +476,7 @@ export function buildCompetitionBoardFromInputs(inputs, { nowMs = Date.now() } =
       publicRows: board.rows.length,
       winners: board.winners.map((winner) => winner.gameName),
       baselineSources: sources,
-      needsDecision,
       priorSeasons: (inputs.priorSeasons || []).map((season) => season.seasonId),
     },
   };
-}
-
-/**
- * Builds and writes the board.
- * @param {object} deps {db, now, serverTimestamp}
- * @param {object} options {updatedBy}
- */
-export async function publishCompetitionBoard(deps, { updatedBy, inputs = null } = {}) {
-  const nowMs = Math.max(0, Math.trunc(Number(deps.now())));
-  const read = inputs || (await readCompetitionBoardInputs(deps.db));
-  const { board, summary } = buildCompetitionBoardFromInputs(read, { nowMs });
-  await deps.db.doc(COMPETITION_BOARD_DOC_PATH).set({
-    ...board,
-    updatedAt: deps.serverTimestamp(),
-    updatedBy: cleanText(updatedBy) || 'server',
-  });
-  return summary;
-}
-
-/**
- * The phase job's step: publish once after the re-upload window closes. A
- * board already written for this season after the window closed (by this job
- * or by a superadmin) is left alone, so a manual rebuild is never overwritten.
- */
-export async function autoPublishCompetitionBoard(deps) {
-  let head;
-  try {
-    head = await readCompetitionBoardHead(deps.db);
-  } catch (error) {
-    if (error instanceof CompetitionBoardError) return { status: 'skipped', reason: error.code };
-    throw error;
-  }
-  const schedule = head.schedule;
-  if (!schedule) return { status: 'skipped', reason: 'no_schedule' };
-  const phase = getCompetitionPhase(schedule, deps.now());
-  if (!AUTO_BUILD_PHASES.has(phase)) return { status: 'skipped', reason: 'phase', phase };
-  const existing = head.board;
-  if (
-    existing?.seasonId === head.seasonId &&
-    toMillis(existing?.updatedAt) >= schedule.reuploadClosesAt
-  ) {
-    return { status: 'skipped', reason: 'already_published', phase };
-  }
-  // Only now, with a build due, are the score collections read.
-  const inputs = await readCompetitionBoardInputs(deps.db, head);
-  const summary = await publishCompetitionBoard(deps, { updatedBy: 'server', inputs });
-  return { status: 'published', phase, summary };
 }
