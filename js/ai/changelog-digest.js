@@ -9,7 +9,7 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "version": "16.6.1",
     "date": "2026-09-26",
     "highlights": [
-      "The VtsScore power form has a dead-troops helper. Members whose troops died tick \"I have dead troops to count\" and an easy-fill grid appears: one row per troop type (Cavalry, Footmen, Archers), one column per tier (Lofty (T11), T10 Enhanced, T10, T9 Enhanced, T9), entered in tho…",
+      "The VtsScore power form has a dead-troops helper. Members whose troops died tick \"I have dead troops to count\", choose Footmen, Cavalry, or Archers using the sword, horseshoe, and target icons in the game's left-to-right order, then enter counts for the five tiers shown on the g…",
       "The homepage callout now sends members to the Eden page to vote for the best members instead of promoting Velo's Rampart; the Arcade lobby keeps its own Rampart banner.",
       "Hero info panels start hidden: the \"Show Hero Info Panels\" toggle is off by default now, and each visitor's choice is still remembered.",
       "Smart Generate joins the Combo Generator. Unlike Generate Best Combos, which takes the greedily highest lineups, Smart #1 shows five lineups whose best four total as high as possible (the fifth only has to fit) and Smart #2 maximises the total of all five, which can leave the ro…",

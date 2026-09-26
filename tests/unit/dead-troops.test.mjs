@@ -5,6 +5,7 @@ import {
   DEAD_TROOP_CLASSES,
   DEAD_TROOP_UNITS,
   DEAD_TROOP_VARIANTS,
+  convertDeadTroopCountUnit,
   deadTroopActualCount,
   deadTroopMultiplier,
   deadTroopRowPower,
@@ -13,9 +14,9 @@ import {
 } from '../../js/dead-troops.js';
 
 test('the grid is three troop types times five tiers', () => {
-  assert.deepEqual([...DEAD_TROOP_CLASSES], ['cavalry', 'footmen', 'archers']);
-  assert.deepEqual([...DEAD_TROOP_VARIANTS], ['lofty', 't10e', 't10', 't9e', 't9']);
-  assert.deepEqual([...DEAD_TROOP_UNITS], ['thousands', 'millions']);
+  assert.deepEqual([...DEAD_TROOP_CLASSES], ['footmen', 'cavalry', 'archers']);
+  assert.deepEqual([...DEAD_TROOP_VARIANTS], ['lofty', 't10', 't10e', 't9', 't9e']);
+  assert.deepEqual([...DEAD_TROOP_UNITS], ['troops', 'thousands', 'millions']);
   assert.equal(DEAD_TROOP_CLASSES.length * DEAD_TROOP_VARIANTS.length, 15);
 });
 
@@ -30,7 +31,8 @@ test('per-unit power follows the owner\u2019s numbers', () => {
   assert.equal(deadTroopMultiplier('nonsense'), 7);
 });
 
-test('counts are thousands by default and millions when switched', () => {
+test('exact, thousands and millions use the right multiplier', () => {
+  assert.equal(deadTroopUnitScale('troops'), 1);
   assert.equal(deadTroopUnitScale('thousands'), 1000);
   assert.equal(deadTroopUnitScale('millions'), 1_000_000);
   // 3 thousand Lofty: 3 × 1000 × 8.2 = 24,600.
@@ -39,6 +41,16 @@ test('counts are thousands by default and millions when switched', () => {
   assert.equal(deadTroopRowPower('2.5', { variant: 't9', unit: 'millions' }), 17_500_000);
   // An unknown unit behaves like the default.
   assert.equal(deadTroopRowPower(3, { variant: 'lofty' }), 24_600);
+  assert.equal(deadTroopRowPower(8_168_070, { variant: 't10', unit: 'troops' }), 61_260_525);
+});
+
+test('switching units preserves the troop count and a blank field', () => {
+  assert.equal(convertDeadTroopCountUnit('8168070', 'troops', 'millions'), '8.16807');
+  assert.equal(convertDeadTroopCountUnit('8.16807', 'millions', 'troops'), '8168070');
+  assert.equal(convertDeadTroopCountUnit('1500', 'thousands', 'millions'), '1.5');
+  assert.equal(convertDeadTroopCountUnit('0.125', 'millions', 'thousands'), '125');
+  assert.equal(convertDeadTroopCountUnit('', 'thousands', 'millions'), '');
+  assert.equal(convertDeadTroopCountUnit('oops', 'thousands', 'millions'), 'oops');
 });
 
 test('blank or hostile counts contribute zero', () => {
