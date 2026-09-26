@@ -84,9 +84,17 @@ test('a plan from a browser host rewrites the file with the local tool invariant
   assert.equal(after.length, before.length);
   // Comments, blank lines and section banners stay exactly where they were.
   assert.deepEqual(textLines(out), textLines(source));
-  // The reorder is written, and the edit lands on the line that already existed.
-  assert.equal(after[0], before[1]);
-  assert.equal(after[1], before[0]);
+  // The reorder is written (anchored lanes travel with their anchor). The line
+  // the edit rewrites drops out of both sides; every other S0-X2 lineup keeps
+  // its place, with the first two swapped.
+  const known = new Set(view.base.map((entry) => entry.line.trim()));
+  known.delete(last.line.trim());
+  const baseOnly = (lines) => lines.filter((line) => known.has(line));
+  assert.deepEqual(baseOnly(after), [
+    baseOnly(before)[1],
+    baseOnly(before)[0],
+    ...baseOnly(before).slice(2),
+  ]);
   // Compare against the same plan without the edit: exactly one line changes, and
   // it is the edited lineup carrying the new skin code.
   const untouched = entriesOf(

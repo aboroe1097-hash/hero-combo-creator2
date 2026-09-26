@@ -336,7 +336,10 @@ test('auto-draft on the shipped list places lineups and the summary lists their 
   }
   state.rows = mergeRows(view.base, state.lanes);
   const plan = planFromState(state);
-  const summary = summarizePlan(view, plan);
+  // Compare against a view with every lane back in the end block: on a fully
+  // planned shipped list each draft slot is a placement, not a move.
+  const endBlockView = { ...view, x8: view.x8.map((l) => ({ ...l, anchor: '' })) };
+  const summary = summarizePlan(endBlockView, plan);
   assert.equal(summary.counts.placed, draft.placed);
   assert.equal(summary.text, draft.placed + ' placed');
   assert.ok(
@@ -371,7 +374,12 @@ test('the save summary counts placed, moved, new, edited, removed and reordered 
       .map((id) => view.base.find((b) => b.id === id)),
     state.lanes
   );
-  const summary = summarizePlan(view, planFromState(state));
+  // These two start in the end block so their new slots read as placements.
+  const halfPlaced = {
+    ...view,
+    x8: view.x8.map((l) => (l.id === first.id || l.id === second.id ? { ...l, anchor: '' } : l)),
+  };
+  const summary = summarizePlan(halfPlaced, planFromState(state));
   assert.equal(summary.text, '2 placed, 1 new, 1 edited, 1 removed, 2 reordered');
   const addedLine = summary.lines.find((line) => line.kind === 'added');
   assert.equal(addedLine.text, "{ heroes: ['Lawman', 'Bjorn', 'The Brave'], skin: '222' },");
@@ -426,7 +434,9 @@ test('a published list rebuilds as the same plan and file, edits and removals in
     opts
   );
   assert.deepEqual([none.edits, none.added, none.removed], [[], [], []]);
-  assert.ok(none.order.every((o) => o.anchor === ''));
+  // The empty plan keeps every lane exactly where the shipped file has it.
+  const shippedAnchors = new Map(view.x8.map((l) => [l.id, l.anchor]));
+  assert.ok(none.order.every((o) => o.anchor === (shippedAnchors.get(o.id) || '')));
   // A list the file cannot hold is refused rather than approximated.
   const foreign = [...first.entries];
   foreign.push({ heroes: ['Lawman', 'The Brave', 'Theodora'] });
