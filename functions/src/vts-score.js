@@ -461,7 +461,7 @@ async function getPreviousComparisonStatus(dependencies, uid, enteredName) {
     ready:
       row?.consent === true &&
       competitionExactNameKey(row.gameName) === savedName &&
-      (row.match?.how === 'uid' || row.match?.how === 'exact-name'),
+      row.match?.how === 'exact-name',
   };
 }
 

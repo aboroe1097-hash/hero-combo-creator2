@@ -161,7 +161,6 @@ export function buildVtsScoreBaselineIndex(raceScores = []) {
       right.uploadedAt - left.uploadedAt || left.seasonId.localeCompare(right.seasonId)
   );
   const index = new Map();
-  index.byUid = new Map();
   index.byExactName = new Map();
   const grouped = new Map();
   const exactGrouped = new Map();
@@ -171,9 +170,6 @@ export function buildVtsScoreBaselineIndex(raceScores = []) {
     map.get(key).push(upload);
   };
   for (const candidate of uploads) {
-    if (candidate.submissionUid && !index.byUid.has(candidate.submissionUid)) {
-      index.byUid.set(candidate.submissionUid, candidate);
-    }
     add(grouped, competitionNameKey(candidate.gameName), candidate);
     add(exactGrouped, normalizeName(candidate.gameName), candidate);
   }
@@ -182,26 +178,29 @@ export function buildVtsScoreBaselineIndex(raceScores = []) {
   return index;
 }
 
-/** Keep each account's latest upload, and only propose scores with a saved
- * dead-troop breakdown so signup and re-upload totals use the same definition. */
+/**
+ * Keep each account's latest upload. Matching is by in-game name alone, because
+ * uploads from before member accounts existed carry no usable uid; a saved
+ * dead-troop breakdown is optional history, not a matching requirement. A name
+ * used by two different known accounts keeps every candidate but proposes none.
+ */
 function baselineEntry(uploads) {
   const accounts = new Set(
     uploads.map((upload) => upload.submissionUid).filter((submissionUid) => submissionUid)
   );
   const seen = new Set();
-  const latestByAccount = [];
+  const latest = [];
   for (const upload of uploads) {
-    const identity = upload.submissionUid || 'unknown-account';
+    const identity = upload.submissionUid || 'legacy-name';
     if (seen.has(identity)) continue;
     seen.add(identity);
-    latestByAccount.push(upload);
+    latest.push(upload);
   }
-  const candidates = latestByAccount.filter((upload) => upload.deadTroopCounts);
   const status = accounts.size > 1 ? 'ambiguous' : 'unique';
   return {
     status,
-    candidate: status === 'unique' ? candidates[0] || null : null,
-    candidates,
+    candidate: status === 'unique' ? latest[0] || null : null,
+    candidates: latest,
     uploads,
   };
 }
@@ -221,8 +220,9 @@ export function proposeBaselineMatch(player, index, { contestedKeys, autoMatch =
   const source = autoMatch && index?.byExactName instanceof Map ? index.byExactName : index;
   const entry = lookupIndex(source, key);
   const contested = contestedKeys instanceof Set && contestedKeys.has(key);
-  // The in-game name is the match: uploads from before accounts existed only
-  // carry a name. The uid is a last resort for records whose name changed.
+  // The in-game name is the only join: uploads from before accounts existed
+  // carry no uid, so a uid match would miss exactly the records this board
+  // needs. Ambiguous names are refused rather than guessed.
   if (entry?.candidates?.length && entry.status === 'unique' && !contested) {
     return {
       status: 'matched',
@@ -230,11 +230,6 @@ export function proposeBaselineMatch(player, index, { contestedKeys, autoMatch =
       candidates: entry.candidates,
       matchType: autoMatch ? 'exact-name' : null,
     };
-  }
-  const sameAccount =
-    autoMatch && index?.byUid instanceof Map ? index.byUid.get(recordUid(player)) : null;
-  if (sameAccount?.deadTroopCounts) {
-    return { status: 'matched', key, candidates: [sameAccount], matchType: 'uid' };
   }
   if (entry?.candidates?.length) {
     return {
@@ -530,8 +525,17 @@ export function buildGrowthBoardProjection(input, options = {}) {
       const fields = {};
       for (const field of COMPETITION_GROWTH_FIELDS) {
         const entry = row.fields?.[field];
-        if (!Number.isFinite(entry?.abs)) continue;
-        fields[field] = { abs: round(entry.abs, 0), pct: round(entry.pct, 4) };
+        // Baseline values ship even without a re-upload: an opted-in member
+        // whose comparison is still pending can at least see where they start.
+        const baseline = Number.isFinite(entry?.baseline) ? round(entry.baseline, 0) : null;
+        const final = Number.isFinite(entry?.final) ? round(entry.final, 0) : null;
+        if (baseline === null && final === null) continue;
+        fields[field] = {
+          baseline,
+          final,
+          abs: Number.isFinite(entry?.abs) ? round(entry.abs, 0) : null,
+          pct: Number.isFinite(entry?.pct) ? round(entry.pct, 4) : null,
+        };
       }
       return {
         rank: Number.isFinite(row.rank) ? row.rank : null,

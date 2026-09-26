@@ -110,6 +110,55 @@ test('Arabic renders right-to-left with the Arabic copy', () => {
   assert.match(html, /الفائزون/);
 });
 
+test('a row renders the full comparison: summary cards, category table, baseline note', () => {
+  const projection = {
+    schemaVersion: 1,
+    seasonId: 'competition-12',
+    publishedAt: '2026-11-05T10:00:00.000Z',
+    rows: [
+      {
+        rank: 1,
+        gameName: 'Grower',
+        baselineSource: 'signup',
+        growthPct: 30,
+        growthAbs: 300,
+        fields: {
+          totalCastlePower: { baseline: 1000, final: 1300, abs: 300, pct: 30 },
+          troopPower: { baseline: 800, final: 1040, abs: 240, pct: 30 },
+          buildingPower: { baseline: 100, final: 100, abs: 0, pct: 0 },
+        },
+      },
+      {
+        rank: null,
+        gameName: 'Pending',
+        baselineSource: 'vtsscore-2026',
+        growthPct: null,
+        growthAbs: null,
+        fields: {
+          totalCastlePower: { baseline: 500, final: null, abs: null, pct: null },
+        },
+      },
+    ],
+    winners: [],
+    notRanked: 1,
+  };
+  const html = board.buildCompetitionBoardHtml(projection, { locale: 'en' });
+  // Summary cards for the ranked row.
+  assert.match(html, /Total power change/);
+  assert.match(html, /Without troops/);
+  assert.match(html, /Biggest driver/);
+  // Category table headers and values.
+  assert.match(html, /Full comparison/);
+  assert.match(html, />Category</);
+  assert.match(html, />Re-upload</);
+  assert.match(html, />Change %</);
+  assert.match(html, /1,300/);
+  // The pending row keeps its baseline and carries the earlier-upload note.
+  assert.match(html, />500</);
+  assert.match(html, /Baseline: an earlier VtsScore upload\./);
+  assert.equal((html.match(/Baseline: the Competition #12 sign-up record\./g) || []).length, 1);
+});
+
 test('a board without results shows the empty state', () => {
   for (const projection of [null, {}, { rows: [], winners: [] }]) {
     const html = board.buildCompetitionBoardHtml(projection, { locale: 'es' });

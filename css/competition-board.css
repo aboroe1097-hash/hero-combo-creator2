@@ -190,7 +190,7 @@
 
 .comp-board__sort:focus-visible,
 .comp-board__search input:focus-visible,
-.comp-board__breakdown summary:focus-visible {
+.comp-board__detail summary:focus-visible {
   outline: 3px solid var(--cb-focus);
   outline-offset: 2px;
 }
@@ -272,39 +272,135 @@
   font-weight: 500;
 }
 
-.comp-board__breakdown summary {
+.comp-board__detail summary {
   cursor: pointer;
   color: var(--cb-accent);
   font-size: 0.85rem;
   font-weight: 500;
 }
 
-.comp-board__breakdown dl {
-  display: grid;
-  gap: 0.25rem;
-  margin: 0.5rem 0 0;
+.comp-board__detail summary:focus-visible {
+  outline: 3px solid var(--cb-focus);
+  outline-offset: 2px;
 }
 
-.comp-board__field {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+.comp-board__cards {
+  display: grid;
   gap: 0.5rem;
-  font-size: 0.85rem;
+  margin: 0.6rem 0 0;
+}
+
+.comp-board__card {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--cb-border);
+  border-radius: 0.6rem;
+  background: var(--cb-surface-soft);
   font-weight: 400;
 }
 
-.comp-board__field dt {
+.comp-board__card span {
   color: var(--cb-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-.comp-board__field dd {
-  margin: 0;
+.comp-board__card strong {
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
 }
 
-.comp-board__field dd span {
-  margin-inline-start: 0.35rem;
+.comp-board__card[data-tone='up'] strong {
+  color: var(--cb-up);
+}
+
+.comp-board__card[data-tone='down'] strong {
+  color: var(--cb-down);
+}
+
+.comp-board__card small {
   color: var(--cb-muted);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.comp-board__detail-scroll {
+  margin: 0.6rem 0 0;
+  overflow-x: auto;
+}
+
+/* The detail table lives inside the standings table, so every rule is scoped
+   under .comp-board and resets the standings-only card layout the nested safe
+   doesn't want: the plain table display, visible headers and cell padding. */
+.comp-board .comp-board__detail-table {
+  display: table;
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  font-weight: 400;
+}
+
+.comp-board .comp-board__detail-table thead {
+  display: table-header-group;
+  position: static;
+  inline-size: auto;
+  block-size: auto;
+  overflow: visible;
+  clip-path: none;
+}
+
+.comp-board .comp-board__detail-table tbody {
+  display: table-row-group;
+}
+
+.comp-board .comp-board__detail-table tr {
+  display: table-row;
+  padding: 0;
+  border: 0;
+}
+
+.comp-board .comp-board__detail-table th,
+.comp-board .comp-board__detail-table td {
+  padding: 0.35rem 0.5rem;
+  border-block-end: 1px solid var(--cb-border);
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.comp-board .comp-board__detail-table thead th {
+  color: var(--cb-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.comp-board .comp-board__detail-table th[scope='row'],
+.comp-board .comp-board__detail-table thead th:first-child {
+  text-align: start;
+}
+
+.comp-board .comp-board__detail-table tbody th {
+  color: var(--cb-muted);
+  font-weight: 500;
+}
+
+.comp-board .comp-board__detail-table tbody tr:first-child th,
+.comp-board .comp-board__detail-table tbody tr:first-child td {
+  color: var(--cb-text);
+  font-weight: 700;
+}
+
+.comp-board__detail-note {
+  margin: 0.5rem 0 0;
+  color: var(--cb-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
 }
 
 .comp-board__visually-hidden {
@@ -372,6 +468,10 @@
 
   .comp-board__num::before {
     content: none;
+  }
+
+  .comp-board__cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

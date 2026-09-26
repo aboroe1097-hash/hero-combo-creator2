@@ -67,7 +67,16 @@ export const COMPETITION_BOARD_COPY_EN = Object.freeze({
   competitionBoardNoOptInResults: 'No opted-in re-uploads are ready yet.',
   competitionBoardNoResults: 'No player matches your search.',
   competitionBoardValuesPrivate: 'Values private',
-  competitionBoardBreakdown: 'Power breakdown',
+  competitionBoardDetail: 'Full comparison',
+  competitionBoardCategory: 'Category',
+  competitionBoardNow: 'Re-upload',
+  competitionBoardChange: 'Change',
+  competitionBoardChangePct: 'Change %',
+  competitionBoardTotalChange: 'Total power change',
+  competitionBoardNoTroopChange: 'Without troops',
+  competitionBoardBiggestDriver: 'Biggest driver',
+  competitionBoardBaselineNoteSignup: 'Baseline: the Competition #12 sign-up record.',
+  competitionBoardBaselineNoteVtsScore: 'Baseline: an earlier VtsScore upload.',
   competitionBoardHistory: 'Upload history',
   competitionBoardTied: 'Tied',
   competitionBoardFieldTotal: 'Total power',
@@ -113,7 +122,16 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardNoOptInResults: 'لا توجد بعد عمليات إعادة رفع جاهزة للمشاركة علنًا.',
     competitionBoardNoResults: 'لا يوجد لاعب يطابق بحثك.',
     competitionBoardValuesPrivate: 'القيم خاصة',
-    competitionBoardBreakdown: 'تفاصيل القوة',
+    competitionBoardDetail: 'المقارنة الكاملة',
+    competitionBoardCategory: 'الفئة',
+    competitionBoardNow: 'إعادة الرفع',
+    competitionBoardChange: 'التغيير',
+    competitionBoardChangePct: 'نسبة التغيير',
+    competitionBoardTotalChange: 'تغيير القوة الإجمالية',
+    competitionBoardNoTroopChange: 'بدون القوات',
+    competitionBoardBiggestDriver: 'أكبر محرّك',
+    competitionBoardBaselineNoteSignup: 'خط الأساس: سجل التسجيل في المسابقة رقم 12.',
+    competitionBoardBaselineNoteVtsScore: 'خط الأساس: رفع VtsScore سابق.',
     competitionBoardHistory: 'سجل الرفع',
     competitionBoardTied: 'تعادل',
     competitionBoardFieldTotal: 'القوة الإجمالية',
@@ -156,7 +174,16 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardNoOptInResults: 'Aún no hay nuevas subidas públicas listas.',
     competitionBoardNoResults: 'Ningún jugador coincide con tu búsqueda.',
     competitionBoardValuesPrivate: 'Valores privados',
-    competitionBoardBreakdown: 'Desglose de poder',
+    competitionBoardDetail: 'Comparación completa',
+    competitionBoardCategory: 'Categoría',
+    competitionBoardNow: 'Nueva subida',
+    competitionBoardChange: 'Cambio',
+    competitionBoardChangePct: '% de cambio',
+    competitionBoardTotalChange: 'Cambio del poder total',
+    competitionBoardNoTroopChange: 'Sin tropas',
+    competitionBoardBiggestDriver: 'Mayor impulsor',
+    competitionBoardBaselineNoteSignup: 'Base: el registro de inscripción de la Competición #12.',
+    competitionBoardBaselineNoteVtsScore: 'Base: una subida anterior de VtsScore.',
     competitionBoardHistory: 'Historial de subidas',
     competitionBoardTied: 'Empate',
     competitionBoardFieldTotal: 'Poder total',
@@ -199,7 +226,16 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardNoOptInResults: 'Ainda não há novos envios públicos prontos.',
     competitionBoardNoResults: 'Nenhum jogador corresponde à sua busca.',
     competitionBoardValuesPrivate: 'Valores privados',
-    competitionBoardBreakdown: 'Detalhamento de poder',
+    competitionBoardDetail: 'Comparação completa',
+    competitionBoardCategory: 'Categoria',
+    competitionBoardNow: 'Novo envio',
+    competitionBoardChange: 'Mudança',
+    competitionBoardChangePct: '% de mudança',
+    competitionBoardTotalChange: 'Mudança do poder total',
+    competitionBoardNoTroopChange: 'Sem tropas',
+    competitionBoardBiggestDriver: 'Maior impulsionador',
+    competitionBoardBaselineNoteSignup: 'Base: o registo de inscrição da Competição #12.',
+    competitionBoardBaselineNoteVtsScore: 'Base: um envio anterior do VtsScore.',
     competitionBoardHistory: 'Histórico de envios',
     competitionBoardTied: 'Empate',
     competitionBoardFieldTotal: 'Poder total',
@@ -242,7 +278,16 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardNoOptInResults: 'Aucun nouvel envoi public n’est encore prêt.',
     competitionBoardNoResults: 'Aucun joueur ne correspond à votre recherche.',
     competitionBoardValuesPrivate: 'Valeurs privées',
-    competitionBoardBreakdown: 'Détail de la puissance',
+    competitionBoardDetail: 'Comparaison complète',
+    competitionBoardCategory: 'Catégorie',
+    competitionBoardNow: 'Nouvel envoi',
+    competitionBoardChange: 'Variation',
+    competitionBoardChangePct: '% de variation',
+    competitionBoardTotalChange: 'Variation de la puissance totale',
+    competitionBoardNoTroopChange: 'Sans troupes',
+    competitionBoardBiggestDriver: 'Principal moteur',
+    competitionBoardBaselineNoteSignup: 'Base : le bulletin d’inscription à la Compétition #12.',
+    competitionBoardBaselineNoteVtsScore: 'Base : un envoi VtsScore antérieur.',
     competitionBoardHistory: 'Historique des envois',
     competitionBoardTied: 'Égalité',
     competitionBoardFieldTotal: 'Puissance totale',
@@ -285,7 +330,16 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardNoOptInResults: 'Noch liegen keine öffentlichen erneuten Uploads vor.',
     competitionBoardNoResults: 'Kein Spieler passt zu deiner Suche.',
     competitionBoardValuesPrivate: 'Werte privat',
-    competitionBoardBreakdown: 'Machtaufschlüsselung',
+    competitionBoardDetail: 'Vollständiger Vergleich',
+    competitionBoardCategory: 'Kategorie',
+    competitionBoardNow: 'Neuer Upload',
+    competitionBoardChange: 'Veränderung',
+    competitionBoardChangePct: 'Veränderung %',
+    competitionBoardTotalChange: 'Veränderung der Gesamtmacht',
+    competitionBoardNoTroopChange: 'Ohne Truppen',
+    competitionBoardBiggestDriver: 'Größter Treiber',
+    competitionBoardBaselineNoteSignup: 'Basis: der Anmeldedatensatz der Competition #12.',
+    competitionBoardBaselineNoteVtsScore: 'Basis: ein früherer VtsScore-Upload.',
     competitionBoardHistory: 'Upload-Verlauf',
     competitionBoardTied: 'Gleichstand',
     competitionBoardFieldTotal: 'Gesamtmacht',
@@ -362,8 +416,15 @@ export function normalizeCompetitionBoard(raw) {
       const fields = {};
       for (const [field] of FIELDS) {
         const entry = row?.fields?.[field];
-        if (finite(entry?.abs) === null) continue;
-        fields[field] = { abs: entry.abs, pct: finite(entry.pct) };
+        const baseline = finite(entry?.baseline);
+        const final = finite(entry?.final);
+        if (baseline === null && final === null) continue;
+        fields[field] = {
+          baseline,
+          final,
+          abs: finite(entry?.abs),
+          pct: finite(entry?.pct),
+        };
       }
       const uploads = (Array.isArray(row?.uploads) ? row.uploads : [])
         .slice(0, 12)
@@ -457,6 +518,7 @@ function formatters(locale) {
   const sign = (value) => (value > 0 ? '+' : '');
   return {
     abs: (value) => (value === null ? '—' : `${sign(value)}${numberFormat.format(value)}`),
+    num: (value) => (value === null || value === undefined ? '—' : numberFormat.format(value)),
     pct: (value) => (value === null ? '—' : `${sign(value)}${percentFormat.format(value)}%`),
     date: (iso) => {
       if (!iso) return '';
@@ -496,20 +558,83 @@ function winnersHtml(board, text, format) {
   </section>`;
 }
 
-function breakdownHtml(row, text, format) {
-  const entries = FIELDS.filter(([field]) => row.fields[field])
-    .map(
-      ([field, key]) => `<div class="comp-board__field">
-        <dt>${esc(text(key))}</dt>
-        <dd data-tone="${tone(row.fields[field].abs)}">${esc(format.abs(row.fields[field].abs))}
-          <span>${esc(format.pct(row.fields[field].pct))}</span></dd>
+/**
+ * The full comparison for one player: where each category started, where it is
+ * now, and how far it moved. Rendered as a <details> so the standings stay
+ * scannable, and as a summary + table so a member without a re-upload yet can
+ * still see the baseline they will be measured from.
+ */
+function detailHtml(row, text, format) {
+  const entries = FIELDS.filter(([field]) => row.fields[field]).map(([field, key]) => [
+    field,
+    key,
+    row.fields[field],
+  ]);
+  if (!entries.length) return '';
+  const hasGrowth = Number.isFinite(row.growthAbs);
+  const nonTroopAbs = entries
+    .filter(([field]) => field !== 'troopPower' && field !== 'totalCastlePower')
+    .reduce((sum, [, , entry]) => sum + (Number.isFinite(entry.abs) ? entry.abs : 0), 0);
+  const driver = entries
+    .filter(([field, , entry]) => field !== 'totalCastlePower' && Number.isFinite(entry.abs))
+    .reduce(
+      (best, candidate) =>
+        Math.abs(candidate[2].abs) > Math.abs(best?.[2].abs ?? 0) ? candidate : best,
+      null
+    );
+  const cards = hasGrowth
+    ? `<div class="comp-board__cards">
+        <article class="comp-board__card" data-tone="${tone(row.growthAbs)}">
+          <span>${esc(text('competitionBoardTotalChange'))}</span>
+          <strong>${esc(format.abs(row.growthAbs))}</strong>
+          <small>${esc(format.pct(row.growthPct))}</small>
+        </article>
+        <article class="comp-board__card" data-tone="${tone(nonTroopAbs)}">
+          <span>${esc(text('competitionBoardNoTroopChange'))}</span>
+          <strong>${esc(format.abs(nonTroopAbs))}</strong>
+        </article>
+        ${
+          driver
+            ? `<article class="comp-board__card">
+                <span>${esc(text('competitionBoardBiggestDriver'))}</span>
+                <strong>${esc(text(driver[1]))}</strong>
+                <small>${esc(format.abs(driver[2].abs))}</small>
+              </article>`
+            : ''
+        }
       </div>`
+    : '';
+  const body = entries
+    .map(
+      ([, key, entry]) => `<tr>
+        <th scope="row">${esc(text(key))}</th>
+        <td>${esc(format.num(entry.baseline))}</td>
+        <td>${esc(format.num(entry.final))}</td>
+        <td data-tone="${tone(entry.abs ?? null)}">${esc(format.abs(entry.abs ?? null))}</td>
+        <td data-tone="${tone(entry.pct ?? null)}">${esc(format.pct(entry.pct ?? null))}</td>
+      </tr>`
     )
     .join('');
-  if (!entries) return '';
-  return `<details class="comp-board__breakdown">
-    <summary>${esc(text('competitionBoardBreakdown'))}</summary>
-    <dl>${entries}</dl>
+  const noteKey =
+    row.baselineSource === 'signup'
+      ? 'competitionBoardBaselineNoteSignup'
+      : 'competitionBoardBaselineNoteVtsScore';
+  return `<details class="comp-board__detail">
+    <summary>${esc(text('competitionBoardDetail'))}</summary>
+    ${cards}
+    <div class="comp-board__detail-scroll">
+      <table class="comp-board__detail-table">
+        <thead><tr>
+          <th scope="col">${esc(text('competitionBoardCategory'))}</th>
+          <th scope="col">${esc(text('competitionBoardBaseline'))}</th>
+          <th scope="col">${esc(text('competitionBoardNow'))}</th>
+          <th scope="col">${esc(text('competitionBoardChange'))}</th>
+          <th scope="col">${esc(text('competitionBoardChangePct'))}</th>
+        </tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+    </div>
+    <p class="comp-board__detail-note">${esc(text(noteKey))}</p>
   </details>`;
 }
 
@@ -547,7 +672,7 @@ export function buildCompetitionBoardRowsHtml(rows, text, format) {
         <span class="comp-board__chip">${esc(
           text(SOURCE_LABEL_KEYS[row.baselineSource] || 'competitionBoardSourceSignup')
         )}</span>
-        ${breakdownHtml(row, text, format)}
+        ${detailHtml(row, text, format)}
         ${historyHtml(row, text, format)}
       </th>
       <td class="comp-board__num" data-label="${esc(text('competitionBoardGrowthPct'))}" data-tone="${tone(row.growthPct)}">${esc(format.pct(row.growthPct))}</td>

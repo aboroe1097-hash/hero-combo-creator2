@@ -71,7 +71,7 @@ test('a player without a VtsScore upload is measured from their sign-up stats', 
   assert.equal(baseline.match.status, 'none');
 });
 
-test('a prior VtsScore upload without dead-troop counts is not used as the baseline', () => {
+test('a prior VtsScore upload without dead-troop counts is still the growth baseline', () => {
   const legacy = upload('old-u1', 'Grower', 800);
   delete legacy.deadTroopCounts;
   const rows = buildCompetitionGrowthRows({
@@ -81,8 +81,10 @@ test('a prior VtsScore upload without dead-troop counts is not used as the basel
     window: WINDOW,
     autoMatch: true,
   });
-  assert.equal(rows[0].baselineSource, 'signup');
-  assert.equal(rows[0].fields.totalCastlePower.baseline, 1_000);
+  assert.equal(rows[0].baselineSource, 'vtsscore-2026');
+  assert.equal(rows[0].fields.totalCastlePower.baseline, 800);
+  assert.equal(rows[0].growthAbs, 400);
+  assert.equal(rows[0].growthPct, 50);
 });
 
 test('names match through case, spacing, the (VTS) prefix and confirmed aliases', () => {
@@ -343,10 +345,24 @@ test('the public projection holds only consenting players and ranks them indepen
     projection.rows[0].uploads.some((upload) => upload.values.totalCastlePower === 1_300),
     'a row carries every upload its name ever had'
   );
+  // Baseline and final values ship for consenting rows so the board can show
+  // the comparison; the pending row keeps its baseline and no final.
+  assert.deepEqual(projection.rows[0].fields.totalCastlePower, {
+    baseline: 1000,
+    final: 1300,
+    abs: 300,
+    pct: 30,
+  });
+  assert.deepEqual(projection.rows[2].fields.totalCastlePower, {
+    baseline: 1000,
+    final: null,
+    abs: null,
+    pct: null,
+  });
   const serialized = JSON.stringify(projection);
   // Nothing a non-consenting player uploaded or signed up with leaks.
   assert.doesNotMatch(serialized, /1776777|1777777|1777\.777|177677/);
   assert.ok(projection.rows.every((row) => !row.gameName.startsWith('Private')));
-  assert.doesNotMatch(serialized, /baseline"|final"|submissionUid|consent/);
+  assert.doesNotMatch(serialized, /submissionUid|consent/);
   assert.doesNotMatch(serialized, /Private (Winner|Loser)[^}]*growth/);
 });

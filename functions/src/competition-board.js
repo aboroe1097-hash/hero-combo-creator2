@@ -172,13 +172,13 @@ function newestFirst(left, right) {
 }
 
 /**
- * Indexes every earlier season's VtsScore uploads by in-game name. Uploads from
- * before accounts existed carry no uid, so the name is the primary join and a
- * missing uid never drops a record; a name used by two different known accounts
- * is still not a safe match.
+ * Indexes every earlier season's VtsScore uploads by in-game name. Matching is
+ * by name alone because uploads from before member accounts existed carry no
+ * usable uid; a saved dead-troop breakdown is optional history, not a matching
+ * requirement. A name used by two different known accounts is still not a safe
+ * match and keeps every candidate without proposing one.
  * @param {Array<{seasonId: string, raceScores: object[]}>} priorSeasons
- * @returns {{byName: Map, byUid: Map}} byName: name key -> {status, candidate, candidates, uploads};
- *   byUid: submissionUid -> that account's latest upload.
+ * @returns {{byName: Map}} byName: name key -> {status, candidate, candidates, uploads}
  */
 export function buildPriorSeasonBaselineIndex(priorSeasons = []) {
   const uploads = [];
@@ -201,12 +201,8 @@ export function buildPriorSeasonBaselineIndex(priorSeasons = []) {
     }
   }
   uploads.sort(newestFirst);
-  const byUid = new Map();
   const grouped = new Map();
   for (const upload of uploads) {
-    if (upload.submissionUid && !byUid.has(upload.submissionUid)) {
-      byUid.set(upload.submissionUid, upload);
-    }
     const key = competitionExactNameKey(upload.gameName);
     if (!key) continue;
     if (!grouped.has(key)) grouped.set(key, []);
@@ -219,27 +215,23 @@ export function buildPriorSeasonBaselineIndex(priorSeasons = []) {
     const accounts = new Set(
       list.map((upload) => upload.submissionUid).filter((submissionUid) => submissionUid)
     );
-    const latestByAccount = [];
+    const latest = [];
     const seen = new Set();
     for (const upload of list) {
-      const identity = upload.submissionUid || `${upload.seasonId}:${upload.uploadedAt}`;
+      const identity = upload.submissionUid || 'legacy-name';
       if (seen.has(identity)) continue;
       seen.add(identity);
-      latestByAccount.push(upload);
+      latest.push(upload);
     }
-    // A historical power value can be a growth baseline only when its
-    // alive+temporarily-dead component is recorded. If the latest upload for
-    // this account predates that breakdown, use the current signup baseline.
-    const candidates = latestByAccount.filter((upload) => upload.deadTroopCounts);
-    const candidate = accounts.size <= 1 ? candidates[0] || null : null;
+    const status = accounts.size > 1 ? 'ambiguous' : 'unique';
     byName.set(key, {
-      status: accounts.size > 1 ? 'ambiguous' : 'unique',
-      candidate,
-      candidates,
+      status,
+      candidate: status === 'unique' ? latest[0] || null : null,
+      candidates: latest,
       uploads: list,
     });
   }
-  return { byName, byUid };
+  return { byName };
 }
 
 /**
@@ -250,16 +242,14 @@ export function resolveServerBaseline(player, { index, contestedKeys } = {}) {
   const key = competitionExactNameKey(player?.gameName);
   const entry = key ? index?.byName?.get(key) || null : null;
   const contested = contestedKeys instanceof Set && contestedKeys.has(key);
-  // The in-game name is the match: uploads from before accounts existed only
-  // carry a name. The uid is a last resort for records whose name changed.
-  const exactName = entry?.status === 'unique' && !contested ? entry.candidate : null;
-  const uidUpload = exactName ? null : index?.byUid?.get(recordUid(player)) || null;
-  const sameAccount = uidUpload?.deadTroopCounts ? uidUpload : null;
-  const chosen = exactName || sameAccount;
+  // The in-game name is the only join: uploads from before accounts existed
+  // carry no uid, so a uid match would miss exactly the records this board
+  // needs. Ambiguous names are refused rather than guessed.
+  const chosen = entry?.status === 'unique' && !contested ? entry.candidate : null;
   const match = {
     status: chosen ? 'matched' : entry?.status === 'ambiguous' ? 'ambiguous' : 'none',
     decision: chosen ? 'vtsscore' : 'signup',
-    how: exactName ? 'exact-name' : sameAccount ? 'uid' : 'none',
+    how: chosen ? 'exact-name' : 'none',
   };
   if (chosen) {
     return {
@@ -469,8 +459,17 @@ export function buildGrowthBoardProjection(input, options = {}) {
       const fields = {};
       for (const field of COMPETITION_GROWTH_FIELDS) {
         const entry = row.fields?.[field];
-        if (!Number.isFinite(entry?.abs)) continue;
-        fields[field] = { abs: round(entry.abs, 0), pct: round(entry.pct, 4) };
+        // Baseline values ship even without a re-upload: an opted-in member
+        // whose comparison is still pending can at least see where they start.
+        const baseline = Number.isFinite(entry?.baseline) ? round(entry.baseline, 0) : null;
+        const final = Number.isFinite(entry?.final) ? round(entry.final, 0) : null;
+        if (baseline === null && final === null) continue;
+        fields[field] = {
+          baseline,
+          final,
+          abs: Number.isFinite(entry?.abs) ? round(entry.abs, 0) : null,
+          pct: Number.isFinite(entry?.pct) ? round(entry.pct, 4) : null,
+        };
       }
       return {
         rank: Number.isFinite(row.rank) ? row.rank : null,

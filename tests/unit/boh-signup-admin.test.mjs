@@ -14,6 +14,7 @@ import {
   BOH_SIGNUP_ADMIN_ERROR_KEYS,
   bohSignupAdminSlotProblem,
   buildBohSignupAdminRequest,
+  deleteBohSignup,
   renderBohSignupRows,
   saveBohSignupSeasonConfig,
   toggleOrderedSlot,
@@ -646,6 +647,38 @@ test('the season picker writes exactly the keys the rules validator allows', asy
   assert.equal(writes.length, 1, 'a rejected setting never reaches Firestore');
 });
 
+test('deleting a sign-up removes its document and its final upload', async () => {
+  const deleted = [];
+  const context = {
+    db: { kind: 'test' },
+    firestore: {
+      doc: (_db, path) => ({ path }),
+      deleteDoc: async (ref) => deleted.push(ref.path),
+    },
+  };
+  await deleteBohSignup({ seasonId: SEASON, submissionUid: 'uid-1' }, context);
+  assert.deepEqual(deleted, [
+    `boh_allstar/${SEASON}/submissions/uid-1`,
+    `boh_allstar/${SEASON}/raceScores/uid-1`,
+  ]);
+  await assert.rejects(
+    deleteBohSignup({ seasonId: 'not a season', submissionUid: 'uid-1' }, context),
+    (error) => error.code === 'invalid_signup_delete'
+  );
+  await assert.rejects(
+    deleteBohSignup({ seasonId: SEASON, submissionUid: '' }, context),
+    (error) => error.code === 'invalid_signup_delete'
+  );
+  assert.equal(deleted.length, 2, 'a rejected request never reaches Firestore');
+  // The rules already admit admins to both documents, so the client write is
+  // the same authority the panel already reads with.
+  const rules = readFileSync('firestore.rules', 'utf8');
+  const submissions = rules.match(/match \/submissions\/\{uid\} \{[\s\S]*?\n {6}\}/)[0];
+  assert.match(submissions, /allow delete: if isAdmin\(\);/);
+  const raceScores = rules.match(/match \/raceScores\/\{submissionUid\} \{[\s\S]*?\n {6}\}/)[0];
+  assert.match(raceScores, /allow read, write: if isAdmin\(\);/);
+});
+
 test('the admin tab is wired into the dashboard and the nav', () => {
   const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
   assert.match(dashboard, /if \(name === 'bohSignups'\) renderBohSignupsPanel\(\);/);
@@ -782,6 +815,9 @@ test('the signup list renders an edit action per row', () => {
   );
   assert.match(html, /data-boh-signup-edit="uid-1"/);
   assert.doesNotMatch(html, /data-boh-signup-edit="uid-2"/, 'member signups are read-only here');
+  // Delete is offered on every row: a bad or duplicate entry must be removable.
+  assert.match(html, /data-boh-signup-delete="uid-1"/);
+  assert.match(html, /data-boh-signup-delete="uid-2"/);
   assert.match(html, /Bil\./);
   assert.match(html, /MalakAbo/);
   assert.match(html, /<td>2<\/td>/);

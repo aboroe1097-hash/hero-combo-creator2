@@ -261,15 +261,18 @@ export function renderBohSignupRows(signups, t) {
             ? esc(t('adminBohSignupManualChip', {}, 'Added by leadership'))
             : esc(t('adminBohSignupMemberChip', {}, 'Member form'))
         }</td>
-        <td>${
+        <td class="dash-boh-actions-cell">${
           // A member's own signup carries fields the admin form cannot show, so
-          // only rows leadership added by hand can be edited from here.
+          // only rows leadership added by hand can be edited from here. Any
+          // row can be deleted: that is the fix for a bad or duplicate entry.
           manual
             ? `<button class="dash-btn" type="button" data-boh-signup-edit="${esc(
                 signup.submissionUid
               )}">${esc(t('adminBohSignupEdit', {}, 'Edit'))}</button>`
-            : '—'
-        }</td>
+            : ''
+        }<button class="dash-btn dash-btn-danger" type="button" data-boh-signup-delete="${esc(
+          signup.submissionUid
+        )}">${esc(t('adminBohSignupDelete', {}, 'Delete'))}</button></td>
       </tr>`;
     })
     .join('');
@@ -399,6 +402,26 @@ export function createBohSignupAdminView(options = {}) {
   }
 
   return Object.freeze({ render, fillForm, collectRequest, readSeasonConfig, state });
+}
+
+/**
+ * Deletes one sign-up and its final upload. The rules admit admins to delete
+ * both documents, so this is a direct client write; the dashboard asks for
+ * confirmation first. Deleting the upload too keeps a re-registration from
+ * inheriting the old re-upload.
+ */
+export async function deleteBohSignup({ seasonId, submissionUid }, context) {
+  const season = String(seasonId || '').trim();
+  const uid = String(submissionUid || '').trim();
+  if (!BOH_SIGNUP_SEASON_PATTERN.test(season) || !uid) {
+    const error = new Error('A season and sign-up are required.');
+    error.code = 'invalid_signup_delete';
+    throw error;
+  }
+  const { firestore, db } = context;
+  const { doc, deleteDoc } = firestore;
+  await deleteDoc(doc(db, `boh_allstar/${season}/submissions/${uid}`));
+  await deleteDoc(doc(db, `boh_allstar/${season}/raceScores/${uid}`));
 }
 
 export class BohSignupSeasonError extends Error {

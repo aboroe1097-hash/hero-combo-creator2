@@ -3636,6 +3636,10 @@ const de = {
   c12Public: 'Öffentlich',
   c12SourceVtsScore: 'VtsScore 2026',
   c12Ambiguous: 'Name nicht eindeutig',
+  c12CompareTitle: 'Spieler vergleichen',
+  c12CompareHint: 'Wähle zwei Spieler, um ihr Wachstum nebeneinander zu vergleichen.',
+  c12CompareLeft: 'Spieler A',
+  c12CompareRight: 'Spieler B',
   c12Confirmed: 'Bestätigt: {name}',
   c12Use: '{name} verwenden ({total})',
   c12Save: 'Entscheidungen speichern',
@@ -3896,6 +3900,10 @@ const de = {
   adminBohSignupMemberChip: 'Mitgliederformular',
   adminBohSignupRevision: 'Revision',
   adminBohSignupActions: 'Aktionen',
+  adminBohSignupDelete: 'Löschen',
+  adminBohSignupDeleteAsk:
+    '{name} und den finalen Upload löschen? Das kann nicht rückgängig gemacht werden.',
+  adminBohSignupDeleted: 'Anmeldung und finaler Upload gelöscht.',
   adminBohSignupsLoading: 'Anmeldungen werden geladen...',
   adminBohSignupsUnavailable:
     'Anmeldungen sind nicht verfügbar. Aktualisiere und versuche es erneut.',

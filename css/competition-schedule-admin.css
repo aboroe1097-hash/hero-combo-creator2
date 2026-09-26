@@ -215,6 +215,11 @@
   border-color: var(--ff-success, #16a34a);
   color: var(--ff-success, #16a34a);
 }
+#ocrDashboardRoot .dash-boh-actions-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
 @media (max-width: 768px) {
   #ocrDashboardRoot .dash-comp-schedule-meta,
   #ocrDashboardRoot .dash-comp-schedule-default {

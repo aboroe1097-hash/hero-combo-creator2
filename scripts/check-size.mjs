@@ -474,7 +474,9 @@ const LIMITS = {
     // admin mobile route (786.1 KiB measured); retain ~0.9 KiB.
     // 16.6.2: the Smart Generate button adds shared component styles;
     // measured 691.0 / 787.7 KiB after build, within these narrow ceilings.
-    'admin.html': { desktop: 692 * 1024, mobile: 788 * 1024 },
+    // 16.6.3: the two-player comparison panel adds admin-only rules;
+    // measured 691.9 / 788.5 KiB. Raise mobile by the measured minimum.
+    'admin.html': { desktop: 692 * 1024, mobile: 789 * 1024 },
     // Eden used to carry every admin dashboard style, because it imports
     // ocr-dashboard.css for weighted-contribution detail; 16.0.14 had lifted the
     // ceiling to 806/909 KiB for admin-only rules alone. 16.0.15 moves the
