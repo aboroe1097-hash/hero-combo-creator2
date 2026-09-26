@@ -1,10 +1,20 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.0";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.1";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.6.1",
+    "date": "2026-09-26",
+    "highlights": [
+      "The VtsScore power form has a dead-troops helper. Members whose troops died ask \"I have dead troops to count\", enter each Lofty / Footmen / Cavalry / Archer tier (T10 Enhanced, T10, T9 Enhanced, T9) in thousands or millions, and see the power each row returns — Lofty 8.2 per tro…",
+      "Smart Generate joins the Combo Generator. Unlike Generate Best Combos, which takes the greedily highest lineups, Smart #1 shows five lineups whose best four total as high as possible (the fifth only has to fit) and Smart #2 maximises the total of all five, which can leave the ro…",
+      "The VtsScore Growth Board stays hidden until VtsScore is unlocked instead of loading for every visitor.",
+      "The VTS Admin growth preview reads earlier seasons correctly again: the season parents are not documents, so a plain listing saw no prior seasons and every baseline fell back to sign-up values. It now reads the uploads as a collection group and falls back to the 2026 baseline se…"
+    ]
+  },
   {
     "version": "16.6.0",
     "date": "2026-09-26",
@@ -82,15 +92,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Velo knows the whole site now. Its toolkit map adds VtsScore / Competition #12, the Buildings planner, Eden Pathing, the Eden Operations Lab, the hub PDF tabs, the current Eden X2 season page and the Issue or Complaint form (the page every footer's \"Contact Devs\" link opens), an…",
       "New read-only answers: Competition #12 phase, next deadline and every phase's open and close time, in game time (UTC−2) and your own time, plus the BoH and Epic slot times; Castle 26–30 resource costs and any building's 26–30 Orichalcum and prerequisites, with blank sheet cells …",
       "**My Competition #12.** With a new \"My Competition #12\" permission in Velo's privacy settings, a signed-in member can ask about their own registration: which power fields are filled, ROC level, chosen BoH and Epic times, and their own baseline and growth once the board is publis…"
-    ]
-  },
-  {
-    "version": "16.5.12",
-    "date": "2026-09-25",
-    "highlights": [
-      "**The War Council.** After the third, sixth and ninth wave — every third wave in Endless War — pick one of three boons for the rest of the run: Ember Heart (fire burns 40% harder), Frost Grip (ice slows bite deeper and hold longer), Swift Wings (faster movement, shorter dash coo…",
-      "**Elemental reactions.** Ice onto a burning foe **shatters** it (bonus damage, armour ignored, the burn is consumed); fire onto a slowed foe **melts** it (double burn, slow cleared); three slows in a row **deep-freeze** a foe in place for a moment; and a burning foe that dies **…",
-      "Wing swaps now sit on a 2.5-second cooldown and the wing buttons dim while it runs, so committing to an element is a decision rather than a toggle."
     ]
   }
 ].map((release) =>

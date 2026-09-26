@@ -2,6 +2,13 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.6.1 - 2026-09-26
+
+- The VtsScore power form has a dead-troops helper. Members whose troops died ask "I have dead troops to count", enter each Lofty / Footmen / Cavalry / Archer tier (T10 Enhanced, T10, T9 Enhanced, T9) in thousands or millions, and see the power each row returns — Lofty 8.2 per troop, T10 7.5, T9 7.0, Enhanced matching its tier. That total is added on top of the entered Troop Power and Total Combat Power when the breakdown is saved. Rows show tier badges until the in-game unit icons are added as image assets.
+- Smart Generate joins the Combo Generator. Unlike Generate Best Combos, which takes the greedily highest lineups, Smart #1 shows five lineups whose best four total as high as possible (the fifth only has to fit) and Smart #2 maximises the total of all five, which can leave the roster without a 100-score lineup but with a higher combined score.
+- The VtsScore Growth Board stays hidden until VtsScore is unlocked instead of loading for every visitor.
+- The VTS Admin growth preview reads earlier seasons correctly again: the season parents are not documents, so a plain listing saw no prior seasons and every baseline fell back to sign-up values. It now reads the uploads as a collection group and falls back to the 2026 baseline season.
+
 ## 16.6.0 - 2026-09-26
 
 - The Combos Planner's queued X8 catch-up lanes are all placed in the main combo ranking now: `js/combos-db.js` ships the finished placements as the base list, and the Combos Generator, the hero season filters and Research open with X8 selected by default alongside the other seasons.

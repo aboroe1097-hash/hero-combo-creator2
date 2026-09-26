@@ -54,7 +54,10 @@ const LIMITS = {
   // source by bytes and transfer-relevant gzip size instead.
   // The translated public Eden X1 navigation entry adds 0.9 KiB to the
   // checked-in shell. Keep less than 0.5 KiB of raw-source headroom.
-  indexBytes: 83 * 1024,
+  // 16.6.1: the Smart Generate mode row (label, two-mode select, button) adds
+  // 0.5 KiB to the checked-in page. Measured 83.5 KiB; keep the same tight
+  // raw-source headroom.
+  indexBytes: 84 * 1024,
   indexGzipBytes: 16 * 1024,
   entryJsBytes: 300 * 1024,
   // The shared v14 stylesheet measures 390.3 KiB. The previous 300 KiB check
@@ -193,7 +196,11 @@ const LIMITS = {
   // 16.5.14 Combos planner in VTS Admin (the shared interface, the placement
   // workflow engine, hero-name matching and the live-publish loader): measured
   // 11822.5 KiB on top of 16.5.13; retain ~22 KiB for CI's admin-auth injection.
-  totalJsBytes: 11845 * 1024,
+  // 16.6.1: the dead-troops helper (pure module, render code and its 6-locale
+  // copy) and Smart Generate (the selection engine and the 13-locale copy) grow
+  // the built JS to 11847.4 KiB; the helper's styles ship as a lazy chunk.
+  // Retain ~20 KiB for CI's admin-auth injection.
+  totalJsBytes: 11868 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
