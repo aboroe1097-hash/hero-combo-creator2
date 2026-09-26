@@ -63,6 +63,7 @@ let lastGeneratorMode = null;
 const GENERATOR_IDLE_LABEL_KEYS = Object.freeze({
   generateCombosBtn: 'generatorGenerateBtn',
   generateRandomBtn: 'generatorRandomBtn',
+  generateSmartBtn: 'generatorSmartBtn',
 });
 
 function comboCopy(id, values = {}) {
@@ -693,7 +694,9 @@ function selectRandomCombos(selected) {
 
 export function generateSmartCombos() {
   const mode =
-    document.getElementById('generatorSmartMode')?.value === 'top5' ? 'top5' : 'top4';
+    document.querySelector('input[name="generatorSmartMode"]:checked')?.value === 'top5'
+      ? 'top5'
+      : 'top4';
   lastGeneratorMode = 'smart';
   runGenerator(
     GENERATOR_MIN_HEROES,
