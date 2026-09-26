@@ -109,14 +109,21 @@ test('an unconfirmed name match falls back to the sign-up baseline', () => {
 
 test('the admin preview proposes the newest upload when one account uploaded more than once', () => {
   const build = (first, second) =>
-    buildVtsScoreBaselineIndex([upload('old-1', 'MalakAbo', first, first * 1000 + 1), upload('old-1', 'MalakAbo', second, second * 1000 + 1)]);
+    buildVtsScoreBaselineIndex([
+      upload('old-1', 'MalakAbo', first, first * 1000 + 1),
+      upload('old-1', 'MalakAbo', second, second * 1000 + 1),
+    ]);
   for (const index of [build(800, 900), build(900, 800)]) {
     const baseline = resolveBaseline(submission('u1', 'MalakAbo', 1_000), {
       vtsScore2026ByName: index,
       autoMatch: true,
     });
     assert.equal(baseline.match.status, 'matched');
-    assert.equal(baseline.values.totalCastlePower, 900, 'the newest upload wins in either input order');
+    assert.equal(
+      baseline.values.totalCastlePower,
+      900,
+      'the newest upload wins in either input order'
+    );
   }
 });
 
