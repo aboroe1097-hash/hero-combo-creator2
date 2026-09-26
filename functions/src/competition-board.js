@@ -320,7 +320,13 @@ export function buildServerGrowthRows({
         });
       }
     }
-    const priorUploads = (key && index?.byName?.get(key)?.uploads) || [];
+    const entry = key ? index?.byName?.get(key) || null : null;
+    // An ambiguous name is an unsafe match: another account's uploads must
+    // never be published under it. Only a unique, unclaimed name carries
+    // history; the row's own current upload always stays.
+    const safeHistory =
+      entry && entry.status === 'unique' && !contestedKeys.has(key);
+    const priorUploads = safeHistory ? entry.uploads : [];
     for (const upload of priorUploads) {
       uploads.push({
         seasonId: upload.seasonId,
