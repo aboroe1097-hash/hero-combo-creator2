@@ -3439,7 +3439,7 @@ Object.assign(zh, {
   adminVtsScoreExportFailed: '无法生成图片。',
   adminVtsScoreExportDone: '排行榜图片已下载。',
   c12Title: '第12届比赛成长',
-  c12Hint: '按总战力成长百分比排名。2026 VtsScore 基准值仅在超级管理员确认匹配后使用。',
+  c12Hint: '2026 年只读预览，按总战力成长百分比排名。公开榜单会自动匹配以前赛季。',
   c12NotRanked: '未排名',
   c12ToReview: '待审核',
   c12Match: '2026 匹配',

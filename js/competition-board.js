@@ -2,11 +2,8 @@
 //
 // The member-facing Competition #12 growth board.
 //
-// It renders the public projection a superadmin publishes from VTS Admin to
-// `boh_allstar_competition/board` (built by js/competition-growth.js). That
-// projection already holds only what may be shown: consenting players' growth,
-// plus the winners' names (with numbers only for winners who consented). This
-// module never sees raw power values and never adds any.
+// It renders the consent-filtered projection returned by the vtsScore Function.
+// This module never sees raw power values and never adds any.
 //
 // renderCompetitionBoard() is pure DOM rendering with no Firebase; the page
 // supplies a translator t(key, vars) and a locale. Any key the page does not
@@ -44,7 +41,7 @@ export const COMPETITION_BOARD_COPY_EN = Object.freeze({
   competitionBoardTitle: 'Competition #12 growth board',
   competitionBoardIntro:
     'Growth from each player’s baseline to their re-upload, ranked by Total Power growth %. Ties are broken by absolute growth.',
-  competitionBoardPublished: 'Published {date}',
+  competitionBoardPublished: 'Updated {date}',
   competitionBoardWinnersTitle: 'Winners',
   competitionBoardStandingsTitle: 'Standings',
   competitionBoardRank: 'Rank',
@@ -63,10 +60,11 @@ export const COMPETITION_BOARD_COPY_EN = Object.freeze({
   competitionBoardSortName: 'Name',
   competitionBoardShowing: 'Showing {shown} of {total}',
   competitionBoardConsentNote:
-    'Only players who agreed to a public comparison are listed with their values. Winners are always named; their numbers appear only if they agreed.',
+    'Only players who agreed to a public comparison appear here. Everyone else stays off the board.',
   competitionBoardNotRanked:
     '{count} players are not ranked: they have no valid re-upload in the window.',
-  competitionBoardEmpty: 'The growth board has not been published yet.',
+  competitionBoardEmpty: 'The growth board will appear after the re-upload window closes.',
+  competitionBoardNoOptInResults: 'No opted-in re-uploads are ready yet.',
   competitionBoardNoResults: 'No player matches your search.',
   competitionBoardValuesPrivate: 'Values private',
   competitionBoardBreakdown: 'Power breakdown',
@@ -88,7 +86,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardTitle: 'لوحة نمو المسابقة رقم 12',
     competitionBoardIntro:
       'النمو من خط أساس كل لاعب حتى إعادة الرفع، مرتبًا حسب نسبة نمو القوة الإجمالية. عند التعادل يُحتسب النمو المطلق.',
-    competitionBoardPublished: 'نُشرت في {date}',
+    competitionBoardPublished: 'آخر تحديث {date}',
     competitionBoardWinnersTitle: 'الفائزون',
     competitionBoardStandingsTitle: 'الترتيب',
     competitionBoardRank: 'المرتبة',
@@ -107,10 +105,11 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardSortName: 'الاسم',
     competitionBoardShowing: 'عرض {shown} من {total}',
     competitionBoardConsentNote:
-      'تظهر قيم اللاعبين الذين وافقوا على المقارنة العلنية فقط. تُذكر أسماء الفائزين دائمًا، وتظهر أرقامهم فقط إذا وافقوا.',
+      'يظهر هنا فقط اللاعبون الذين وافقوا على المقارنة العلنية. ولا تظهر بيانات الآخرين.',
     competitionBoardNotRanked:
       '{count} لاعبين غير مصنَّفين: ليس لديهم إعادة رفع صالحة ضمن النافذة.',
-    competitionBoardEmpty: 'لم تُنشر لوحة النمو بعد.',
+    competitionBoardEmpty: 'ستظهر لوحة النمو بعد إغلاق فترة إعادة الرفع.',
+    competitionBoardNoOptInResults: 'لا توجد بعد عمليات إعادة رفع جاهزة للمشاركة علنًا.',
     competitionBoardNoResults: 'لا يوجد لاعب يطابق بحثك.',
     competitionBoardValuesPrivate: 'القيم خاصة',
     competitionBoardBreakdown: 'تفاصيل القوة',
@@ -129,7 +128,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardTitle: 'Tabla de crecimiento de la Competición #12',
     competitionBoardIntro:
       'Crecimiento desde la base de cada jugador hasta su nueva subida, ordenado por % de crecimiento del Poder Total. Los empates se deciden por el crecimiento absoluto.',
-    competitionBoardPublished: 'Publicada el {date}',
+    competitionBoardPublished: 'Actualizada el {date}',
     competitionBoardWinnersTitle: 'Ganadores',
     competitionBoardStandingsTitle: 'Clasificación',
     competitionBoardRank: 'Puesto',
@@ -148,10 +147,11 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardSortName: 'Nombre',
     competitionBoardShowing: 'Mostrando {shown} de {total}',
     competitionBoardConsentNote:
-      'Solo aparecen con sus valores los jugadores que aceptaron una comparación pública. Los ganadores siempre se nombran; sus cifras solo aparecen si lo aceptaron.',
+      'Solo aparecen los jugadores que aceptaron la comparación pública. Los demás no figuran en la tabla.',
     competitionBoardNotRanked:
       '{count} jugadores no están clasificados: no tienen una nueva subida válida dentro del plazo.',
-    competitionBoardEmpty: 'La tabla de crecimiento aún no se ha publicado.',
+    competitionBoardEmpty: 'La tabla de crecimiento aparecerá al cerrar el plazo de nuevas subidas.',
+    competitionBoardNoOptInResults: 'Aún no hay nuevas subidas públicas listas.',
     competitionBoardNoResults: 'Ningún jugador coincide con tu búsqueda.',
     competitionBoardValuesPrivate: 'Valores privados',
     competitionBoardBreakdown: 'Desglose de poder',
@@ -170,7 +170,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardTitle: 'Quadro de crescimento da Competição #12',
     competitionBoardIntro:
       'Crescimento da base de cada jogador até o novo envio, ordenado pelo % de crescimento do Poder Total. Empates são decididos pelo crescimento absoluto.',
-    competitionBoardPublished: 'Publicado em {date}',
+    competitionBoardPublished: 'Atualizado em {date}',
     competitionBoardWinnersTitle: 'Vencedores',
     competitionBoardStandingsTitle: 'Classificação',
     competitionBoardRank: 'Posição',
@@ -189,10 +189,11 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardSortName: 'Nome',
     competitionBoardShowing: 'Mostrando {shown} de {total}',
     competitionBoardConsentNote:
-      'Só aparecem com seus valores os jogadores que aceitaram uma comparação pública. Os vencedores são sempre nomeados; seus números só aparecem se aceitaram.',
+      'Só aparecem os jogadores que aceitaram a comparação pública. Os demais ficam fora do quadro.',
     competitionBoardNotRanked:
       '{count} jogadores não estão classificados: não têm um novo envio válido dentro da janela.',
-    competitionBoardEmpty: 'O quadro de crescimento ainda não foi publicado.',
+    competitionBoardEmpty: 'O quadro de crescimento aparecerá após o fim do prazo de novos envios.',
+    competitionBoardNoOptInResults: 'Ainda não há novos envios públicos prontos.',
     competitionBoardNoResults: 'Nenhum jogador corresponde à sua busca.',
     competitionBoardValuesPrivate: 'Valores privados',
     competitionBoardBreakdown: 'Detalhamento de poder',
@@ -211,7 +212,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardTitle: 'Tableau de croissance de la Compétition n°12',
     competitionBoardIntro:
       'Croissance entre la référence de chaque joueur et son nouvel envoi, classée par % de croissance de la Puissance totale. Les égalités sont départagées par la croissance absolue.',
-    competitionBoardPublished: 'Publié le {date}',
+    competitionBoardPublished: 'Mis à jour le {date}',
     competitionBoardWinnersTitle: 'Gagnants',
     competitionBoardStandingsTitle: 'Classement',
     competitionBoardRank: 'Rang',
@@ -230,10 +231,11 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardSortName: 'Nom',
     competitionBoardShowing: '{shown} sur {total} affichés',
     competitionBoardConsentNote:
-      'Seuls les joueurs ayant accepté une comparaison publique apparaissent avec leurs valeurs. Les gagnants sont toujours nommés ; leurs chiffres n’apparaissent que s’ils ont accepté.',
+      'Seuls les joueurs ayant accepté la comparaison publique apparaissent ici. Les autres restent hors du tableau.',
     competitionBoardNotRanked:
       '{count} joueurs ne sont pas classés : ils n’ont pas de nouvel envoi valide dans la fenêtre.',
-    competitionBoardEmpty: 'Le tableau de croissance n’a pas encore été publié.',
+    competitionBoardEmpty: 'Le tableau de croissance apparaîtra après la clôture des nouveaux envois.',
+    competitionBoardNoOptInResults: 'Aucun nouvel envoi public n’est encore prêt.',
     competitionBoardNoResults: 'Aucun joueur ne correspond à votre recherche.',
     competitionBoardValuesPrivate: 'Valeurs privées',
     competitionBoardBreakdown: 'Détail de la puissance',
@@ -252,7 +254,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardTitle: 'Wachstumstafel Wettbewerb #12',
     competitionBoardIntro:
       'Wachstum vom Ausgangswert jedes Spielers bis zum erneuten Upload, sortiert nach Gesamtmacht-Wachstum in %. Bei Gleichstand entscheidet das absolute Wachstum.',
-    competitionBoardPublished: 'Veröffentlicht am {date}',
+    competitionBoardPublished: 'Aktualisiert am {date}',
     competitionBoardWinnersTitle: 'Gewinner',
     competitionBoardStandingsTitle: 'Rangliste',
     competitionBoardRank: 'Rang',
@@ -271,10 +273,11 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardSortName: 'Name',
     competitionBoardShowing: '{shown} von {total} angezeigt',
     competitionBoardConsentNote:
-      'Mit Werten erscheinen nur Spieler, die einem öffentlichen Vergleich zugestimmt haben. Gewinner werden immer genannt; ihre Zahlen erscheinen nur mit Zustimmung.',
+      'Hier erscheinen nur Spieler, die dem öffentlichen Vergleich zugestimmt haben. Alle anderen bleiben außerhalb der Tafel.',
     competitionBoardNotRanked:
       '{count} Spieler sind nicht gewertet: Sie haben keinen gültigen erneuten Upload im Zeitfenster.',
-    competitionBoardEmpty: 'Die Wachstumstafel wurde noch nicht veröffentlicht.',
+    competitionBoardEmpty: 'Die Wachstumstafel erscheint nach dem Ende des erneuten Uploads.',
+    competitionBoardNoOptInResults: 'Noch liegen keine öffentlichen erneuten Uploads vor.',
     competitionBoardNoResults: 'Kein Spieler passt zu deiner Suche.',
     competitionBoardValuesPrivate: 'Werte privat',
     competitionBoardBreakdown: 'Machtaufschlüsselung',
@@ -378,7 +381,7 @@ export function normalizeCompetitionBoard(raw) {
     })
     .filter(Boolean)
     .sort((left, right) => left.rank - right.rank);
-  const published = Date.parse(String(raw.publishedAt || ''));
+  const published = Date.parse(String(raw.updatedAt || raw.publishedAt || ''));
   return {
     seasonId: cleanText(raw.seasonId, 80),
     publishedAt: Number.isFinite(published) ? new Date(published).toISOString() : '',
@@ -525,8 +528,9 @@ export function buildCompetitionBoardHtml(projection, { t, locale = 'en', state 
       ${board?.publishedAt ? `<p class="comp-board__meta">${esc(text('competitionBoardPublished', { date: format.date(board.publishedAt) }))}</p>` : ''}
     </header>`;
   if (!board || (!board.rows.length && !board.winners.length)) {
+    const emptyKey = board?.seasonId ? 'competitionBoardNoOptInResults' : 'competitionBoardEmpty';
     return `<div class="comp-board" dir="${dir}" lang="${esc(lang)}">${head}
-      <p class="comp-board__empty">${esc(text('competitionBoardEmpty'))}</p></div>`;
+      <p class="comp-board__empty">${esc(text(emptyKey))}</p></div>`;
   }
   const sort = SORTS.some(([key]) => key === state.sort) ? state.sort : 'pct';
   const query = cleanText(state.query, 80);

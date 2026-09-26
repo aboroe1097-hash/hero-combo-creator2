@@ -3610,7 +3610,7 @@ const de = {
   adminVtsScoreExportFailed: 'Das Bild konnte nicht erstellt werden.',
   adminVtsScoreExportDone: 'Bestenliste-Bild heruntergeladen.',
   c12Title: 'Wachstum Wettbewerb #12',
-  c12Hint: 'Sortiert nach Gesamtmacht-Wachstum in %. Ein VtsScore-Ausgangswert von 2026 gilt erst, wenn ein Superadmin die Zuordnung bestätigt.',
+  c12Hint: 'Schreibgeschützte Vorschau für 2026, sortiert nach Gesamtmacht-Wachstum in %. Die öffentliche Tafel gleicht frühere Saisons automatisch ab.',
   c12NotRanked: 'Nicht gewertet',
   c12ToReview: 'Zu prüfen',
   c12Match: 'Zuordnung 2026',

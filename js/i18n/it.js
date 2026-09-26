@@ -2707,7 +2707,7 @@ const it = {
   adminVtsScoreExportFailed: "Impossibile creare l'immagine.",
   adminVtsScoreExportDone: 'Immagine della classifica scaricata.',
   c12Title: 'Crescita Competizione #12',
-  c12Hint: 'Ordinato per % di crescita del Potere Totale. Una base VtsScore 2026 si usa solo dopo la conferma di un superadmin.',
+  c12Hint: 'Anteprima 2026 di sola lettura, ordinata per % di crescita del Potere Totale. La classifica pubblica confronta automaticamente le stagioni precedenti.',
   c12NotRanked: 'Non in classifica',
   c12ToReview: 'Da verificare',
   c12Match: 'Corrispondenza 2026',

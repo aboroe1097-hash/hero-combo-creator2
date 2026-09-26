@@ -2760,43 +2760,8 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Competition #12 growth board: the public projection a superadmin
-    // publishes from VTS Admin (js/competition-growth.js). It holds only
-    // consenting players' values plus the winners' names, so any signed-in
-    // visitor may read it. An admin write path; the member budget is untouched.
-    match /boh_allstar_competition/board {
-      allow get: if signedIn();
-      allow list: if false;
-      allow create, update: if isSuperAdmin()
-        && request.resource.data.keys().hasOnly([
-          'schemaVersion', 'seasonId', 'rows', 'winners', 'notRanked',
-          'publishedAt', 'updatedAt', 'updatedBy'
-        ])
-        && request.resource.data.rows is list
-        && request.resource.data.rows.size() <= 200
-        && request.resource.data.winners is list
-        && request.resource.data.winners.size() <= 20
-        && request.resource.data.updatedAt == request.time
-        && request.resource.data.updatedBy == request.auth.uid;
-      allow delete: if false;
-    }
-
-    // Superadmin decisions on which 2026 VtsScore upload (if any) is a
-    // Competition #12 player's baseline. Name matches are proposals only; this
-    // private document records the confirmations. Admins may read it.
-    match /boh_allstar_competition/matches {
-      allow get: if isAdmin();
-      allow list: if false;
-      allow create, update: if isSuperAdmin()
-        && request.resource.data.keys().hasOnly([
-          'schemaVersion', 'seasonId', 'decisions', 'updatedAt', 'updatedBy'
-        ])
-        && request.resource.data.decisions is map
-        && request.resource.data.decisions.size() <= 200
-        && request.resource.data.updatedAt == request.time
-        && request.resource.data.updatedBy == request.auth.uid;
-      allow delete: if false;
-    }
+    // The Growth Board is returned by vtsScore after consent filtering.
+    // Legacy board and match documents have no client read or write rule.
 
     // The published Combos ranking is public; only a superadmin can publish it.
     match /combos_plan/current {

@@ -2224,7 +2224,7 @@ const tr = {
   adminVtsScoreExportFailed: 'Görsel oluşturulamadı.',
   adminVtsScoreExportDone: 'Lider tablosu görseli indirildi.',
   c12Title: 'Yarışma #12 büyümesi',
-  c12Hint: 'Toplam Güç büyüme yüzdesine göre sıralanır. 2026 VtsScore başlangıcı yalnızca bir süper yönetici eşleşmeyi onaylarsa kullanılır.',
+  c12Hint: 'Toplam Güç büyüme yüzdesine göre sıralanan salt okunur 2026 önizlemesi. Genel pano önceki sezonları otomatik eşleştirir.',
   c12NotRanked: 'Sıralanmayan',
   c12ToReview: 'İncelenecek',
   c12Match: '2026 eşleşmesi',

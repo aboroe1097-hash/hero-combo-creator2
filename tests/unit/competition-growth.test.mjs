@@ -243,7 +243,7 @@ test('ranking uses growth %, breaks ties on absolute growth, and shares equal ra
   );
 });
 
-test('the public projection holds only consenting players and names winners without values', () => {
+test('the public projection holds only consenting players and ranks them independently', () => {
   const rows = buildCompetitionGrowthRows({
     submissions: [
       submission('a', 'Public Winner', 1_000, true),
@@ -278,17 +278,16 @@ test('the public projection holds only consenting players and names winners with
   assert.deepEqual(
     projection.rows.map((row) => [row.gameName, row.rank]),
     [
-      ['Public Winner', 2],
-      ['Public Other', 4],
+      ['Public Winner', 1],
+      ['Public Other', 2],
     ]
   );
   assert.equal(projection.rows[0].baselineSource, 'signup');
   assert.equal(projection.rows[0].growthPct, 30);
   assert.equal(projection.rows[0].fields.totalCastlePower.abs, 300);
   assert.deepEqual(projection.winners, [
-    { rank: 1, gameName: 'Private Winner' },
-    { rank: 2, gameName: 'Public Winner', growthPct: 30, growthAbs: 300 },
-    { rank: 3, gameName: 'Private Loser' },
+    { rank: 1, gameName: 'Public Winner', growthPct: 30, growthAbs: 300 },
+    { rank: 2, gameName: 'Public Other', growthPct: 5, growthAbs: 50 },
   ]);
   assert.equal(projection.notRanked, 1);
   const serialized = JSON.stringify(projection);

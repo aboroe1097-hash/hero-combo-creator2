@@ -429,6 +429,12 @@ input:disabled {
   font-size: 0.82rem;
 }
 
+.vts-score-comparison-hint {
+  padding: 6px 10px;
+  border-left: 3px solid var(--vts-accent);
+  color: var(--vts-text) !important;
+}
+
 .vts-score-field-hint[data-tone='warning'] {
   color: #fde68a !important;
 }

@@ -3,13 +3,11 @@ import test from 'node:test';
 
 import * as browser from '../../js/competition-growth.js';
 import {
-  autoPublishCompetitionBoard,
   buildCompetitionBoardFromInputs,
   buildGrowthBoardProjection,
   buildPriorSeasonBaselineIndex,
   buildServerGrowthRows,
   computeGrowthRow,
-  COMPETITION_BOARD_DOC_PATH,
   rankCompetitionGrowth,
   readCompetitionPowerValues,
   resolveServerBaseline,
@@ -113,17 +111,16 @@ test('the baseline is the latest earlier upload, matched automatically only when
       ],
     },
   ]);
-  // The newer season wins for Alpha, and its one upload settles Twin too.
-  assert.equal(index.byName.get('alpha').candidate.submissionUid, 'new-alpha');
-  assert.equal(index.byName.get('twin').status, 'unique');
-  assert.equal(index.byName.get('twin').candidate.submissionUid, 'twin-new');
+  // A name claimed by different accounts in any earlier season is ambiguous.
+  assert.equal(index.byName.get('alpha').status, 'ambiguous');
+  assert.equal(index.byName.get('twin').status, 'ambiguous');
   assert.equal(index.byUid.get('only-old').seasonId, 'season-2026');
 
-  const auto = resolveServerBaseline(submission('p1', 'alpha', 1), { index });
+  const auto = resolveServerBaseline(submission('new-alpha', 'alpha', 1), { index });
   assert.equal(auto.source, 'vtsscore-prior');
   assert.equal(auto.seasonId, 'season-2027a');
   assert.equal(auto.values.totalCastlePower, 95_000_000);
-  assert.equal(auto.match.how, 'auto');
+  assert.equal(auto.match.how, 'uid');
 
   const legacy = resolveServerBaseline(submission('p2', 'Oldie', 1), { index });
   assert.equal(legacy.source, 'vtsscore-2026');
@@ -135,20 +132,14 @@ test('the baseline is the latest earlier upload, matched automatically only when
   assert.equal(contested.source, 'signup');
   assert.equal(contested.match.status, 'ambiguous');
 
-  const keptSignup = resolveServerBaseline(submission('p1', 'Alpha', 70_000_000), {
-    index,
-    confirmation: { decision: 'signup' },
-  });
+  const keptSignup = resolveServerBaseline(submission('p1', 'Alpha', 70_000_000), { index });
   assert.equal(keptSignup.source, 'signup');
   assert.equal(keptSignup.values.totalCastlePower, 70_000_000);
 
-  // A confirmed account wins even when its name differs from the player's.
-  const confirmed = resolveServerBaseline(submission('p3', 'Renamed', 1), {
-    index,
-    confirmation: { decision: 'vtsscore', matchedSubmissionUid: 'only-old' },
-  });
-  assert.equal(confirmed.values.totalCastlePower, 5_000_000);
-  assert.equal(confirmed.match.how, 'confirmed');
+  // An exact name is accepted when its earlier owner is unique.
+  const exact = resolveServerBaseline(submission('p3', 'Oldie', 1), { index });
+  assert.equal(exact.values.totalCastlePower, 5_000_000);
+  assert.equal(exact.match.how, 'exact-name');
 
   const sameSeasonDuplicate = buildPriorSeasonBaselineIndex([
     {
@@ -161,14 +152,13 @@ test('the baseline is the latest earlier upload, matched automatically only when
     index: sameSeasonDuplicate,
   });
   assert.equal(unresolved.source, 'signup');
-  assert.equal(unresolved.match.decision, 'pending');
+  assert.equal(unresolved.match.decision, 'signup');
 });
 
 function boardInputs() {
   return {
     seasonId: 'competition-12',
     schedule: SCHEDULE,
-    board: null,
     submissions: [
       submission('a', 'Alpha', 100_000_000),
       submission('b', 'Bravo', 200_000_000, false),
@@ -181,7 +171,6 @@ function boardInputs() {
     priorSeasons: [
       { seasonId: 'season-2026', raceScores: [upload('old-a', 'Alpha', 80_000_000, 1)] },
     ],
-    confirmations: {},
   };
 }
 
@@ -190,13 +179,10 @@ test('the server board ranks from earlier-season baselines and keeps private val
   // Alpha grew 80M -> 120M (+50%), Bravo 200M -> 260M (+30%) from sign-up stats.
   assert.deepEqual(
     board.winners.map((winner) => [winner.rank, winner.gameName]),
-    [
-      [1, 'Alpha'],
-      [2, 'Bravo'],
-    ]
+    [[1, 'Alpha']]
   );
   assert.equal(board.winners[0].growthPct, 50);
-  assert.equal(board.winners[1].growthPct, undefined);
+  assert.doesNotMatch(JSON.stringify(board), /Bravo/);
   assert.deepEqual(
     board.rows.map((row) => [row.gameName, row.baselineSource]),
     [['Alpha', 'vtsscore-2026']]
@@ -211,6 +197,7 @@ function fakeDb(documents, collections = {}) {
   const writes = [];
   const snap = (id, data) => ({ id, exists: data != null, data: () => data });
   return {
+    documents,
     reads,
     writes,
     doc(path) {
@@ -245,13 +232,19 @@ function fakeDb(documents, collections = {}) {
   };
 }
 
-function competitionDb(board = null) {
+function competitionDb() {
   const inputs = boardInputs();
   return fakeDb(
     {
       'boh_allstar_config/current': { activeSeason: 'competition-12' },
       'boh_allstar_competition/current': SCHEDULE,
-      [COMPETITION_BOARD_DOC_PATH]: board,
+      'boh_allstar_member_grants/a': {
+        schemaVersion: 1,
+        uid: 'a',
+        seasonId: 'competition-12',
+        expiresAt: SCHEDULE.winnersEndAt + DAY,
+      },
+      'boh_allstar/competition-12/submissions/a': inputs.submissions[0],
     },
     {
       'boh_allstar/competition-12/submissions': inputs.submissions,
@@ -261,52 +254,27 @@ function competitionDb(board = null) {
   );
 }
 
-test('the phase job publishes once after the re-upload window and reads scores only then', async () => {
-  const deps = (db, nowMs) => ({ db, now: () => nowMs, serverTimestamp: () => nowMs });
-
-  const during = competitionDb();
-  const waiting = await autoPublishCompetitionBoard(deps(during, SCHEDULE.reuploadOpensAt + 5));
-  assert.deepEqual([waiting.status, waiting.reason], ['skipped', 'phase']);
-  assert.equal(during.writes.length, 0);
-  assert.equal(
-    during.reads.some((path) => path.includes('raceScores')),
-    false
+test('the live board reads current and prior records without writing a projection', async () => {
+  const db = competitionDb();
+  const response = recorder();
+  await createVtsScoreHandler({ db, now: () => SCHEDULE.reuploadClosesAt + 5 })(
+    handlerRequest(null, 'GET', { view: 'competition-growth' }),
+    response
   );
-
-  const after = competitionDb();
-  const published = await autoPublishCompetitionBoard(deps(after, SCHEDULE.reuploadClosesAt + 5));
-  assert.equal(published.status, 'published');
-  assert.equal(after.writes.length, 1);
-  const [path, written] = after.writes[0];
-  assert.equal(path, COMPETITION_BOARD_DOC_PATH);
-  assert.equal(written.updatedBy, 'server');
-  assert.equal(written.seasonId, 'competition-12');
-  assert.equal(written.winners[0].gameName, 'Alpha');
-
-  // A board already written for this season after the window closed stays.
-  const manual = competitionDb({
-    seasonId: 'competition-12',
-    updatedAt: SCHEDULE.reuploadClosesAt + 60_000,
-    rows: [],
-    winners: [],
-  });
-  const kept = await autoPublishCompetitionBoard(deps(manual, SCHEDULE.reuploadClosesAt + DAY));
-  assert.deepEqual([kept.status, kept.reason], ['skipped', 'already_published']);
-  assert.equal(manual.writes.length, 0);
-  assert.equal(
-    manual.reads.some((path) => path.includes('raceScores')),
-    false
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(
+    response.body.board.winners.map((row) => row.gameName),
+    ['Alpha']
   );
-
-  const closed = competitionDb();
-  const old = await autoPublishCompetitionBoard(deps(closed, SCHEDULE.winnersEndAt + 1));
-  assert.deepEqual([old.status, old.reason], ['skipped', 'phase']);
+  assert.doesNotMatch(JSON.stringify(response.body), /Bravo/);
+  assert.equal(db.writes.length, 0);
 });
 
-function handlerRequest(body) {
+function handlerRequest(body, method = 'POST', query = {}) {
   return {
-    method: 'POST',
+    method,
     body,
+    query,
     headers: {
       origin: 'https://roc-vts.com',
       authorization: 'Bearer auth-token',
@@ -342,42 +310,33 @@ function recorder() {
   };
 }
 
-test('vtsScore builds and publishes the board only for a superadmin', async () => {
-  const handlerFor = (claims, db) =>
-    createVtsScoreHandler({
-      auth: { verifyIdToken: async () => ({ uid: 'owner-uid', ...claims }) },
-      appCheck: { verifyToken: async () => ({ appId: 'web-app' }) },
-      db,
-      now: () => SCHEDULE.reuploadClosesAt + 5,
-      serverTimestamp: () => 'server-time',
-    });
-
-  const memberDb = competitionDb();
-  const denied = recorder();
-  await handlerFor({ admin: true }, memberDb)(handlerRequest({ action: 'buildBoard' }), denied);
-  assert.equal(denied.statusCode, 403);
-  assert.deepEqual(denied.body, { error: 'superadmin_required' });
-  assert.equal(memberDb.writes.length, 0);
-
-  const ownerDb = competitionDb();
-  const built = recorder();
-  await handlerFor({ superadmin: true }, ownerDb)(handlerRequest({ action: 'buildBoard' }), built);
-  assert.equal(built.statusCode, 200);
-  assert.equal(built.body.board.seasonId, 'competition-12');
-  assert.deepEqual(built.body.board.winners, ['Alpha', 'Bravo']);
-  assert.equal(ownerDb.writes.length, 1);
-  assert.equal(ownerDb.writes[0][1].updatedBy, 'owner-uid');
-  assert.equal(ownerDb.writes[0][1].updatedAt, 'server-time');
-
-  // Extra keys make it an ordinary (invalid) score upload, never a build.
-  const extra = recorder();
-  const extraDb = competitionDb();
-  await handlerFor({ superadmin: true }, extraDb)(
-    handlerRequest({ action: 'buildBoard', seasonId: 'competition-12' }),
-    extra
+test('the previous-data hint requires a saved consenting registration and exact entered name', async () => {
+  const db = competitionDb();
+  const handler = createVtsScoreHandler({
+    auth: { verifyIdToken: async () => ({ uid: 'a' }) },
+    appCheck: { verifyToken: async () => ({ appId: 'web-app' }) },
+    db,
+    now: () => SCHEDULE.reuploadClosesAt + 5,
+  });
+  const hint = async (name) => {
+    const response = recorder();
+    await handler(handlerRequest(null, 'GET', { view: 'previous-comparison', name }), response);
+    return response;
+  };
+  assert.equal((await hint('Alpha')).body.ready, true);
+  assert.equal((await hint('Someone Else')).body.ready, false);
+  db.documents['boh_allstar/competition-12/submissions/a'] = submission(
+    'a',
+    'Alpha',
+    100_000_000,
+    false
   );
-  assert.equal(extra.statusCode, 400);
-  assert.equal(extraDb.writes.length, 0);
+  assert.equal((await hint('Alpha')).body.ready, false);
+  db.documents['boh_allstar/competition-12/submissions/a'] = {
+    ...submission('a', 'Alpha', 100_000_000),
+    status: 'draft',
+  };
+  assert.equal((await hint('Alpha')).body.ready, false);
 });
 
 test('rows without an earlier upload fall back to sign-up stats', () => {
@@ -391,10 +350,10 @@ test('rows without an earlier upload fall back to sign-up stats', () => {
   assert.equal(rows[0].growthPct, 20);
 });
 
-test('the admin endpoint for the board build is the member vtsScore endpoint', async () => {
+test('the live board endpoint is the member vtsScore endpoint', async () => {
   const { VTS_SCORE_ENDPOINT } = await import('../../js/all-star-boh-access.js');
   const source = await import('node:fs').then((fs) =>
-    fs.readFileSync('js/vts-score-store.js', 'utf8')
+    fs.readFileSync('js/all-star-boh-access.js', 'utf8')
   );
   assert.ok(source.includes(`'${VTS_SCORE_ENDPOINT}'`));
 });

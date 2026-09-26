@@ -536,7 +536,7 @@ export const AI_TOOL_DECLARATIONS = Object.freeze([
   Object.freeze({
     name: 'get_my_competition',
     description:
-      "Read the signed-in member's own Competition #12 registration after explicit consent: filled power fields, ROC level, active times, consent, and their own published growth.",
+      "Read the signed-in member's own Competition #12 registration after explicit consent: filled power fields, ROC level, active times, consent, and their own Growth Board result.",
     parameters: Object.freeze({ type: 'object', properties: {}, additionalProperties: false }),
   }),
 ]);

@@ -3733,7 +3733,7 @@ const fr = {
   adminVtsScoreExportFailed: "Impossible de générer l'image.",
   adminVtsScoreExportDone: 'Image du classement téléchargée.',
   c12Title: 'Croissance Compétition n°12',
-  c12Hint: 'Classé par % de croissance de la Puissance totale. Une référence VtsScore 2026 n’est utilisée qu’après confirmation par un superadmin.',
+  c12Hint: 'Aperçu 2026 en lecture seule, classé par % de croissance de la Puissance totale. Le tableau public rapproche automatiquement les saisons précédentes.',
   c12NotRanked: 'Non classés',
   c12ToReview: 'À vérifier',
   c12Match: 'Correspondance 2026',

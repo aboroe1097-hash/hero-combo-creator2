@@ -63,6 +63,10 @@ function normalizeName(value) {
     .toLowerCase();
 }
 
+export function competitionExactNameKey(value) {
+  return normalizeName(value);
+}
+
 /**
  * The key two spellings of one account share: confirmed/taught aliases resolve
  * to their canonical name first, then case, whitespace and the "(VTS)" prefix
@@ -132,14 +136,26 @@ function uploadMillis(record) {
  */
 export function buildVtsScoreBaselineIndex(raceScores = []) {
   const index = new Map();
+  index.byUid = new Map();
+  index.byExactName = new Map();
   for (const record of Array.isArray(raceScores) ? raceScores : []) {
     const values = readCompetitionPowerValues(record?.powerValues);
     const gameName = cleanText(record?.gameName);
     const key = competitionNameKey(gameName);
+    const exactKey = normalizeName(gameName);
     const submissionUid = recordUid(record);
-    if (!values || !key || !submissionUid) continue;
+    if (!values || !submissionUid) continue;
+    const candidate = { submissionUid, gameName, values };
+    index.byUid.set(submissionUid, candidate);
+    if (exactKey) {
+      const exactEntry = index.byExactName.get(exactKey) || { status: 'unique', candidates: [] };
+      exactEntry.candidates.push(candidate);
+      exactEntry.status = exactEntry.candidates.length > 1 ? 'ambiguous' : 'unique';
+      index.byExactName.set(exactKey, exactEntry);
+    }
+    if (!key) continue;
     const entry = index.get(key) || { status: 'unique', candidates: [] };
-    entry.candidates.push({ submissionUid, gameName, values });
+    entry.candidates.push(candidate);
     entry.status = entry.candidates.length > 1 ? 'ambiguous' : 'unique';
     index.set(key, entry);
   }
@@ -156,13 +172,18 @@ function lookupIndex(index, key) {
  * The name-matched proposal for one player: 'matched' (one candidate),
  * 'ambiguous' (several, or contested by another player), or 'none'.
  */
-export function proposeBaselineMatch(player, index, { contestedKeys } = {}) {
-  const key = competitionNameKey(player?.gameName);
-  const entry = lookupIndex(index, key);
+export function proposeBaselineMatch(player, index, { contestedKeys, autoMatch = false } = {}) {
+  const key = autoMatch ? normalizeName(player?.gameName) : competitionNameKey(player?.gameName);
+  const sameAccount = autoMatch && index?.byUid instanceof Map
+    ? index.byUid.get(recordUid(player))
+    : null;
+  if (sameAccount) return { status: 'matched', key, candidates: [sameAccount], matchType: 'uid' };
+  const source = autoMatch && index?.byExactName instanceof Map ? index.byExactName : index;
+  const entry = lookupIndex(source, key);
   if (!entry?.candidates?.length) return { status: 'none', key, candidates: [] };
   const contested = contestedKeys instanceof Set && contestedKeys.has(key);
   const status = entry.status === 'unique' && !contested ? 'matched' : 'ambiguous';
-  return { status, key, candidates: entry.candidates };
+  return { status, key, candidates: entry.candidates, matchType: autoMatch ? 'exact-name' : null };
 }
 
 /**
@@ -185,16 +206,29 @@ export function resolveBaseline(player, options = {}) {
     decision === 'vtsscore'
       ? proposal.candidates.find((candidate) => candidate.submissionUid === confirmedUid) || null
       : null;
-  const suggested = proposal.status === 'matched' ? proposal.candidates[0] : null;
+  const automatic =
+    options.autoMatch === true && decision !== 'signup' && proposal.status === 'matched'
+      ? proposal.candidates[0]
+      : null;
+  const selected = confirmed || automatic;
   const match = {
     status: proposal.status,
-    decision: decision === 'vtsscore' || decision === 'signup' ? decision : 'pending',
+    decision:
+      decision === 'signup'
+        ? 'signup'
+        : confirmed || automatic
+          ? 'vtsscore'
+          : decision === 'vtsscore'
+            ? 'pending'
+            : 'pending',
     confirmed: Boolean(confirmed),
-    candidate: confirmed || suggested,
+    automatic: Boolean(automatic && !confirmed),
+    matchType: proposal.matchType || null,
+    candidate: selected || (proposal.status === 'matched' ? proposal.candidates[0] : null),
     candidates: proposal.candidates,
   };
-  if (confirmed) {
-    return { values: { ...confirmed.values }, source: 'vtsscore-2026', match };
+  if (selected) {
+    return { values: { ...selected.values }, source: 'vtsscore-2026', match };
   }
   const values = signupValues(options.signup ?? player);
   return { values, source: values ? 'signup' : null, match };
@@ -258,10 +292,10 @@ export function computeGrowthRow(player, { baseline, raceScore = null, window = 
   };
 }
 
-function nameKeysClaimedTwice(players) {
+function nameKeysClaimedTwice(players, keyFor = competitionNameKey) {
   const seen = new Map();
   for (const player of players) {
-    const key = competitionNameKey(player?.gameName);
+    const key = keyFor(player?.gameName);
     if (key) seen.set(key, (seen.get(key) || 0) + 1);
   }
   return new Set([...seen].filter(([, count]) => count > 1).map(([key]) => key));
@@ -282,6 +316,7 @@ export function buildCompetitionGrowthRows({
   baselineRaceScores = [],
   confirmations = {},
   window = null,
+  autoMatch = false,
 } = {}) {
   const players = (Array.isArray(submissions) ? submissions : []).filter(
     (submission) => cleanText(submission?.status) === 'submitted' && recordUid(submission)
@@ -290,13 +325,15 @@ export function buildCompetitionGrowthRows({
     (Array.isArray(raceScores) ? raceScores : []).map((score) => [recordUid(score), score])
   );
   const index = buildVtsScoreBaselineIndex(baselineRaceScores);
-  const contestedKeys = nameKeysClaimedTwice(players);
+  const nameKey = autoMatch ? (name) => normalizeName(name) : competitionNameKey;
+  const contestedKeys = nameKeysClaimedTwice(players, nameKey);
   return players.map((player) => {
     const submissionUid = recordUid(player);
     const baseline = resolveBaseline(player, {
       vtsScore2026ByName: index,
       contestedKeys,
       confirmation: confirmations?.[submissionUid] || null,
+      autoMatch,
     });
     return computeGrowthRow(player, {
       baseline,
@@ -354,8 +391,8 @@ function round(value, digits) {
 }
 
 /**
- * The public board. Only consenting players' values are included; winners are
- * named regardless, with their numbers only when they consented.
+ * The public board contains only consenting players, including its rankings,
+ * winners and counts.
  * @param {object[]|{ranked: object[], notRanked: object[]}} input rows or a ranking
  * @param {object} options
  * @param {string} options.seasonId
@@ -366,6 +403,8 @@ export function buildGrowthBoardProjection(input, options = {}) {
   const ranking = Array.isArray(input) ? rankCompetitionGrowth(input) : input;
   const ranked = Array.isArray(ranking?.ranked) ? ranking.ranked : [];
   const notRanked = Array.isArray(ranking?.notRanked) ? ranking.notRanked : [];
+  const publicRanking = rankCompetitionGrowth(ranked.filter((row) => row.consent === true));
+  const publicNotRanked = notRanked.filter((row) => row.consent === true);
   const winnerCount = Math.max(
     1,
     Math.trunc(Number(options.winnerCount) || COMPETITION_WINNER_COUNT)
@@ -374,8 +413,7 @@ export function buildGrowthBoardProjection(input, options = {}) {
     growthPct: round(row.growthPct, 4),
     growthAbs: round(row.growthAbs, 0),
   });
-  const rows = ranked
-    .filter((row) => row.consent === true)
+  const rows = publicRanking.ranked
     .slice(0, COMPETITION_BOARD_MAX_ROWS)
     .map((row) => {
       const fields = {};
@@ -392,13 +430,13 @@ export function buildGrowthBoardProjection(input, options = {}) {
         fields,
       };
     });
-  const winners = ranked
+  const winners = publicRanking.ranked
     .filter((row) => row.rank <= winnerCount)
     .slice(0, COMPETITION_BOARD_MAX_WINNERS)
     .map((row) => ({
       rank: row.rank,
       gameName: row.gameName,
-      ...(row.consent === true ? publicGrowth(row) : {}),
+      ...publicGrowth(row),
     }));
   return {
     schemaVersion: COMPETITION_BOARD_SCHEMA_VERSION,
@@ -406,6 +444,6 @@ export function buildGrowthBoardProjection(input, options = {}) {
     publishedAt: cleanText(options.publishedAt) || new Date().toISOString(),
     rows,
     winners,
-    notRanked: notRanked.length,
+    notRanked: publicNotRanked.length,
   };
 }

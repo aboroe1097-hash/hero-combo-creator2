@@ -17,6 +17,27 @@ import {
 } from '../../js/ai/deadline-reminder.js';
 import { deriveDeterministicActions, deriveExecutedSources } from '../../js/ai/ui-actions.js';
 import { gameTimeToMillis } from '../../js/competition-schedule.js';
+import { findOwnBoardEntry } from '../../js/ai/tool-adapters-competition.js';
+
+test('my competition preserves an earlier-season baseline label', () => {
+  const own = findOwnBoardEntry(
+    {
+      seasonId: 'season-test',
+      rows: [
+        {
+          gameName: 'Player',
+          rank: 1,
+          baselineSource: 'vtsscore-prior',
+          growthPct: 20,
+          growthAbs: 200,
+        },
+      ],
+      winners: [],
+    },
+    { seasonId: 'season-test', gameName: 'Player', consent: true }
+  );
+  assert.equal(own.baselineSource, 'vtsscore-prior');
+});
 
 const HOUR = 3_600_000;
 // An invented season; every instant is entered in game time (UTC−2), the way
