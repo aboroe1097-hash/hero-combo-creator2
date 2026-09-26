@@ -287,19 +287,21 @@ test('explicit transition components retain pointer, keyboard, selection, and st
   const heroInfoToggle = page.locator('#heroInfoToggle');
   const heroInfoLabel = page.locator('#heroInfoToggleLabel');
   const toggleThumb = heroInfoLabel.locator('.toggle-thumb');
-  await expect(heroInfoToggle).toBeChecked();
-  await expect(toggleThumb).toHaveCSS('transition-property', 'transform, background-color');
-
-  await heroInfoLabel.click();
+  // Panels start hidden now, so the switch reads off on arrival.
   await expect(heroInfoToggle).not.toBeChecked();
-  await expect(toggleThumb).not.toHaveClass(/checked/);
+  await expect(toggleThumb).toHaveCSS('transition-property', 'transform, background-color');
   await expect(page.locator('body')).toHaveClass(/hide-hero-info/);
 
-  await heroInfoToggle.focus();
-  await page.keyboard.press('Space');
+  await heroInfoLabel.click();
   await expect(heroInfoToggle).toBeChecked();
   await expect(toggleThumb).toHaveClass(/checked/);
   await expect(page.locator('body')).not.toHaveClass(/hide-hero-info/);
+
+  await heroInfoToggle.focus();
+  await page.keyboard.press('Space');
+  await expect(heroInfoToggle).not.toBeChecked();
+  await expect(toggleThumb).not.toHaveClass(/checked/);
+  await expect(page.locator('body')).toHaveClass(/hide-hero-info/);
 
   await page.locator('#tabHeroesCombos').click();
   await page.locator('[data-hub-subtab="manual"]').click();

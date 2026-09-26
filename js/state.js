@@ -30,7 +30,8 @@ function detectInitialLanguage() {
 }
 
 export let currentLanguage = detectInitialLanguage();
-export let heroInfoEnabled = true;
+// Hero info panels start hidden: the toggle reveals them per visitor.
+export let heroInfoEnabled = false;
 // Canonical research season order. Declared here rather than beside the other
 // season lists further down because the default selection below is derived from
 // it — see RESEARCH_DEFAULT_SEASON_COUNT.
