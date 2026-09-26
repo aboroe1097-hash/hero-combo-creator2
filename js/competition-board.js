@@ -19,6 +19,14 @@ import '../css/competition-board.css';
 export const COMPETITION_BOARD_PATH = 'boh_allstar_competition/board';
 const MAX_ROWS = 200;
 const MAX_WINNERS = 20;
+// 'vtsscore-prior' comes from the server build (functions/src/competition-board.js)
+// when a player's latest earlier upload is from a season other than 2026.
+const BASELINE_SOURCES = new Set(['vtsscore-2026', 'vtsscore-prior', 'signup']);
+const SOURCE_LABEL_KEYS = Object.freeze({
+  'vtsscore-2026': 'competitionBoardSourceVtsScore',
+  'vtsscore-prior': 'competitionBoardSourceVtsScorePrior',
+  signup: 'competitionBoardSourceSignup',
+});
 
 const FIELDS = Object.freeze([
   ['totalCastlePower', 'competitionBoardFieldTotal'],
@@ -45,6 +53,7 @@ export const COMPETITION_BOARD_COPY_EN = Object.freeze({
   competitionBoardGrowthAbs: 'Growth',
   competitionBoardBaseline: 'Baseline',
   competitionBoardSourceVtsScore: '2026 VtsScore',
+  competitionBoardSourceVtsScorePrior: 'Earlier VtsScore',
   competitionBoardSourceSignup: 'Sign-up',
   competitionBoardSearch: 'Search players',
   competitionBoardSearchPlaceholder: 'Player name',
@@ -88,6 +97,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardGrowthAbs: 'النمو',
     competitionBoardBaseline: 'خط الأساس',
     competitionBoardSourceVtsScore: 'VtsScore 2026',
+    competitionBoardSourceVtsScorePrior: 'VtsScore سابق',
     competitionBoardSourceSignup: 'التسجيل',
     competitionBoardSearch: 'ابحث عن لاعب',
     competitionBoardSearchPlaceholder: 'اسم اللاعب',
@@ -128,6 +138,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardGrowthAbs: 'Crecimiento',
     competitionBoardBaseline: 'Base',
     competitionBoardSourceVtsScore: 'VtsScore 2026',
+    competitionBoardSourceVtsScorePrior: 'VtsScore anterior',
     competitionBoardSourceSignup: 'Inscripción',
     competitionBoardSearch: 'Buscar jugadores',
     competitionBoardSearchPlaceholder: 'Nombre del jugador',
@@ -168,6 +179,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardGrowthAbs: 'Crescimento',
     competitionBoardBaseline: 'Base',
     competitionBoardSourceVtsScore: 'VtsScore 2026',
+    competitionBoardSourceVtsScorePrior: 'VtsScore anterior',
     competitionBoardSourceSignup: 'Inscrição',
     competitionBoardSearch: 'Buscar jogadores',
     competitionBoardSearchPlaceholder: 'Nome do jogador',
@@ -208,6 +220,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardGrowthAbs: 'Croissance',
     competitionBoardBaseline: 'Référence',
     competitionBoardSourceVtsScore: 'VtsScore 2026',
+    competitionBoardSourceVtsScorePrior: 'VtsScore précédent',
     competitionBoardSourceSignup: 'Inscription',
     competitionBoardSearch: 'Rechercher des joueurs',
     competitionBoardSearchPlaceholder: 'Nom du joueur',
@@ -248,6 +261,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardGrowthAbs: 'Wachstum',
     competitionBoardBaseline: 'Ausgangswert',
     competitionBoardSourceVtsScore: 'VtsScore 2026',
+    competitionBoardSourceVtsScorePrior: 'Früherer VtsScore',
     competitionBoardSourceSignup: 'Anmeldung',
     competitionBoardSearch: 'Spieler suchen',
     competitionBoardSearchPlaceholder: 'Spielername',
@@ -345,7 +359,7 @@ export function normalizeCompetitionBoard(raw) {
       return {
         rank: Number.isInteger(row?.rank) && row.rank > 0 ? row.rank : null,
         gameName,
-        baselineSource: row?.baselineSource === 'vtsscore-2026' ? 'vtsscore-2026' : 'signup',
+        baselineSource: BASELINE_SOURCES.has(row?.baselineSource) ? row.baselineSource : 'signup',
         growthPct: finite(row?.growthPct),
         growthAbs: finite(row?.growthAbs),
         fields,
@@ -481,9 +495,7 @@ export function buildCompetitionBoardRowsHtml(rows, text, format) {
       <th scope="row" class="comp-board__name" data-label="${esc(text('competitionBoardPlayer'))}">
         <span dir="auto">${esc(row.gameName)}</span>
         <span class="comp-board__chip">${esc(
-          row.baselineSource === 'vtsscore-2026'
-            ? text('competitionBoardSourceVtsScore')
-            : text('competitionBoardSourceSignup')
+          text(SOURCE_LABEL_KEYS[row.baselineSource] || 'competitionBoardSourceSignup')
         )}</span>
         ${breakdownHtml(row, text, format)}
       </th>

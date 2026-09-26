@@ -8,6 +8,7 @@ import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { createUnlockAllStarBohHandler } from './src/all-star-boh-auth.js';
 import { createBohSignupAdminHandler } from './src/boh-signup-admin.js';
+import { autoPublishCompetitionBoard } from './src/competition-board.js';
 import { createCompetitionPhaseSyncJob } from './src/competition-phase.js';
 import { createComplaintRetentionJob } from './src/complaint-retention.js';
 import { createSetUserRoleHandler } from './src/user-roles.js';
@@ -163,5 +164,13 @@ export const syncCompetitionPhase = onSchedule(
     // Logs nothing, like every entrypoint here (see the security tests); the
     // run's outcome is visible in the function's execution history.
     await syncCompetitionPhaseJob();
+    // Once the re-upload window has closed, publish the growth board built
+    // from the season's records (once; a later superadmin rebuild wins). It
+    // reads three small documents per run and the scores only when a build is due.
+    await autoPublishCompetitionBoard({
+      db: firestore,
+      now: Date.now,
+      serverTimestamp: () => FieldValue.serverTimestamp(),
+    });
   }
 );

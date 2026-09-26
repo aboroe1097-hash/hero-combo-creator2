@@ -6,6 +6,7 @@ import {
   getAllStarBohGrantPath,
   isAllowedAllStarBohOrigin,
 } from './all-star-boh-auth.js';
+import { CompetitionBoardError, publishCompetitionBoard } from './competition-board.js';
 import {
   COMPETITION_SCHEDULE_DOC_PATH,
   getCompetitionPhase,
@@ -276,7 +277,7 @@ function readCurrentVtsScoreRequest(body) {
   });
 }
 
-export function readVtsScoreRequest(request) {
+function readVtsScoreBody(request) {
   const contentType = requestHeader(request, 'content-type').toLowerCase();
   if (!contentType.startsWith('application/json')) {
     throw new VtsScoreError(415, 'unsupported_media_type', 'JSON is required.');
@@ -302,9 +303,29 @@ export function readVtsScoreRequest(request) {
       throw new VtsScoreError(400, 'invalid_json', 'Invalid JSON.');
     }
   }
+  return body;
+}
+
+// A superadmin's "build and publish the growth board" request is exactly
+// {"action": "buildBoard"}; anything else is a member's score upload.
+function isBuildBoardRequest(body) {
+  return (
+    body &&
+    typeof body === 'object' &&
+    !Array.isArray(body) &&
+    body.action === 'buildBoard' &&
+    Object.keys(body).length === 1
+  );
+}
+
+function readScoreRequestBody(body) {
   return Object.prototype.hasOwnProperty.call(body || {}, 'powerValues')
     ? readCurrentVtsScoreRequest(body)
     : readLegacyVtsScoreRequest(body);
+}
+
+export function readVtsScoreRequest(request) {
+  return readScoreRequestBody(readVtsScoreBody(request));
 }
 
 async function verifyRequestIdentity(request, dependencies) {
@@ -322,7 +343,7 @@ async function verifyRequestIdentity(request, dependencies) {
   } catch {
     throw new VtsScoreError(401, 'invalid_app_check', 'App Check failed.');
   }
-  return decodedAuth.uid;
+  return decodedAuth;
 }
 
 function validateGrant(raw, uid, nowMs, expectedSeason = '') {
@@ -458,6 +479,9 @@ async function saveScore(dependencies, uid, input) {
 
 function safeError(error) {
   if (error instanceof VtsScoreError) return error;
+  if (error instanceof CompetitionBoardError) {
+    return new VtsScoreError(error.status, error.code, error.message);
+  }
   if (error instanceof AllStarBohUnlockError) {
     return new VtsScoreError(error.status, error.code, error.message);
   }
@@ -479,7 +503,8 @@ export function createVtsScoreHandler(dependencies) {
       return sendJson(response, 405, { error: 'method_not_allowed' });
     }
     try {
-      const uid = await verifyRequestIdentity(request, runtime);
+      const identity = await verifyRequestIdentity(request, runtime);
+      const uid = identity.uid;
       if (method === 'GET') {
         const result = await listPlayers(runtime, uid);
         return sendJson(response, 200, {
@@ -488,7 +513,17 @@ export function createVtsScoreHandler(dependencies) {
           players: result.players,
         });
       }
-      const score = await saveScore(runtime, uid, readVtsScoreRequest(request));
+      const body = readVtsScoreBody(request);
+      if (isBuildBoardRequest(body)) {
+        // The exact claim isSuperAdmin() reads in firestore.rules: publishing
+        // the board is the same power the VTS Admin publish button has.
+        if (identity.superadmin !== true) {
+          throw new VtsScoreError(403, 'superadmin_required', 'Superadmin access is required.');
+        }
+        const summary = await publishCompetitionBoard(runtime, { updatedBy: uid });
+        return sendJson(response, 200, { schemaVersion: VTS_SCORE_SCHEMA_VERSION, board: summary });
+      }
+      const score = await saveScore(runtime, uid, readScoreRequestBody(body));
       return sendJson(response, 200, {
         schemaVersion: VTS_SCORE_SCHEMA_VERSION,
         score,

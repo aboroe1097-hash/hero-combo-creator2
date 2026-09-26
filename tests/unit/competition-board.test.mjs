@@ -293,3 +293,20 @@ test('the board stylesheet is theme-scoped, mobile-first and avoids the 768px bo
   assert.doesNotMatch(css, /min-width:\s*768px/);
   assert.doesNotMatch(source, /firebase-sdk|firebase\.js|initializeApp/);
 });
+
+test('an earlier-season baseline from the server build keeps its own label', () => {
+  const normalized = board.normalizeCompetitionBoard({
+    ...PROJECTION,
+    rows: [{ ...PROJECTION.rows[0], baselineSource: 'vtsscore-prior' }, PROJECTION.rows[1]],
+  });
+  assert.equal(normalized.rows[0].baselineSource, 'vtsscore-prior');
+  assert.equal(
+    board.normalizeCompetitionBoard({
+      ...PROJECTION,
+      rows: [{ ...PROJECTION.rows[0], baselineSource: 'made-up' }],
+    }).rows[0].baselineSource,
+    'signup'
+  );
+  const t = board.createCompetitionBoardTranslator({ locale: 'de' });
+  assert.equal(t('competitionBoardSourceVtsScorePrior'), 'Früherer VtsScore');
+});
