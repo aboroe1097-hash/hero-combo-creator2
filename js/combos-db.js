@@ -414,3 +414,81 @@ export function selectNonOverlappingCombos(combos, ownedHeroes, limit = 5) {
 
   return selected;
 }
+
+/**
+ * Smart Generate: pick `limit` hero-disjoint combos that maximise the user's
+ * total score instead of taking the greedily highest ones. Strong heroes go
+ * where they lift the total most, which may mean no single 100-score combo.
+ *
+ * - mode 'top4' (Smart #1): show `limit` combos but maximise the total of the
+ *   best `limit - 1` of them; the weakest combo is filler that only has to fit.
+ * - mode 'top5' (Smart #2): maximise the total of all `limit` combos.
+ *
+ * Scores are the same rank scores the generator displays, so the greedy pick is
+ * always a candidate and the result is never weaker than it. Returns the same
+ * shape as selectNonOverlappingCombos, displayScore included.
+ */
+export function selectSmartCombos(combos, ownedHeroes, limit = 5, mode = 'top5') {
+  const ownedSet = ownedHeroes instanceof Set ? ownedHeroes : new Set(ownedHeroes);
+  const eligible = (combos || []).filter(combo => combo?.heroes?.every(hero => ownedSet.has(hero)));
+  const total = eligible.length;
+  const scored = eligible.map((combo, index) => ({
+    combo,
+    score: Number(scoreComboByRank(index, total)),
+    displayScore: scoreComboByRank(index, total),
+  }));
+  scored.sort((left, right) => right.score - left.score);
+
+  const dropWeakest = mode !== 'top5';
+  const valueOf = list => {
+    const sum = list.reduce((acc, entry) => acc + entry.score, 0);
+    if (!dropWeakest || list.length < limit) return sum;
+    return sum - Math.min(...list.map(entry => entry.score));
+  };
+
+  // Seed with the greedy pick: the search only ever replaces it with better.
+  const greedy = [];
+  const greedyUsed = new Set();
+  for (const entry of scored) {
+    if (greedy.length >= limit) break;
+    if (entry.combo.heroes.some(hero => greedyUsed.has(hero))) continue;
+    greedy.push(entry);
+    entry.combo.heroes.forEach(hero => greedyUsed.add(hero));
+  }
+  let best = greedy;
+  let bestValue = valueOf(greedy);
+
+  const chosen = [];
+  const used = new Set();
+  let visits = 0;
+  const walk = (start, sum) => {
+    if (visits > 250_000) return;
+    visits += 1;
+    if (chosen.length === limit) {
+      const value = valueOf(chosen);
+      if (value > bestValue || (value === bestValue && chosen.length > best.length)) {
+        bestValue = value;
+        best = [...chosen];
+      }
+      return;
+    }
+    const room = limit - chosen.length;
+    for (let index = start; index < scored.length; index += 1) {
+      const entry = scored[index];
+      // Rows are score-sorted: once the best possible fill cannot beat the
+      // incumbent, no later row can either.
+      if (sum + room * entry.score <= bestValue) break;
+      if (entry.combo.heroes.some(hero => used.has(hero))) continue;
+      chosen.push(entry);
+      entry.combo.heroes.forEach(hero => used.add(hero));
+      walk(index + 1, sum + entry.score);
+      chosen.pop();
+      entry.combo.heroes.forEach(hero => used.delete(hero));
+    }
+  };
+  walk(0, 0);
+
+  return best
+    .map(entry => ({ ...entry.combo, displayScore: entry.displayScore }))
+    .sort((left, right) => Number(right.displayScore) - Number(left.displayScore));
+}
