@@ -168,7 +168,10 @@ export function findOwnBoardEntry(board, { seasonId, gameName, consent }) {
   const winner = key ? winners.find((entry) => nameKey(entry?.gameName) === key) : null;
   const available = {
     available: true,
-    updatedAt: typeof (board.updatedAt || board.publishedAt) === 'string' ? board.updatedAt || board.publishedAt : null,
+    updatedAt:
+      typeof (board.updatedAt || board.publishedAt) === 'string'
+        ? board.updatedAt || board.publishedAt
+        : null,
     winnerRank: winner ? Number(winner.rank) || null : null,
   };
   if (row && consent) {
@@ -176,7 +179,7 @@ export function findOwnBoardEntry(board, { seasonId, gameName, consent }) {
       ...available,
       listed: true,
       rank: Number(row.rank) || null,
-      baselineSource: ['vtsscore-2026', 'signup'].includes(row.baselineSource)
+      baselineSource: ['vtsscore-2026', 'vtsscore-prior', 'signup'].includes(row.baselineSource)
         ? row.baselineSource
         : null,
       growthPct: Number.isFinite(row.growthPct) ? row.growthPct : null,
@@ -206,9 +209,7 @@ async function readPublicGrowthBoard(fetchImpl = globalThis.fetch) {
   if (
     payload?.schemaVersion !== 1 ||
     (payload.board !== null &&
-      (!payload.board ||
-        typeof payload.board !== 'object' ||
-        !Array.isArray(payload.board.rows)))
+      (!payload.board || typeof payload.board !== 'object' || !Array.isArray(payload.board.rows)))
   ) {
     throw new Error('The public growth board response is invalid.');
   }
