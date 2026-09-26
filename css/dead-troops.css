@@ -1,0 +1,234 @@
+/* Optional dead-troops entry, loaded only with the power review. */
+.vts-score-dead-troops__box {
+  min-width: 0;
+  margin: 18px 0 0;
+  padding: 16px;
+  border: 1px solid var(--vts-border);
+  border-radius: 16px;
+  background: var(--vts-surface-soft);
+}
+.vts-score-dead-troops__box legend {
+  padding: 0 6px;
+  color: var(--vts-text);
+  font-weight: 800;
+}
+.vts-score-dead-troops__toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  color: var(--vts-text);
+  font-weight: 700;
+  cursor: pointer;
+}
+.vts-score-dead-troops__toggle input,
+.vts-score-dead-troops__unit-option input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--vts-accent);
+}
+.vts-score-dead-troops__grid {
+  display: grid;
+  gap: 14px;
+  padding-top: 14px;
+}
+.vts-score-dead-troops__grid[hidden],
+.vts-score-dead-troops__panel[hidden] {
+  display: none;
+}
+.vts-score-dead-troops__unit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.vts-score-dead-troops__unit-label {
+  width: 100%;
+  color: var(--vts-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.vts-score-dead-troops__unit-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 6px 10px;
+  border: 1px solid var(--vts-border);
+  border-radius: 9px;
+  cursor: pointer;
+}
+.vts-score-dead-troops__unit-option:has(input:checked) {
+  border-color: var(--vts-accent);
+  background: rgb(34 211 238 / 10%);
+}
+.vts-score-dead-troops__tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+.vts-score-dead-troops__tab {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 7px;
+  min-width: 0;
+  min-height: 58px;
+  padding: 8px 5px;
+  border: 1px solid var(--vts-border);
+  border-radius: 10px;
+  background: var(--vts-surface-solid);
+  color: var(--vts-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.vts-score-dead-troops__tab[aria-pressed='true'] {
+  border-color: var(--vts-accent);
+  background: rgb(34 211 238 / 11%);
+  color: var(--vts-text);
+  box-shadow: inset 0 -2px var(--vts-accent);
+}
+.vts-score-dead-troops__glyph {
+  display: inline-flex;
+  flex: 0 0 25px;
+  width: 25px;
+  height: 25px;
+  color: var(--vts-warning);
+}
+.vts-score-dead-troops__glyph svg {
+  width: 100%;
+  height: 100%;
+}
+.vts-score-dead-troops__tab-count {
+  flex-basis: 100%;
+  color: var(--vts-subtle);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+.vts-score-dead-troops__panel {
+  display: grid;
+  gap: 7px;
+}
+.vts-score-dead-troops__cell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(100px, 128px);
+  align-items: center;
+  gap: 2px 8px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--vts-border);
+  border-radius: 10px;
+  background: var(--vts-surface-solid);
+}
+.vts-score-dead-troops__cell-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  cursor: pointer;
+}
+.vts-score-dead-troops__badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  justify-content: center;
+  min-width: 34px;
+  padding: 3px 5px;
+  border-radius: 5px;
+  background: #cbd5e1;
+  color: #263242;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+.vts-score-dead-troops__badge.is-enhanced {
+  background: #f2c869;
+  color: #3b2a06;
+}
+.vts-score-dead-troops__variant {
+  min-width: 0;
+  color: var(--vts-text);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+.vts-score-dead-troops__entry {
+  position: relative;
+  min-width: 0;
+}
+.vts-score-dead-troops__entry input {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  padding: 7px 9px;
+  padding-inline-end: 27px;
+  border: 1px solid var(--vts-border-strong);
+  border-radius: 8px;
+  background: var(--vts-surface-soft);
+  color: var(--vts-text);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+.vts-score-dead-troops__entry:has(.vts-score-dead-troops__suffix:empty) input {
+  padding-inline-end: 9px;
+}
+.vts-score-dead-troops__entry input:focus-visible,
+.vts-score-dead-troops__tab:focus-visible,
+.vts-score-dead-troops__unit-option:focus-within,
+.vts-score-dead-troops__toggle:focus-within {
+  outline: 2px solid var(--vts-focus);
+  outline-offset: 2px;
+}
+.vts-score-dead-troops__suffix {
+  position: absolute;
+  inset-inline-end: 10px;
+  top: 50%;
+  color: var(--vts-subtle);
+  font-size: 0.75rem;
+  font-weight: 800;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+.vts-score-dead-troops__row-power {
+  grid-column: 1 / -1;
+  color: var(--vts-subtle);
+  font-size: 0.73rem;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+.vts-score-dead-troops__row-power:empty {
+  display: none;
+}
+.vts-score-dead-troops__summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--vts-accent);
+  border-radius: 10px;
+  background: rgb(34 211 238 / 10%);
+  font-weight: 700;
+}
+.vts-score-dead-troops__total {
+  color: var(--vts-accent);
+  font-size: 1.18rem;
+  font-variant-numeric: tabular-nums;
+}
+.vts-score-dead-troops__explanation,
+.vts-score-dead-troops__preview {
+  margin: 0;
+  color: var(--vts-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 380px) {
+  .vts-score-dead-troops__box {
+    padding: 12px;
+  }
+  .vts-score-dead-troops__tab {
+    font-size: 0.76rem;
+  }
+}

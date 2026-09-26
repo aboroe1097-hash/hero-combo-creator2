@@ -2,6 +2,15 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.6.1 - 2026-09-26
+
+- The VtsScore power form has a dead-troops helper. Members whose troops died tick "I have dead troops to count", choose Footmen, Cavalry, or Archers using the sword, horseshoe, and target icons in the game's left-to-right order, then enter counts for the five tiers shown on the game screen. Only one troop type is shown at a time; its filled-tier count stays visible when switching types. Each field shows the real troop count and returned power at 8.2 per Lofty troop, 7.5 for T10 and 7.0 for T9, with Enhanced matching its tier. Exact counts from the game screen are the default; thousands and millions remain available, and changing units preserves the actual troop count. The total is added to Troop Power and Total Combat Power when the breakdown is saved.
+- The homepage callout now sends members to the Eden page to vote for the best members instead of promoting Velo's Rampart; the Arcade lobby keeps its own Rampart banner.
+- Hero info panels start hidden: the "Show Hero Info Panels" toggle is off by default now, and each visitor's choice is still remembered.
+- Smart Generate joins the Combo Generator. Unlike Generate Best Combos, which takes the greedily highest lineups, Smart #1 shows five lineups whose best four total as high as possible (the fifth only has to fit) and Smart #2 maximises the total of all five, which can leave the roster without a 100-score lineup but with a higher combined score.
+- The VtsScore Growth Board stays hidden until VtsScore is unlocked instead of loading for every visitor.
+- The VTS Admin growth preview reads earlier seasons correctly again: the season parents are not documents, so a plain listing saw no prior seasons and every baseline fell back to sign-up values. It now reads the uploads as a collection group and falls back to the 2026 baseline season.
+
 ## 16.6.0 - 2026-09-26
 
 - The Combos Planner's queued X8 catch-up lanes are all placed in the main combo ranking now: `js/combos-db.js` ships the finished placements as the base list, and the Combos Generator, the hero season filters and Research open with X8 selected by default alongside the other seasons.

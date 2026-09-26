@@ -51,8 +51,10 @@ export const ADMIN_RUNTIME_EN = Object.freeze({
   adminUnsavedRefreshConfirm:
     'This form has unsaved edits and newer cloud data is available. Refreshing will discard the open form. Continue?',
   adminShareUnsupported: 'Sharing is not supported in this browser. Use Download instead.',
-  adminAccessAccountHint: 'VTS Admin uses your VTS account. Sign in, then an R5 can grant you access.',
-  adminAccessNoPrivilege: 'This account does not have admin access. Ask an R5 to grant it, then reload this page.',
+  adminAccessAccountHint:
+    'VTS Admin uses your VTS account. Sign in, then an R5 can grant you access.',
+  adminAccessNoPrivilege:
+    'This account does not have admin access. Ask an R5 to grant it, then reload this page.',
   adminAccessSignIn: 'Sign in to your account',
   adminLoginFirebaseUnavailable: 'Firebase is not configured for admin sign-in.',
   adminOverrideUnavailable: 'The admin override is not configured for this deployment.',
@@ -462,15 +464,18 @@ export const ADMIN_RUNTIME_EN = Object.freeze({
   adminLogSeasonEnded: 'Ended {season}: {workspace} is archived and read-only.',
   adminLogSeasonStarted: 'Started {season} on {workspace}.',
   adminLogSeasonRenamed: 'Renamed {season} to {label}.',
-  adminLogSeasonRecallChecked: 'Checked a snapshot against {workspace}: {create} new, {update} changed.',
+  adminLogSeasonRecallChecked:
+    'Checked a snapshot against {workspace}: {create} new, {update} changed.',
   adminLogSeasonRecalled: 'Recalled {written} document(s) into {workspace}.',
-  adminLogSeasonRecallPartial: 'Recalled {written} document(s) into {workspace}; {refused} refused.',
+  adminLogSeasonRecallPartial:
+    'Recalled {written} document(s) into {workspace}; {refused} refused.',
   adminSeasonLifecycleTab: 'Season Lifecycle',
   adminSeasonLifecycleTitle: 'Season lifecycle',
   adminSeasonLifecycleSubtitle:
     'Name every season, close one out, open the next, and pull back an older season into {workspace}.',
   adminSeasonLifecycleLoading: 'Loading the season timeline…',
-  adminSeasonLifecycleEmpty: 'No season is registered yet. Start one to name the season being played.',
+  adminSeasonLifecycleEmpty:
+    'No season is registered yet. Start one to name the season being played.',
   adminSeasonCurrentLabel: 'Current season',
   adminSeasonCurrentNone: 'No season is marked active',
   adminSeasonStateActive: 'Active',
@@ -485,9 +490,11 @@ export const ADMIN_RUNTIME_EN = Object.freeze({
   adminSeasonWorkspaceNone: 'no workspace',
   adminSeasonEndBtn: 'End current season',
   adminSeasonAdoptBtn: 'Register {season} on {workspace}',
-  adminSeasonAdoptConfirm: 'Register {season} as the running season on {workspace}? Only the season list changes; the workspace and its records stay as they are.',
+  adminSeasonAdoptConfirm:
+    'Register {season} as the running season on {workspace}? Only the season list changes; the workspace and its records stay as they are.',
   adminSeasonAdoptDone: '{season} is registered as the running season on {workspace}.',
-  adminSeasonBackupSwitch: 'Open {workspace} in the workspace switcher first: a snapshot of its records is downloaded before the season can change.',
+  adminSeasonBackupSwitch:
+    'Open {workspace} in the workspace switcher first: a snapshot of its records is downloaded before the season can change.',
   adminSeasonEndConfirm:
     'End {season}? {workspace} is archived and becomes read-only. Nothing is deleted and the season stays browsable and exportable.',
   adminSeasonEndDone: 'Ended {season}. Its workspace is archived and read-only.',
@@ -535,7 +542,8 @@ export const ADMIN_RUNTIME_EN = Object.freeze({
   adminSeasonRecallApplyBtn: 'Apply recall',
   adminSeasonRecallApplyConfirm:
     'Write {n} document(s) into {workspace}? Existing documents are overwritten in place and nothing is deleted.',
-  adminSeasonRecallHint: 'Choose an exported snapshot and check the diff before anything is written.',
+  adminSeasonRecallHint:
+    'Choose an exported snapshot and check the diff before anything is written.',
   adminSeasonRecallPlanFor: '{file} checked against {workspace}',
   adminSeasonRecallColDocument: 'Document',
   adminSeasonRecallColChange: 'Change',
@@ -571,7 +579,8 @@ export const ADMIN_RUNTIME_EN = Object.freeze({
   adminRolesSuperadmin: 'Superadmin',
   adminRolesSearchLabel: 'Search members',
   adminRolesSearchPlaceholder: 'Name or account id',
-  adminRolesTokenLag: 'A role change reaches the other person only after their next sign-in, which can take up to an hour.',
+  adminRolesTokenLag:
+    'A role change reaches the other person only after their next sign-in, which can take up to an hour.',
   adminRolesNoSelfDemote: 'A superadmin cannot remove their own access.',
   adminRolesUnnamed: 'Unnamed member',
   adminRolesEmpty: 'No member profiles yet. A profile appears after someone signs in once.',
@@ -614,7 +623,8 @@ export const ADMIN_RUNTIME_EN = Object.freeze({
   adminWorkspaceRepublishBtn: 'Republish {workspace}',
   adminWorkspaceSnapshotBtn: 'Export Snapshot',
   adminWorkspaceSnapshotToast: 'Workspace snapshot downloaded.',
-  adminWorkspaceSwitchConfirm: 'Switch to {workspace}? The admin reloads and only that season loads.',
+  adminWorkspaceSwitchConfirm:
+    'Switch to {workspace}? The admin reloads and only that season loads.',
   adminWorkspaceSwitchToast: 'Switched to {workspace}. Reloading…',
   adminWorkspaceUnpublishBtn: 'Unpublish',
   adminWorkspaceUnpublishConfirm: 'Unpublish {workspace} from the public site?',
@@ -622,7 +632,8 @@ export const ADMIN_RUNTIME_EN = Object.freeze({
   adminWorkspaceUnpublishedToast: 'Season unpublished. The public page now shows a draft notice.',
   adminComplaintsTab: 'Complaints',
   adminComplaintsTitle: 'Complaints and issues',
-  adminComplaintsSubtitle: 'Filings from the Eden page are read-only here: only a superadmin can open one, and marking it reviewed is the only change allowed.',
+  adminComplaintsSubtitle:
+    'Filings from the Eden page are read-only here: only a superadmin can open one, and marking it reviewed is the only change allowed.',
   adminComplaintsRefresh: 'Refresh',
   adminComplaintsShowReviewed: 'Show reviewed',
   adminComplaintsLoading: 'Loading complaints…',
@@ -636,7 +647,8 @@ export const ADMIN_RUNTIME_EN = Object.freeze({
   adminComplaintsReviewed: 'Reviewed',
   adminComplaintsReviewFailed: 'The review stamp was not saved. Try again.',
   adminComplaintsDelete: 'Delete',
-  adminComplaintsDeleteConfirm: 'Delete this filing and its screenshots for good? This cannot be undone.',
+  adminComplaintsDeleteConfirm:
+    'Delete this filing and its screenshots for good? This cannot be undone.',
   adminComplaintsDeleted: 'Filing deleted.',
   adminComplaintsDeleteFailed: 'The filing was not deleted. Try again.',
   adminExpPngBanners: 'PNG Banners List',
@@ -680,13 +692,15 @@ export const ADMIN_RUNTIME_EN = Object.freeze({
   adminDutyExportEmpty: 'No {label} uploads to export yet.',
   adminMainAccountsTitle: 'Always main',
   adminMainAccountsCount: '{count} listed',
-  adminMainAccountsHint: 'Uploaded duty rows start as Banner. Add an account here to start its rows as Main instead. A switch set by hand always wins.',
+  adminMainAccountsHint:
+    'Uploaded duty rows start as Banner. Add an account here to start its rows as Main instead. A switch set by hand always wins.',
   adminMainAccountsPh: 'Account name, e.g. MalakAbo',
   adminMainAccountsAdd: 'Add as main',
   adminMainAccountsRemoveFor: 'Remove {account} from the always-main list',
   adminMainAccountsNone: 'No accounts yet. Every uploaded row starts as Banner.',
   adminMainAccountsSaved: 'Saved. {count} accounts always start as Main.',
-  adminMainAccountsLocal: 'Saved on this device only ({count} accounts). Cloud sync did not finish.',
+  adminMainAccountsLocal:
+    'Saved on this device only ({count} accounts). Cloud sync did not finish.',
   adminAccountLinksOwnerFor: 'Owner of {account}',
   adminAccountLinksTypeFor: 'Link type for {account}',
   adminBulkToolbar: 'Batch edit',
@@ -696,7 +710,8 @@ export const ADMIN_RUNTIME_EN = Object.freeze({
   adminBulkSelectItem: 'Select {item}',
   adminBulkMerge: 'Merge selected',
   adminBulkMergeMixedTypes: 'Only lists of the same duty type can be merged.',
-  adminBulkMergeConfirm: 'Merge {count} lists into one dated {date}? The merged list keeps {rows} rows (duplicate names removed).',
+  adminBulkMergeConfirm:
+    'Merge {count} lists into one dated {date}? The merged list keeps {rows} rows (duplicate names removed).',
   adminBulkMergedLog: '{label}: merged {count} lists into one with {rows} rows.',
   adminBulkSetDate: 'Set date',
   adminBulkSetDatePrompt: 'New date for {count} selected lists (YYYY-MM-DD):',

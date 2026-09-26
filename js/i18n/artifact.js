@@ -88,8 +88,10 @@ const PACKS = Object.freeze({
     heroPathAria: 'مسار قطعة أثرية موجّه نحو الأبطال',
     heroPathKicker: 'مسار موجّه نحو الأبطال',
     heroPathBalanced: 'مسار السيف المتوازن',
-    heroPathDescSelected: 'يستخدم الأبطال المحددين في مركز الأبطال والتركيبات وآليات مهاراتهم الفعلية.',
-    heroPathDescEmpty: 'حدد أبطالًا في مركز الأبطال والتركيبات لتخصيص هذا الترتيب الصالح وفق المتطلبات.',
+    heroPathDescSelected:
+      'يستخدم الأبطال المحددين في مركز الأبطال والتركيبات وآليات مهاراتهم الفعلية.',
+    heroPathDescEmpty:
+      'حدد أبطالًا في مركز الأبطال والتركيبات لتخصيص هذا الترتيب الصالح وفق المتطلبات.',
     heroPathNext: 'العقدة الموصى بها التالية',
     heroPathComplete: 'اكتمل المسار',
     sharePath: 'مشاركة هذا المسار',
@@ -133,8 +135,10 @@ const PACKS = Object.freeze({
     heroPathAria: 'Auf Helden ausgerichteter Artefakt-Pfad',
     heroPathKicker: 'Auf Helden ausgerichteter Pfad',
     heroPathBalanced: 'Ausgeglichener Schwert-Pfad',
-    heroPathDescSelected: 'Nutzt die im Helden- & Combo-Hub ausgewählten Helden sowie deren tatsächliche Skill-Mechaniken.',
-    heroPathDescEmpty: 'Wähle Helden im Helden- & Combo-Hub aus, um diese voraussetzungsgültige Reihenfolge zu personalisieren.',
+    heroPathDescSelected:
+      'Nutzt die im Helden- & Combo-Hub ausgewählten Helden sowie deren tatsächliche Skill-Mechaniken.',
+    heroPathDescEmpty:
+      'Wähle Helden im Helden- & Combo-Hub aus, um diese voraussetzungsgültige Reihenfolge zu personalisieren.',
     heroPathNext: 'Nächster empfohlener Knoten',
     heroPathComplete: 'Pfad abgeschlossen',
     sharePath: 'Diesen Pfad teilen',
@@ -178,8 +182,10 @@ const PACKS = Object.freeze({
     heroPathAria: 'Ruta de artefacto enfocada en héroes',
     heroPathKicker: 'Ruta enfocada en héroes',
     heroPathBalanced: 'Ruta de espada equilibrada',
-    heroPathDescSelected: 'Usa los héroes seleccionados en el Centro de héroes y combos y sus mecánicas de habilidad reales.',
-    heroPathDescEmpty: 'Selecciona héroes en el Centro de héroes y combos para personalizar este orden válido según los requisitos.',
+    heroPathDescSelected:
+      'Usa los héroes seleccionados en el Centro de héroes y combos y sus mecánicas de habilidad reales.',
+    heroPathDescEmpty:
+      'Selecciona héroes en el Centro de héroes y combos para personalizar este orden válido según los requisitos.',
     heroPathNext: 'Siguiente nodo recomendado',
     heroPathComplete: 'Ruta completada',
     sharePath: 'Compartir esta ruta',
@@ -223,8 +229,10 @@ const PACKS = Object.freeze({
     heroPathAria: 'Chemin d’artefact ciblé sur les héros',
     heroPathKicker: 'Chemin ciblé sur les héros',
     heroPathBalanced: 'Chemin d’épée équilibré',
-    heroPathDescSelected: 'Utilise les héros sélectionnés dans le Hub héros et combos et leurs véritables mécaniques de compétence.',
-    heroPathDescEmpty: 'Sélectionnez des héros dans le Hub héros et combos pour personnaliser cet ordre valide selon les prérequis.',
+    heroPathDescSelected:
+      'Utilise les héros sélectionnés dans le Hub héros et combos et leurs véritables mécaniques de compétence.',
+    heroPathDescEmpty:
+      'Sélectionnez des héros dans le Hub héros et combos pour personnaliser cet ordre valide selon les prérequis.',
     heroPathNext: 'Nœud recommandé suivant',
     heroPathComplete: 'Chemin terminé',
     sharePath: 'Partager ce chemin',
@@ -268,8 +276,10 @@ const PACKS = Object.freeze({
     heroPathAria: 'Staza artefakta usmjerena na junake',
     heroPathKicker: 'Staza usmjerena na junake',
     heroPathBalanced: 'Uravnotežena staza mača',
-    heroPathDescSelected: 'Koristi junake odabrane u Heroes & Combos Hub te njihove stvarne mehanike vještina.',
-    heroPathDescEmpty: 'Odaberite junake u Heroes & Combos Hub kako biste personalizirali ovaj redoslijed valjan za preduvjete.',
+    heroPathDescSelected:
+      'Koristi junake odabrane u Heroes & Combos Hub te njihove stvarne mehanike vještina.',
+    heroPathDescEmpty:
+      'Odaberite junake u Heroes & Combos Hub kako biste personalizirali ovaj redoslijed valjan za preduvjete.',
     heroPathNext: 'Sljedeći preporučeni čvor',
     heroPathComplete: 'Staza dovršena',
     sharePath: 'Podijeli ovu stazu',
@@ -313,8 +323,10 @@ const PACKS = Object.freeze({
     heroPathAria: 'Jalur Artefak yang menargetkan Hero',
     heroPathKicker: 'Jalur yang menargetkan Hero',
     heroPathBalanced: 'Jalur Pedang Seimbang',
-    heroPathDescSelected: 'Menggunakan hero yang dipilih di Hub Hero & Kombo dan mekanisme skill aslinya.',
-    heroPathDescEmpty: 'Pilih hero di Hub Hero & Kombo untuk mempersonalisasi urutan yang valid sesuai prasyarat ini.',
+    heroPathDescSelected:
+      'Menggunakan hero yang dipilih di Hub Hero & Kombo dan mekanisme skill aslinya.',
+    heroPathDescEmpty:
+      'Pilih hero di Hub Hero & Kombo untuk mempersonalisasi urutan yang valid sesuai prasyarat ini.',
     heroPathNext: 'Node rekomendasi berikutnya',
     heroPathComplete: 'Jalur selesai',
     sharePath: 'Bagikan jalur ini',
@@ -358,8 +370,10 @@ const PACKS = Object.freeze({
     heroPathAria: 'Percorso artefatto incentrato sugli eroi',
     heroPathKicker: 'Percorso incentrato sugli eroi',
     heroPathBalanced: 'Percorso della spada bilanciato',
-    heroPathDescSelected: 'Usa gli eroi selezionati nell’Hub eroi e combo e le loro reali meccaniche delle abilità.',
-    heroPathDescEmpty: 'Seleziona gli eroi nell’Hub eroi e combo per personalizzare questo ordine valido per i prerequisiti.',
+    heroPathDescSelected:
+      'Usa gli eroi selezionati nell’Hub eroi e combo e le loro reali meccaniche delle abilità.',
+    heroPathDescEmpty:
+      'Seleziona gli eroi nell’Hub eroi e combo per personalizzare questo ordine valido per i prerequisiti.',
     heroPathNext: 'Prossimo nodo consigliato',
     heroPathComplete: 'Percorso completato',
     sharePath: 'Condividi questo percorso',
@@ -404,7 +418,8 @@ const PACKS = Object.freeze({
     heroPathKicker: '영웅 대상 경로',
     heroPathBalanced: '균형 잡힌 검 경로',
     heroPathDescSelected: '영웅 & 조합 허브에서 선택한 영웅과 실제 스킬 메커니즘을 사용합니다.',
-    heroPathDescEmpty: '영웅 & 조합 허브에서 영웅을 선택하여 이 선행 조건 충족 순서를 맞춤 설정하세요.',
+    heroPathDescEmpty:
+      '영웅 & 조합 허브에서 영웅을 선택하여 이 선행 조건 충족 순서를 맞춤 설정하세요.',
     heroPathNext: '다음 권장 노드',
     heroPathComplete: '경로 완료',
     sharePath: '이 경로 공유',
@@ -448,8 +463,10 @@ const PACKS = Object.freeze({
     heroPathAria: 'Caminho de artefato voltado para heróis',
     heroPathKicker: 'Caminho voltado para heróis',
     heroPathBalanced: 'Caminho de espada equilibrado',
-    heroPathDescSelected: 'Usa os heróis selecionados no Centro de heróis e combos e suas mecânicas de habilidade reais.',
-    heroPathDescEmpty: 'Selecione heróis no Centro de heróis e combos para personalizar esta ordem válida por pré-requisitos.',
+    heroPathDescSelected:
+      'Usa os heróis selecionados no Centro de heróis e combos e suas mecânicas de habilidade reais.',
+    heroPathDescEmpty:
+      'Selecione heróis no Centro de heróis e combos para personalizar esta ordem válida por pré-requisitos.',
     heroPathNext: 'Próximo nó recomendado',
     heroPathComplete: 'Caminho concluído',
     sharePath: 'Compartilhar este caminho',
@@ -493,8 +510,10 @@ const PACKS = Object.freeze({
     heroPathAria: 'Путь артефакта, нацеленный на героев',
     heroPathKicker: 'Путь, нацеленный на героев',
     heroPathBalanced: 'Сбалансированный путь меча',
-    heroPathDescSelected: 'Использует героев, выбранных в Хабе героев и комбо, и их реальные механики навыков.',
-    heroPathDescEmpty: 'Выберите героев в Хабе героев и комбо, чтобы персонализировать этот порядок, валидный по предпосылкам.',
+    heroPathDescSelected:
+      'Использует героев, выбранных в Хабе героев и комбо, и их реальные механики навыков.',
+    heroPathDescEmpty:
+      'Выберите героев в Хабе героев и комбо, чтобы персонализировать этот порядок, валидный по предпосылкам.',
     heroPathNext: 'Следующий рекомендуемый узел',
     heroPathComplete: 'Путь завершён',
     sharePath: 'Поделиться этим путём',
@@ -538,8 +557,10 @@ const PACKS = Object.freeze({
     heroPathAria: 'Kahramana odaklı Eser yolu',
     heroPathKicker: 'Kahramana odaklı yol',
     heroPathBalanced: 'Dengeli Kılıç yolu',
-    heroPathDescSelected: 'Kahraman ve kombo merkezinde seçilen kahramanları ve bunların gerçek beceri mekaniklerini kullanır.',
-    heroPathDescEmpty: 'Bu ön koşul geçerli sırayı kişiselleştirmek için Kahraman ve kombo merkezinde kahraman seçin.',
+    heroPathDescSelected:
+      'Kahraman ve kombo merkezinde seçilen kahramanları ve bunların gerçek beceri mekaniklerini kullanır.',
+    heroPathDescEmpty:
+      'Bu ön koşul geçerli sırayı kişiselleştirmek için Kahraman ve kombo merkezinde kahraman seçin.',
     heroPathNext: 'Sonraki önerilen düğüm',
     heroPathComplete: 'Yol tamamlandı',
     sharePath: 'Bu yolu paylaş',

@@ -1,4 +1,7 @@
+/* The tool shell floats a Contact pill over the page bottom; keep the
+   footer's last row clear of it on every standalone page. */
 .standalone-footer-v14 {
+  padding-bottom: clamp(3.25rem, 8vw, 4.75rem);
   position: relative;
   width: 100%;
   margin-block: clamp(1.5rem, 4vw, 3rem) 0;

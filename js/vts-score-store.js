@@ -93,27 +93,39 @@ export async function loadCompetitionGrowthSnapshot(seasonId) {
     throw new Error('The competition season must not be the baseline season.');
   }
   const { db, firestore } = await adminContext();
-  const { collection, doc, getDoc, getDocs } = firestore;
-  const [submissions, raceScores, seasonDocs, schedule] = await Promise.all([
+  const { collection, collectionGroup, doc, getDoc, getDocs } = firestore;
+  const [submissions, raceScores, schedule] = await Promise.all([
     getDocs(collection(db, getVtsScoreSubmissionsPath(season))),
     getDocs(collection(db, getVtsScoreRaceScoresPath(season))),
-    getDocs(collection(db, 'boh_allstar')),
     getDoc(doc(db, COMPETITION_SCHEDULE_DOC_PATH)),
   ]);
-  const priorSeasons = seasonDocs.docs
-    .map((entry) => normalizeVtsScoreSeasonId(entry.id))
-    .filter((id) => id && id !== season);
-  const priorScores = await Promise.all(
-    priorSeasons.map((id) => getDocs(collection(db, getVtsScoreRaceScoresPath(id))))
-  );
+  // Every earlier season's uploads, read as a collection group: the season
+  // parent documents were never written, so a plain read of the seasons
+  // collection returns nothing and every baseline silently collapses to the
+  // sign-up stats. The season id comes from each doc's own path. If the group
+  // query itself is unavailable, fall back to the 2026 baseline season rather
+  // than dropping baselines entirely.
+  let baselineRaceScores = [];
+  try {
+    const allScores = await getDocs(collectionGroup(db, 'raceScores'));
+    baselineRaceScores = allScores.docs
+      .map((entry) => ({
+        submissionUid: entry.id,
+        ...entry.data(),
+        seasonId: normalizeVtsScoreSeasonId(entry.ref?.parent?.parent?.id),
+      }))
+      .filter((record) => record.seasonId && record.seasonId !== season);
+  } catch {
+    baselineRaceScores = docsWithUid(
+      await getDocs(collection(db, getVtsScoreRaceScoresPath(COMPETITION_BASELINE_SEASON)))
+    ).map((record) => ({ ...record, seasonId: COMPETITION_BASELINE_SEASON }));
+  }
   const scheduleData = schedule?.exists?.() ? schedule.data() : null;
   return {
     season,
     submissions: docsWithUid(submissions),
     raceScores: docsWithUid(raceScores),
-    baselineRaceScores: priorSeasons.flatMap((id, index) =>
-      docsWithUid(priorScores[index]).map((record) => ({ seasonId: id, ...record }))
-    ),
+    baselineRaceScores,
     schedule: scheduleData?.seasonId === season ? scheduleData : null,
   };
 }

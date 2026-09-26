@@ -2322,11 +2322,14 @@ test.describe('app smoke tabs', () => {
 
   test('generator filters default to S0-X2 and update visible heroes', async ({ page }) => {
     await openApp(page);
-    await page.locator('#heroInfoToggleLabel').click();
+    // Hero info panels start hidden; the toggle reveals them.
     await expect(page.locator('body')).toHaveClass(/hide-hero-info/);
     await expect(page.locator('#generatorHeroes .generator-card .info-btn').first()).toBeHidden();
     await page.locator('#heroInfoToggleLabel').click();
     await expect(page.locator('body')).not.toHaveClass(/hide-hero-info/);
+    await expect(page.locator('#generatorHeroes .generator-card .info-btn').first()).toBeVisible();
+    await page.locator('#heroInfoToggleLabel').click();
+    await expect(page.locator('body')).toHaveClass(/hide-hero-info/);
 
     const cards = page.locator('#generatorHeroes .generator-card');
     await expect(cards.first()).toBeVisible();

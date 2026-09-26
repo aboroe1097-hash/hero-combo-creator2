@@ -7,6 +7,7 @@ import {
   filterCombosForSkinMode,
   scoreComboByRank,
   selectNonOverlappingCombos,
+  selectSmartCombos,
 } from './combos-db.js';
 import { renderCountersToggle, getCounterCount } from './combo-counters.js';
 import { hasSkin, getHeroSkins, getSkinCount, getSkinForHero, SKIN_TYPES } from './skins-db.js';
@@ -62,6 +63,7 @@ let lastGeneratorMode = null;
 const GENERATOR_IDLE_LABEL_KEYS = Object.freeze({
   generateCombosBtn: 'generatorGenerateBtn',
   generateRandomBtn: 'generatorRandomBtn',
+  generateSmartBtn: 'generatorSmartBtn',
 });
 
 function comboCopy(id, values = {}) {
@@ -688,6 +690,20 @@ function selectRandomCombos(selected) {
     combo.heroes.forEach((hero) => usedHeroes.add(hero));
   }
   return combos.sort((a, b) => parseFloat(b.displayScore) - parseFloat(a.displayScore));
+}
+
+export function generateSmartCombos() {
+  const mode =
+    document.querySelector('input[name="generatorSmartMode"]:checked')?.value === 'top5'
+      ? 'top5'
+      : 'top4';
+  lastGeneratorMode = 'smart';
+  runGenerator(
+    GENERATOR_MIN_HEROES,
+    'generatorMinHeroesMessage',
+    `Select at least ${GENERATOR_MIN_HEROES} heroes to generate smart combos.`,
+    (selected) => selectSmartCombos(getSourceCombos(), selected, GENERATOR_MAX_COMBOS, mode)
+  );
 }
 
 function runGenerator(min, messageKey, fallback, select) {

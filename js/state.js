@@ -7,7 +7,7 @@ import { seasonColors, TechseasonColors } from './constants.js';
 import { comboToolsText } from './i18n/combo-tools/index.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '16.6.0';
+export const APP_VERSION = '16.6.1';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};
@@ -30,7 +30,8 @@ function detectInitialLanguage() {
 }
 
 export let currentLanguage = detectInitialLanguage();
-export let heroInfoEnabled = true;
+// Hero info panels start hidden: the toggle reveals them per visitor.
+export let heroInfoEnabled = false;
 // Canonical research season order. Declared here rather than beside the other
 // season lists further down because the default selection below is derived from
 // it — see RESEARCH_DEFAULT_SEASON_COUNT.

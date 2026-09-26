@@ -215,8 +215,8 @@
 }
 
 .fx-card-enter {
-  animation: fx-card-enter 240ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1))
-    var(--fx-delay, 0ms) both;
+  animation: fx-card-enter 240ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) var(--fx-delay, 0ms)
+    both;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -826,6 +826,71 @@
 
 .gen-big-btn--download:hover {
   background: #7e22ce;
+}
+
+/* ---- Smart Generate row ---- */
+.gen-smart-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.gen-smart-row__title {
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.gen-smart-row__modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.gen-smart-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.9rem;
+  border-radius: 9999px;
+  color: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+
+.gen-smart-chip input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.gen-smart-chip:hover {
+  background: rgba(148, 163, 184, 0.18);
+}
+
+.gen-smart-chip:has(input:checked) {
+  background: #059669;
+  color: #fff;
+}
+
+.gen-smart-chip:has(input:focus-visible) {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+.gen-smart-row__btn {
+  padding: 0.6rem 1.6rem;
 }
 
 /* ---- Skin filter row ---- */

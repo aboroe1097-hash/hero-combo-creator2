@@ -570,10 +570,13 @@ const SIGNUP_COPY = Object.freeze({
 const COMPETITION_COPY = Object.freeze({
   en: {
     signupOcrLabel: 'Fill from a screenshot (optional)',
-    signupOcrHint: 'Lord Info → Power screenshot: open Lord Info and scroll to the Power section. PNG, JPEG or WebP; max 10 MB.',
-    signupOcrPrivacy: 'Your screenshot is sent to the secure OCR service to read visible numbers; the image itself is not saved.',
+    signupOcrHint:
+      'Lord Info → Power screenshot: open Lord Info and scroll to the Power section. PNG, JPEG or WebP; max 10 MB.',
+    signupOcrPrivacy:
+      'Your screenshot is sent to the secure OCR service to read visible numbers; the image itself is not saved.',
     signupOcrConfirm: 'I checked every number against my screenshot.',
-    signupOcrConfirmRequired: 'Tick the box to confirm you checked the numbers read from your screenshot.',
+    signupOcrConfirmRequired:
+      'Tick the box to confirm you checked the numbers read from your screenshot.',
     signupOcrFilled: 'Values filled from your screenshot. Check every number, then save.',
     signupCommitmentTitle: 'Active times and commitment',
     kicker: 'VTS 1097 · COMPETITION #12',
@@ -599,10 +602,30 @@ const COMPETITION_COPY = Object.freeze({
     slotChosenLabel: '{label}, choice {rank}',
     slotNotChosenLabel: '{label}, not chosen',
     publicConsent: 'Show my values and growth on the public Growth Board',
-    publicConsentHelp: 'Off by default. Turn it on only if you want your results visible to everyone.',
+    publicConsentHelp:
+      'Off by default. Turn it on only if you want your results visible to everyone.',
     previousComparisonReadyPublic:
       'Your previous-season data is ready. After you upload your current stats, your comparison will appear on the Growth Board below.',
-    previousComparisonNoMatch: 'No earlier uploads matched this name. If you uploaded under a different name before, tell an admin your old name.',
+    previousComparisonNoMatch:
+      'No earlier uploads matched this name. If you uploaded under a different name before, tell an admin your old name.',
+    deadTroopsTitle: 'Dead troops',
+    deadTroopsToggle: 'I have dead troops to count',
+    deadTroopsUnitLabel: 'Count unit',
+    deadTroopsExact: 'Exact count',
+    deadTroopsThousands: 'Thousands',
+    deadTroopsMillions: 'Millions',
+    deadTroopsPowerBack: 'Power back',
+    deadTroopsRowReadout: '{troops} troops · +{power} power',
+    deadTroopsTotal: 'Dead troops power, added to Troop Power and Total on submit',
+    deadTroopsPreview: 'With dead troops: Troop Power {troop} · Total {total}',
+    deadTroopsClassFootmen: 'Footmen',
+    deadTroopsClassCavalry: 'Cavalry',
+    deadTroopsClassArchers: 'Archers',
+    deadTroopsVariantLofty: 'Lofty (T11)',
+    deadTroopsVariantT10E: 'T10 Enhanced',
+    deadTroopsVariantT10: 'T10',
+    deadTroopsVariantT9E: 'T9 Enhanced',
+    deadTroopsVariantT9: 'T9',
     previousComparisonReadyPrivate:
       'Your previous-season data is ready. It stays private unless you opt in to the public Growth Board.',
     phaseNameUnconfigured: 'Schedule to be announced',
@@ -661,8 +684,10 @@ const COMPETITION_COPY = Object.freeze({
   },
   ar: {
     signupOcrLabel: 'املأ من لقطة شاشة (اختياري)',
-    signupOcrHint: 'لقطة معلومات اللورد ← القوة: افتح معلومات اللورد ومرّر إلى قسم القوة. PNG أو JPEG أو WebP؛ الحد الأقصى 10 ميغابايت.',
-    signupOcrPrivacy: 'تُرسل لقطتك إلى خدمة OCR الآمنة لقراءة الأرقام الظاهرة؛ ولا تُحفظ الصورة نفسها.',
+    signupOcrHint:
+      'لقطة معلومات اللورد ← القوة: افتح معلومات اللورد ومرّر إلى قسم القوة. PNG أو JPEG أو WebP؛ الحد الأقصى 10 ميغابايت.',
+    signupOcrPrivacy:
+      'تُرسل لقطتك إلى خدمة OCR الآمنة لقراءة الأرقام الظاهرة؛ ولا تُحفظ الصورة نفسها.',
     signupOcrConfirm: 'راجعت كل رقم مقابل لقطة الشاشة.',
     signupOcrConfirmRequired: 'ضع علامة للتأكيد أنك راجعت الأرقام المقروءة من لقطة الشاشة.',
     signupOcrFilled: 'تم ملء القيم من لقطة الشاشة. راجع كل رقم ثم احفظ.',
@@ -691,7 +716,26 @@ const COMPETITION_COPY = Object.freeze({
     publicConsentHelp: 'غير مفعّل افتراضيًا. فعّله فقط إذا أردت أن تظهر نتائجك للجميع.',
     previousComparisonReadyPublic:
       'بياناتك من الموسم السابق جاهزة. بعد رفع قيمك الحالية، ستظهر مقارنتك على لوحة النمو أدناه.',
-    previousComparisonNoMatch: 'لا توجد رفعات سابقة مطابقة لهذا الاسم. إن كنت قد رفعت باسم مختلف من قبل، أخبر أحد المسؤولين باسمك القديم.',
+    previousComparisonNoMatch:
+      'لا توجد رفعات سابقة مطابقة لهذا الاسم. إن كنت قد رفعت باسم مختلف من قبل، أخبر أحد المسؤولين باسمك القديم.',
+    deadTroopsTitle: 'القوات المفقودة',
+    deadTroopsToggle: 'لدي قوات مفقودة لاحتسابها',
+    deadTroopsUnitLabel: 'وحدة العدد',
+    deadTroopsExact: 'العدد الفعلي',
+    deadTroopsThousands: 'بالآلاف',
+    deadTroopsMillions: 'بالملايين',
+    deadTroopsPowerBack: 'قوة معادة',
+    deadTroopsRowReadout: '{troops} جندي · +{power} قوة',
+    deadTroopsTotal: 'قوة القوات المفقودة، تُضاف إلى قوة القوات والإجمالي عند الإرسال',
+    deadTroopsPreview: 'مع القوات المفقودة: قوة القوات {troop} · الإجمالي {total}',
+    deadTroopsClassFootmen: 'المشاة',
+    deadTroopsClassCavalry: 'الفرسان',
+    deadTroopsClassArchers: 'الرامون',
+    deadTroopsVariantLofty: 'Lofty (T11)',
+    deadTroopsVariantT10E: 'T10 مطوّرة',
+    deadTroopsVariantT10: 'T10',
+    deadTroopsVariantT9E: 'T9 مطوّرة',
+    deadTroopsVariantT9: 'T9',
     previousComparisonReadyPrivate:
       'بياناتك من الموسم السابق جاهزة. ستبقى خاصة ما لم تختر مشاركة النتائج على لوحة النمو العامة.',
     phaseNameUnconfigured: 'سيُعلن الجدول لاحقًا',
@@ -748,10 +792,13 @@ const COMPETITION_COPY = Object.freeze({
   },
   es: {
     signupOcrLabel: 'Rellenar desde una captura (opcional)',
-    signupOcrHint: 'Captura de Info del Señor → Poder: abre Info del Señor y desplázate hasta la sección Poder. PNG, JPEG o WebP; máx. 10 MB.',
-    signupOcrPrivacy: 'La captura se envía al servicio OCR seguro para leer los números visibles; la imagen no se guarda.',
+    signupOcrHint:
+      'Captura de Info del Señor → Poder: abre Info del Señor y desplázate hasta la sección Poder. PNG, JPEG o WebP; máx. 10 MB.',
+    signupOcrPrivacy:
+      'La captura se envía al servicio OCR seguro para leer los números visibles; la imagen no se guarda.',
     signupOcrConfirm: 'He comprobado cada número con mi captura.',
-    signupOcrConfirmRequired: 'Marca la casilla para confirmar que comprobaste los números leídos de tu captura.',
+    signupOcrConfirmRequired:
+      'Marca la casilla para confirmar que comprobaste los números leídos de tu captura.',
     signupOcrFilled: 'Valores rellenados desde tu captura. Comprueba cada número y guarda.',
     signupCommitmentTitle: 'Horas activas y compromiso',
     kicker: 'VTS 1097 · COMPETICIÓN N.º 12',
@@ -777,10 +824,30 @@ const COMPETITION_COPY = Object.freeze({
     slotChosenLabel: '{label}, opción {rank}',
     slotNotChosenLabel: '{label}, no elegida',
     publicConsent: 'Mostrar mis valores y mi crecimiento en el tablero público de crecimiento',
-    publicConsentHelp: 'Desactivado por defecto. Actívalo solo si quieres que todos vean tus resultados.',
+    publicConsentHelp:
+      'Desactivado por defecto. Actívalo solo si quieres que todos vean tus resultados.',
     previousComparisonReadyPublic:
       'Tus datos de la temporada anterior están listos. Tras subir tus estadísticas actuales, la comparación aparecerá abajo.',
-    previousComparisonNoMatch: 'No hay subidas anteriores que coincidan con este nombre. Si subiste valores con otro nombre, indícale a un administrador tu nombre anterior.',
+    previousComparisonNoMatch:
+      'No hay subidas anteriores que coincidan con este nombre. Si subiste valores con otro nombre, indícale a un administrador tu nombre anterior.',
+    deadTroopsTitle: 'Tropas caídas',
+    deadTroopsToggle: 'Tengo tropas caídas que contar',
+    deadTroopsUnitLabel: 'Unidad de recuento',
+    deadTroopsExact: 'Cantidad exacta',
+    deadTroopsThousands: 'Miles',
+    deadTroopsMillions: 'Millones',
+    deadTroopsPowerBack: 'Poder devuelto',
+    deadTroopsRowReadout: '{troops} tropas · +{power} poder',
+    deadTroopsTotal: 'Poder de tropas caídas, se suma al Poder de tropas y al Total al enviar',
+    deadTroopsPreview: 'Con tropas caídas: Poder de tropas {troop} · Total {total}',
+    deadTroopsClassFootmen: 'Infantería',
+    deadTroopsClassCavalry: 'Caballería',
+    deadTroopsClassArchers: 'Arqueros',
+    deadTroopsVariantLofty: 'Lofty (T11)',
+    deadTroopsVariantT10E: 'T10 mejorada',
+    deadTroopsVariantT10: 'T10',
+    deadTroopsVariantT9E: 'T9 mejorada',
+    deadTroopsVariantT9: 'T9',
     previousComparisonReadyPrivate:
       'Tus datos de la temporada anterior están listos. Seguirán siendo privados si no aceptas aparecer en el tablero público.',
     phaseNameUnconfigured: 'Calendario por anunciar',
@@ -842,10 +909,13 @@ const COMPETITION_COPY = Object.freeze({
   },
   pt: {
     signupOcrLabel: 'Preencher a partir de uma captura (opcional)',
-    signupOcrHint: 'Captura de Info do Lorde → Poder: abra Info do Lorde e role até a seção Poder. PNG, JPEG ou WebP; máx. 10 MB.',
-    signupOcrPrivacy: 'A captura é enviada ao serviço OCR seguro para ler os números visíveis; a imagem não é salva.',
+    signupOcrHint:
+      'Captura de Info do Lorde → Poder: abra Info do Lorde e role até a seção Poder. PNG, JPEG ou WebP; máx. 10 MB.',
+    signupOcrPrivacy:
+      'A captura é enviada ao serviço OCR seguro para ler os números visíveis; a imagem não é salva.',
     signupOcrConfirm: 'Conferi cada número com a minha captura.',
-    signupOcrConfirmRequired: 'Marque a caixa para confirmar que conferiu os números lidos da captura.',
+    signupOcrConfirmRequired:
+      'Marque a caixa para confirmar que conferiu os números lidos da captura.',
     signupOcrFilled: 'Valores preenchidos a partir da captura. Confira cada número e salve.',
     signupCommitmentTitle: 'Horários ativos e compromisso',
     kicker: 'VTS 1097 · COMPETIÇÃO Nº 12',
@@ -871,10 +941,30 @@ const COMPETITION_COPY = Object.freeze({
     slotChosenLabel: '{label}, opção {rank}',
     slotNotChosenLabel: '{label}, não escolhido',
     publicConsent: 'Mostrar meus valores e meu crescimento no painel público de crescimento',
-    publicConsentHelp: 'Desativado por padrão. Ative somente se quiser que todos vejam seus resultados.',
+    publicConsentHelp:
+      'Desativado por padrão. Ative somente se quiser que todos vejam seus resultados.',
     previousComparisonReadyPublic:
       'Seus dados da temporada anterior estão prontos. Depois de enviar os valores atuais, a comparação aparecerá abaixo.',
-    previousComparisonNoMatch: 'Não há envios anteriores com este nome. Se você enviou com outro nome antes, informe seu nome antigo a um administrador.',
+    previousComparisonNoMatch:
+      'Não há envios anteriores com este nome. Se você enviou com outro nome antes, informe seu nome antigo a um administrador.',
+    deadTroopsTitle: 'Tropas mortas',
+    deadTroopsToggle: 'Tenho tropas mortas para contar',
+    deadTroopsUnitLabel: 'Unidade de contagem',
+    deadTroopsExact: 'Contagem exata',
+    deadTroopsThousands: 'Milhares',
+    deadTroopsMillions: 'Milhões',
+    deadTroopsPowerBack: 'Poder devolvido',
+    deadTroopsRowReadout: '{troops} tropas · +{power} poder',
+    deadTroopsTotal: 'Poder das tropas mortas, somado ao Poder de tropas e ao Total ao enviar',
+    deadTroopsPreview: 'Com tropas mortas: Poder de tropas {troop} · Total {total}',
+    deadTroopsClassFootmen: 'Infantaria',
+    deadTroopsClassCavalry: 'Cavalaria',
+    deadTroopsClassArchers: 'Arqueiros',
+    deadTroopsVariantLofty: 'Lofty (T11)',
+    deadTroopsVariantT10E: 'T10 aprimorada',
+    deadTroopsVariantT10: 'T10',
+    deadTroopsVariantT9E: 'T9 aprimorada',
+    deadTroopsVariantT9: 'T9',
     previousComparisonReadyPrivate:
       'Seus dados da temporada anterior estão prontos. Eles continuarão privados se você não optar pelo painel público.',
     phaseNameUnconfigured: 'Calendário a anunciar',
@@ -935,11 +1025,15 @@ const COMPETITION_COPY = Object.freeze({
   },
   fr: {
     signupOcrLabel: 'Remplir depuis une capture (facultatif)',
-    signupOcrHint: 'Capture Infos du Seigneur → Puissance : ouvrez Infos du Seigneur et faites défiler jusqu’à la section Puissance. PNG, JPEG ou WebP ; 10 Mo max.',
-    signupOcrPrivacy: 'La capture est envoyée au service OCR sécurisé pour lire les nombres visibles ; l’image elle-même n’est pas conservée.',
+    signupOcrHint:
+      'Capture Infos du Seigneur → Puissance : ouvrez Infos du Seigneur et faites défiler jusqu’à la section Puissance. PNG, JPEG ou WebP ; 10 Mo max.',
+    signupOcrPrivacy:
+      'La capture est envoyée au service OCR sécurisé pour lire les nombres visibles ; l’image elle-même n’est pas conservée.',
     signupOcrConfirm: 'J’ai vérifié chaque nombre avec ma capture.',
-    signupOcrConfirmRequired: 'Cochez la case pour confirmer que vous avez vérifié les nombres lus sur votre capture.',
-    signupOcrFilled: 'Valeurs remplies depuis votre capture. Vérifiez chaque nombre, puis enregistrez.',
+    signupOcrConfirmRequired:
+      'Cochez la case pour confirmer que vous avez vérifié les nombres lus sur votre capture.',
+    signupOcrFilled:
+      'Valeurs remplies depuis votre capture. Vérifiez chaque nombre, puis enregistrez.',
     signupCommitmentTitle: 'Horaires actifs et engagement',
     kicker: 'VTS 1097 · COMPÉTITION NO 12',
     title: 'Compétition no 12 · Préparation d’avant-saison',
@@ -964,10 +1058,31 @@ const COMPETITION_COPY = Object.freeze({
     slotChosenLabel: '{label}, choix {rank}',
     slotNotChosenLabel: '{label}, non choisi',
     publicConsent: 'Afficher mes valeurs et ma progression sur le tableau public de croissance',
-    publicConsentHelp: 'Désactivé par défaut. Activez-le uniquement si vous voulez rendre vos résultats publics.',
+    publicConsentHelp:
+      'Désactivé par défaut. Activez-le uniquement si vous voulez rendre vos résultats publics.',
     previousComparisonReadyPublic:
       'Vos données de la saison précédente sont prêtes. Après l’envoi de vos valeurs actuelles, votre comparaison apparaîtra ci-dessous.',
-    previousComparisonNoMatch: 'Aucun envoi précédent ne correspond à ce nom. Si vous avez envoyé sous un autre nom, indiquez votre ancien nom à un administrateur.',
+    previousComparisonNoMatch:
+      'Aucun envoi précédent ne correspond à ce nom. Si vous avez envoyé sous un autre nom, indiquez votre ancien nom à un administrateur.',
+    deadTroopsTitle: 'Troupes perdues',
+    deadTroopsToggle: 'J’ai des troupes perdues à compter',
+    deadTroopsUnitLabel: 'Unité de comptage',
+    deadTroopsExact: 'Nombre exact',
+    deadTroopsThousands: 'Milliers',
+    deadTroopsMillions: 'Millions',
+    deadTroopsPowerBack: 'Puissance récupérée',
+    deadTroopsRowReadout: '{troops} troupes · +{power} puissance',
+    deadTroopsTotal:
+      'Puissance des troupes perdues, ajoutée à la Puissance de troupes et au Total à l’envoi',
+    deadTroopsPreview: 'Avec les troupes perdues : Puissance de troupes {troop} · Total {total}',
+    deadTroopsClassFootmen: 'Infanterie',
+    deadTroopsClassCavalry: 'Cavalerie',
+    deadTroopsClassArchers: 'Archers',
+    deadTroopsVariantLofty: 'Lofty (T11)',
+    deadTroopsVariantT10E: 'T10 améliorée',
+    deadTroopsVariantT10: 'T10',
+    deadTroopsVariantT9E: 'T9 améliorée',
+    deadTroopsVariantT9: 'T9',
     previousComparisonReadyPrivate:
       'Vos données de la saison précédente sont prêtes. Elles resteront privées sans votre accord pour le tableau public.',
     phaseNameUnconfigured: 'Calendrier à venir',
@@ -1031,10 +1146,13 @@ const COMPETITION_COPY = Object.freeze({
   },
   de: {
     signupOcrLabel: 'Aus einem Screenshot ausfüllen (optional)',
-    signupOcrHint: 'Screenshot Lord-Info → Stärke: Öffne Lord-Info und scrolle zum Abschnitt Stärke. PNG, JPEG oder WebP; max. 10 MB.',
-    signupOcrPrivacy: 'Der Screenshot wird an den sicheren OCR-Dienst gesendet, um sichtbare Zahlen zu lesen; das Bild selbst wird nicht gespeichert.',
+    signupOcrHint:
+      'Screenshot Lord-Info → Stärke: Öffne Lord-Info und scrolle zum Abschnitt Stärke. PNG, JPEG oder WebP; max. 10 MB.',
+    signupOcrPrivacy:
+      'Der Screenshot wird an den sicheren OCR-Dienst gesendet, um sichtbare Zahlen zu lesen; das Bild selbst wird nicht gespeichert.',
     signupOcrConfirm: 'Ich habe jede Zahl mit meinem Screenshot verglichen.',
-    signupOcrConfirmRequired: 'Setze das Häkchen, um zu bestätigen, dass du die gelesenen Zahlen geprüft hast.',
+    signupOcrConfirmRequired:
+      'Setze das Häkchen, um zu bestätigen, dass du die gelesenen Zahlen geprüft hast.',
     signupOcrFilled: 'Werte aus deinem Screenshot übernommen. Prüfe jede Zahl und speichere dann.',
     signupCommitmentTitle: 'Aktive Zeiten und Einsatz',
     kicker: 'VTS 1097 · WETTBEWERB NR. 12',
@@ -1060,10 +1178,31 @@ const COMPETITION_COPY = Object.freeze({
     slotChosenLabel: '{label}, Wahl {rank}',
     slotNotChosenLabel: '{label}, nicht gewählt',
     publicConsent: 'Meine Werte und mein Wachstum auf der öffentlichen Wachstumstafel zeigen',
-    publicConsentHelp: 'Standardmäßig aus. Nur aktivieren, wenn deine Ergebnisse für alle sichtbar sein sollen.',
+    publicConsentHelp:
+      'Standardmäßig aus. Nur aktivieren, wenn deine Ergebnisse für alle sichtbar sein sollen.',
     previousComparisonReadyPublic:
       'Deine Daten aus der letzten Saison sind bereit. Nach dem Upload deiner aktuellen Werte erscheint dein Vergleich unten.',
-    previousComparisonNoMatch: 'Frühere Hochladungen passen nicht zu diesem Namen. Wenn du früher unter einem anderen Namen hochgeladen hast, nenne einem Admin deinen alten Namen.',
+    previousComparisonNoMatch:
+      'Frühere Hochladungen passen nicht zu diesem Namen. Wenn du früher unter einem anderen Namen hochgeladen hast, nenne einem Admin deinen alten Namen.',
+    deadTroopsTitle: 'Gefallene Truppen',
+    deadTroopsToggle: 'Ich habe gefallene Truppen zu zählen',
+    deadTroopsUnitLabel: 'Zähleinheit',
+    deadTroopsExact: 'Genaue Anzahl',
+    deadTroopsThousands: 'Tausend',
+    deadTroopsMillions: 'Millionen',
+    deadTroopsPowerBack: 'Zurückgewonnene Macht',
+    deadTroopsRowReadout: '{troops} Truppen · +{power} Macht',
+    deadTroopsTotal:
+      'Macht der gefallenen Truppen, beim Senden zur Truppenmacht und Gesamt addiert',
+    deadTroopsPreview: 'Mit gefallenen Truppen: Truppenmacht {troop} · Gesamt {total}',
+    deadTroopsClassFootmen: 'Fußtruppen',
+    deadTroopsClassCavalry: 'Kavallerie',
+    deadTroopsClassArchers: 'Bogenschützen',
+    deadTroopsVariantLofty: 'Lofty (T11)',
+    deadTroopsVariantT10E: 'T10 verbessert',
+    deadTroopsVariantT10: 'T10',
+    deadTroopsVariantT9E: 'T9 verbessert',
+    deadTroopsVariantT9: 'T9',
     previousComparisonReadyPrivate:
       'Deine Daten aus der letzten Saison sind bereit. Ohne Zustimmung zur öffentlichen Tafel bleiben sie privat.',
     phaseNameUnconfigured: 'Zeitplan folgt',

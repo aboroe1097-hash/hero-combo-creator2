@@ -54,7 +54,10 @@ const LIMITS = {
   // source by bytes and transfer-relevant gzip size instead.
   // The translated public Eden X1 navigation entry adds 0.9 KiB to the
   // checked-in shell. Keep less than 0.5 KiB of raw-source headroom.
-  indexBytes: 83 * 1024,
+  // 16.6.1: the Smart Generate mode row (label, two-mode select, button) adds
+  // 0.5 KiB to the checked-in page. Measured 83.5 KiB; keep the same tight
+  // raw-source headroom.
+  indexBytes: 84 * 1024,
   indexGzipBytes: 16 * 1024,
   entryJsBytes: 300 * 1024,
   // The shared v14 stylesheet measures 390.3 KiB. The previous 300 KiB check
@@ -193,7 +196,11 @@ const LIMITS = {
   // 16.5.14 Combos planner in VTS Admin (the shared interface, the placement
   // workflow engine, hero-name matching and the live-publish loader): measured
   // 11822.5 KiB on top of 16.5.13; retain ~22 KiB for CI's admin-auth injection.
-  totalJsBytes: 11845 * 1024,
+  // 16.6.1: the dead-troops helper (pure module, render code and its 6-locale
+  // copy) and Smart Generate (the selection engine and the 13-locale copy) grow
+  // the built JS to 11847.4 KiB; the helper's styles ship as a lazy chunk.
+  // Retain ~20 KiB for CI's admin-auth injection.
+  totalJsBytes: 11868 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -465,7 +472,9 @@ const LIMITS = {
     // light-theme states and RTL-safe margins: 688.9 KiB. Lift desktop to 690.
     // 16.5.4: the standalone footer's 44px touch targets add ~0.1 KiB to the
     // admin mobile route (786.1 KiB measured); retain ~0.9 KiB.
-    'admin.html': { desktop: 690 * 1024, mobile: 787 * 1024 },
+    // 16.6.1: the shared components stylesheet gains the Smart Generate row
+    // (+0.8 KiB desktop, +0.5 mobile, measured 690.8 / 787.5). Raise by the minimum.
+    'admin.html': { desktop: 691 * 1024, mobile: 788 * 1024 },
     // Eden used to carry every admin dashboard style, because it imports
     // ocr-dashboard.css for weighted-contribution detail; 16.0.14 had lifted the
     // ceiling to 806/909 KiB for admin-only rules alone. 16.0.15 moves the
@@ -474,10 +483,13 @@ const LIMITS = {
     // roughly 1 KiB of headroom. Admin-only dashboard rules belong in the admin
     // file; adding them to ocr-dashboard.css is what this budget now catches.
     // 16.5.4: 44px footer and retry-button touch targets: 664.1 KiB desktop.
-    'eden-x1.html': { desktop: 665 * 1024, mobile: 761 * 1024 },
+    // 16.6.1: the shared components stylesheet gains the Smart Generate row
+    // (+0.6 KiB on the Eden mobile graph, measured 761.6). Raise by the minimum.
+    'eden-x1.html': { desktop: 665 * 1024, mobile: 762 * 1024 },
     // Eden X2 is the same page shell and the same module graph as Eden X1, so
     // it inherits the audited Eden budget rather than getting its own.
-    'eden-x2.html': { desktop: 665 * 1024, mobile: 761 * 1024 },
+    // 16.6.1: same shared-stylesheet growth as eden-x1.html.
+    'eden-x2.html': { desktop: 665 * 1024, mobile: 762 * 1024 },
     // Arcade measures 437.3/530.0 KiB with the audited 14.2.8 shared graph;
     // retain less than 2 KiB of route-specific headroom.
     'arcade.html': { desktop: 463 * 1024, mobile: 585 * 1024 },

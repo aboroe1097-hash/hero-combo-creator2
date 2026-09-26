@@ -10,6 +10,7 @@ import {
   rankedCombos,
   scoreComboByRank,
   selectNonOverlappingCombos,
+  selectSmartCombos,
 } from '../../js/combos-db.js';
 
 // X8 lanes (any lane with an X8 hero) are either placed inside the list with the Combos
@@ -279,4 +280,87 @@ test('fresh Alexander Bleeding Steed Theodora is buildable from owned heroes', (
   );
 
   assert.equal(selected[0]?.heroes.join('|'), 'Alexander|Bleeding Steed|Theodora');
+});
+
+test('smart generate #2 maximises the total of all five, beating the greedy pick', () => {
+  // Rank scores for six eligible rows: 100, 80.2, 60.4, 40.6, 20.8, 1.
+  const combos = [
+    { heroes: ['a', 'b', 'c'] }, // greedy first pick, blocks rows 2-4
+    { heroes: ['a', 'd', 'e'] },
+    { heroes: ['b', 'f', 'g'] },
+    { heroes: ['c', 'h', 'i'] },
+    { heroes: ['j', 'k', 'l'] },
+    { heroes: ['m', 'n', 'o'] },
+  ];
+  const owned = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o'];
+  const greedy = selectNonOverlappingCombos(combos, owned, 3);
+  const smart = selectSmartCombos(combos, owned, 3, 'top5');
+  const total = (list) => list.reduce((sum, combo) => sum + Number(combo.displayScore), 0);
+
+  assert.equal(smart.length, 3);
+  assert.deepEqual(
+    smart.map((combo) => combo.heroes[0]),
+    ['a', 'b', 'c'],
+    'the three disjoint mid rows total more than the greedy set'
+  );
+  assert.ok(total(smart) > total(greedy), 'smart beats the greedy pick');
+  assert.ok(total(smart) >= total(greedy), 'never worse than greedy');
+});
+
+test('smart generate #1 maximises the best four and only fills the fifth', () => {
+  const combos = [
+    { heroes: ['a', 'b', 'c'] },
+    { heroes: ['a', 'd', 'e'] },
+    { heroes: ['b', 'f', 'g'] },
+    { heroes: ['c', 'h', 'i'] },
+    { heroes: ['j', 'k', 'l'] },
+    { heroes: ['m', 'n', 'o'] },
+  ];
+  const owned = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o'];
+  // Limit 3 counts only the best 2 of the set: rows 2+3 (80.2 + 60.4).
+  const smart = selectSmartCombos(combos, owned, 3, 'top4');
+  const scores = smart.map((combo) => Number(combo.displayScore));
+  assert.equal(smart.length, 3, 'the fifth slot is still filled');
+  assert.equal(scores[0] + scores[1], 140.6, 'the best two carry the total');
+});
+
+test('smart generate keeps the rank scores and respects owned heroes', () => {
+  const combos = [
+    { heroes: ['a', 'b', 'c'] },
+    { heroes: ['a', 'd', 'e'] },
+    { heroes: ['x', 'y', 'z'] }, // not owned
+    { heroes: ['c', 'h', 'i'] },
+    { heroes: ['j', 'k', 'l'] },
+  ];
+  const owned = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'];
+  const smart = selectSmartCombos(combos, owned, 3, 'top5');
+  assert.ok(smart.every((combo) => !combo.heroes.includes('x')));
+  // The picked rows carry their eligible rank scores (67.0, 34.0, 1.0).
+  assert.deepEqual(
+    smart.map((combo) => Number(combo.displayScore)),
+    [67, 34, 1]
+  );
+  assert.equal(typeof smart[0].displayScore, 'string');
+  // Sorted best first, every hero used at most once across the set.
+  const heroes = smart.flatMap((combo) => combo.heroes);
+  assert.equal(new Set(heroes).size, heroes.length);
+  const numbers = smart.map((combo) => Number(combo.displayScore));
+  assert.deepEqual(
+    numbers,
+    [...numbers].sort((a, b) => b - a)
+  );
+});
+
+test('smart generate falls back to what exists when disjoint rows run out', () => {
+  const combos = [
+    { heroes: ['a', 'b', 'c'] },
+    { heroes: ['a', 'd', 'e'] },
+    { heroes: ['a', 'f', 'g'] },
+  ];
+  const owned = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+  for (const mode of ['top4', 'top5']) {
+    const smart = selectSmartCombos(combos, owned, 5, mode);
+    assert.equal(smart.length, 1, mode);
+    assert.deepEqual(smart[0].heroes, ['a', 'b', 'c']);
+  }
 });
