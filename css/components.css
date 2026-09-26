@@ -812,6 +812,17 @@
   background: #047857;
 }
 
+.gen-big-btn--smart {
+  background: linear-gradient(120deg, #0ea5e9, #6366f1 55%, #a855f7);
+  box-shadow:
+    0 10px 22px -8px rgba(99, 102, 241, 0.75),
+    0 4px 6px -4px rgba(0, 0, 0, 0.25);
+}
+
+.gen-big-btn--smart:hover {
+  background: linear-gradient(120deg, #38bdf8, #818cf8 55%, #c084fc);
+}
+
 .gen-big-btn--random {
   background: #d97706;
 }

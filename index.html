@@ -48,10 +48,9 @@
     <link id="manifestLink" rel="manifest" href="site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <script src="js/maintenance-config.js?v=20260926_154850"></script>
-    <script src="js/theme-prepaint.js?v=20260926_154850"></script>
-    <style>
-    </style>
+    <script src="js/maintenance-config.js?v=20260926_172457"></script>
+    <script src="js/theme-prepaint.js?v=20260926_172457"></script>
+    <style></style>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -106,18 +105,18 @@
         href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
       />
     </noscript>
-    <link rel="stylesheet" href="css/_tokens.css?v=20260926_154850" />
-    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260926_154850" />
-    <link rel="stylesheet" href="css/app.css?v=20260926_154850" />
-    <link rel="stylesheet" href="css/components.css?v=20260926_154850" />
-    <link rel="stylesheet" href="css/atmosphere.css?v=20260926_154850" />
-    <link rel="stylesheet" href="css/mobile.css?v=20260926_154850" media="(max-width: 768px)" />
-    <link rel="stylesheet" href="css/shell-v14.css?v=20260926_154850" />
-    <link rel="stylesheet" href="css/loader-v14.css?v=20260926_154850" />
-    <link rel="stylesheet" href="css/command-palette.css?v=20260926_154850" />
-    <link rel="stylesheet" href="css/account-chip.css?v=20260926_154850" />
-    <link rel="stylesheet" href="css/shell-account-chip.css?v=20260926_154850" />
-    <script src="js/admin-auth-config.js?v=20260926_154850"></script>
+    <link rel="stylesheet" href="css/_tokens.css?v=20260926_172457" />
+    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260926_172457" />
+    <link rel="stylesheet" href="css/app.css?v=20260926_172457" />
+    <link rel="stylesheet" href="css/components.css?v=20260926_172457" />
+    <link rel="stylesheet" href="css/atmosphere.css?v=20260926_172457" />
+    <link rel="stylesheet" href="css/mobile.css?v=20260926_172457" media="(max-width: 768px)" />
+    <link rel="stylesheet" href="css/shell-v14.css?v=20260926_172457" />
+    <link rel="stylesheet" href="css/loader-v14.css?v=20260926_172457" />
+    <link rel="stylesheet" href="css/command-palette.css?v=20260926_172457" />
+    <link rel="stylesheet" href="css/account-chip.css?v=20260926_172457" />
+    <link rel="stylesheet" href="css/shell-account-chip.css?v=20260926_172457" />
+    <script src="js/admin-auth-config.js?v=20260926_172457"></script>
   </head>
   <body>
     <a
@@ -440,7 +439,19 @@
               </div>
               <div class="tab-item tab-badge-wrap" data-shell-hub data-shell-desktop-primary>
                 <button id="tabClassDevelopment" class="tab-pill tab-pill-inactive">
-                  <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7 20v-6m5 6V9m5 11V4M4 20h16"/></svg>
+                  <svg
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="2"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M7 20v-6m5 6V9m5 11V4M4 20h16"
+                    />
+                  </svg>
                   <span data-i18n="tabClassDevelopment">Class Development Hub</span></button
                 ><span class="tab-badge tab-badge-hub" data-i18n="tabBadgeHub">HUB</span>
               </div>
@@ -697,7 +708,8 @@
               aria-selected="true"
               data-hub-subtab="generator"
               data-i18n="tabGenerator"
-              data-subtool-badge="NEW" data-i18n-badge="badgeNew"
+              data-subtool-badge="NEW"
+              data-i18n-badge="badgeNew"
             >
               Combo Generator
             </button>
@@ -764,7 +776,9 @@
                     ><input type="checkbox" value="X2" /><span data-i18n="seasonX2">X2</span></label
                   >
                   <label class="filter-pill x8-pill"
-                    ><input type="checkbox" value="X8" checked /><span data-i18n="seasonX8">X8</span></label
+                    ><input type="checkbox" value="X8" checked /><span data-i18n="seasonX8"
+                      >X8</span
+                    ></label
                   >
                   <label class="filter-pill x10-pill hidden" data-season="X10"
                     ><input type="checkbox" value="X10" /><span data-i18n="seasonX10"
@@ -984,7 +998,9 @@
                     ></label
                   >
                   <label class="filter-pill x8-pill"
-                    ><input type="checkbox" value="X8" checked /><span data-i18n="seasonX8">X8</span></label
+                    ><input type="checkbox" value="X8" checked /><span data-i18n="seasonX8"
+                      >X8</span
+                    ></label
                   >
                   <label class="filter-pill x10-pill hidden" data-season="X10"
                     ><input type="checkbox" value="X10" /><span data-i18n="seasonX10"
@@ -1164,6 +1180,14 @@
             </div>
 
             <div class="gen-buttons-row">
+              <button
+                id="generateSmartBtn"
+                class="gen-big-btn gen-big-btn--smart"
+                data-i18n-title="generatorSmartTop4"
+                title="#1 — highest total of the best 4"
+              >
+                SMART GENERATE
+              </button>
               <button id="generateCombosBtn" class="gen-big-btn gen-big-btn--generate">
                 GENERATE BEST COMBOS
               </button>
@@ -1172,28 +1196,6 @@
               </button>
               <button id="downloadGeneratorBtn" class="gen-big-btn gen-big-btn--download hidden">
                 DOWNLOAD AS IMAGE
-              </button>
-            </div>
-
-            <div class="gen-smart-row" role="group" aria-labelledby="genSmartModeTitle">
-              <span id="genSmartModeTitle" class="gen-smart-row__title" data-i18n="generatorSmartLabel">
-                Smart mode
-              </span>
-              <div class="gen-smart-row__modes" id="generatorSmartMode">
-                <label class="gen-smart-chip">
-                  <input type="radio" name="generatorSmartMode" value="top4" checked />
-                  <span data-i18n="generatorSmartTop4">#1 — highest total of the best 4</span>
-                </label>
-                <label class="gen-smart-chip">
-                  <input type="radio" name="generatorSmartMode" value="top5" />
-                  <span data-i18n="generatorSmartTop5">#2 — highest total of all 5</span>
-                </label>
-              </div>
-              <button
-                id="generateSmartBtn"
-                class="gen-big-btn gen-big-btn--generate gen-smart-row__btn"
-              >
-                SMART GENERATE
               </button>
             </div>
 
@@ -1298,7 +1300,8 @@
               aria-controls="specializationSection"
               data-hub-subtab="towers"
               data-i18n="tabTowersSpecialization"
-              data-subtool-badge="BETA" data-i18n-badge="badgeBeta"
+              data-subtool-badge="BETA"
+              data-i18n-badge="badgeBeta"
             >
               <svg
                 fill="none"
@@ -1347,7 +1350,8 @@
               aria-controls="artifactSection"
               data-hub-subtab="artifact"
               data-i18n="tabArtifact"
-              data-subtool-badge="NEW" data-i18n-badge="badgeNew"
+              data-subtool-badge="NEW"
+              data-i18n-badge="badgeNew"
             >
               <svg
                 fill="none"
@@ -1413,27 +1417,21 @@
                   data-i18n-aria="researchSeasonFilterAria"
                 >
                   <div class="research-season-bar">
-                    <button type="button" class="tech-season-btn" data-season="S0">
-                      S0
+                    <button type="button" class="tech-season-btn" data-season="S0">S0</button>
+                    <button type="button" class="tech-season-btn" data-season="S1">S1</button>
+                    <button type="button" class="tech-season-btn" data-season="S2">S2</button>
+                    <button type="button" class="tech-season-btn" data-season="S3">S3</button>
+                    <button type="button" class="tech-season-btn" data-season="S4">S4</button>
+                    <button type="button" class="tech-season-btn" data-season="X1">X1</button>
+                    <button type="button" class="tech-season-btn active" data-season="X2">
+                      X2
                     </button>
-                    <button type="button" class="tech-season-btn" data-season="S1">
-                      S1
+                    <button type="button" class="tech-season-btn active" data-season="X8">
+                      X8
                     </button>
-                    <button type="button" class="tech-season-btn" data-season="S2">
-                      S2
+                    <button type="button" class="tech-season-btn active" data-season="X12">
+                      X12
                     </button>
-                    <button type="button" class="tech-season-btn" data-season="S3">
-                      S3
-                    </button>
-                    <button type="button" class="tech-season-btn" data-season="S4">
-                      S4
-                    </button>
-                    <button type="button" class="tech-season-btn" data-season="X1">
-                      X1
-                    </button>
-                    <button type="button" class="tech-season-btn active" data-season="X2">X2</button>
-                    <button type="button" class="tech-season-btn active" data-season="X8">X8</button>
-                    <button type="button" class="tech-season-btn active" data-season="X12">X12</button>
                   </div>
                 </div>
               </div>
@@ -1544,7 +1542,7 @@
         <section
           id="edenMapSection"
           class="tab-panel hidden animate-fade-in tab-panel-pad-sm"
-          data-tab-src="tabs/eden-map.html?v=20260926_154850"
+          data-tab-src="tabs/eden-map.html?v=20260926_172457"
         >
           <div class="tab-loading">
             <div class="spinner"></div>
@@ -1908,12 +1906,12 @@
 
     <div id="toastContainer"></div>
 
-    <script src="js/loader-v14.js?v=20260926_154850"></script>
-    <script type="module" src="js/app.js?v=20260926_154850"></script>
-    <script type="module" src="js/command-palette.js?v=20260926_154850"></script>
-    <script type="module" src="js/ai-launcher.js?v=20260926_154850"></script>
-    <script src="js/index-page-enhancements.js?v=20260926_154850"></script>
-    <script src="js/shell-v14.js?v=20260926_154850"></script>
+    <script src="js/loader-v14.js?v=20260926_172457"></script>
+    <script type="module" src="js/app.js?v=20260926_172457"></script>
+    <script type="module" src="js/command-palette.js?v=20260926_172457"></script>
+    <script type="module" src="js/ai-launcher.js?v=20260926_172457"></script>
+    <script src="js/index-page-enhancements.js?v=20260926_172457"></script>
+    <script src="js/shell-v14.js?v=20260926_172457"></script>
     <script type="module" src="js/account-chip-bootstrap.js"></script>
   </body>
 </html>

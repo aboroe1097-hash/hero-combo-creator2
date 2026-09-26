@@ -881,9 +881,15 @@ export async function bootVtsScore(options = {}) {
     if (Number.isFinite(endsAt) && !state.countdownTimer) {
       state.countdownTimer = setInterval(renderCountdown, 1000);
     }
-    // The board stays hidden until VtsScore is unlocked: its roster and upload
-    // history are for members who completed the unlock step, not drive-by
-    // visitors reading the schedule.
+    updateGrowthBoardVisibility();
+  }
+
+  // The board stays hidden until VtsScore is unlocked: its roster and upload
+  // history are for members who completed the unlock step, not drive-by
+  // visitors reading the schedule. Called from the schedule render and again
+  // from phase gating, because the registration phase returns before the
+  // schedule render runs.
+  function updateGrowthBoardVisibility() {
     const boardVisible = Boolean(state.grant) && getCompetitionPageState(state.phase).growthBoard;
     setHidden(element('vtsScoreGrowthBoard'), !boardVisible);
     if (boardVisible) void mountGrowthBoard();
@@ -988,6 +994,7 @@ export async function bootVtsScore(options = {}) {
    */
   async function applyPhaseGating() {
     if (!state.grant) return;
+    updateGrowthBoardVisibility();
     const view = currentPageState();
     setHidden(signupPanel, view.signup === 'hidden');
     setSignupReadOnly(view.signup === 'readonly');
@@ -1228,10 +1235,204 @@ export async function bootVtsScore(options = {}) {
     }
   });
 
+  // The registration form records the baseline power, so it needs the same
+  // dead-troops helper as the score step: the counts entered here are added on
+  // top of the Troop Power and Total Combat Power it saves.
+  const signupDeadTroopsMount = element('vtsScoreSignupDeadTroops');
+  const signupDeadTroops = { enabled: false, unit: 'thousands', counts: new Map() };
+  const signupDeadField = (field) =>
+    Number(signupForm?.querySelector(`[data-boh-field="stats.${field}"]`)?.value) || 0;
+
+  function signupDeadTroopsPower() {
+    if (!signupDeadTroops.enabled) return 0;
+    const rows = [];
+    for (const className of DEAD_TROOP_CLASSES) {
+      for (const variant of DEAD_TROOP_VARIANTS) {
+        rows.push({
+          variant,
+          count: signupDeadTroops.counts.get(`${className}:${variant}`) ?? '',
+        });
+      }
+    }
+    return deadTroopsTotalPower(rows, signupDeadTroops.unit);
+  }
+
+  function renderSignupDeadTroops() {
+    const mount = signupDeadTroopsMount;
+    if (!mount) return;
+    void import('../css/dead-troops.css');
+    const classLabels = {
+      cavalry: 'deadTroopsClassCavalry',
+      footmen: 'deadTroopsClassFootmen',
+      archers: 'deadTroopsClassArchers',
+    };
+    const variantLabels = {
+      lofty: 'deadTroopsVariantLofty',
+      t10e: 'deadTroopsVariantT10E',
+      t10: 'deadTroopsVariantT10',
+      t9e: 'deadTroopsVariantT9E',
+      t9: 'deadTroopsVariantT9',
+    };
+    const badgeText = (variant) =>
+      variant === 'lofty' ? 'T11' : variant.startsWith('t10') ? 'T10' : 'T9';
+    mount.replaceChildren();
+    const box = deadTroopEl('fieldset', 'vts-score-dead-troops__box');
+    box.append(deadTroopEl('legend', '', i18n.text('deadTroopsTitle')));
+
+    const toggle = deadTroopEl('label', 'vts-score-dead-troops__toggle');
+    const toggleInput = document.createElement('input');
+    toggleInput.type = 'checkbox';
+    toggleInput.checked = signupDeadTroops.enabled;
+    toggle.append(toggleInput, deadTroopEl('span', '', i18n.text('deadTroopsToggle')));
+    box.append(toggle);
+
+    const unitRow = deadTroopEl('div', 'vts-score-dead-troops__unit');
+    unitRow.append(deadTroopEl('span', '', i18n.text('deadTroopsUnitLabel')));
+    for (const unit of DEAD_TROOP_UNITS) {
+      const option = deadTroopEl('label', 'vts-score-dead-troops__unit-option');
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = 'vtsScoreSignupDeadTroopUnit';
+      radio.value = unit;
+      radio.checked = signupDeadTroops.unit === unit;
+      radio.addEventListener('change', () => {
+        signupDeadTroops.unit = unit;
+        refresh();
+      });
+      option.append(
+        radio,
+        deadTroopEl(
+          'span',
+          '',
+          i18n.text(unit === 'millions' ? 'deadTroopsMillions' : 'deadTroopsThousands')
+        )
+      );
+      unitRow.append(option);
+    }
+    box.append(unitRow);
+
+    const grid = deadTroopEl('div', 'vts-score-dead-troops__grid');
+    const headRow = deadTroopEl(
+      'div',
+      'vts-score-dead-troops__row vts-score-dead-troops__row--head'
+    );
+    headRow.append(deadTroopEl('span', 'vts-score-dead-troops__row-head', ''));
+    for (const variant of DEAD_TROOP_VARIANTS) {
+      headRow.append(
+        deadTroopEl('span', 'vts-score-dead-troops__col-head', i18n.text(variantLabels[variant]))
+      );
+    }
+    grid.append(headRow);
+
+    for (const className of DEAD_TROOP_CLASSES) {
+      const row = deadTroopEl('div', 'vts-score-dead-troops__row vts-score-dead-troops__class');
+      const rowHead = deadTroopEl('span', 'vts-score-dead-troops__row-head');
+      rowHead.append(deadTroopGlyph(className));
+      rowHead.append(
+        deadTroopEl(
+          'strong',
+          'vts-score-dead-troops__class-name',
+          i18n.text(classLabels[className])
+        )
+      );
+      row.append(rowHead);
+      for (const variant of DEAD_TROOP_VARIANTS) {
+        const key = `${className}:${variant}`;
+        const cell = deadTroopEl('label', 'vts-score-dead-troops__cell');
+        const badge = deadTroopEl(
+          'span',
+          `vts-score-dead-troops__badge${variant === 't10e' || variant === 't9e' ? ' is-enhanced' : ''}`,
+          badgeText(variant)
+        );
+        const head = deadTroopEl('span', 'vts-score-dead-troops__head');
+        head.append(badge);
+        const name = deadTroopEl(
+          'span',
+          'vts-score-dead-troops__variant',
+          i18n.text(variantLabels[variant])
+        );
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.step = 'any';
+        input.inputMode = 'decimal';
+        input.autocomplete = 'off';
+        input.dataset.deadTroopCount = key;
+        input.value = signupDeadTroops.counts.get(key) ?? '';
+        input.addEventListener('input', () => {
+          signupDeadTroops.counts.set(key, input.value);
+          refresh();
+        });
+        const readout = deadTroopEl('small', 'vts-score-dead-troops__row-power');
+        readout.dataset.deadTroopPower = key;
+        const quick = deadTroopEl('span', 'vts-score-dead-troops__cell-quick');
+        for (const step of [0.5, 1, 5, 10, 20]) {
+          const chip = deadTroopEl('button', 'vts-score-dead-troops__quick-chip', `+${step}`);
+          chip.type = 'button';
+          chip.addEventListener('click', () => {
+            const next = Math.round(((Number(input.value) || 0) + step) * 100) / 100;
+            input.value = String(next);
+            signupDeadTroops.counts.set(key, input.value);
+            refresh();
+          });
+          quick.append(chip);
+        }
+        cell.append(head, name, input, readout, quick);
+        row.append(cell);
+      }
+      grid.append(row);
+    }
+    box.append(grid);
+
+    const total = deadTroopEl('p', 'vts-score-dead-troops__total');
+    const preview = deadTroopEl('p', 'vts-score-dead-troops__preview');
+    box.append(total, preview);
+    mount.append(box);
+
+    function refresh() {
+      grid.hidden = !signupDeadTroops.enabled;
+      grid.classList.toggle('is-open', signupDeadTroops.enabled);
+      let sum = 0;
+      for (const readout of grid.querySelectorAll('[data-dead-troop-power]')) {
+        const [, variant] = readout.dataset.deadTroopPower.split(':');
+        const value = signupDeadTroops.counts.get(readout.dataset.deadTroopPower) ?? '';
+        const power = deadTroopRowPower(value, { variant, unit: signupDeadTroops.unit });
+        const troops = deadTroopActualCount(value, signupDeadTroops.unit);
+        if (signupDeadTroops.enabled) sum += power;
+        readout.textContent = troops
+          ? i18n.text('deadTroopsRowReadout', {
+              troops: i18n.formatNumber(troops),
+              power: i18n.formatNumber(power),
+            })
+          : '—';
+      }
+      total.textContent = `${i18n.text('deadTroopsTotal')}: ${i18n.formatNumber(sum)}`;
+      preview.textContent = i18n.text('deadTroopsPreview', {
+        troop: i18n.formatNumber(signupDeadField('troopPower') + sum),
+        total: i18n.formatNumber(signupDeadField('totalCastlePower') + sum),
+      });
+    }
+
+    toggleInput.addEventListener('change', () => {
+      signupDeadTroops.enabled = toggleInput.checked;
+      refresh();
+    });
+    setHidden(mount, false);
+    refresh();
+  }
+
+  renderSignupDeadTroops();
+
   signupForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!['open', 'edit'].includes(currentPageState().signup)) return;
     const values = state.signupSession?.readForm(signupPanel) || {};
+    // Dead-troops power lands on top of the baseline the registration stores.
+    const signupDead = signupDeadTroopsPower();
+    if (signupDead && values?.stats) {
+      values.stats.troopPower = (Number(values.stats.troopPower) || 0) + signupDead;
+      values.stats.totalCastlePower = (Number(values.stats.totalCastlePower) || 0) + signupDead;
+    }
     // At least one slot per event is required by the stored document; say
     // which picker is empty before the write instead of a generic failure.
     for (const [key, path, message] of [
