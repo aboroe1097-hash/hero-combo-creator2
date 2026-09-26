@@ -2,6 +2,13 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.6.2 - 2026-09-26
+
+- The dead-troops calculator is available during Competition #12 registration for screenshot and manual power entry. It uses the compact Footmen, Cavalry, and Archers editor, defaults to exact counts, and previews the power added to Troop Power and Total Combat Power.
+- The unlocked Growth Board is visible near the top of VtsScore during registration as well as later phases.
+- Smart Generate is a single prominent option before Generate Best Combos and uses the best four of five lineups. The homepage Eden voting callout and Arcade game banner open their intended destinations.
+- Continue with Google from Create account can sign in to an existing Google account even when Firebase does not return a reusable credential from the linking popup.
+
 ## 16.6.1 - 2026-09-26
 
 - The VtsScore power form has a dead-troops helper. Members whose troops died tick "I have dead troops to count", choose Footmen, Cavalry, or Archers using the sword, horseshoe, and target icons in the game's left-to-right order, then enter counts for the five tiers shown on the game screen. Only one troop type is shown at a time; its filled-tier count stays visible when switching types. Each field shows the real troop count and returned power at 8.2 per Lofty troop, 7.5 for T10 and 7.0 for T9, with Enhanced matching its tier. Exact counts from the game screen are the default; thousands and millions remain available, and changing units preserves the actual troop count. The total is added to Troop Power and Total Combat Power when the breakdown is saved.

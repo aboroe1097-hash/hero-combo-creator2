@@ -1,4 +1,4 @@
-/* Optional dead-troops entry, loaded only with the power review. */
+/* Optional dead-troops entry shared by registration and power review. */
 .vts-score-dead-troops__box {
   min-width: 0;
   margin: 18px 0 0;
@@ -20,6 +20,14 @@
   color: var(--vts-text);
   font-weight: 700;
   cursor: pointer;
+}
+.vts-score-signup .vts-score-dead-troops__toggle {
+  display: flex;
+  margin: 0;
+}
+.vts-score-signup .vts-score-dead-troops__toggle > span {
+  display: inline;
+  margin: 0;
 }
 .vts-score-dead-troops__toggle input,
 .vts-score-dead-troops__unit-option input {
@@ -58,6 +66,14 @@
   border: 1px solid var(--vts-border);
   border-radius: 9px;
   cursor: pointer;
+}
+.vts-score-signup .vts-score-dead-troops__unit-option {
+  display: inline-flex;
+  margin: 0;
+}
+.vts-score-signup .vts-score-dead-troops__unit-option > span {
+  display: inline;
+  margin: 0;
 }
 .vts-score-dead-troops__unit-option:has(input:checked) {
   border-color: var(--vts-accent);
@@ -129,6 +145,14 @@
   gap: 8px;
   min-width: 0;
   cursor: pointer;
+}
+.vts-score-signup .vts-score-dead-troops__cell-label {
+  display: flex;
+  margin: 0;
+}
+.vts-score-signup .vts-score-dead-troops__cell-label > span {
+  display: inline-flex;
+  margin: 0;
 }
 .vts-score-dead-troops__badge {
   display: inline-flex;

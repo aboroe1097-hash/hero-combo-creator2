@@ -154,10 +154,10 @@ test('Google conflict recovery requires explicit confirmation before leaving the
   assert.match(googleUpgrade, /error\?\.credential/);
   assert.match(googleUpgrade, /signInWithCredential\(auth, credential\)/);
   assert.match(googleUpgrade, /signedInExisting: true/);
-  assert.match(googleUpgrade, /account\/google-credential-unavailable/);
+  assert.match(googleUpgrade, /signInWithPopup\(auth, provider\)/);
   assert.ok(
     googleUpgrade.indexOf('confirmExistingGoogleAccountSwitch') <
-      googleUpgrade.indexOf('result = await signInWithCredential'),
+      googleUpgrade.indexOf('result = credential'),
     'confirmation must happen before the anonymous UID is replaced'
   );
   assert.match(

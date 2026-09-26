@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="vts-app-version" content="16.6.1" />
+    <meta name="vts-app-version" content="16.6.2" />
     <meta
       name="description"
       content="VTS 1097 Competition #12: register your BoH and Epic Showdown active times, upload your data, and re-upload later to measure your growth."
@@ -11,10 +11,10 @@
     <meta id="themeColorMeta" name="theme-color" content="#08111f" />
     <title>VtsScore · Competition #12</title>
     <link rel="icon" href="images/logo.png" />
-    <link rel="stylesheet" href="css/_tokens.css?v=20260926_172457" />
-    <link rel="stylesheet" href="css/vts-score.css?v=20260926_172457" />
-    <link rel="stylesheet" href="css/account-chip.css?v=20260926_172457" />
-    <script src="js/theme-prepaint.js?v=20260926_172457"></script>
+    <link rel="stylesheet" href="css/_tokens.css?v=20260926_184915" />
+    <link rel="stylesheet" href="css/vts-score.css?v=20260926_184915" />
+    <link rel="stylesheet" href="css/account-chip.css?v=20260926_184915" />
+    <script src="js/theme-prepaint.js?v=20260926_184915"></script>
   </head>
   <body>
     <main id="vtsScoreApp" class="vts-score-shell">
@@ -107,6 +107,13 @@
 
       <section id="vtsScorePhaseNotice" class="vts-score-card vts-score-phase-notice" hidden>
         <p id="vtsScorePhaseNoticeText" role="status"></p>
+      </section>
+
+      <section id="vtsScoreGrowthBoard" class="vts-score-card vts-score-growth-board" hidden>
+        <p class="vts-score-kicker" data-vts-i18n="growthBoardKicker">GROWTH BOARD</p>
+        <p data-vts-i18n="growthBoardPending">
+          The opt-in Growth Board refreshes automatically when results are ready.
+        </p>
       </section>
 
       <!-- Season registration: the retired All-Star BoH form, revived for the
@@ -526,15 +533,8 @@
         </section>
       </section>
 
-      <!-- The public board refreshes from opted-in results after re-uploads close. -->
-      <section id="vtsScoreGrowthBoard" class="vts-score-card vts-score-growth-board" hidden>
-        <p class="vts-score-kicker" data-vts-i18n="growthBoardKicker">GROWTH BOARD</p>
-        <p data-vts-i18n="growthBoardPending">
-          The opt-in Growth Board refreshes automatically when results are ready.
-        </p>
-      </section>
     </main>
-    <script type="module" src="js/vts-score.js?v=20260926_172457"></script>
+    <script type="module" src="js/vts-score.js?v=20260926_184915"></script>
     <script type="module" src="js/account-chip-bootstrap.js"></script>
   </body>
 </html>

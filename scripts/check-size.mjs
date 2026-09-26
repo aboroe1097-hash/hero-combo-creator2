@@ -472,8 +472,8 @@ const LIMITS = {
     // light-theme states and RTL-safe margins: 688.9 KiB. Lift desktop to 690.
     // 16.5.4: the standalone footer's 44px touch targets add ~0.1 KiB to the
     // admin mobile route (786.1 KiB measured); retain ~0.9 KiB.
-    // 16.6.1: the shared components stylesheet gains the Smart Generate row
-    // (+0.8 KiB desktop, +0.5 mobile, measured 690.8 / 787.5). Raise by the minimum.
+    // 16.6.2: the Smart Generate button adds shared component styles;
+    // measured 691.0 / 787.7 KiB after build, within these narrow ceilings.
     'admin.html': { desktop: 692 * 1024, mobile: 788 * 1024 },
     // Eden used to carry every admin dashboard style, because it imports
     // ocr-dashboard.css for weighted-contribution detail; 16.0.14 had lifted the
@@ -483,13 +483,12 @@ const LIMITS = {
     // roughly 1 KiB of headroom. Admin-only dashboard rules belong in the admin
     // file; adding them to ocr-dashboard.css is what this budget now catches.
     // 16.5.4: 44px footer and retry-button touch targets: 664.1 KiB desktop.
-    // 16.6.1: the shared components stylesheet gains the Smart Generate row and
-    // its gradient button (+0.6 KiB mobile, +0.2 desktop; measured 761.6 / 665.2).
-    // Raise by the minimum.
+    // 16.6.2: the Smart Generate gradient button measures 665.2 / 761.8 KiB
+    // on Eden X1 after build. These ceilings retain under 1 KiB of headroom.
     'eden-x1.html': { desktop: 666 * 1024, mobile: 762 * 1024 },
     // Eden X2 is the same page shell and the same module graph as Eden X1, so
     // it inherits the audited Eden budget rather than getting its own.
-    // 16.6.1: same shared-stylesheet growth as eden-x1.html.
+    // 16.6.2: same shared-stylesheet growth as eden-x1.html.
     'eden-x2.html': { desktop: 666 * 1024, mobile: 762 * 1024 },
     // Arcade measures 437.3/530.0 KiB with the audited 14.2.8 shared graph;
     // retain less than 2 KiB of route-specific headroom.
