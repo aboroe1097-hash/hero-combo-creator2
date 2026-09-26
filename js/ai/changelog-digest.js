@@ -9,10 +9,10 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "version": "16.6.2",
     "date": "2026-09-26",
     "highlights": [
-      "The dead-troops calculator is available during Competition #12 registration for screenshot and manual power entry. It uses the compact Footmen, Cavalry, and Archers editor, defaults to exact counts, and previews the power added to Troop Power and Total Combat Power.",
-      "The unlocked Growth Board is visible near the top of VtsScore during registration as well as later phases.",
+      "The same compact dead-troops editor is shared by Competition #12 registration and score review. It defaults to exact counts and adds temporarily dead troops to the alive power total. Tier counts are stored with sign-ups and final uploads so edits restore the split without counti…",
+      "The unlocked Growth Board is visible after the registration and score-entry workspace in every phase.",
       "Smart Generate is a single prominent option before Generate Best Combos and uses the best four of five lineups. The homepage Eden voting callout and Arcade game banner open their intended destinations.",
-      "Continue with Google from Create account can sign in to an existing Google account even when Firebase does not return a reusable credential from the linking popup."
+      "When a Google linking conflict has no reusable credential, the guest session stays active and the member is directed to the explicit Sign in with Google flow."
     ]
   },
   {

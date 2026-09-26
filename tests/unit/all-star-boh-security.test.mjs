@@ -1085,7 +1085,7 @@ test('Firestore private signup tactical catalogs match canonical source data', (
     /keys\(\)\.hasAll\(\[[\s\S]*?\]\)/,
     'legacy-compatible member stats required keys'
   );
-  for (const optionalKey of ['usableHeroNames', 'researchProgressPct']) {
+  for (const optionalKey of ['usableHeroNames', 'researchProgressPct', 'deadTroopCounts']) {
     assert.match(statsHasOnly, new RegExp(`'${optionalKey}'`));
     assert.doesNotMatch(statsHasAll, new RegExp(`'${optionalKey}'`));
   }
@@ -1096,6 +1096,10 @@ test('Firestore private signup tactical catalogs match canonical source data', (
   assert.match(
     statsValidator,
     /!\('researchProgressPct' in stats\)[\s\S]*validAllStarBohResearchProgress\(stats\.researchProgressPct\)/
+  );
+  assert.match(
+    rules,
+    /function validAllStarBohDeadTroopCounts\(counts\) \{[\s\S]*?counts\.FootmenLofty is int[\s\S]*?counts\.ArchersT9Enhanced is int[\s\S]*?\n {4}\}/
   );
   // The second size cap lives in validAllStarBohSubmissionData, not in the
   // stats validator — grep the whole file so this cap can never drift alone.

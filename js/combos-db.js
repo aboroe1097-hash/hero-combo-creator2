@@ -420,15 +420,14 @@ export function selectNonOverlappingCombos(combos, ownedHeroes, limit = 5) {
  * total score instead of taking the greedily highest ones. Strong heroes go
  * where they lift the total most, which may mean no single 100-score combo.
  *
- * - mode 'top4' (Smart #1): show `limit` combos but maximise the total of the
- *   best `limit - 1` of them; the weakest combo is filler that only has to fit.
- * - mode 'top5' (Smart #2): maximise the total of all `limit` combos.
+ * Show `limit` combos, maximizing the total of the best `limit - 1` of them;
+ * the weakest combo is filler that only has to fit.
  *
  * Scores are the same rank scores the generator displays, so the greedy pick is
  * always a candidate and the result is never weaker than it. Returns the same
  * shape as selectNonOverlappingCombos, displayScore included.
  */
-export function selectSmartCombos(combos, ownedHeroes, limit = 5, mode = 'top5') {
+export function selectSmartCombos(combos, ownedHeroes, limit = 5) {
   const ownedSet = ownedHeroes instanceof Set ? ownedHeroes : new Set(ownedHeroes);
   const eligible = (combos || []).filter(combo => combo?.heroes?.every(hero => ownedSet.has(hero)));
   const total = eligible.length;
@@ -439,10 +438,9 @@ export function selectSmartCombos(combos, ownedHeroes, limit = 5, mode = 'top5')
   }));
   scored.sort((left, right) => right.score - left.score);
 
-  const dropWeakest = mode !== 'top5';
   const valueOf = list => {
     const sum = list.reduce((acc, entry) => acc + entry.score, 0);
-    if (!dropWeakest || list.length < limit) return sum;
+    if (list.length < limit) return sum;
     return sum - Math.min(...list.map(entry => entry.score));
   };
 

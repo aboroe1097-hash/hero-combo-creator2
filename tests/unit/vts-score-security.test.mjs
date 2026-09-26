@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { createVtsScoreHandler, readVtsScoreRequest } from '../../functions/src/vts-score.js';
+import { DEAD_TROOP_COUNT_KEYS } from '../../js/dead-troops.js';
 
 const POWER_VALUES = Object.freeze({
   totalCastlePower: 1_112_473_195,
@@ -193,6 +194,32 @@ test('VtsScore POST verifies the target signup and stores no screenshot bytes', 
   assert.equal(stored.submittedByUid, 'member-uid');
   assert.equal(stored.baselineSubmissionRevision, 4);
   assert.doesNotMatch(JSON.stringify(stored), /image|base64|screenshot/i);
+});
+
+test('VtsScore stores dead troop counts and excludes that power from OCR correction flags', async () => {
+  const deadTroopCounts = Object.fromEntries(DEAD_TROOP_COUNT_KEYS.map((key) => [key, 0]));
+  deadTroopCounts.FootmenLofty = 1000;
+  const adjustedPower = {
+    ...POWER_VALUES,
+    totalCastlePower: POWER_VALUES.totalCastlePower + 8200,
+    troopPower: POWER_VALUES.troopPower + 8200,
+  };
+  const payload = fullScoreBody({
+    powerValues: adjustedPower,
+    deadTroopCounts,
+    ocr: { ...fullScoreBody().ocr, correctedFields: [] },
+  });
+  const parsed = readVtsScoreRequest(request('POST', payload));
+  assert.deepEqual(parsed.deadTroopCounts, deadTroopCounts);
+  assert.deepEqual(parsed.ocr.correctedFields, []);
+
+  const runtime = dependencies();
+  const response = responseRecorder();
+  await createVtsScoreHandler(runtime)(request('POST', payload), response);
+  assert.equal(response.statusCode, 200);
+  const saved = runtime.documents.get('boh_allstar/competition-11/raceScores/signup-uid');
+  assert.equal(saved.powerValues.totalCastlePower, adjustedPower.totalCastlePower);
+  assert.deepEqual(saved.deadTroopCounts, deadTroopCounts);
 });
 
 function competitionSchedule(seasonId, offsetsMs) {

@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import * as browser from '../../js/competition-growth.js';
 import {
+  COMPETITION_DEAD_TROOP_COUNT_KEYS,
   buildCompetitionBoardFromInputs,
   buildGrowthBoardProjection,
   buildPriorSeasonBaselineIndex,
@@ -53,7 +54,14 @@ function submission(uid, gameName, total, consent = true) {
 }
 
 function upload(uid, gameName, total, atMs) {
-  return { id: uid, schemaVersion: 2, gameName, powerValues: power(total), updatedAt: atMs };
+  return {
+    id: uid,
+    schemaVersion: 2,
+    gameName,
+    powerValues: power(total),
+    deadTroopCounts: Object.fromEntries(COMPETITION_DEAD_TROOP_COUNT_KEYS.map((key) => [key, 0])),
+    updatedAt: atMs,
+  };
 }
 
 test('the copied growth, ranking and projection match the browser builder', () => {
@@ -376,6 +384,19 @@ test('rows without an earlier upload fall back to sign-up stats', () => {
   });
   assert.equal(rows[0].baselineSource, 'signup');
   assert.equal(rows[0].growthPct, 20);
+});
+
+test('a prior upload without dead-troop counts falls back to the signup baseline', () => {
+  const prior = upload('prior', 'Alpha', 80_000_000, 1);
+  delete prior.deadTroopCounts;
+  const rows = buildServerGrowthRows({
+    submissions: [submission('a', 'Alpha', 100_000_000)],
+    raceScores: [upload('a', 'Alpha', 120_000_000, SCHEDULE.reuploadOpensAt + 1)],
+    priorSeasons: [{ seasonId: 'season-2026', raceScores: [prior] }],
+    window: SCHEDULE,
+  });
+  assert.equal(rows[0].baselineSource, 'signup');
+  assert.equal(rows[0].fields.totalCastlePower.baseline, 100_000_000);
 });
 
 test('the live board endpoint is the member vtsScore endpoint', async () => {

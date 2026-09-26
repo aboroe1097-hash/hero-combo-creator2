@@ -11,7 +11,9 @@ import {
   buildCompetitionBoardFromInputs,
   buildServerGrowthRows,
   competitionExactNameKey,
+  deadTroopPowerFromCounts,
   readCompetitionBoardHead,
+  readCompetitionDeadTroopCounts,
   readCompetitionBoardInputs,
 } from './competition-board.js';
 import {
@@ -56,6 +58,7 @@ const LEGACY_OCR_KEYS = Object.freeze([
   'requestId',
 ]);
 const REQUEST_KEYS = Object.freeze(['gameName', 'ocr', 'powerValues', 'seasonId', 'submissionUid']);
+const REQUEST_KEYS_WITH_DEAD_TROOPS = Object.freeze(['deadTroopCounts', ...REQUEST_KEYS]);
 const OCR_KEYS = Object.freeze(['confidence', 'correctedFields', 'requestId', 'sourceValues']);
 const POWER_KEYS = Object.freeze([...VTS_SCORE_POWER_FIELDS].sort());
 
@@ -252,10 +255,19 @@ function readConfidenceMap(value) {
 }
 
 function readCurrentVtsScoreRequest(body) {
-  if (!strictKeys(body, REQUEST_KEYS) || !strictKeys(body.ocr, OCR_KEYS)) {
+  const hasDeadTroopCounts = Object.prototype.hasOwnProperty.call(body || {}, 'deadTroopCounts');
+  const expectedKeys = hasDeadTroopCounts ? REQUEST_KEYS_WITH_DEAD_TROOPS : REQUEST_KEYS;
+  if (!strictKeys(body, expectedKeys) || !strictKeys(body.ocr, OCR_KEYS)) {
     throw new VtsScoreError(400, 'invalid_request', 'Invalid score request.');
   }
   const identity = readIdentity(body);
+  const deadTroopCounts = hasDeadTroopCounts
+    ? readCompetitionDeadTroopCounts(body.deadTroopCounts)
+    : null;
+  if (hasDeadTroopCounts && !deadTroopCounts) {
+    throw new VtsScoreError(400, 'invalid_request', 'Invalid dead troop counts.');
+  }
+  const deadTroopPower = deadTroopCounts ? deadTroopPowerFromCounts(deadTroopCounts) : 0;
   const powerValues = readPowerMap(body.powerValues, {
     required: true,
     label: 'power breakdown',
@@ -278,9 +290,15 @@ function readCurrentVtsScoreRequest(body) {
   ) {
     throw new VtsScoreError(400, 'invalid_request', 'Invalid OCR corrections.');
   }
-  const correctedFields = VTS_SCORE_POWER_FIELDS.filter(
-    (field) => powerValues[field] !== sourceValues[field]
-  );
+  const correctedFields = VTS_SCORE_POWER_FIELDS.filter((field) => {
+    const expected =
+      sourceValues[field] !== null &&
+      deadTroopPower &&
+      (field === 'totalCastlePower' || field === 'troopPower')
+        ? sourceValues[field] + deadTroopPower
+        : sourceValues[field];
+    return powerValues[field] !== expected;
+  });
   if (
     correctedFields.length !== correctedSet.size ||
     correctedFields.some((field) => !correctedSet.has(field))
@@ -291,6 +309,7 @@ function readCurrentVtsScoreRequest(body) {
     schemaVersion: VTS_SCORE_RECORD_SCHEMA_VERSION,
     ...identity,
     powerValues,
+    ...(deadTroopCounts ? { deadTroopCounts } : {}),
     ocr: Object.freeze({
       requestId: normalizedText(body.ocr.requestId, 160, 'Invalid OCR audit.'),
       sourceValues,
@@ -493,7 +512,11 @@ async function saveScore(dependencies, uid, input) {
     const revision = Number.isInteger(existing?.revision) ? existing.revision + 1 : 1;
     const scorePayload =
       input.schemaVersion === VTS_SCORE_RECORD_SCHEMA_VERSION
-        ? { powerValues: input.powerValues, ocr: input.ocr }
+        ? {
+            powerValues: input.powerValues,
+            ...(input.deadTroopCounts ? { deadTroopCounts: input.deadTroopCounts } : {}),
+            ocr: input.ocr,
+          }
         : { dragonPower: input.dragonPower, ocr: input.ocr };
     saved = {
       schemaVersion: input.schemaVersion,

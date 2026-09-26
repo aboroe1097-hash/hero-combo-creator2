@@ -17,15 +17,8 @@ import {
 } from './firebase.js';
 import { createVtsScoreI18n } from './vts-score-i18n.js';
 import { competitionExactNameKey } from './competition-growth.js';
-import {
-  DEAD_TROOP_CLASSES,
-  DEAD_TROOP_UNITS,
-  DEAD_TROOP_VARIANTS,
-  convertDeadTroopCountUnit,
-  deadTroopActualCount,
-  deadTroopRowPower,
-  deadTroopsTotalPower,
-} from './dead-troops.js';
+import { addDeadTroopPowerToStats, removeDeadTroopPowerFromStats } from './dead-troops.js';
+import { createDeadTroopsEditor } from './dead-troops-ui.js';
 import { buildSignupOcrAudit, mapOcrReviewToSignupFields } from './vts-score-signup-ocr.js';
 import {
   buildVtsScoreSubmission,
@@ -405,279 +398,27 @@ export async function bootVtsScore(options = {}) {
     renderDeadTroops();
   }
 
-  // Dead-troops helper: counts what dead troops return once they heal and adds
-  // that power on top of the entered Troop Power and Total. The counts survive
-  // re-renders, so re-reading a screenshot or switching language keeps them.
-  const deadTroopState = {
-    enabled: false,
-    unit: 'troops',
-    activeClass: 'footmen',
-    counts: new Map(),
-  };
   const deadTroopsMount = element('vtsScoreDeadTroops');
-
-  // Simple class marks based on the sword, horseshoe and target in the game UI.
-  const DEAD_TROOP_GLYPHS = {
-    cavalry:
-      '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v15a8 8 0 0 0 16 0V5l-4 2v13a4 4 0 0 1-8 0V7z"/><path d="M8 11h4m8 0h4M8 17h4m8 0h4"/></svg>',
-    footmen:
-      '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3l3 4-1 13-2 3-2-3-1-13zM8 21h16M16 23v6m-3 0h6"/></svg>',
-    archers:
-      '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="16" cy="16" r="11"/><circle cx="16" cy="16" r="6"/><circle cx="16" cy="16" r="1.5"/><path d="M16 2v5m0 18v5M2 16h5m18 0h5"/></svg>',
-  };
-
-  function deadTroopGlyph(className) {
-    const span = document.createElement('span');
-    span.className = 'vts-score-dead-troops__glyph';
-    span.innerHTML = DEAD_TROOP_GLYPHS[className] || DEAD_TROOP_GLYPHS.footmen;
-    return span;
-  }
-
-  function deadTroopEl(tag, className, text) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text !== undefined) node.textContent = text;
-    return node;
-  }
-
-  function deadTroopRows() {
-    const rows = [];
-    for (const className of DEAD_TROOP_CLASSES) {
-      for (const variant of DEAD_TROOP_VARIANTS) {
-        rows.push({
-          className,
-          variant,
-          count: deadTroopState.counts.get(`${className}:${variant}`) ?? '',
-        });
-      }
-    }
-    return rows;
-  }
+  const deadTroopsEditor = createDeadTroopsEditor(deadTroopsMount, {
+    i18n,
+    idPrefix: 'vtsDeadTroops',
+    getBaseValues: () => ({
+      troopPower: powerInput('troopPower')?.value,
+      totalCastlePower: powerInput('totalCastlePower')?.value,
+    }),
+  });
 
   function deadTroopsPower() {
-    return deadTroopState.enabled ? deadTroopsTotalPower(deadTroopRows(), deadTroopState.unit) : 0;
+    return deadTroopsEditor.getPower();
   }
 
   function updateDeadTroopReadouts() {
-    if (!deadTroopsMount) return;
-    for (const cell of deadTroopsMount.querySelectorAll('[data-dead-troop-cell]')) {
-      const { deadTroopClass: className, deadTroopVariant: variant } = cell.dataset;
-      const entered = deadTroopState.counts.get(`${className}:${variant}`) ?? '';
-      const power = deadTroopRowPower(entered, {
-        variant,
-        unit: deadTroopState.unit,
-      });
-      const troops = deadTroopActualCount(entered, deadTroopState.unit);
-      const readout = cell.querySelector('[data-dead-troop-power]');
-      if (readout) {
-        // Show what the number really is and what it returns: 20 in thousands
-        // reads as 20,000 troops · +164,000 power.
-        readout.textContent = troops
-          ? i18n.text('deadTroopsRowReadout', {
-              troops: i18n.formatNumber(troops),
-              power: i18n.formatNumber(power),
-            })
-          : '';
-      }
-    }
-    for (const className of DEAD_TROOP_CLASSES) {
-      const count = DEAD_TROOP_VARIANTS.filter(
-        (variant) =>
-          deadTroopActualCount(
-            deadTroopState.counts.get(`${className}:${variant}`),
-            deadTroopState.unit
-          ) > 0
-      ).length;
-      const indicator = deadTroopsMount.querySelector(
-        `[data-dead-troop-class-count="${className}"]`
-      );
-      if (indicator) indicator.textContent = `${count}/${DEAD_TROOP_VARIANTS.length}`;
-    }
-    const total = deadTroopsPower();
-    const totalEl = deadTroopsMount.querySelector('[data-dead-troop-total]');
-    if (totalEl) {
-      totalEl.textContent = i18n.formatNumber(total);
-    }
-    const previewEl = deadTroopsMount.querySelector('[data-dead-troop-preview]');
-    if (previewEl) {
-      const base = (field) => {
-        const value = Number(powerInput(field)?.value);
-        return Number.isFinite(value) ? value : 0;
-      };
-      previewEl.textContent = i18n.text('deadTroopsPreview', {
-        troop: i18n.formatNumber(base('troopPower') + total),
-        total: i18n.formatNumber(base('totalCastlePower') + total),
-      });
-    }
+    deadTroopsEditor.refresh();
   }
 
   function renderDeadTroops() {
     if (!deadTroopsMount || !state.review) return;
-    // Styles load with the helper instead of the initial page budget.
-    void import('../css/dead-troops.css');
-    const classLabels = {
-      cavalry: 'deadTroopsClassCavalry',
-      footmen: 'deadTroopsClassFootmen',
-      archers: 'deadTroopsClassArchers',
-    };
-    const variantLabels = {
-      lofty: 'deadTroopsVariantLofty',
-      t10e: 'deadTroopsVariantT10E',
-      t10: 'deadTroopsVariantT10',
-      t9e: 'deadTroopsVariantT9E',
-      t9: 'deadTroopsVariantT9',
-    };
-    const badgeText = (variant) =>
-      variant === 'lofty' ? 'T11' : variant.startsWith('t10') ? 'T10' : 'T9';
-    deadTroopsMount.replaceChildren();
-
-    const box = deadTroopEl('fieldset', 'vts-score-dead-troops__box');
-    box.append(deadTroopEl('legend', '', i18n.text('deadTroopsTitle')));
-    const toggle = deadTroopEl('label', 'vts-score-dead-troops__toggle');
-    const toggleInput = document.createElement('input');
-    toggleInput.type = 'checkbox';
-    toggleInput.checked = deadTroopState.enabled;
-    toggleInput.dataset.deadTroopToggle = '';
-    toggle.append(toggleInput, deadTroopEl('span', '', i18n.text('deadTroopsToggle')));
-    box.append(toggle);
-
-    const grid = deadTroopEl('div', 'vts-score-dead-troops__grid');
-    grid.hidden = !deadTroopState.enabled;
-    toggleInput.addEventListener('change', () => {
-      deadTroopState.enabled = toggleInput.checked;
-      grid.hidden = !deadTroopState.enabled;
-      updateDeadTroopReadouts();
-    });
-
-    const unitRow = deadTroopEl('div', 'vts-score-dead-troops__unit');
-    unitRow.append(
-      deadTroopEl('span', 'vts-score-dead-troops__unit-label', i18n.text('deadTroopsUnitLabel'))
-    );
-    for (const unit of DEAD_TROOP_UNITS) {
-      const option = deadTroopEl('label', 'vts-score-dead-troops__unit-option');
-      const radio = document.createElement('input');
-      radio.type = 'radio';
-      radio.name = 'vtsScoreDeadTroopUnit';
-      radio.value = unit;
-      radio.checked = deadTroopState.unit === unit;
-      radio.addEventListener('change', () => {
-        for (const [key, count] of deadTroopState.counts) {
-          deadTroopState.counts.set(
-            key,
-            convertDeadTroopCountUnit(count, deadTroopState.unit, unit)
-          );
-        }
-        deadTroopState.unit = unit;
-        for (const input of grid.querySelectorAll('[data-dead-troop-count]')) {
-          input.value = deadTroopState.counts.get(input.dataset.deadTroopCount) ?? '';
-        }
-        for (const suffix of grid.querySelectorAll('[data-dead-troop-unit]')) {
-          suffix.textContent = unit === 'troops' ? '' : unit === 'millions' ? 'M' : 'K';
-        }
-        updateDeadTroopReadouts();
-      });
-      const unitLabel =
-        unit === 'troops'
-          ? 'deadTroopsExact'
-          : unit === 'millions'
-            ? 'deadTroopsMillions'
-            : 'deadTroopsThousands';
-      option.append(radio, deadTroopEl('span', '', i18n.text(unitLabel)));
-      unitRow.append(option);
-    }
-    grid.append(unitRow);
-
-    const tabs = deadTroopEl('div', 'vts-score-dead-troops__tabs');
-    const panels = deadTroopEl('div', 'vts-score-dead-troops__panels');
-    for (const className of DEAD_TROOP_CLASSES) {
-      const tab = deadTroopEl('button', 'vts-score-dead-troops__tab');
-      tab.type = 'button';
-      tab.dataset.deadTroopTab = className;
-      tab.setAttribute('aria-pressed', String(deadTroopState.activeClass === className));
-      tab.append(
-        deadTroopGlyph(className),
-        deadTroopEl('span', '', i18n.text(classLabels[className]))
-      );
-      const count = deadTroopEl('small', 'vts-score-dead-troops__tab-count');
-      count.dataset.deadTroopClassCount = className;
-      tab.append(count);
-      tabs.append(tab);
-
-      const panel = deadTroopEl('div', 'vts-score-dead-troops__panel');
-      panel.dataset.deadTroopPanel = className;
-      panel.hidden = deadTroopState.activeClass !== className;
-      for (const variant of DEAD_TROOP_VARIANTS) {
-        const cell = deadTroopEl('div', 'vts-score-dead-troops__cell');
-        cell.dataset.deadTroopCell = '';
-        cell.dataset.deadTroopClass = className;
-        cell.dataset.deadTroopVariant = variant;
-        const inputId = `vtsDeadTroops-${className}-${variant}`;
-        const label = deadTroopEl('label', 'vts-score-dead-troops__cell-label');
-        label.htmlFor = inputId;
-        label.append(
-          deadTroopEl(
-            'span',
-            `vts-score-dead-troops__badge${variant.includes('e') ? ' is-enhanced' : ''}`,
-            badgeText(variant)
-          ),
-          deadTroopEl('span', 'vts-score-dead-troops__variant', i18n.text(variantLabels[variant]))
-        );
-        const entry = deadTroopEl('div', 'vts-score-dead-troops__entry');
-        const input = document.createElement('input');
-        input.id = inputId;
-        input.type = 'number';
-        input.min = '0';
-        input.step = 'any';
-        input.inputMode = 'decimal';
-        input.autocomplete = 'off';
-        input.placeholder = '0';
-        input.dataset.deadTroopCount = `${className}:${variant}`;
-        input.value = deadTroopState.counts.get(`${className}:${variant}`) ?? '';
-        input.addEventListener('input', () => {
-          deadTroopState.counts.set(`${className}:${variant}`, input.value);
-          updateDeadTroopReadouts();
-        });
-        const suffix = deadTroopEl(
-          'span',
-          'vts-score-dead-troops__suffix',
-          deadTroopState.unit === 'troops' ? '' : deadTroopState.unit === 'millions' ? 'M' : 'K'
-        );
-        suffix.dataset.deadTroopUnit = '';
-        entry.append(input, suffix);
-        const power = deadTroopEl('small', 'vts-score-dead-troops__row-power');
-        power.dataset.deadTroopPower = '';
-        cell.append(label, entry, power);
-        panel.append(cell);
-      }
-      tab.addEventListener('click', () => {
-        deadTroopState.activeClass = className;
-        for (const button of tabs.children)
-          button.setAttribute('aria-pressed', String(button === tab));
-        for (const item of panels.children) item.hidden = item !== panel;
-      });
-      panels.append(panel);
-    }
-    grid.append(tabs, panels);
-
-    const summary = deadTroopEl('div', 'vts-score-dead-troops__summary');
-    summary.append(deadTroopEl('span', '', i18n.text('deadTroopsPowerBack')));
-    const total = deadTroopEl('strong', 'vts-score-dead-troops__total');
-    total.dataset.deadTroopTotal = '';
-    summary.append(total);
-    grid.append(summary);
-    const explanation = deadTroopEl(
-      'p',
-      'vts-score-dead-troops__explanation',
-      i18n.text('deadTroopsTotal')
-    );
-    const preview = deadTroopEl('p', 'vts-score-dead-troops__preview');
-    preview.dataset.deadTroopPreview = '';
-    grid.append(explanation, preview);
-    box.append(grid);
-    deadTroopsMount.append(box);
-
-    setHidden(deadTroopsMount, false);
-    updateDeadTroopReadouts();
+    deadTroopsEditor.render();
   }
 
   function collectPowerValues() {
@@ -1097,6 +838,18 @@ export async function bootVtsScore(options = {}) {
     renderSignupState();
     if (existing) {
       state.signupSession.fillForm(signupPanel, existing);
+      const savedDeadTroopCounts = existing.stats?.deadTroopCounts;
+      const editableStats = savedDeadTroopCounts
+        ? removeDeadTroopPowerFromStats(existing.stats, savedDeadTroopCounts)
+        : null;
+      if (savedDeadTroopCounts && editableStats) {
+        signupDeadTroopsEditor.setActualCounts(savedDeadTroopCounts);
+        for (const field of ['troopPower', 'totalCastlePower']) {
+          const input = signupForm?.querySelector(`[data-boh-field="stats.${field}"]`);
+          if (input) input.value = String(editableStats[field]);
+        }
+        refreshSignupDeadTroops();
+      }
     } else if (!signupNameInput?.value.trim() && !signupNameTouched) {
       try {
         const currentUser = (options.getCurrentUser || getCurrentUser)() || state.authUser;
@@ -1260,225 +1013,18 @@ export async function bootVtsScore(options = {}) {
   // dead-troops helper as the score step: the counts entered here are added on
   // top of the Troop Power and Total Combat Power it saves.
   const signupDeadTroopsMount = element('vtsScoreSignupDeadTroops');
-  const signupDeadTroops = {
-    enabled: false,
-    unit: 'troops',
-    activeClass: 'footmen',
-    counts: new Map(),
-  };
-  let refreshSignupDeadTroops = () => {};
   const signupDeadField = (field) =>
     Number(signupForm?.querySelector(`[data-boh-field="stats.${field}"]`)?.value) || 0;
-
-  function signupDeadTroopsPower() {
-    if (!signupDeadTroops.enabled) return 0;
-    const rows = [];
-    for (const className of DEAD_TROOP_CLASSES) {
-      for (const variant of DEAD_TROOP_VARIANTS) {
-        rows.push({
-          variant,
-          count: signupDeadTroops.counts.get(`${className}:${variant}`) ?? '',
-        });
-      }
-    }
-    return deadTroopsTotalPower(rows, signupDeadTroops.unit);
-  }
-
-  function renderSignupDeadTroops() {
-    const mount = signupDeadTroopsMount;
-    if (!mount) return;
-    void import('../css/dead-troops.css');
-    const classLabels = {
-      cavalry: 'deadTroopsClassCavalry',
-      footmen: 'deadTroopsClassFootmen',
-      archers: 'deadTroopsClassArchers',
-    };
-    const variantLabels = {
-      lofty: 'deadTroopsVariantLofty',
-      t10e: 'deadTroopsVariantT10E',
-      t10: 'deadTroopsVariantT10',
-      t9e: 'deadTroopsVariantT9E',
-      t9: 'deadTroopsVariantT9',
-    };
-    const badgeText = (variant) =>
-      variant === 'lofty' ? 'T11' : variant.startsWith('t10') ? 'T10' : 'T9';
-    mount.replaceChildren();
-    const box = deadTroopEl('fieldset', 'vts-score-dead-troops__box');
-    box.append(deadTroopEl('legend', '', i18n.text('deadTroopsTitle')));
-
-    const toggle = deadTroopEl('label', 'vts-score-dead-troops__toggle');
-    const toggleInput = document.createElement('input');
-    toggleInput.type = 'checkbox';
-    toggleInput.checked = signupDeadTroops.enabled;
-    toggleInput.dataset.deadTroopToggle = '';
-    toggle.append(toggleInput, deadTroopEl('span', '', i18n.text('deadTroopsToggle')));
-    box.append(toggle);
-
-    const grid = deadTroopEl('div', 'vts-score-dead-troops__grid');
-    grid.hidden = !signupDeadTroops.enabled;
-    const unitRow = deadTroopEl('div', 'vts-score-dead-troops__unit');
-    unitRow.append(
-      deadTroopEl('span', 'vts-score-dead-troops__unit-label', i18n.text('deadTroopsUnitLabel'))
-    );
-    for (const unit of DEAD_TROOP_UNITS) {
-      const option = deadTroopEl('label', 'vts-score-dead-troops__unit-option');
-      const radio = document.createElement('input');
-      radio.type = 'radio';
-      radio.name = 'vtsScoreSignupDeadTroopUnit';
-      radio.value = unit;
-      radio.checked = signupDeadTroops.unit === unit;
-      radio.addEventListener('change', () => {
-        for (const [key, count] of signupDeadTroops.counts) {
-          signupDeadTroops.counts.set(
-            key,
-            convertDeadTroopCountUnit(count, signupDeadTroops.unit, unit)
-          );
-        }
-        signupDeadTroops.unit = unit;
-        for (const input of grid.querySelectorAll('[data-dead-troop-count]')) {
-          input.value = signupDeadTroops.counts.get(input.dataset.deadTroopCount) ?? '';
-        }
-        for (const suffix of grid.querySelectorAll('[data-dead-troop-unit]')) {
-          suffix.textContent = unit === 'troops' ? '' : unit === 'millions' ? 'M' : 'K';
-        }
-        refresh();
-      });
-      const unitLabel =
-        unit === 'troops'
-          ? 'deadTroopsExact'
-          : unit === 'millions'
-            ? 'deadTroopsMillions'
-            : 'deadTroopsThousands';
-      option.append(
-        radio,
-        deadTroopEl('span', '', i18n.text(unitLabel))
-      );
-      unitRow.append(option);
-    }
-    grid.append(unitRow);
-
-    const tabs = deadTroopEl('div', 'vts-score-dead-troops__tabs');
-    const panels = deadTroopEl('div', 'vts-score-dead-troops__panels');
-    for (const className of DEAD_TROOP_CLASSES) {
-      const tab = deadTroopEl('button', 'vts-score-dead-troops__tab');
-      tab.type = 'button';
-      tab.setAttribute('aria-pressed', String(signupDeadTroops.activeClass === className));
-      tab.append(deadTroopGlyph(className), deadTroopEl('span', '', i18n.text(classLabels[className])));
-      const count = deadTroopEl('small', 'vts-score-dead-troops__tab-count');
-      count.dataset.signupDeadTroopClassCount = className;
-      tab.append(count);
-      tabs.append(tab);
-
-      const panel = deadTroopEl('div', 'vts-score-dead-troops__panel');
-      panel.hidden = signupDeadTroops.activeClass !== className;
-      for (const variant of DEAD_TROOP_VARIANTS) {
-        const key = `${className}:${variant}`;
-        const inputId = `vtsSignupDeadTroops-${className}-${variant}`;
-        const cell = deadTroopEl('div', 'vts-score-dead-troops__cell');
-        const label = deadTroopEl('label', 'vts-score-dead-troops__cell-label');
-        label.htmlFor = inputId;
-        label.append(
-          deadTroopEl(
-            'span',
-            `vts-score-dead-troops__badge${variant.includes('e') ? ' is-enhanced' : ''}`,
-            badgeText(variant)
-          ),
-          deadTroopEl('span', 'vts-score-dead-troops__variant', i18n.text(variantLabels[variant]))
-        );
-        const entry = deadTroopEl('div', 'vts-score-dead-troops__entry');
-        const input = document.createElement('input');
-        input.id = inputId;
-        input.type = 'number';
-        input.min = '0';
-        input.step = 'any';
-        input.inputMode = 'decimal';
-        input.autocomplete = 'off';
-        input.placeholder = '0';
-        input.dataset.deadTroopCount = key;
-        input.value = signupDeadTroops.counts.get(key) ?? '';
-        input.addEventListener('input', () => {
-          signupDeadTroops.counts.set(key, input.value);
-          refresh();
-        });
-        const suffix = deadTroopEl(
-          'span',
-          'vts-score-dead-troops__suffix',
-          signupDeadTroops.unit === 'troops'
-            ? ''
-            : signupDeadTroops.unit === 'millions'
-              ? 'M'
-              : 'K'
-        );
-        suffix.dataset.deadTroopUnit = '';
-        entry.append(input, suffix);
-        const readout = deadTroopEl('small', 'vts-score-dead-troops__row-power');
-        readout.dataset.deadTroopPower = key;
-        cell.append(label, entry, readout);
-        panel.append(cell);
-      }
-      tab.addEventListener('click', () => {
-        signupDeadTroops.activeClass = className;
-        for (const button of tabs.children)
-          button.setAttribute('aria-pressed', String(button === tab));
-        for (const item of panels.children) item.hidden = item !== panel;
-      });
-      panels.append(panel);
-    }
-    grid.append(tabs, panels);
-
-    const summary = deadTroopEl('div', 'vts-score-dead-troops__summary');
-    summary.append(deadTroopEl('span', '', i18n.text('deadTroopsPowerBack')));
-    const total = deadTroopEl('strong', 'vts-score-dead-troops__total');
-    summary.append(total);
-    const preview = deadTroopEl('p', 'vts-score-dead-troops__preview');
-    grid.append(summary, preview);
-    box.append(grid);
-    mount.append(box);
-
-    function refresh() {
-      grid.hidden = !signupDeadTroops.enabled;
-      let sum = 0;
-      for (const readout of grid.querySelectorAll('[data-dead-troop-power]')) {
-        const [, variant] = readout.dataset.deadTroopPower.split(':');
-        const value = signupDeadTroops.counts.get(readout.dataset.deadTroopPower) ?? '';
-        const power = deadTroopRowPower(value, { variant, unit: signupDeadTroops.unit });
-        const troops = deadTroopActualCount(value, signupDeadTroops.unit);
-        if (signupDeadTroops.enabled) sum += power;
-        readout.textContent = troops
-          ? i18n.text('deadTroopsRowReadout', {
-              troops: i18n.formatNumber(troops),
-              power: i18n.formatNumber(power),
-            })
-          : '';
-      }
-      for (const className of DEAD_TROOP_CLASSES) {
-        const filled = DEAD_TROOP_VARIANTS.filter(
-          (variant) =>
-            deadTroopActualCount(
-              signupDeadTroops.counts.get(`${className}:${variant}`),
-              signupDeadTroops.unit
-            ) > 0
-        ).length;
-        const indicator = grid.querySelector(
-          `[data-signup-dead-troop-class-count="${className}"]`
-        );
-        if (indicator) indicator.textContent = `${filled}/${DEAD_TROOP_VARIANTS.length}`;
-      }
-      total.textContent = i18n.formatNumber(sum);
-      preview.textContent = i18n.text('deadTroopsPreview', {
-        troop: i18n.formatNumber(signupDeadField('troopPower') + sum),
-        total: i18n.formatNumber(signupDeadField('totalCastlePower') + sum),
-      });
-    }
-
-    toggleInput.addEventListener('change', () => {
-      signupDeadTroops.enabled = toggleInput.checked;
-      refresh();
-    });
-    refreshSignupDeadTroops = refresh;
-    setHidden(mount, false);
-    refresh();
-  }
+  const signupDeadTroopsEditor = createDeadTroopsEditor(signupDeadTroopsMount, {
+    i18n,
+    idPrefix: 'vtsSignupDeadTroops',
+    getBaseValues: () => ({
+      troopPower: signupDeadField('troopPower'),
+      totalCastlePower: signupDeadField('totalCastlePower'),
+    }),
+  });
+  const refreshSignupDeadTroops = () => signupDeadTroopsEditor.refresh();
+  const renderSignupDeadTroops = () => signupDeadTroopsEditor.render();
 
   renderSignupDeadTroops();
   signupForm?.addEventListener('input', (event) => {
@@ -1496,10 +1042,12 @@ export async function bootVtsScore(options = {}) {
     if (!['open', 'edit'].includes(currentPageState().signup)) return;
     const values = state.signupSession?.readForm(signupPanel) || {};
     // Dead-troops power lands on top of the baseline the registration stores.
-    const signupDead = signupDeadTroopsPower();
-    if (signupDead && values?.stats) {
-      values.stats.troopPower = (Number(values.stats.troopPower) || 0) + signupDead;
-      values.stats.totalCastlePower = (Number(values.stats.totalCastlePower) || 0) + signupDead;
+    if (values?.stats) {
+      // Keep the alive/dead split with the saved totals so editing a signup can
+      // restore the helper and subtract its old contribution before re-adding.
+      const deadTroopCounts = signupDeadTroopsEditor.getActualCounts();
+      values.stats.deadTroopCounts = deadTroopCounts;
+      Object.assign(values.stats, addDeadTroopPowerToStats(values.stats, deadTroopCounts));
     }
     // At least one slot per event is required by the stored document; say
     // which picker is empty before the write instead of a generic failure.
@@ -1592,6 +1140,7 @@ export async function bootVtsScore(options = {}) {
         seasonId: state.grant?.seasonId,
         player,
         powerValues: collectPowerValues(),
+        deadTroopCounts: deadTroopsEditor.getActualCounts(),
         review: state.review,
       });
     } catch (error) {

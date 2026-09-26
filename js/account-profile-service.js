@@ -107,8 +107,7 @@ export async function upgradeGuestWithGoogle({ confirmExistingAccount } = {}) {
   const guest = getCurrentUser() || (await ensureAnonymousAuth());
   if (!guest?.isAnonymous) throw new Error('The current session is already linked to an account.');
 
-  const { GoogleAuthProvider, linkWithPopup, signInWithCredential, signInWithPopup } =
-    await importFirebaseAuth();
+  const { GoogleAuthProvider, linkWithPopup, signInWithCredential } = await importFirebaseAuth();
   const provider = new GoogleAuthProvider();
   let result;
   try {
@@ -116,15 +115,16 @@ export async function upgradeGuestWithGoogle({ confirmExistingAccount } = {}) {
   } catch (error) {
     if (error?.code !== 'auth/credential-already-in-use') throw error;
     const credential = GoogleAuthProvider.credentialFromError?.(error) || error?.credential || null;
+    if (!credential) {
+      const credentialError = new Error('Google credential unavailable.');
+      credentialError.code = 'account/google-credential-unavailable';
+      throw credentialError;
+    }
 
     const confirmed = await confirmExistingGoogleAccountSwitch(confirmExistingAccount);
     if (!confirmed) return { user: guest, canceled: true, signedInExisting: false };
 
-    // Some Firebase popup errors omit the reusable credential. In that case,
-    // complete the existing-account flow with a normal Google popup here.
-    result = credential
-      ? await signInWithCredential(auth, credential)
-      : await signInWithPopup(auth, provider);
+    result = await signInWithCredential(auth, credential);
 
     return { user: result.user, signedInExisting: true };
   }

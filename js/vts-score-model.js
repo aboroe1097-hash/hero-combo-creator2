@@ -3,6 +3,7 @@ import {
   BOH_STATS_REQUIRED_POWER_FIELDS,
   normalizeBohPowerNumber,
 } from './all-star-boh-ocr.js';
+import { deadTroopPowerFromCounts, normalizeDeadTroopCounts } from './dead-troops.js';
 
 export const VTS_SCORE_VERSION = 2;
 export const VTS_SCORE_MAX_POWER = 100_000_000_000;
@@ -88,7 +89,7 @@ export function resolveVtsScorePlayer(players, gameNameInput) {
   return matches.length === 1 ? matches[0] : null;
 }
 
-export function buildVtsScoreSubmission({ seasonId, player, powerValues, review } = {}) {
+export function buildVtsScoreSubmission({ seasonId, player, powerValues, review, deadTroopCounts } = {}) {
   if (!player?.submissionUid || !player?.gameName) {
     throw new TypeError('Choose your exact game name from the signup list.');
   }
@@ -99,6 +100,12 @@ export function buildVtsScoreSubmission({ seasonId, player, powerValues, review 
   const sourceValues = {};
   const confidence = {};
   const correctedFields = [];
+  const savedDeadTroopCounts =
+    deadTroopCounts === undefined ? undefined : normalizeDeadTroopCounts(deadTroopCounts);
+  if (deadTroopCounts !== undefined && !savedDeadTroopCounts) {
+    throw new TypeError('Dead troop counts are invalid.');
+  }
+  const deadPower = savedDeadTroopCounts ? deadTroopPowerFromCounts(savedDeadTroopCounts) : 0;
   for (const field of VTS_SCORE_POWER_FIELDS) {
     const value = normalizeBohPowerNumber(powerValues?.[field], {
       max: VTS_SCORE_MAX_POWER,
@@ -113,13 +120,18 @@ export function buildVtsScoreSubmission({ seasonId, player, powerValues, review 
     sourceValues[field] = original;
     confidence[field] =
       typeof review.confidence?.[field] === 'number' ? review.confidence[field] : null;
-    if (value !== original) correctedFields.push(field);
+    const expectedFromScreenshot =
+      original !== null && deadPower && (field === 'troopPower' || field === 'totalCastlePower')
+        ? original + deadPower
+        : original;
+    if (value !== expectedFromScreenshot) correctedFields.push(field);
   }
   return {
     seasonId: String(seasonId || '').trim(),
     submissionUid: String(player.submissionUid),
     gameName: String(player.gameName),
     powerValues: confirmed,
+    ...(savedDeadTroopCounts ? { deadTroopCounts: savedDeadTroopCounts } : {}),
     ocr: {
       requestId: String(review.requestId),
       sourceValues,

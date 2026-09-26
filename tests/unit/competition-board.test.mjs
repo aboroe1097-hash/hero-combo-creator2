@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { register } from 'node:module';
 import test from 'node:test';
+import { DEAD_TROOP_COUNT_KEYS } from '../../js/dead-troops.js';
 
 // js/competition-board.js imports its stylesheet (Vite bundles it); Node gets
 // an empty module for .css instead.
@@ -255,6 +256,7 @@ test('a projection built by competition-growth renders without leaking private v
   const H = 3_600_000;
   const opens = Date.parse('2026-11-01T00:00:00Z');
   const stats = (total) => ({ totalCastlePower: total, troopPower: total });
+  const deadTroopCounts = Object.fromEntries(DEAD_TROOP_COUNT_KEYS.map((key) => [key, 0]));
   const rows = growth.buildCompetitionGrowthRows({
     submissions: [
       {
@@ -273,8 +275,20 @@ test('a projection built by competition-growth renders without leaking private v
       },
     ],
     raceScores: [
-      { submissionUid: 'a', schemaVersion: 2, powerValues: stats(1100), updatedAt: opens + H },
-      { submissionUid: 'b', schemaVersion: 2, powerValues: stats(9_876_543), updatedAt: opens + H },
+      {
+        submissionUid: 'a',
+        schemaVersion: 2,
+        powerValues: stats(1100),
+        deadTroopCounts,
+        updatedAt: opens + H,
+      },
+      {
+        submissionUid: 'b',
+        schemaVersion: 2,
+        powerValues: stats(9_876_543),
+        deadTroopCounts,
+        updatedAt: opens + H,
+      },
     ],
     window: { opensAt: opens, closesAt: opens + 48 * H },
   });

@@ -9,6 +9,7 @@ import {
   COMPETITION_EPIC_SLOTS,
   normalizeSlotSelection,
 } from './competition-schedule.js';
+import { normalizeDeadTroopCounts } from './dead-troops.js';
 
 export const BOH_SIGNUP_SCHEMA_VERSION = 1;
 export const BOH_PLAN_SCHEMA_VERSION = 1;
@@ -596,6 +597,13 @@ function timestampOrNull(value) {
  */
 export function normalizeBohSignup(input = {}, options = {}) {
   const rawStats = input.stats && typeof input.stats === 'object' ? input.stats : input;
+  const hasDeadTroopCounts = Object.prototype.hasOwnProperty.call(rawStats, 'deadTroopCounts');
+  const deadTroopCounts = hasDeadTroopCounts
+    ? normalizeDeadTroopCounts(rawStats.deadTroopCounts)
+    : null;
+  if (hasDeadTroopCounts && !deadTroopCounts) {
+    throw modelError('boh_signup_dead_troop_counts_invalid');
+  }
   const rawCommitment =
     input.commitment && typeof input.commitment === 'object' ? input.commitment : {};
   const gameName = normalizeBohName(
@@ -736,6 +744,7 @@ export function normalizeBohSignup(input = {}, options = {}) {
       ...(isBlankOptionalValue(rawStats.royalTechPower)
         ? {}
         : { royalTechPower: nonNegativeNumber(rawStats.royalTechPower) }),
+      ...(deadTroopCounts ? { deadTroopCounts } : {}),
       t9TroopTypes,
       t10TroopTypes,
       troopRoster,

@@ -700,7 +700,7 @@ export function generateSmartCombos() {
     GENERATOR_MIN_HEROES,
     'generatorMinHeroesMessage',
     `Select at least ${GENERATOR_MIN_HEROES} heroes to generate smart combos.`,
-    (selected) => selectSmartCombos(getSourceCombos(), selected, GENERATOR_MAX_COMBOS, 'top4')
+    (selected) => selectSmartCombos(getSourceCombos(), selected, GENERATOR_MAX_COMBOS)
   );
 }
 
