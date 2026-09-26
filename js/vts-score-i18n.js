@@ -602,6 +602,7 @@ const COMPETITION_COPY = Object.freeze({
     publicConsentHelp: 'Off by default. Turn it on only if you want your results visible to everyone.',
     previousComparisonReadyPublic:
       'Your previous-season data is ready. After you upload your current stats, your comparison will appear on the Growth Board below.',
+    previousComparisonNoMatch: 'No earlier uploads matched this name. If you uploaded under a different name before, tell an admin your old name.',
     previousComparisonReadyPrivate:
       'Your previous-season data is ready. It stays private unless you opt in to the public Growth Board.',
     phaseNameUnconfigured: 'Schedule to be announced',
@@ -641,7 +642,7 @@ const COMPETITION_COPY = Object.freeze({
     submitReupload: 'Submit growth re-upload',
     savedReupload: 'GROWTH RE-UPLOAD SAVED',
     growthBoardKicker: 'GROWTH BOARD',
-    growthBoardPending: 'The opt-in Growth Board refreshes automatically when results are ready.',
+    growthBoardPending: 'The opt-in Growth Board updates automatically as members upload.',
     statusEnterPin: 'Enter the VTS member PIN to continue.',
     statusChecking: 'Checking member access…',
     statusUnlocking: 'Unlocking…',
@@ -690,6 +691,7 @@ const COMPETITION_COPY = Object.freeze({
     publicConsentHelp: 'غير مفعّل افتراضيًا. فعّله فقط إذا أردت أن تظهر نتائجك للجميع.',
     previousComparisonReadyPublic:
       'بياناتك من الموسم السابق جاهزة. بعد رفع قيمك الحالية، ستظهر مقارنتك على لوحة النمو أدناه.',
+    previousComparisonNoMatch: 'لا توجد رفعات سابقة مطابقة لهذا الاسم. إن كنت قد رفعت باسم مختلف من قبل، أخبر أحد المسؤولين باسمك القديم.',
     previousComparisonReadyPrivate:
       'بياناتك من الموسم السابق جاهزة. ستبقى خاصة ما لم تختر مشاركة النتائج على لوحة النمو العامة.',
     phaseNameUnconfigured: 'سيُعلن الجدول لاحقًا',
@@ -727,7 +729,7 @@ const COMPETITION_COPY = Object.freeze({
     submitReupload: 'إرسال رفع قياس النمو',
     savedReupload: 'تم حفظ رفع قياس النمو',
     growthBoardKicker: 'لوحة النمو',
-    growthBoardPending: 'تُحدَّث لوحة النمو للموافقين تلقائيًا عند جاهزية النتائج.',
+    growthBoardPending: 'تُحدَّث لوحة النمو للموافقين تلقائيًا مع كل رفع من الأعضاء.',
     statusEnterPin: 'أدخل رمز PIN لأعضاء VTS للمتابعة.',
     statusChecking: 'جارٍ التحقق من صلاحية العضو…',
     statusUnlocking: 'جارٍ الفتح…',
@@ -778,6 +780,7 @@ const COMPETITION_COPY = Object.freeze({
     publicConsentHelp: 'Desactivado por defecto. Actívalo solo si quieres que todos vean tus resultados.',
     previousComparisonReadyPublic:
       'Tus datos de la temporada anterior están listos. Tras subir tus estadísticas actuales, la comparación aparecerá abajo.',
+    previousComparisonNoMatch: 'No hay subidas anteriores que coincidan con este nombre. Si subiste valores con otro nombre, indícale a un administrador tu nombre anterior.',
     previousComparisonReadyPrivate:
       'Tus datos de la temporada anterior están listos. Seguirán siendo privados si no aceptas aparecer en el tablero público.',
     phaseNameUnconfigured: 'Calendario por anunciar',
@@ -820,7 +823,7 @@ const COMPETITION_COPY = Object.freeze({
     savedReupload: 'NUEVA SUBIDA GUARDADA',
     growthBoardKicker: 'TABLERO DE CRECIMIENTO',
     growthBoardPending:
-      'El tablero público de quienes dieron su consentimiento se actualiza automáticamente cuando haya resultados.',
+      'El tablero de crecimiento con consentimiento se actualiza automáticamente con cada subida de los miembros.',
     statusEnterPin: 'Introduce el PIN de miembro VTS para continuar.',
     statusChecking: 'Comprobando el acceso de miembro…',
     statusUnlocking: 'Desbloqueando…',
@@ -871,6 +874,7 @@ const COMPETITION_COPY = Object.freeze({
     publicConsentHelp: 'Desativado por padrão. Ative somente se quiser que todos vejam seus resultados.',
     previousComparisonReadyPublic:
       'Seus dados da temporada anterior estão prontos. Depois de enviar os valores atuais, a comparação aparecerá abaixo.',
+    previousComparisonNoMatch: 'Não há envios anteriores com este nome. Se você enviou com outro nome antes, informe seu nome antigo a um administrador.',
     previousComparisonReadyPrivate:
       'Seus dados da temporada anterior estão prontos. Eles continuarão privados se você não optar pelo painel público.',
     phaseNameUnconfigured: 'Calendário a anunciar',
@@ -912,7 +916,7 @@ const COMPETITION_COPY = Object.freeze({
     savedReupload: 'NOVO ENVIO SALVO',
     growthBoardKicker: 'PAINEL DE CRESCIMENTO',
     growthBoardPending:
-      'O painel público de crescimento atualiza automaticamente quando os resultados estiverem prontos.',
+      'O painel de crescimento com consentimento é atualizado automaticamente a cada envio dos membros.',
     statusEnterPin: 'Digite o PIN de membro VTS para continuar.',
     statusChecking: 'Verificando o acesso de membro…',
     statusUnlocking: 'Desbloqueando…',
@@ -963,6 +967,7 @@ const COMPETITION_COPY = Object.freeze({
     publicConsentHelp: 'Désactivé par défaut. Activez-le uniquement si vous voulez rendre vos résultats publics.',
     previousComparisonReadyPublic:
       'Vos données de la saison précédente sont prêtes. Après l’envoi de vos valeurs actuelles, votre comparaison apparaîtra ci-dessous.',
+    previousComparisonNoMatch: 'Aucun envoi précédent ne correspond à ce nom. Si vous avez envoyé sous un autre nom, indiquez votre ancien nom à un administrateur.',
     previousComparisonReadyPrivate:
       'Vos données de la saison précédente sont prêtes. Elles resteront privées sans votre accord pour le tableau public.',
     phaseNameUnconfigured: 'Calendrier à venir',
@@ -1007,7 +1012,7 @@ const COMPETITION_COPY = Object.freeze({
     savedReupload: 'NOUVEL ENVOI ENREGISTRÉ',
     growthBoardKicker: 'TABLEAU DE PROGRESSION',
     growthBoardPending:
-      'Le tableau public des membres consentants se met à jour automatiquement quand les résultats sont prêts.',
+      'Le tableau de progression des membres consentants se met à jour automatiquement à chaque envoi.',
     statusEnterPin: 'Saisissez le code PIN membre VTS pour continuer.',
     statusChecking: 'Vérification de l’accès membre…',
     statusUnlocking: 'Déverrouillage…',
@@ -1058,6 +1063,7 @@ const COMPETITION_COPY = Object.freeze({
     publicConsentHelp: 'Standardmäßig aus. Nur aktivieren, wenn deine Ergebnisse für alle sichtbar sein sollen.',
     previousComparisonReadyPublic:
       'Deine Daten aus der letzten Saison sind bereit. Nach dem Upload deiner aktuellen Werte erscheint dein Vergleich unten.',
+    previousComparisonNoMatch: 'Frühere Hochladungen passen nicht zu diesem Namen. Wenn du früher unter einem anderen Namen hochgeladen hast, nenne einem Admin deinen alten Namen.',
     previousComparisonReadyPrivate:
       'Deine Daten aus der letzten Saison sind bereit. Ohne Zustimmung zur öffentlichen Tafel bleiben sie privat.',
     phaseNameUnconfigured: 'Zeitplan folgt',
@@ -1100,7 +1106,7 @@ const COMPETITION_COPY = Object.freeze({
     savedReupload: 'WACHSTUMS-UPLOAD GESPEICHERT',
     growthBoardKicker: 'WACHSTUMSTAFEL',
     growthBoardPending:
-      'Die öffentliche Wachstumstafel aktualisiert sich automatisch, sobald Ergebnisse bereitstehen.',
+      'Die Wachstumstafel der einwilligenden Mitglieder aktualisiert sich automatisch bei jedem Hochladen.',
     statusEnterPin: 'Gib die VTS-Mitglieder-PIN ein, um fortzufahren.',
     statusChecking: 'Mitgliederzugang wird geprüft…',
     statusUnlocking: 'Wird freigeschaltet…',

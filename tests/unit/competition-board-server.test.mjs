@@ -185,11 +185,39 @@ test('the server board ranks from earlier-season baselines and keeps private val
   assert.doesNotMatch(JSON.stringify(board), /Bravo/);
   assert.deepEqual(
     board.rows.map((row) => [row.gameName, row.baselineSource]),
-    [['Alpha', 'vtsscore-2026']]
+    [
+      ['Alpha', 'vtsscore-2026'],
+      // Unranked but consenting names stay listed with their history.
+      ['Charlie', 'signup'],
+    ]
+  );
+  const charlie = board.rows.find((row) => row.gameName === 'Charlie');
+  assert.equal(charlie.rank, null);
+  const alpha = board.rows.find((row) => row.gameName === 'Alpha');
+  assert.ok(
+    alpha.uploads.length >= 2,
+    'a row carries every upload its name ever had, across seasons'
   );
   assert.equal(board.notRanked, 1);
   assert.deepEqual(summary.baselineSources, { signup: 2, 'vtsscore-2026': 1, 'vtsscore-prior': 0 });
   assert.equal(summary.ranked, 2);
+});
+
+test('an ambiguous name never publishes another account\u2019s upload history', () => {
+  const inputs = boardInputs();
+  inputs.priorSeasons.push({
+    seasonId: 'season-2026',
+    raceScores: [upload('twin-1', 'Twin', 10_000_000, 1), upload('twin-2', 'Twin', 11_000_000, 2)],
+  });
+  inputs.submissions.push(submission('t', 'Twin', 30_000_000));
+  inputs.raceScores.push(upload('t', 'Twin', 40_000_000, SCHEDULE.reuploadOpensAt + 4000));
+  const twin = buildServerGrowthRows(inputs).find((row) => row.gameName === 'Twin');
+  assert.equal(twin.match.how, 'none');
+  assert.deepEqual(
+    twin.uploads.map((entry) => [entry.seasonId, entry.values.totalCastlePower]),
+    [['competition-12', 40_000_000]],
+    'only the member\u2019s own upload; the other accounts\u2019 history stays private'
+  );
 });
 
 function fakeDb(documents, collections = {}) {

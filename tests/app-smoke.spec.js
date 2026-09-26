@@ -2337,16 +2337,15 @@ test.describe('app smoke tabs', () => {
     await expect(cards.first()).not.toHaveClass(/generator-card-selected/);
     await expect(page.locator('#genSelectedCount')).toHaveClass(/hidden/);
 
-    // The generator opens on every season a live player can own; X8 stays off.
-    for (const season of ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2']) {
+    // The generator opens on every season a player can field, X8 included.
+    for (const season of ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8']) {
       await expect(page.locator(`#generatorSeasonFilters input[value="${season}"]`)).toBeChecked();
     }
-    await expect(page.locator('#generatorSeasonFilters input[value="X8"]')).not.toBeChecked();
 
     const initialSeasons = await page
       .locator('#generatorHeroes .hero-tag')
       .evaluateAll((nodes) => [...new Set(nodes.map((node) => node.textContent.trim()))].sort());
-    expect(initialSeasons).toEqual(['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2']);
+    expect(initialSeasons).toEqual(['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8']);
 
     await page.locator('#generatorTroopFilters .archers-pill').click();
     await expect(page.locator('#generatorTroopFilters input[value="All"]')).not.toBeChecked();
@@ -2378,6 +2377,14 @@ test.describe('app smoke tabs', () => {
       .locator('#generatorHeroes .hero-tag')
       .evaluateAll((nodes) => [...new Set(nodes.map((node) => node.textContent.trim()))].sort());
     expect(seasonsWithS2).toContain('S2');
+
+    // Turning X8 off drops its heroes; turning it back on restores them and the note.
+    await page.locator('#generatorSeasonFilters .x8-pill').click();
+    await expect(page.locator('#generatorSeasonFilters input[value="X8"]')).not.toBeChecked();
+    const seasonsWithoutX8 = await page
+      .locator('#generatorHeroes .hero-tag')
+      .evaluateAll((nodes) => [...new Set(nodes.map((node) => node.textContent.trim()))].sort());
+    expect(seasonsWithoutX8).not.toContain('X8');
 
     await page.locator('#generatorSeasonFilters .x8-pill').click();
     await expect(page.locator('#generatorSeasonFilters input[value="X8"]')).toBeChecked();

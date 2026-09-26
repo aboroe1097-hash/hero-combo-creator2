@@ -107,6 +107,26 @@ test('an unconfirmed name match falls back to the sign-up baseline', () => {
   }
 });
 
+test('the admin preview proposes the newest upload when one account uploaded more than once', () => {
+  const build = (first, second) =>
+    buildVtsScoreBaselineIndex([
+      upload('old-1', 'MalakAbo', first, first * 1000 + 1),
+      upload('old-1', 'MalakAbo', second, second * 1000 + 1),
+    ]);
+  for (const index of [build(800, 900), build(900, 800)]) {
+    const baseline = resolveBaseline(submission('u1', 'MalakAbo', 1_000), {
+      vtsScore2026ByName: index,
+      autoMatch: true,
+    });
+    assert.equal(baseline.match.status, 'matched');
+    assert.equal(
+      baseline.values.totalCastlePower,
+      900,
+      'the newest upload wins in either input order'
+    );
+  }
+});
+
 test('duplicate or ambiguous names are never auto-matched', () => {
   const index = buildVtsScoreBaselineIndex([
     upload('old-1', 'Twin', 800),
@@ -280,6 +300,8 @@ test('the public projection holds only consenting players and ranks them indepen
     [
       ['Public Winner', 1],
       ['Public Other', 2],
+      // Unranked but consenting names stay listed with their history.
+      ['Missing', null],
     ]
   );
   assert.equal(projection.rows[0].baselineSource, 'signup');
@@ -290,10 +312,14 @@ test('the public projection holds only consenting players and ranks them indepen
     { rank: 2, gameName: 'Public Other', growthPct: 5, growthAbs: 50 },
   ]);
   assert.equal(projection.notRanked, 1);
+  assert.ok(
+    projection.rows[0].uploads.some((upload) => upload.values.totalCastlePower === 1_300),
+    'a row carries every upload its name ever had'
+  );
   const serialized = JSON.stringify(projection);
   // Nothing a non-consenting player uploaded or signed up with leaks.
   assert.doesNotMatch(serialized, /1776777|1777777|1777\.777|177677/);
   assert.ok(projection.rows.every((row) => !row.gameName.startsWith('Private')));
-  assert.doesNotMatch(serialized, /baseline"|final"|submissionUid|consent|Missing/);
+  assert.doesNotMatch(serialized, /baseline"|final"|submissionUid|consent/);
   assert.doesNotMatch(serialized, /Private (Winner|Loser)[^}]*growth/);
 });

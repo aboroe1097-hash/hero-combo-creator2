@@ -138,15 +138,23 @@ test('a superadmin publishes from the admin planner, and can go back to the ship
   await page.waitForFunction(() => typeof window.switchDashSubtab === 'function');
   await page.evaluate(() => window.switchDashSubtab('combos'));
   const tool = page.locator('#dashCombosRoot');
-  await expect(tool.locator('.qrow').first()).toBeVisible({ timeout: 30000 });
   const live = tool.locator('#cp-liveText');
   await expect(live).toHaveText('Live: shipped file');
   await expect(tool.locator('#cp-publishBtn')).toBeVisible();
 
+  // The shipped list arrives fully planned, so the tray opens empty. View the
+  // placed lanes, unplace one, and let the draft fill the gap again.
+  await tool.locator('[data-tray="placed"]').click();
+  await expect(tool.locator('.qrow').first()).toBeVisible({ timeout: 30000 });
+  await tool.locator('.qrow [data-unplace]').first().click();
+
   await tool.locator('#cp-autoDraft').click();
   await tool.locator('#cp-publishBtn').click();
   await expect(tool.locator('#cp-summaryTitle')).toHaveText('Publish this ranking live?');
-  await expect(tool.locator('#cp-summaryText')).toContainText('placed');
+  // Every shipped lane is placed, so re-drafting the unplaced one reads as a move.
+  await expect(tool.locator('#cp-summaryText')).toContainText(
+    '1 moved compared with the shipped combos-db.js'
+  );
   await tool.locator('#cp-summarySave').click();
   await expect(tool.locator('#cp-status')).toContainText('lineups live');
   await expect(live).toContainText(/Live: published .* by you \(\d+ lineups\)/);

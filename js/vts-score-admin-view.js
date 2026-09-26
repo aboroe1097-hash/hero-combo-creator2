@@ -65,6 +65,7 @@ const NOT_RANKED_KEYS = Object.freeze({
  */
 export function createCompetitionGrowthSection(options = {}) {
   const t = options.t || ((key) => key);
+  const label = options.label || ((field) => field);
   const { num, signed } = options;
   const state = { snapshot: null, loading: false, failed: false };
   let host = null;
@@ -74,7 +75,33 @@ export function createCompetitionGrowthSection(options = {}) {
       ...state.snapshot,
       window: state.snapshot?.schedule,
       autoMatch: true,
+      seasonId: state.snapshot?.season || '',
     });
+
+  // Every upload this name ever had, newest first: the owner's window into
+  // previous members' values and what each sign-up maps to.
+  function historyDetails(row) {
+    const uploads = Array.isArray(row.uploads) ? row.uploads : [];
+    if (!uploads.length) return '';
+    const items = uploads
+      .map((upload) => {
+        const when =
+          upload.uploadedAt > 0
+            ? new Date(upload.uploadedAt).toISOString().slice(0, 10)
+            : upload.seasonId || '—';
+        const values = Object.entries(upload.values || {})
+          .map(
+            ([field, value]) =>
+              `<span class="vts-admin-muted">${esc(label(field))} ${esc(num(value))}</span>`
+          )
+          .join(' ');
+        return `<li><strong>${esc(when)}</strong> ${values}</li>`;
+      })
+      .join('');
+    return `<details class="vts-admin-history"><summary>${esc(
+      t('c12SourceVtsScorePrior')
+    )}</summary><ul>${items}</ul></details>`;
+  }
 
   function matchCell(row) {
     const match = row.match;
@@ -91,7 +118,7 @@ export function createCompetitionGrowthSection(options = {}) {
     const total = row.fields.totalCastlePower;
     const reason = NOT_RANKED_KEYS[row.notRankedReason];
     const pct = row.growthPct === null ? '—' : `${signed(row.growthPct, 2)}%`;
-    return `<tr><td>${row.rank ? `${row.rank}${row.tied ? '=' : ''}` : '—'}</td><th scope="row"><strong>${esc(row.gameName)}</strong>${reason ? `<br><span class="vts-admin-muted">${esc(t(reason))}</span>` : ''}</th><td><span class="vts-admin-chip">${esc(
+    return `<tr><td>${row.rank ? `${row.rank}${row.tied ? '=' : ''}` : '—'}</td><th scope="row"><strong>${esc(row.gameName)}</strong>${reason ? `<br><span class="vts-admin-muted">${esc(t(reason))}</span>` : ''}${historyDetails(row)}</th><td><span class="vts-admin-chip">${esc(
       row.baselineSource === 'vtsscore-2026'
         ? t('c12SourceVtsScore')
         : row.baselineSource === 'vtsscore-prior'
@@ -177,6 +204,7 @@ export function createVtsScoreAdminView(options = {}) {
         setStatus,
         num: (value, decimals) => num(value, decimals),
         signed: (value, decimals) => signed(value, decimals),
+        label: categoryLabel,
       })
     : null;
   let lastSnapshot = null;

@@ -2,6 +2,13 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.6.0 - 2026-09-26
+
+- The Combos Planner's queued X8 catch-up lanes are all placed in the main combo ranking now: `js/combos-db.js` ships the finished placements as the base list, and the Combos Generator, the hero season filters and Research open with X8 selected by default alongside the other seasons.
+- The VtsScore Growth Board is no longer tied to results. It builds from live uploads in every phase and refreshes as members upload, and every opted-in name lists every upload it ever had — date and values, newest first — including names without a valid re-upload.
+- Previous scores are matched by in-game name first. Uploads from before accounts existed carry no uid and used to be skipped; now the name is the join and the account uid is only a last resort for names that changed. When nothing matches a saved, opting-in member's name, the form asks for the name they uploaded under before (a rename or a new account).
+- VTS Admin → VtsScore is the window into previous members' values: the Competition #12 table loads every earlier VtsScore season, and each sign-up row shows the full upload history it maps to, values included. **Deploy the vtsScore function after this release.** The OCR Worker is unchanged.
+
 ## 16.5.20 - 2026-09-26
 
 - Competition #12 now builds the public growth board directly from saved registrations and current and earlier VtsScore uploads whenever results are available. No admin publish or scheduled board write is needed. Only submitted registrations whose members opted into public sharing appear, and their ranks are recalculated among those members. Legacy published board and manual match documents are no longer readable from the client.

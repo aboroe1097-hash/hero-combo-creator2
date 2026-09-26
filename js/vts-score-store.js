@@ -82,9 +82,10 @@ function docsWithUid(snapshot) {
 
 /**
  * Everything the Competition #12 growth table needs: the competition season's
- * sign-ups and re-uploads, last season's VtsScore uploads (the proposed
- * baselines) and the schedule. This read-only admin table previews the 2026
- * baseline; the public board uses all prior seasons through the Function.
+ * sign-ups and re-uploads, every earlier season's VtsScore uploads (the name
+ * matches and the full history the table shows) and the schedule. This
+ * read-only admin window is where the owner can look at previous members'
+ * values and how current sign-ups map to them.
  */
 export async function loadCompetitionGrowthSnapshot(seasonId) {
   const season = normalizeVtsScoreSeasonId(seasonId) || (await loadVtsScoreActiveSeason());
@@ -93,18 +94,26 @@ export async function loadCompetitionGrowthSnapshot(seasonId) {
   }
   const { db, firestore } = await adminContext();
   const { collection, doc, getDoc, getDocs } = firestore;
-  const [submissions, raceScores, baselineRaceScores, schedule] = await Promise.all([
+  const [submissions, raceScores, seasonDocs, schedule] = await Promise.all([
     getDocs(collection(db, getVtsScoreSubmissionsPath(season))),
     getDocs(collection(db, getVtsScoreRaceScoresPath(season))),
-    getDocs(collection(db, getVtsScoreRaceScoresPath(COMPETITION_BASELINE_SEASON))),
+    getDocs(collection(db, 'boh_allstar')),
     getDoc(doc(db, COMPETITION_SCHEDULE_DOC_PATH)),
   ]);
+  const priorSeasons = seasonDocs.docs
+    .map((entry) => normalizeVtsScoreSeasonId(entry.id))
+    .filter((id) => id && id !== season);
+  const priorScores = await Promise.all(
+    priorSeasons.map((id) => getDocs(collection(db, getVtsScoreRaceScoresPath(id))))
+  );
   const scheduleData = schedule?.exists?.() ? schedule.data() : null;
   return {
     season,
     submissions: docsWithUid(submissions),
     raceScores: docsWithUid(raceScores),
-    baselineRaceScores: docsWithUid(baselineRaceScores),
+    baselineRaceScores: priorSeasons.flatMap((id, index) =>
+      docsWithUid(priorScores[index]).map((record) => ({ seasonId: id, ...record }))
+    ),
     schedule: scheduleData?.seasonId === season ? scheduleData : null,
   };
 }

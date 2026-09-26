@@ -277,11 +277,19 @@ export async function bootVtsScore(options = {}) {
   function renderPreviousComparisonHint() {
     const hint = element('vtsScoreComparisonHint');
     if (!hint) return;
-    if (!savedComparisonKey() || state.previousComparisonCheckedKey !== savedComparisonKey() || !state.previousComparisonReady) {
+    const key = savedComparisonKey();
+    if (!key || state.previousComparisonCheckedKey !== key) {
       setHidden(hint, true);
       return;
     }
-    hint.textContent = i18n.text('previousComparisonReadyPublic');
+    if (state.previousComparisonReady) {
+      hint.textContent = i18n.text('previousComparisonReadyPublic');
+      setHidden(hint, false);
+      return;
+    }
+    // No safe prior match: the name may predate a rename or a new account, so
+    // ask for the name they uploaded under before.
+    hint.textContent = i18n.text('previousComparisonNoMatch');
     setHidden(hint, false);
   }
 
@@ -657,11 +665,7 @@ export async function bootVtsScore(options = {}) {
     } finally {
       clearTimeout(state.growthBoardRefreshTimer);
       state.growthBoardRefreshTimer = setTimeout(() => {
-        if (
-          document.visibilityState !== 'hidden' &&
-          ['resultsPending', 'winners'].includes(state.phase) &&
-          !section.hidden
-        ) {
+        if (document.visibilityState !== 'hidden' && !section.hidden) {
           void mountGrowthBoard();
         }
       }, 60_000);

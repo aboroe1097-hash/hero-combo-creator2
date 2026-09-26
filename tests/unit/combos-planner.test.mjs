@@ -58,10 +58,8 @@ test('a placed X8 lane moves above its anchor and the S0-X2 order is untouched',
   );
   const out = entriesOf(buildComboSource(parsed, { order, added: [] }, { heroNames, isX8Lane }));
   const before = entriesOf(source);
-  const lineOf = (combo) =>
-    before.find((l) => l.includes(`${combo.heroes[0]}`) && l.includes(`${combo.heroes[2]}`));
-  const laneLine = lineOf(lane);
-  const anchorLine = before[10];
+  const laneLine = lane.line.trim();
+  const anchorLine = anchor.line.trim();
   assert.equal(out.indexOf(laneLine), out.indexOf(anchorLine) - 1);
   const baseLines = (lines) =>
     lines.filter(
@@ -151,9 +149,15 @@ test('reordering the S0-X2 list writes the new order and leaves every comment al
   const before = entriesOf(source);
   const after = entriesOf(out);
   assert.equal(after.length, before.length);
-  assert.equal(after[0], before[1]);
-  assert.equal(after[1], before[0]);
-  assert.equal(after[2], before[2]);
+  // Anchored X8 lanes travel with their anchor, so compare the S0-X2 order on
+  // its own: the first two lineups swap and every later one stays put.
+  const baseLines = (() => {
+    const known = new Set(view.base.map((b) => b.line.trim()));
+    return (lines) => lines.filter((line) => known.has(line));
+  })();
+  const beforeBase = baseLines(before);
+  const afterBase = baseLines(after);
+  assert.deepEqual(afterBase, [beforeBase[1], beforeBase[0], ...beforeBase.slice(2)]);
   // Every comment and blank line stays exactly where it was.
   assert.deepEqual(entryTextLines(out), entryTextLines(source));
 });
@@ -184,8 +188,10 @@ test('an edited S0-X2 line keeps its note and writes the file style', () => {
     { order: currentOrder(), added: [], baseEdits: [{ id: first.id, heroes, skin: '123' }] },
     { heroNames, isX8Lane }
   );
-  const line = entriesOf(out)[0];
-  assert.ok(line.startsWith(`{ heroes: ['Beowulf', 'Ramses II', 'Theodora'], skin: '123'`));
+  const line = entriesOf(out).find((entry) =>
+    entry.startsWith(`{ heroes: ['Beowulf', 'Ramses II', 'Theodora'], skin: '123'`)
+  );
+  assert.ok(line, 'the edited S0-X2 line is written');
   assert.ok(line.includes(", note: 'Top skin-mode lane."), 'the note stays on the line');
   assert.deepEqual(entryTextLines(out), entryTextLines(source));
 });
@@ -291,10 +297,8 @@ test('a removed lineup leaves the file, and the lane it anchored falls back to t
     o.id === lane.id ? { id: lane.id, anchor: anchor.id } : o
   );
   const before = entriesOf(source);
-  const anchorLine = before[3];
-  const laneLine = before.find(
-    (line) => line.includes(`${lane.heroes[0]}`) && line.includes(`${lane.heroes[2]}`)
-  );
+  const anchorLine = anchor.line.trim();
+  const laneLine = lane.line.trim();
   const out = buildComboSource(
     parsed,
     { order, added: [], removed: [anchor.id] },
@@ -309,9 +313,7 @@ test('a removed lineup leaves the file, and the lane it anchored falls back to t
 test('a removed X8 lineup leaves the file, and an unknown id is refused', () => {
   const lane = view.x8[view.x8.length - 1];
   const before = entriesOf(source);
-  const laneLine = before.find(
-    (line) => line.includes(`${lane.heroes[0]}`) && line.includes(`${lane.heroes[2]}`)
-  );
+  const laneLine = lane.line.trim();
   const out = buildComboSource(
     parsed,
     { order: currentOrder(), added: [], removed: [lane.id] },
@@ -358,10 +360,8 @@ test('a placed X8 lane stays above its S0-X2 lineup when that lineup moves', () 
   [baseOrder[5], baseOrder[6]] = [baseOrder[6], baseOrder[5]];
   const out = buildComboSource(parsed, { order, added: [], baseOrder }, { heroNames, isX8Lane });
   const before = entriesOf(source);
-  const laneLine = before.find(
-    (line) => line.includes(`${lane.heroes[0]}`) && line.includes(`${lane.heroes[2]}`)
-  );
-  const anchorLine = before[5];
+  const laneLine = lane.line.trim();
+  const anchorLine = anchor.line.trim();
   const after = entriesOf(out);
   assert.equal(after.indexOf(laneLine) + 1, after.indexOf(anchorLine));
   assert.equal(heroesIn(after[0]), heroesIn(before[0]));

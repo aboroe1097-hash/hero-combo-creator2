@@ -1,10 +1,20 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.5.20";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.0";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.6.0",
+    "date": "2026-09-26",
+    "highlights": [
+      "The Combos Planner's queued X8 catch-up lanes are all placed in the main combo ranking now: `js/combos-db.js` ships the finished placements as the base list, and the Combos Generator, the hero season filters and Research open with X8 selected by default alongside the other seaso…",
+      "The VtsScore Growth Board is no longer tied to results. It builds from live uploads in every phase and refreshes as members upload, and every opted-in name lists every upload it ever had — date and values, newest first — including names without a valid re-upload.",
+      "Previous scores are matched by in-game name first. Uploads from before accounts existed carry no uid and used to be skipped; now the name is the join and the account uid is only a last resort for names that changed. When nothing matches a saved, opting-in member's name, the form…",
+      "VTS Admin → VtsScore is the window into previous members' values: the Competition #12 table loads every earlier VtsScore season, and each sign-up row shows the full upload history it maps to, values included. **Deploy the vtsScore function after this release.** The OCR Worker is…"
+    ]
+  },
   {
     "version": "16.5.20",
     "date": "2026-09-26",
@@ -81,17 +91,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "**The War Council.** After the third, sixth and ninth wave — every third wave in Endless War — pick one of three boons for the rest of the run: Ember Heart (fire burns 40% harder), Frost Grip (ice slows bite deeper and hold longer), Swift Wings (faster movement, shorter dash coo…",
       "**Elemental reactions.** Ice onto a burning foe **shatters** it (bonus damage, armour ignored, the burn is consumed); fire onto a slowed foe **melts** it (double burn, slow cleared); three slows in a row **deep-freeze** a foe in place for a moment; and a burning foe that dies **…",
       "Wing swaps now sit on a 2.5-second cooldown and the wing buttons dim while it runs, so committing to an element is a decision rather than a toggle."
-    ]
-  },
-  {
-    "version": "16.5.11",
-    "date": "2026-09-25",
-    "highlights": [
-      "**Velo aims where you aim.** Keyboard and mouse players now fire in the direction they aim — the mouse aims at the point under the cursor — instead of the old auto-lock on the nearest enemy. Touch players keep the assist on purpose: shots still bend to a foe inside a narrow cone…",
-      "**Six enemy roles make waves read as armies.** The shieldwall blocks bolts that hit its front but not splash, fire or a flank; the skirmisher kites and shoots; the saboteur hunts your towers and ignores the stronghold while any tower stands; the herald buffs nearby foes; the hau…",
-      "**Wave omens.** From the third wave on (every wave in Endless War), choose the omen the next wave carries, or take none: Iron Tide (every foe armoured, +60% gold), Fog of War (+40% score), Blood Moon (faster foes, slower chains, +50% score) or Mirror Ice (ice barely bites, +80% …",
-      "**Feats.** Six named one-off challenges — Wingborne, Ashfall, Cold Calculus, Untouched, Warlord's Bane and Architect — are tracked in the browser, listed on the title and results cards, and announced the moment one is earned.",
-      "Fixed: on phones under 560 px wide the tower build picker was pushed below the arena and clipped; it now sits above the thumb controls where it belongs."
     ]
   }
 ].map((release) =>
