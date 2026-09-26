@@ -10,6 +10,7 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-09-26",
     "highlights": [
       "The VtsScore power form has a dead-troops helper. Members whose troops died ask \"I have dead troops to count\", enter each Lofty / Footmen / Cavalry / Archer tier (T10 Enhanced, T10, T9 Enhanced, T9) in thousands or millions, and see the power each row returns — Lofty 8.2 per tro…",
+      "Hero info panels start hidden: the \"Show Hero Info Panels\" toggle is off by default now, and each visitor's choice is still remembered.",
       "Smart Generate joins the Combo Generator. Unlike Generate Best Combos, which takes the greedily highest lineups, Smart #1 shows five lineups whose best four total as high as possible (the fifth only has to fit) and Smart #2 maximises the total of all five, which can leave the ro…",
       "The VtsScore Growth Board stays hidden until VtsScore is unlocked instead of loading for every visitor.",
       "The VTS Admin growth preview reads earlier seasons correctly again: the season parents are not documents, so a plain listing saw no prior seasons and every baseline fell back to sign-up values. It now reads the uploads as a collection group and falls back to the 2026 baseline se…"
