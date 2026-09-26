@@ -44,6 +44,24 @@ export const COMPETITION_GROWTH_FIELDS = Object.freeze([
   'artifactPower',
   'royalTechPower',
 ]);
+export const COMPETITION_DEAD_TROOP_COUNT_KEYS = Object.freeze([
+  'FootmenLofty',
+  'FootmenT10',
+  'FootmenT10Enhanced',
+  'FootmenT9',
+  'FootmenT9Enhanced',
+  'CavalryLofty',
+  'CavalryT10',
+  'CavalryT10Enhanced',
+  'CavalryT9',
+  'CavalryT9Enhanced',
+  'ArchersLofty',
+  'ArchersT10',
+  'ArchersT10Enhanced',
+  'ArchersT9',
+  'ArchersT9Enhanced',
+]);
+const DEAD_TROOP_MAX_COUNT = 1_000_000_000_000;
 
 export class CompetitionBoardError extends Error {
   constructor(status, code, message) {
@@ -100,6 +118,33 @@ export function readCompetitionPowerValues(source) {
   return values.totalCastlePower > 0 ? values : null;
 }
 
+export function readCompetitionDeadTroopCounts(source) {
+  if (!source || typeof source !== 'object' || Array.isArray(source)) return null;
+  const keys = Object.keys(source);
+  if (
+    keys.length !== COMPETITION_DEAD_TROOP_COUNT_KEYS.length ||
+    keys.some((key) => !COMPETITION_DEAD_TROOP_COUNT_KEYS.includes(key))
+  ) {
+    return null;
+  }
+  const counts = {};
+  for (const key of COMPETITION_DEAD_TROOP_COUNT_KEYS) {
+    const value = source[key];
+    if (!Number.isSafeInteger(value) || value < 0 || value > DEAD_TROOP_MAX_COUNT) return null;
+    counts[key] = value;
+  }
+  return counts;
+}
+
+export function deadTroopPowerFromCounts(source) {
+  const counts = readCompetitionDeadTroopCounts(source);
+  if (!counts) return null;
+  return COMPETITION_DEAD_TROOP_COUNT_KEYS.reduce((total, key) => {
+    const multiplier = key.endsWith('Lofty') ? 8.2 : /T10/u.test(key) ? 7.5 : 7;
+    return total + Math.round(counts[key] * multiplier);
+  }, 0);
+}
+
 function signupValues(submission) {
   if (!submission || typeof submission !== 'object') return null;
   return (
@@ -150,6 +195,7 @@ export function buildPriorSeasonBaselineIndex(priorSeasons = []) {
         submissionUid: recordUid(record),
         gameName,
         values,
+        deadTroopCounts: readCompetitionDeadTroopCounts(record?.deadTroopCounts),
         uploadedAt: Number.isFinite(uploadedAt) ? uploadedAt : 0,
       });
     }
@@ -173,18 +219,22 @@ export function buildPriorSeasonBaselineIndex(priorSeasons = []) {
     const accounts = new Set(
       list.map((upload) => upload.submissionUid).filter((submissionUid) => submissionUid)
     );
-    const unique = accounts.size <= 1;
-    const candidates = [];
+    const latestByAccount = [];
     const seen = new Set();
     for (const upload of list) {
       const identity = upload.submissionUid || `${upload.seasonId}:${upload.uploadedAt}`;
       if (seen.has(identity)) continue;
       seen.add(identity);
-      candidates.push(upload);
+      latestByAccount.push(upload);
     }
+    // A historical power value can be a growth baseline only when its
+    // alive+temporarily-dead component is recorded. If the latest upload for
+    // this account predates that breakdown, use the current signup baseline.
+    const candidates = latestByAccount.filter((upload) => upload.deadTroopCounts);
+    const candidate = accounts.size <= 1 ? candidates[0] || null : null;
     byName.set(key, {
-      status: unique ? 'unique' : 'ambiguous',
-      candidate: unique ? list[0] : null,
+      status: accounts.size > 1 ? 'ambiguous' : 'unique',
+      candidate,
       candidates,
       uploads: list,
     });
@@ -203,10 +253,11 @@ export function resolveServerBaseline(player, { index, contestedKeys } = {}) {
   // The in-game name is the match: uploads from before accounts existed only
   // carry a name. The uid is a last resort for records whose name changed.
   const exactName = entry?.status === 'unique' && !contested ? entry.candidate : null;
-  const sameAccount = exactName ? null : index?.byUid?.get(recordUid(player)) || null;
+  const uidUpload = exactName ? null : index?.byUid?.get(recordUid(player)) || null;
+  const sameAccount = uidUpload?.deadTroopCounts ? uidUpload : null;
   const chosen = exactName || sameAccount;
   const match = {
-    status: chosen ? 'matched' : entry ? 'ambiguous' : 'none',
+    status: chosen ? 'matched' : entry?.status === 'ambiguous' ? 'ambiguous' : 'none',
     decision: chosen ? 'vtsscore' : 'signup',
     how: exactName ? 'exact-name' : sameAccount ? 'uid' : 'none',
   };
@@ -243,7 +294,9 @@ export function computeGrowthRow(player, { baseline, raceScore = null, window = 
   const consent = player?.commitment?.publicComparisonConsent === true;
   const baselineValues = baseline?.values || null;
   const finalValues =
-    raceScore && Number(raceScore.schemaVersion) === 2
+    raceScore &&
+    Number(raceScore.schemaVersion) === 2 &&
+    readCompetitionDeadTroopCounts(raceScore.deadTroopCounts)
       ? readCompetitionPowerValues(raceScore.powerValues)
       : null;
   let notRankedReason = null;

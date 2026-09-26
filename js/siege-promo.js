@@ -8,12 +8,7 @@
 // loads it lazily once the page is idle.
 
 import '../css/siege-promo.css';
-import {
-  calloutDismissed,
-  dailySiegeFor,
-  dismissCallout,
-  formatDailyNote,
-} from './siege-daily.js';
+import { calloutDismissed, dailySiegeFor, dismissCallout, formatDailyNote } from './siege-daily.js';
 
 export { CALLOUT_KEY, CALLOUT_VERSION, calloutDismissed, dismissCallout } from './siege-daily.js';
 
@@ -71,7 +66,7 @@ export function mountSiegeFeature(container, { getCopy }) {
 
   const actions = element('div', 'siege-feature-actions');
   const play = element('a', 'siege-feature-play');
-  play.href = EDEN_URL;
+  play.href = SIEGE_URL;
   play.dataset.i18n = 'arcadeSiegePlay';
   const dailyLink = element('a', 'siege-feature-daily-link');
   dailyLink.href = `${SIEGE_URL}?mode=daily`;
@@ -116,8 +111,8 @@ export function mountSiegeCallout({ getCopy, storage } = {}) {
   const body = element('span', 'siege-callout-body', copy.siegeCalloutBody || '');
   text.append(title, body);
 
-  const play = element('a', 'siege-callout-play', copy.siegeCalloutPlay || 'Play now');
-  play.href = SIEGE_URL;
+  const play = element('a', 'siege-callout-play', copy.siegeCalloutPlay || 'Go to Eden');
+  play.href = EDEN_URL;
   play.addEventListener('click', () => dismissCallout(storage));
 
   const close = element('button', 'siege-callout-close');

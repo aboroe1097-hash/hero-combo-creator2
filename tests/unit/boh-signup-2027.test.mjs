@@ -25,6 +25,7 @@ import {
   validateBohSignupDocument,
   writeBohSignupFormValues,
 } from '../../js/boh-signup-document.js';
+import { DEAD_TROOP_COUNT_KEYS } from '../../js/dead-troops.js';
 import { VTS_SCORE_COPY_KEYS, VTS_SCORE_LANGUAGES } from '../../js/vts-score-i18n.js';
 import {
   availableLanguages,
@@ -147,6 +148,25 @@ test('a filled signup round-trips into the document firestore.rules pins', () =>
   assert.equal(
     getBohSignupDocumentPath(SEASON, ACCOUNT),
     `boh_allstar/${SEASON}/submissions/${ACCOUNT}`
+  );
+});
+
+test('dead troop counts persist separately from the competition power totals', () => {
+  const deadTroopCounts = Object.fromEntries(DEAD_TROOP_COUNT_KEYS.map((key) => [key, 0]));
+  deadTroopCounts.FootmenLofty = 1000;
+  const values = signupValues();
+  values.stats.deadTroopCounts = deadTroopCounts;
+
+  const document = build({ values });
+  assert.deepEqual(validateBohSignupDocument(document), []);
+  assert.deepEqual(document.stats.deadTroopCounts, deadTroopCounts);
+
+  values.stats.deadTroopCounts = { UnknownTier: 1000 };
+  assert.throws(
+    () => build({ values }),
+    (error) =>
+      error instanceof BohSignupDocumentError &&
+      error.reason === 'boh_signup_dead_troop_counts_invalid'
   );
 });
 

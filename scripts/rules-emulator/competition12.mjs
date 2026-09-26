@@ -15,12 +15,15 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { buildBohSignupDocument } from '../../js/boh-signup-document.js';
+import { DEAD_TROOP_COUNT_KEYS } from '../../js/dead-troops.js';
 
 const PROJECT = 'demo-comp12';
 const BASE = `http://127.0.0.1:8080/v1/projects/${PROJECT}/databases/(default)/documents`;
 const SEASON = 'season-2027';
 const H = 60 * 60 * 1000;
 let n = 0;
+const DEAD_TROOP_COUNTS = Object.fromEntries(DEAD_TROOP_COUNT_KEYS.map((key) => [key, 0]));
+DEAD_TROOP_COUNTS.FootmenLofty = 1000;
 function client(claims) {
   const app = initializeApp({ projectId: PROJECT, apiKey: 'x' }, `c${n++}`);
   const db = getFirestore(app);
@@ -55,7 +58,7 @@ async function seedBase(offsets, flags = { open: true, acceptNewSignups: true })
 }
 const values = (extra = {}) => ({
   gameName: 'MalakAbo',
-  stats: { totalCastlePower: 1_112_473_195, troopPower: 999_076_138, buildingPower: 6_477_467, technologyPower: 38_902_234, heroCombatPower: 30_585_714, dragonPower: 16_306_050, unitSpecialtyPower: 21_125_570, t9TroopTypes: ['Spearman'], readySpeedHeroes: [], level50HeroCount: 12, rocLevel: 55 },
+   stats: { totalCastlePower: 1_112_481_395, troopPower: 999_084_338, deadTroopCounts: { ...DEAD_TROOP_COUNTS }, buildingPower: 6_477_467, technologyPower: 38_902_234, heroCombatPower: 30_585_714, dragonPower: 16_306_050, unitSpecialtyPower: 21_125_570, t9TroopTypes: ['Spearman'], readySpeedHeroes: [], level50HeroCount: 12, rocLevel: 55 },
   commitment: { availability: 'all', preferredRole: 'offensive', bohTimeSlots: ['+20', '+8'], epicTimeSlots: ['+10'], publicComparisonConsent: true, vts1097Member: true, ...extra },
 });
 function signupDoc(uid, createdAt, revision = 1, v = values()) {
@@ -77,6 +80,11 @@ const subPath = (uid) => `boh_allstar/${SEASON}/submissions/${uid}`;
 // Registration phase (the sync Function sets open + acceptNewSignups)
 await wipe(); await seedBase([-1, 24, 48, 72, 96, 120, 144]);
 await expectOk('member registers with slots during registration', () => setDoc(doc(m1, subPath('m1')), signupDoc('m1', serverTimestamp())));
+await expectDenied('negative dead troop counts are rejected', () => {
+  const invalid = signupDoc('m2', serverTimestamp());
+  invalid.stats.deadTroopCounts.FootmenLofty = -1;
+  return setDoc(doc(m2, subPath('m2')), invalid);
+});
 await expectDenied('an unknown commitment key is rejected', () => { const d = signupDoc('m2', serverTimestamp()); d.commitment.favouriteColour = 'red'; return setDoc(doc(m2, subPath('m2')), d); });
 await expectOk('anonymous visitor reads the schedule', () => getDoc(doc(anon, 'boh_allstar_competition/current')));
 // Final check: no new sign-ups, edits allowed

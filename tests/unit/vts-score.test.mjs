@@ -13,6 +13,7 @@ import {
   resolveVtsScorePlayer,
   VTS_SCORE_POWER_FIELDS,
 } from '../../js/vts-score-model.js';
+import { DEAD_TROOP_COUNT_KEYS } from '../../js/dead-troops.js';
 
 const BASE_POWER_VALUES = Object.freeze({
   totalCastlePower: 1_112_473_195,
@@ -122,6 +123,28 @@ test('VtsScore ranks close signup names and emits a strict full-breakdown OCR pa
     },
   });
   assert.doesNotMatch(JSON.stringify(payload), /image|base64|screenshot/i);
+});
+
+test('dead troop power is recorded separately and is not mislabeled as an OCR correction', () => {
+  const deadTroopCounts = Object.fromEntries(DEAD_TROOP_COUNT_KEYS.map((key) => [key, 0]));
+  deadTroopCounts.FootmenLofty = 1000;
+  const payload = buildVtsScoreSubmission({
+    seasonId: 'competition-11',
+    player: { submissionUid: 'uid-a', gameName: 'MalakAbo' },
+    powerValues: {
+      ...BASE_POWER_VALUES,
+      totalCastlePower: BASE_POWER_VALUES.totalCastlePower + 8200,
+      troopPower: BASE_POWER_VALUES.troopPower + 8200,
+    },
+    review: {
+      requestId: 'ocr-request-2',
+      ocrValues: BASE_POWER_VALUES,
+      confidence: Object.fromEntries(VTS_SCORE_POWER_FIELDS.map((field) => [field, 0.93])),
+    },
+    deadTroopCounts,
+  });
+  assert.deepEqual(payload.deadTroopCounts, deadTroopCounts);
+  assert.deepEqual(payload.ocr.correctedFields, []);
 });
 
 test('the optional Artifact Power sign-up field is marked optional and accepts the rules range', () => {

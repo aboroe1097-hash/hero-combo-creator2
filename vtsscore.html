@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="vts-app-version" content="16.6.1" />
+    <meta name="vts-app-version" content="16.6.2" />
     <meta
       name="description"
       content="VTS 1097 Competition #12: register your BoH and Epic Showdown active times, upload your data, and re-upload later to measure your growth."
@@ -11,10 +11,10 @@
     <meta id="themeColorMeta" name="theme-color" content="#08111f" />
     <title>VtsScore · Competition #12</title>
     <link rel="icon" href="images/logo.png" />
-    <link rel="stylesheet" href="css/_tokens.css?v=20260926_161518" />
-    <link rel="stylesheet" href="css/vts-score.css?v=20260926_161518" />
-    <link rel="stylesheet" href="css/account-chip.css?v=20260926_161518" />
-    <script src="js/theme-prepaint.js?v=20260926_161518"></script>
+    <link rel="stylesheet" href="css/_tokens.css?v=20260926_202541" />
+    <link rel="stylesheet" href="css/vts-score.css?v=20260926_202541" />
+    <link rel="stylesheet" href="css/account-chip.css?v=20260926_202541" />
+    <script src="js/theme-prepaint.js?v=20260926_202541"></script>
   </head>
   <body>
     <main id="vtsScoreApp" class="vts-score-shell">
@@ -89,9 +89,7 @@
       <section id="vtsScoreGate" class="vts-score-card vts-score-gate" hidden>
         <p class="vts-score-kicker" data-vts-i18n="members">VTS MEMBERS</p>
         <h2 data-vts-i18n="unlockTitle">Unlock Competition #12</h2>
-        <p data-vts-i18n="unlockHelp">
-          Use the VTS member PIN leadership shared with you.
-        </p>
+        <p data-vts-i18n="unlockHelp">Use the VTS member PIN leadership shared with you.</p>
         <form id="vtsScorePinForm">
           <label for="vtsScorePin" data-vts-i18n="pin">Member PIN</label>
           <div class="vts-score-inline">
@@ -168,8 +166,8 @@
                   Fill from a screenshot (optional)
                 </label>
                 <p class="vts-score-field-hint" data-vts-i18n="signupOcrHint">
-                  Lord Info → Power screenshot: open Lord Info and scroll to the Power section.
-                  PNG, JPEG or WebP; max 10 MB.
+                  Lord Info → Power screenshot: open Lord Info and scroll to the Power section. PNG,
+                  JPEG or WebP; max 10 MB.
                 </p>
                 <input
                   id="vtsScoreSignupImage"
@@ -329,6 +327,7 @@
                   />
                 </label>
               </div>
+              <div id="vtsScoreSignupDeadTroops" class="vts-score-dead-troops" hidden></div>
             </div>
           </div>
 
@@ -378,7 +377,8 @@
                 >Show my values and growth on the public Growth Board</span
               >
               <small class="vts-score-field-hint" data-vts-i18n="publicConsentHelp"
-                >Off by default. Turn it on only if you want your results visible to everyone.</small
+                >Off by default. Turn it on only if you want your results visible to
+                everyone.</small
               >
             </span>
           </label>
@@ -526,7 +526,6 @@
         </section>
       </section>
 
-      <!-- The public board refreshes from opted-in results after re-uploads close. -->
       <section id="vtsScoreGrowthBoard" class="vts-score-card vts-score-growth-board" hidden>
         <p class="vts-score-kicker" data-vts-i18n="growthBoardKicker">GROWTH BOARD</p>
         <p data-vts-i18n="growthBoardPending">
@@ -534,7 +533,7 @@
         </p>
       </section>
     </main>
-    <script type="module" src="js/vts-score.js?v=20260926_161518"></script>
-      <script type="module" src="js/account-chip-bootstrap.js"></script>
+    <script type="module" src="js/vts-score.js?v=20260926_202541"></script>
+    <script type="module" src="js/account-chip-bootstrap.js"></script>
   </body>
 </html>

@@ -155,6 +155,7 @@ test('Google conflict recovery requires explicit confirmation before leaving the
   assert.match(googleUpgrade, /signInWithCredential\(auth, credential\)/);
   assert.match(googleUpgrade, /signedInExisting: true/);
   assert.match(googleUpgrade, /account\/google-credential-unavailable/);
+  assert.doesNotMatch(googleUpgrade, /signInWithPopup\(auth, provider\)/);
   assert.ok(
     googleUpgrade.indexOf('confirmExistingGoogleAccountSwitch') <
       googleUpgrade.indexOf('result = await signInWithCredential'),

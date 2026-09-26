@@ -70,3 +70,11 @@ test('the prompts stay out of the index markup and off the arcade card grid', ()
   const app = readFileSync('js/app.js', 'utf8');
   assert.match(app, /import\('\.\/siege-promo\.js'\)/u, 'the hub loads the callout lazily');
 });
+
+test('the Arcade Rampart card and homepage Eden vote callout keep their own destinations', () => {
+  const promo = readFileSync('js/siege-promo.js', 'utf8');
+  const arcade = promo.split('export function mountSiegeCallout')[0];
+  const homepage = promo.split('export function mountSiegeCallout')[1];
+  assert.match(arcade, /play\.href = SIEGE_URL/u);
+  assert.match(homepage, /play\.href = EDEN_URL/u);
+});

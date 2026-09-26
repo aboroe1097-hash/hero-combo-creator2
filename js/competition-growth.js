@@ -24,6 +24,7 @@
 // Pure: no Firestore, no DOM, no i18n. The admin tab (vts-score-admin-view.js)
 // and tests call it; the member board reads only the published projection.
 
+import { normalizeDeadTroopCounts } from './dead-troops.js';
 import { resolveConfirmedPlayerAlias } from './vts-player-aliases.js';
 
 export const COMPETITION_BASELINE_SEASON = 'season-2026';
@@ -148,6 +149,7 @@ export function buildVtsScoreBaselineIndex(raceScores = []) {
       submissionUid: recordUid(record),
       gameName,
       values,
+      deadTroopCounts: normalizeDeadTroopCounts(record?.deadTroopCounts),
       seasonId: cleanText(record?.seasonId),
       uploadedAt: Number.isFinite(uploadedAt) ? uploadedAt : 0,
     });
@@ -161,40 +163,47 @@ export function buildVtsScoreBaselineIndex(raceScores = []) {
   const index = new Map();
   index.byUid = new Map();
   index.byExactName = new Map();
+  const grouped = new Map();
+  const exactGrouped = new Map();
+  const add = (map, key, upload) => {
+    if (!key) return;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(upload);
+  };
   for (const candidate of uploads) {
     if (candidate.submissionUid && !index.byUid.has(candidate.submissionUid)) {
       index.byUid.set(candidate.submissionUid, candidate);
     }
-    const key = competitionNameKey(candidate.gameName);
-    const exactKey = normalizeName(candidate.gameName);
-    if (exactKey) {
-      const exactEntry = index.byExactName.get(exactKey) || {
-        status: 'unique',
-        candidates: [],
-        uploads: [],
-      };
-      exactEntry.candidates.push(candidate);
-      exactEntry.uploads.push(candidate);
-      exactEntry.status = accountStatus(exactEntry.candidates);
-      index.byExactName.set(exactKey, exactEntry);
-    }
-    if (!key) continue;
-    const entry = index.get(key) || { status: 'unique', candidates: [], uploads: [] };
-    entry.candidates.push(candidate);
-    entry.uploads.push(candidate);
-    entry.status = accountStatus(entry.candidates);
-    index.set(key, entry);
+    add(grouped, competitionNameKey(candidate.gameName), candidate);
+    add(exactGrouped, normalizeName(candidate.gameName), candidate);
   }
+  for (const [key, list] of grouped) index.set(key, baselineEntry(list));
+  for (const [key, list] of exactGrouped) index.byExactName.set(key, baselineEntry(list));
   return index;
 }
 
-/** Only distinct known accounts make a name ambiguous: uid-less uploads are
- * the pre-account era and cannot prove a second account used the name. */
-function accountStatus(candidates) {
+/** Keep each account's latest upload, and only propose scores with a saved
+ * dead-troop breakdown so signup and re-upload totals use the same definition. */
+function baselineEntry(uploads) {
   const accounts = new Set(
-    candidates.map((candidate) => candidate.submissionUid).filter((submissionUid) => submissionUid)
+    uploads.map((upload) => upload.submissionUid).filter((submissionUid) => submissionUid)
   );
-  return accounts.size > 1 ? 'ambiguous' : 'unique';
+  const seen = new Set();
+  const latestByAccount = [];
+  for (const upload of uploads) {
+    const identity = upload.submissionUid || 'unknown-account';
+    if (seen.has(identity)) continue;
+    seen.add(identity);
+    latestByAccount.push(upload);
+  }
+  const candidates = latestByAccount.filter((upload) => upload.deadTroopCounts);
+  const status = accounts.size > 1 ? 'ambiguous' : 'unique';
+  return {
+    status,
+    candidate: status === 'unique' ? candidates[0] || null : null,
+    candidates,
+    uploads,
+  };
 }
 
 function lookupIndex(index, key) {
@@ -224,7 +233,9 @@ export function proposeBaselineMatch(player, index, { contestedKeys, autoMatch =
   }
   const sameAccount =
     autoMatch && index?.byUid instanceof Map ? index.byUid.get(recordUid(player)) : null;
-  if (sameAccount) return { status: 'matched', key, candidates: [sameAccount], matchType: 'uid' };
+  if (sameAccount?.deadTroopCounts) {
+    return { status: 'matched', key, candidates: [sameAccount], matchType: 'uid' };
+  }
   if (entry?.candidates?.length) {
     return {
       status: 'ambiguous',
@@ -317,7 +328,9 @@ export function computeGrowthRow(player, { baseline, raceScore = null, window = 
   const consent = player?.commitment?.publicComparisonConsent === true;
   const baselineValues = baseline?.values || null;
   const finalValues =
-    raceScore && Number(raceScore.schemaVersion) === 2
+    raceScore &&
+    Number(raceScore.schemaVersion) === 2 &&
+    normalizeDeadTroopCounts(raceScore.deadTroopCounts)
       ? readCompetitionPowerValues(raceScore.powerValues)
       : null;
   let notRankedReason = null;
@@ -407,7 +420,12 @@ export function buildCompetitionGrowthRows({
         });
       }
     }
-    const priorUploads = (key && lookupIndex(index, key)?.uploads) || [];
+    const historyEntry = key && lookupIndex(index, key);
+    const safeHistory =
+      Boolean(historyEntry) &&
+      historyEntry.status !== 'ambiguous' &&
+      !contestedKeys.has(key);
+    const priorUploads = safeHistory ? historyEntry.uploads || [] : [];
     for (const upload of priorUploads) {
       uploads.push({
         seasonId: upload.seasonId,

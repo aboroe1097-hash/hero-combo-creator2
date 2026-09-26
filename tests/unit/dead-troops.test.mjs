@@ -3,14 +3,20 @@ import test from 'node:test';
 
 import {
   DEAD_TROOP_CLASSES,
+  DEAD_TROOP_COUNT_KEYS,
   DEAD_TROOP_UNITS,
   DEAD_TROOP_VARIANTS,
+  addDeadTroopPowerToStats,
   convertDeadTroopCountUnit,
   deadTroopActualCount,
+  deadTroopCountKey,
   deadTroopMultiplier,
+  deadTroopPowerFromCounts,
   deadTroopRowPower,
   deadTroopsTotalPower,
   deadTroopUnitScale,
+  normalizeDeadTroopCounts,
+  removeDeadTroopPowerFromStats,
 } from '../../js/dead-troops.js';
 
 test('the grid is three troop types times five tiers', () => {
@@ -42,6 +48,7 @@ test('exact, thousands and millions use the right multiplier', () => {
   // An unknown unit behaves like the default.
   assert.equal(deadTroopRowPower(3, { variant: 'lofty' }), 24_600);
   assert.equal(deadTroopRowPower(8_168_070, { variant: 't10', unit: 'troops' }), 61_260_525);
+  assert.equal(deadTroopRowPower(1000.3, { variant: 'lofty', unit: 'troops' }), 8_200);
 });
 
 test('switching units preserves the troop count and a blank field', () => {
@@ -91,4 +98,25 @@ test('an entered number reports the troops it really means', () => {
     deadTroopActualCount(20, 'thousands') * 8.2,
     deadTroopRowPower(20, { variant: 'lofty', unit: 'thousands' })
   );
+});
+
+test('persisted counts are actual troop counts with a stable power total', () => {
+  const counts = Object.fromEntries(DEAD_TROOP_COUNT_KEYS.map((key) => [key, 0]));
+  counts[deadTroopCountKey('footmen', 'lofty')] = 1000;
+  counts[deadTroopCountKey('archers', 't10e')] = 2000;
+  assert.equal(deadTroopPowerFromCounts(counts), 23_200);
+  assert.equal(normalizeDeadTroopCounts(counts).FootmenLofty, 1000);
+  assert.equal(normalizeDeadTroopCounts({ FootmenLofty: 1000 }).FootmenLofty, 1000);
+  assert.equal(normalizeDeadTroopCounts({ unknown: 1 }), null);
+  assert.equal(normalizeDeadTroopCounts({ FootmenLofty: -1 }), null);
+  assert.equal(normalizeDeadTroopCounts({ FootmenLofty: 1.5 }), null);
+});
+
+test('editing removes and reapplies the saved dead-troop contribution exactly once', () => {
+  const counts = Object.fromEntries(DEAD_TROOP_COUNT_KEYS.map((key) => [key, 0]));
+  counts.FootmenLofty = 1000;
+  const saved = { troopPower: 58_200, totalCastlePower: 108_200, buildingPower: 700 };
+  const editable = removeDeadTroopPowerFromStats(saved, counts);
+  assert.deepEqual(editable, { troopPower: 50_000, totalCastlePower: 100_000, buildingPower: 700 });
+  assert.deepEqual(addDeadTroopPowerToStats(editable, counts), saved);
 });

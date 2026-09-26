@@ -1411,6 +1411,35 @@ service cloud.firestore {
         ]);
     }
 
+    function validAllStarBohDeadTroopCounts(counts) {
+      return counts is map
+        && counts.keys().hasOnly([
+          'FootmenLofty', 'FootmenT10', 'FootmenT10Enhanced', 'FootmenT9', 'FootmenT9Enhanced',
+          'CavalryLofty', 'CavalryT10', 'CavalryT10Enhanced', 'CavalryT9', 'CavalryT9Enhanced',
+          'ArchersLofty', 'ArchersT10', 'ArchersT10Enhanced', 'ArchersT9', 'ArchersT9Enhanced'
+        ])
+        && counts.keys().hasAll([
+          'FootmenLofty', 'FootmenT10', 'FootmenT10Enhanced', 'FootmenT9', 'FootmenT9Enhanced',
+          'CavalryLofty', 'CavalryT10', 'CavalryT10Enhanced', 'CavalryT9', 'CavalryT9Enhanced',
+          'ArchersLofty', 'ArchersT10', 'ArchersT10Enhanced', 'ArchersT9', 'ArchersT9Enhanced'
+        ])
+        && counts.FootmenLofty is int && counts.FootmenLofty >= 0 && counts.FootmenLofty <= 1000000000000
+        && counts.FootmenT10 is int && counts.FootmenT10 >= 0 && counts.FootmenT10 <= 1000000000000
+        && counts.FootmenT10Enhanced is int && counts.FootmenT10Enhanced >= 0 && counts.FootmenT10Enhanced <= 1000000000000
+        && counts.FootmenT9 is int && counts.FootmenT9 >= 0 && counts.FootmenT9 <= 1000000000000
+        && counts.FootmenT9Enhanced is int && counts.FootmenT9Enhanced >= 0 && counts.FootmenT9Enhanced <= 1000000000000
+        && counts.CavalryLofty is int && counts.CavalryLofty >= 0 && counts.CavalryLofty <= 1000000000000
+        && counts.CavalryT10 is int && counts.CavalryT10 >= 0 && counts.CavalryT10 <= 1000000000000
+        && counts.CavalryT10Enhanced is int && counts.CavalryT10Enhanced >= 0 && counts.CavalryT10Enhanced <= 1000000000000
+        && counts.CavalryT9 is int && counts.CavalryT9 >= 0 && counts.CavalryT9 <= 1000000000000
+        && counts.CavalryT9Enhanced is int && counts.CavalryT9Enhanced >= 0 && counts.CavalryT9Enhanced <= 1000000000000
+        && counts.ArchersLofty is int && counts.ArchersLofty >= 0 && counts.ArchersLofty <= 1000000000000
+        && counts.ArchersT10 is int && counts.ArchersT10 >= 0 && counts.ArchersT10 <= 1000000000000
+        && counts.ArchersT10Enhanced is int && counts.ArchersT10Enhanced >= 0 && counts.ArchersT10Enhanced <= 1000000000000
+        && counts.ArchersT9 is int && counts.ArchersT9 >= 0 && counts.ArchersT9 <= 1000000000000
+        && counts.ArchersT9Enhanced is int && counts.ArchersT9Enhanced >= 0 && counts.ArchersT9Enhanced <= 1000000000000;
+    }
+
     function validAllStarBohStats(stats) {
       return stats is map
         && stats.keys().hasOnly([
@@ -1418,7 +1447,7 @@ service cloud.firestore {
           'heroCombatPower', 'dragonPower', 't9TroopTypes', 'readySpeedHeroes',
           'level50HeroCount', 'rocLevel', 'usableHeroNames',
           'researchProgressPct', 'troopRoster', 't10TroopTypes',
-          'unitSpecialtyPower', 'artifactPower', 'royalTechPower'
+          'unitSpecialtyPower', 'artifactPower', 'royalTechPower', 'deadTroopCounts'
         ])
         && stats.keys().hasAll([
           'totalCastlePower', 'troopPower', 'buildingPower', 'technologyPower',
@@ -1440,6 +1469,7 @@ service cloud.firestore {
         && (!('unitSpecialtyPower' in stats) || validAllStarBohNullableInt(stats.unitSpecialtyPower, 0, 1000000000000000))
         && (!('artifactPower' in stats) || validAllStarBohNullableInt(stats.artifactPower, 0, 1000000000000000))
         && (!('royalTechPower' in stats) || validAllStarBohNullableInt(stats.royalTechPower, 0, 1000000000000000))
+        && (!('deadTroopCounts' in stats) || validAllStarBohDeadTroopCounts(stats.deadTroopCounts))
         && (
           !('usableHeroNames' in stats)
           || validAllStarBohUsableHeroNames(stats.usableHeroNames)
@@ -2379,7 +2409,7 @@ service cloud.firestore {
         'heroCombatPower', 'dragonPower', 't9TroopTypes', 'readySpeedHeroes',
         'level50HeroCount', 'rocLevel', 'usableHeroNames',
         'researchProgressPct', 'troopRoster', 't10TroopTypes',
-        'unitSpecialtyPower', 'artifactPower', 'royalTechPower'
+         'unitSpecialtyPower', 'artifactPower', 'royalTechPower', 'deadTroopCounts'
       ])
       && stats.keys().hasAll([
         'totalCastlePower', 'troopPower', 'buildingPower', 'technologyPower',
@@ -2422,6 +2452,7 @@ service cloud.firestore {
         || validAllStarBohNullableInt(stats.artifactPower, 0, 1000000000000000))
       && (!('royalTechPower' in stats)
         || validAllStarBohNullableInt(stats.royalTechPower, 0, 1000000000000000))
+      && (!('deadTroopCounts' in stats) || validAllStarBohDeadTroopCounts(stats.deadTroopCounts))
       && (
         !('preferredTeammates' in data)
         || (data.preferredTeammates is list && data.preferredTeammates.size() <= 6)

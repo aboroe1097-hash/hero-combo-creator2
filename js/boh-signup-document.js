@@ -23,6 +23,7 @@ import {
   normalizeBohName,
   normalizeBohSignup,
 } from './all-star-boh-model.js';
+import { DEAD_TROOP_COUNT_KEYS, normalizeDeadTroopCounts } from './dead-troops.js';
 
 export const BOH_SIGNUP_STATUS_VALUES = Object.freeze(['draft', 'submitted', 'withdrawn']);
 export const BOH_SIGNUP_MAX_DOCUMENT_BYTES = 48 * 1024;
@@ -541,6 +542,15 @@ export function validateBohSignupDocument(documentInput) {
     }
     if (hasKey(stats, 'royalTechPower') && !isNullablePower(stats.royalTechPower)) {
       problems.push('stats.royalTechPower');
+    }
+    if (hasKey(stats, 'deadTroopCounts')) {
+      const deadTroopCounts = normalizeDeadTroopCounts(stats.deadTroopCounts);
+      if (
+        !deadTroopCounts ||
+        DEAD_TROOP_COUNT_KEYS.some((key) => !hasKey(stats.deadTroopCounts, key))
+      ) {
+        problems.push('stats.deadTroopCounts');
+      }
     }
   }
 

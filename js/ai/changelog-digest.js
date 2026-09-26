@@ -1,10 +1,20 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.1";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.2";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.6.2",
+    "date": "2026-09-26",
+    "highlights": [
+      "The same compact dead-troops editor is shared by Competition #12 registration and score review. It defaults to exact counts and adds temporarily dead troops to the alive power total. Tier counts are stored with sign-ups and final uploads so edits restore the split without counti…",
+      "The unlocked Growth Board is visible after the registration and score-entry workspace in every phase.",
+      "Smart Generate is a single prominent option before Generate Best Combos and uses the best four of five lineups. The homepage Eden voting callout and Arcade game banner open their intended destinations.",
+      "When a Google linking conflict has no reusable credential, the guest session stays active and the member is directed to the explicit Sign in with Google flow."
+    ]
+  },
   {
     "version": "16.6.1",
     "date": "2026-09-26",
@@ -82,18 +92,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Placing new X8 lineups is fast: each unplaced lineup gets a suggested slot with its reason (for example \"above #58 · shares Lawman + The Avalanche\"), learned from similar lineups and from the placements already made, and paid lineups keep their place above free ones. Keys: J/K t…",
       "The planner shows about 35 compact rows at once, focuses the ranking around the lineup being placed, groups the queue by X8 hero with progress, places several lineups as one block, drafts every suggestion in one undoable step, keeps an automatic draft, accepts a pasted list of l…",
       "A superadmin can publish the ranking live from VTS Admin: players get it on their next page load without a site update, the Combo Generator, Hero Atlas and counter tables follow it, and \"Use shipped list\" switches back. The site checks every published lineup and keeps the shippe…"
-    ]
-  },
-  {
-    "version": "16.5.13",
-    "date": "2026-09-25",
-    "highlights": [
-      "Velo graduates to **Velo 1.0**. The chat header's \"Beta 0.4\" badge becomes a plain \"Velo 1.0\" version mark in every language — a version number needs no translation — and the internal b0.4 build number is retired from the assistant's own answers, the toolkit map, and the system …",
-      "The command palette (Ctrl/Cmd+K) now finds **Talk with Velo** and opens the assistant drawer from there through the same lazy loader the floating launcher uses, so no page pays for the drawer until someone asks for it. Closing the drawer returns keyboard focus to the palette tri…",
-      "The chat's copy button and source chips reach the 44-pixel touch target on phones instead of 32-pixel rows that were hard to hit, and answer tables no longer force sideways scrolling on 320-pixel screens — a narrow table now shrinks with its wrapper while wide answers keep their…",
-      "Velo knows the whole site now. Its toolkit map adds VtsScore / Competition #12, the Buildings planner, Eden Pathing, the Eden Operations Lab, the hub PDF tabs, the current Eden X2 season page and the Issue or Complaint form (the page every footer's \"Contact Devs\" link opens), an…",
-      "New read-only answers: Competition #12 phase, next deadline and every phase's open and close time, in game time (UTC−2) and your own time, plus the BoH and Epic slot times; Castle 26–30 resource costs and any building's 26–30 Orichalcum and prerequisites, with blank sheet cells …",
-      "**My Competition #12.** With a new \"My Competition #12\" permission in Velo's privacy settings, a signed-in member can ask about their own registration: which power fields are filled, ROC level, chosen BoH and Epic times, and their own baseline and growth once the board is publis…"
     ]
   }
 ].map((release) =>

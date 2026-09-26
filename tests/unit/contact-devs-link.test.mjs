@@ -13,7 +13,7 @@ test('no page links Contact Devs to a mailto address', () => {
   let found = 0;
   pages.forEach((page) => {
     const html = readFileSync(join(repoRoot, page), 'utf8');
-    const links = html.match(/<a\b[^>]*>\s*Contact Devs\s*<\/a>/g) || [];
+    const links = html.match(/<a\b[^>]*>\s*Contact Devs\s*<\/a\s*>/g) || [];
     links.forEach((link) => {
       found += 1;
       assert.doesNotMatch(link, /mailto:/, `${page}: ${link}`);

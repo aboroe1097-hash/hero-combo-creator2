@@ -693,16 +693,14 @@ function selectRandomCombos(selected) {
 }
 
 export function generateSmartCombos() {
-  const mode =
-    document.querySelector('input[name="generatorSmartMode"]:checked')?.value === 'top5'
-      ? 'top5'
-      : 'top4';
+  // One Smart mode: fill five lineups and make the best four total as high as
+  // they can, letting the fifth be whatever fits.
   lastGeneratorMode = 'smart';
   runGenerator(
     GENERATOR_MIN_HEROES,
     'generatorMinHeroesMessage',
     `Select at least ${GENERATOR_MIN_HEROES} heroes to generate smart combos.`,
-    (selected) => selectSmartCombos(getSourceCombos(), selected, GENERATOR_MAX_COMBOS, mode)
+    (selected) => selectSmartCombos(getSourceCombos(), selected, GENERATOR_MAX_COMBOS)
   );
 }
 

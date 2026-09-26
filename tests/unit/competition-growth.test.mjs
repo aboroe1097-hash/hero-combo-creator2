@@ -11,6 +11,7 @@ import {
   rankCompetitionGrowth,
   resolveBaseline,
 } from '../../js/competition-growth.js';
+import { DEAD_TROOP_COUNT_KEYS } from '../../js/dead-troops.js';
 
 const H = 60 * 60 * 1000;
 const OPENS = Date.parse('2026-11-01T00:00:00Z');
@@ -46,6 +47,7 @@ function upload(uid, gameName, total, updatedAt = inWindow) {
     gameName,
     schemaVersion: 2,
     powerValues: stats(total),
+    deadTroopCounts: Object.fromEntries(DEAD_TROOP_COUNT_KEYS.map((key) => [key, 0])),
     updatedAt,
   };
 }
@@ -67,6 +69,20 @@ test('a player without a VtsScore upload is measured from their sign-up stats', 
   assert.equal(baseline.source, 'signup');
   assert.equal(baseline.values.totalCastlePower, 1_000);
   assert.equal(baseline.match.status, 'none');
+});
+
+test('a prior VtsScore upload without dead-troop counts is not used as the baseline', () => {
+  const legacy = upload('old-u1', 'Grower', 800);
+  delete legacy.deadTroopCounts;
+  const rows = buildCompetitionGrowthRows({
+    submissions: [submission('u1', 'Grower', 1_000)],
+    raceScores: [upload('u1', 'Grower', 1_200)],
+    baselineRaceScores: [legacy],
+    window: WINDOW,
+    autoMatch: true,
+  });
+  assert.equal(rows[0].baselineSource, 'signup');
+  assert.equal(rows[0].fields.totalCastlePower.baseline, 1_000);
 });
 
 test('names match through case, spacing, the (VTS) prefix and confirmed aliases', () => {
@@ -205,6 +221,17 @@ test('a missing, invalid or out-of-window re-upload is not ranked, never zero', 
       ['None', 'no-reupload', null, null],
     ]
   );
+});
+
+test('a final upload without dead-troop counts is not ranked', () => {
+  const final = upload('u1', 'Grower', 1_200);
+  delete final.deadTroopCounts;
+  const rows = buildCompetitionGrowthRows({
+    submissions: [submission('u1', 'Grower', 1_000)],
+    raceScores: [final],
+    window: WINDOW,
+  });
+  assert.equal(rows[0].notRankedReason, 'invalid-reupload');
 });
 
 test('a normalized schedule limits re-uploads to its re-upload window, not registration', () => {
