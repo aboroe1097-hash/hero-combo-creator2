@@ -280,6 +280,8 @@ test('the public projection holds only consenting players and ranks them indepen
     [
       ['Public Winner', 1],
       ['Public Other', 2],
+      // Unranked but consenting names stay listed with their history.
+      ['Missing', null],
     ]
   );
   assert.equal(projection.rows[0].baselineSource, 'signup');
@@ -290,10 +292,14 @@ test('the public projection holds only consenting players and ranks them indepen
     { rank: 2, gameName: 'Public Other', growthPct: 5, growthAbs: 50 },
   ]);
   assert.equal(projection.notRanked, 1);
+  assert.ok(
+    projection.rows[0].uploads.some((upload) => upload.values.totalCastlePower === 1_300),
+    'a row carries every upload its name ever had'
+  );
   const serialized = JSON.stringify(projection);
   // Nothing a non-consenting player uploaded or signed up with leaks.
   assert.doesNotMatch(serialized, /1776777|1777777|1777\.777|177677/);
   assert.ok(projection.rows.every((row) => !row.gameName.startsWith('Private')));
-  assert.doesNotMatch(serialized, /baseline"|final"|submissionUid|consent|Missing/);
+  assert.doesNotMatch(serialized, /baseline"|final"|submissionUid|consent/);
   assert.doesNotMatch(serialized, /Private (Winner|Loser)[^}]*growth/);
 });

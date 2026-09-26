@@ -68,6 +68,7 @@ export const COMPETITION_BOARD_COPY_EN = Object.freeze({
   competitionBoardNoResults: 'No player matches your search.',
   competitionBoardValuesPrivate: 'Values private',
   competitionBoardBreakdown: 'Power breakdown',
+  competitionBoardHistory: 'Upload history',
   competitionBoardTied: 'Tied',
   competitionBoardFieldTotal: 'Total power',
   competitionBoardFieldTroop: 'Troop power',
@@ -113,6 +114,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardNoResults: 'لا يوجد لاعب يطابق بحثك.',
     competitionBoardValuesPrivate: 'القيم خاصة',
     competitionBoardBreakdown: 'تفاصيل القوة',
+    competitionBoardHistory: 'سجل الرفع',
     competitionBoardTied: 'تعادل',
     competitionBoardFieldTotal: 'القوة الإجمالية',
     competitionBoardFieldTroop: 'قوة القوات',
@@ -155,6 +157,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardNoResults: 'Ningún jugador coincide con tu búsqueda.',
     competitionBoardValuesPrivate: 'Valores privados',
     competitionBoardBreakdown: 'Desglose de poder',
+    competitionBoardHistory: 'Historial de subidas',
     competitionBoardTied: 'Empate',
     competitionBoardFieldTotal: 'Poder total',
     competitionBoardFieldTroop: 'Poder de tropas',
@@ -197,6 +200,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardNoResults: 'Nenhum jogador corresponde à sua busca.',
     competitionBoardValuesPrivate: 'Valores privados',
     competitionBoardBreakdown: 'Detalhamento de poder',
+    competitionBoardHistory: 'Histórico de envios',
     competitionBoardTied: 'Empate',
     competitionBoardFieldTotal: 'Poder total',
     competitionBoardFieldTroop: 'Poder das tropas',
@@ -239,6 +243,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardNoResults: 'Aucun joueur ne correspond à votre recherche.',
     competitionBoardValuesPrivate: 'Valeurs privées',
     competitionBoardBreakdown: 'Détail de la puissance',
+    competitionBoardHistory: 'Historique des envois',
     competitionBoardTied: 'Égalité',
     competitionBoardFieldTotal: 'Puissance totale',
     competitionBoardFieldTroop: 'Puissance des troupes',
@@ -281,6 +286,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardNoResults: 'Kein Spieler passt zu deiner Suche.',
     competitionBoardValuesPrivate: 'Werte privat',
     competitionBoardBreakdown: 'Machtaufschlüsselung',
+    competitionBoardHistory: 'Upload-Verlauf',
     competitionBoardTied: 'Gleichstand',
     competitionBoardFieldTotal: 'Gesamtmacht',
     competitionBoardFieldTroop: 'Truppenmacht',
@@ -359,6 +365,23 @@ export function normalizeCompetitionBoard(raw) {
         if (finite(entry?.abs) === null) continue;
         fields[field] = { abs: entry.abs, pct: finite(entry.pct) };
       }
+      const uploads = (Array.isArray(row?.uploads) ? row.uploads : [])
+        .slice(0, 12)
+        .map((upload) => {
+          const uploadedAt = finite(upload?.uploadedAt);
+          const values = {};
+          for (const [field] of FIELDS) {
+            const value = finite(upload?.values?.[field]);
+            if (value === null) continue;
+            values[field] = value;
+          }
+          return {
+            seasonId: cleanText(upload?.seasonId, 40),
+            uploadedAt: Number.isFinite(uploadedAt) ? uploadedAt : 0,
+            values,
+          };
+        })
+        .filter((upload) => Object.keys(upload.values).length > 0);
       return {
         rank: Number.isInteger(row?.rank) && row.rank > 0 ? row.rank : null,
         gameName,
@@ -366,6 +389,7 @@ export function normalizeCompetitionBoard(raw) {
         growthPct: finite(row?.growthPct),
         growthAbs: finite(row?.growthAbs),
         fields,
+        uploads,
       };
     })
     .filter(Boolean);
@@ -489,6 +513,29 @@ function breakdownHtml(row, text, format) {
   </details>`;
 }
 
+/** Every upload this name ever had, newest first. */
+function historyHtml(row, text, format) {
+  const uploads = Array.isArray(row.uploads) ? row.uploads : [];
+  if (!uploads.length) return '';
+  const items = uploads
+    .map((upload) => {
+      const iso =
+        Number.isFinite(upload.uploadedAt) && upload.uploadedAt > 0
+          ? new Date(upload.uploadedAt).toISOString()
+          : '';
+      const total = upload.values?.totalCastlePower ?? null;
+      const when = iso
+        ? `<time datetime="${esc(iso)}">${esc(format.date(iso))}</time>`
+        : esc(upload.seasonId || text('competitionBoardSourceVtsScorePrior'));
+      return `<li>${when} — ${esc(format.abs(total))}</li>`;
+    })
+    .join('');
+  return `<details class="comp-board__history">
+    <summary>${esc(text('competitionBoardHistory'))}</summary>
+    <ul>${items}</ul>
+  </details>`;
+}
+
 /** The table body for the current search/sort state. */
 export function buildCompetitionBoardRowsHtml(rows, text, format) {
   return rows
@@ -501,6 +548,7 @@ export function buildCompetitionBoardRowsHtml(rows, text, format) {
           text(SOURCE_LABEL_KEYS[row.baselineSource] || 'competitionBoardSourceSignup')
         )}</span>
         ${breakdownHtml(row, text, format)}
+        ${historyHtml(row, text, format)}
       </th>
       <td class="comp-board__num" data-label="${esc(text('competitionBoardGrowthPct'))}" data-tone="${tone(row.growthPct)}">${esc(format.pct(row.growthPct))}</td>
       <td class="comp-board__num" data-label="${esc(text('competitionBoardGrowthAbs'))}" data-tone="${tone(row.growthAbs)}">${esc(format.abs(row.growthAbs))}</td>

@@ -413,12 +413,8 @@ async function listPlayers(dependencies, uid) {
 
 async function loadCompetitionGrowthBoard(dependencies) {
   const head = await readCompetitionBoardHead(dependencies.db);
-  const phase = head.schedule
-    ? getCompetitionPhase(head.schedule, dependencies.now())
-    : 'unconfigured';
-  if (!['resultsPending', 'winners'].includes(phase)) {
-    return { schemaVersion: 1, seasonId: head.seasonId, board: null };
-  }
+  // The board is not a results view: it builds from live uploads in every
+  // phase and refreshes as members upload.
   const inputs = await readCompetitionBoardInputs(dependencies.db, head);
   const { board } = buildCompetitionBoardFromInputs(inputs, { nowMs: dependencies.now() });
   return { schemaVersion: 1, seasonId: head.seasonId, board };

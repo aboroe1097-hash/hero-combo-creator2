@@ -185,7 +185,18 @@ test('the server board ranks from earlier-season baselines and keeps private val
   assert.doesNotMatch(JSON.stringify(board), /Bravo/);
   assert.deepEqual(
     board.rows.map((row) => [row.gameName, row.baselineSource]),
-    [['Alpha', 'vtsscore-2026']]
+    [
+      ['Alpha', 'vtsscore-2026'],
+      // Unranked but consenting names stay listed with their history.
+      ['Charlie', 'signup'],
+    ]
+  );
+  const charlie = board.rows.find((row) => row.gameName === 'Charlie');
+  assert.equal(charlie.rank, null);
+  const alpha = board.rows.find((row) => row.gameName === 'Alpha');
+  assert.ok(
+    alpha.uploads.length >= 2,
+    'a row carries every upload its name ever had, across seasons'
   );
   assert.equal(board.notRanked, 1);
   assert.deepEqual(summary.baselineSources, { signup: 2, 'vtsscore-2026': 1, 'vtsscore-prior': 0 });

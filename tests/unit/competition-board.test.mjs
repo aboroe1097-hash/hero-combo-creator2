@@ -141,6 +141,7 @@ test('the normalizer drops unknown keys and malformed rows', () => {
     growthPct: null,
     growthAbs: null,
     fields: {},
+    uploads: [],
   });
   assert.equal('extra' in normalized, false);
   assert.equal(normalized.winners[0].gameName, 'Private Winner');

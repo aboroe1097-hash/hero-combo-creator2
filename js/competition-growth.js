@@ -130,9 +130,12 @@ function uploadMillis(record) {
 }
 
 /**
- * Indexes last season's VtsScore uploads by name key. A key with more than
- * one upload is ambiguous: it keeps every candidate but proposes none.
- * @returns {Map<string, {status: 'unique'|'ambiguous', candidates: Array<{submissionUid: string, gameName: string, values: object}>}>}
+ * Indexes VtsScore uploads by in-game name. Uploads from before accounts
+ * existed carry no uid and must still index, so the name is the join and a
+ * missing uid never drops a record. A name used by two different known
+ * accounts is ambiguous: it keeps every candidate but proposes none. Each
+ * entry keeps the full `uploads` history for the name, newest first.
+ * @returns {Map<string, {status: 'unique'|'ambiguous', candidates: Array, uploads: Array}>}
  */
 export function buildVtsScoreBaselineIndex(raceScores = []) {
   const index = new Map();
@@ -144,22 +147,44 @@ export function buildVtsScoreBaselineIndex(raceScores = []) {
     const key = competitionNameKey(gameName);
     const exactKey = normalizeName(gameName);
     const submissionUid = recordUid(record);
-    if (!values || !submissionUid) continue;
-    const candidate = { submissionUid, gameName, values };
-    index.byUid.set(submissionUid, candidate);
+    if (!values) continue;
+    const uploadedAt = uploadMillis(record);
+    const candidate = {
+      submissionUid,
+      gameName,
+      values,
+      seasonId: cleanText(record?.seasonId),
+      uploadedAt: Number.isFinite(uploadedAt) ? uploadedAt : 0,
+    };
+    if (submissionUid) index.byUid.set(submissionUid, candidate);
     if (exactKey) {
-      const exactEntry = index.byExactName.get(exactKey) || { status: 'unique', candidates: [] };
+      const exactEntry = index.byExactName.get(exactKey) || {
+        status: 'unique',
+        candidates: [],
+        uploads: [],
+      };
       exactEntry.candidates.push(candidate);
-      exactEntry.status = exactEntry.candidates.length > 1 ? 'ambiguous' : 'unique';
+      exactEntry.uploads.push(candidate);
+      exactEntry.status = accountStatus(exactEntry.candidates);
       index.byExactName.set(exactKey, exactEntry);
     }
     if (!key) continue;
-    const entry = index.get(key) || { status: 'unique', candidates: [] };
+    const entry = index.get(key) || { status: 'unique', candidates: [], uploads: [] };
     entry.candidates.push(candidate);
-    entry.status = entry.candidates.length > 1 ? 'ambiguous' : 'unique';
+    entry.uploads.push(candidate);
+    entry.status = accountStatus(entry.candidates);
     index.set(key, entry);
   }
   return index;
+}
+
+/** Only distinct known accounts make a name ambiguous: uid-less uploads are
+ * the pre-account era and cannot prove a second account used the name. */
+function accountStatus(candidates) {
+  const accounts = new Set(
+    candidates.map((candidate) => candidate.submissionUid).filter((submissionUid) => submissionUid)
+  );
+  return accounts.size > 1 ? 'ambiguous' : 'unique';
 }
 
 function lookupIndex(index, key) {
@@ -174,16 +199,31 @@ function lookupIndex(index, key) {
  */
 export function proposeBaselineMatch(player, index, { contestedKeys, autoMatch = false } = {}) {
   const key = autoMatch ? normalizeName(player?.gameName) : competitionNameKey(player?.gameName);
-  const sameAccount = autoMatch && index?.byUid instanceof Map
-    ? index.byUid.get(recordUid(player))
-    : null;
-  if (sameAccount) return { status: 'matched', key, candidates: [sameAccount], matchType: 'uid' };
   const source = autoMatch && index?.byExactName instanceof Map ? index.byExactName : index;
   const entry = lookupIndex(source, key);
-  if (!entry?.candidates?.length) return { status: 'none', key, candidates: [] };
   const contested = contestedKeys instanceof Set && contestedKeys.has(key);
-  const status = entry.status === 'unique' && !contested ? 'matched' : 'ambiguous';
-  return { status, key, candidates: entry.candidates, matchType: autoMatch ? 'exact-name' : null };
+  // The in-game name is the match: uploads from before accounts existed only
+  // carry a name. The uid is a last resort for records whose name changed.
+  if (entry?.candidates?.length && entry.status === 'unique' && !contested) {
+    return {
+      status: 'matched',
+      key,
+      candidates: entry.candidates,
+      matchType: autoMatch ? 'exact-name' : null,
+    };
+  }
+  const sameAccount =
+    autoMatch && index?.byUid instanceof Map ? index.byUid.get(recordUid(player)) : null;
+  if (sameAccount) return { status: 'matched', key, candidates: [sameAccount], matchType: 'uid' };
+  if (entry?.candidates?.length) {
+    return {
+      status: 'ambiguous',
+      key,
+      candidates: entry.candidates,
+      matchType: autoMatch ? 'exact-name' : null,
+    };
+  }
+  return { status: 'none', key, candidates: [] };
 }
 
 /**
@@ -228,7 +268,11 @@ export function resolveBaseline(player, options = {}) {
     candidates: proposal.candidates,
   };
   if (selected) {
-    return { values: { ...selected.values }, source: 'vtsscore-2026', match };
+    const source =
+      selected.seasonId && selected.seasonId !== COMPETITION_BASELINE_SEASON
+        ? 'vtsscore-prior'
+        : 'vtsscore-2026';
+    return { values: { ...selected.values }, source, match };
   }
   const values = signupValues(options.signup ?? player);
   return { values, source: values ? 'signup' : null, match };
@@ -317,6 +361,7 @@ export function buildCompetitionGrowthRows({
   confirmations = {},
   window = null,
   autoMatch = false,
+  seasonId = '',
 } = {}) {
   const players = (Array.isArray(submissions) ? submissions : []).filter(
     (submission) => cleanText(submission?.status) === 'submitted' && recordUid(submission)
@@ -329,17 +374,42 @@ export function buildCompetitionGrowthRows({
   const contestedKeys = nameKeysClaimedTwice(players, nameKey);
   return players.map((player) => {
     const submissionUid = recordUid(player);
+    const raceScore = scores.get(submissionUid) || null;
     const baseline = resolveBaseline(player, {
       vtsScore2026ByName: index,
       contestedKeys,
       confirmation: confirmations?.[submissionUid] || null,
       autoMatch,
     });
-    return computeGrowthRow(player, {
-      baseline,
-      raceScore: scores.get(submissionUid) || null,
-      window,
-    });
+    const row = computeGrowthRow(player, { baseline, raceScore, window });
+    // Everything this name ever uploaded, newest first: the current-season
+    // upload plus every earlier upload matched by in-game name.
+    const key = nameKey(player?.gameName);
+    const uploads = [];
+    if (raceScore) {
+      const values = readCompetitionPowerValues(raceScore?.powerValues);
+      const uploadedAt = uploadMillis(raceScore);
+      if (values) {
+        uploads.push({
+          seasonId: cleanText(seasonId),
+          uploadedAt: Number.isFinite(uploadedAt) ? uploadedAt : 0,
+          values,
+        });
+      }
+    }
+    const priorUploads = (key && lookupIndex(index, key)?.uploads) || [];
+    for (const upload of priorUploads) {
+      uploads.push({
+        seasonId: upload.seasonId,
+        uploadedAt: upload.uploadedAt,
+        values: upload.values,
+      });
+    }
+    uploads.sort(
+      (left, right) =>
+        right.uploadedAt - left.uploadedAt || left.seasonId.localeCompare(right.seasonId)
+    );
+    return { ...row, uploads };
   });
 }
 
@@ -413,7 +483,20 @@ export function buildGrowthBoardProjection(input, options = {}) {
     growthPct: round(row.growthPct, 4),
     growthAbs: round(row.growthAbs, 0),
   });
-  const rows = publicRanking.ranked
+  // Every upload a name ever had: the row's own history, newest first.
+  const uploadHistory = (row) =>
+    (Array.isArray(row.uploads) ? row.uploads : []).slice(0, 12).map((upload) => ({
+      seasonId: cleanText(upload.seasonId),
+      uploadedAt: Number.isFinite(upload.uploadedAt) ? upload.uploadedAt : 0,
+      values: Object.fromEntries(
+        Object.entries(upload.values || {})
+          .filter(([, value]) => Number.isFinite(value))
+          .map(([field, value]) => [field, round(value, 0)])
+      ),
+    }));
+  // Ranked and unranked names alike carry their history: an opted-in member
+  // without a valid re-upload still has earlier uploads worth showing.
+  const rows = [...publicRanking.ranked, ...publicNotRanked]
     .slice(0, COMPETITION_BOARD_MAX_ROWS)
     .map((row) => {
       const fields = {};
@@ -423,11 +506,12 @@ export function buildGrowthBoardProjection(input, options = {}) {
         fields[field] = { abs: round(entry.abs, 0), pct: round(entry.pct, 4) };
       }
       return {
-        rank: row.rank,
+        rank: Number.isFinite(row.rank) ? row.rank : null,
         gameName: row.gameName,
         baselineSource: row.baselineSource,
         ...publicGrowth(row),
         fields,
+        uploads: uploadHistory(row),
       };
     });
   const winners = publicRanking.ranked
