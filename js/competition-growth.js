@@ -138,25 +138,35 @@ function uploadMillis(record) {
  * @returns {Map<string, {status: 'unique'|'ambiguous', candidates: Array, uploads: Array}>}
  */
 export function buildVtsScoreBaselineIndex(raceScores = []) {
-  const index = new Map();
-  index.byUid = new Map();
-  index.byExactName = new Map();
+  const uploads = [];
   for (const record of Array.isArray(raceScores) ? raceScores : []) {
     const values = readCompetitionPowerValues(record?.powerValues);
     const gameName = cleanText(record?.gameName);
-    const key = competitionNameKey(gameName);
-    const exactKey = normalizeName(gameName);
-    const submissionUid = recordUid(record);
     if (!values) continue;
     const uploadedAt = uploadMillis(record);
-    const candidate = {
-      submissionUid,
+    uploads.push({
+      submissionUid: recordUid(record),
       gameName,
       values,
       seasonId: cleanText(record?.seasonId),
       uploadedAt: Number.isFinite(uploadedAt) ? uploadedAt : 0,
-    };
-    if (submissionUid) index.byUid.set(submissionUid, candidate);
+    });
+  }
+  // Newest first, so the admin preview proposes the latest upload from any
+  // earlier season no matter what order the records arrive in.
+  uploads.sort(
+    (left, right) =>
+      right.uploadedAt - left.uploadedAt || left.seasonId.localeCompare(right.seasonId)
+  );
+  const index = new Map();
+  index.byUid = new Map();
+  index.byExactName = new Map();
+  for (const candidate of uploads) {
+    if (candidate.submissionUid && !index.byUid.has(candidate.submissionUid)) {
+      index.byUid.set(candidate.submissionUid, candidate);
+    }
+    const key = competitionNameKey(candidate.gameName);
+    const exactKey = normalizeName(candidate.gameName);
     if (exactKey) {
       const exactEntry = index.byExactName.get(exactKey) || {
         status: 'unique',
