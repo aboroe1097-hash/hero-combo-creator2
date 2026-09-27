@@ -205,7 +205,10 @@ const LIMITS = {
   // 16.6.5: the three-waypoint growth comparison, the growth board steps and
   // the 13-language VtsScore copy (seven new locale blocks across four consts)
   // grow the built JS to 11969.7 KiB; the cap moves by the measured minimum.
-  totalJsBytes: 11970 * 1024,
+  // 16.6.6: the growth-board terminology across 13 languages, the
+  // dead-troop-full totals and the standings layout guard grow it to
+  // 11972.2 KiB; the cap moves by the measured minimum.
+  totalJsBytes: 11973 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and

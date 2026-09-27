@@ -24,7 +24,7 @@
 // Pure: no Firestore, no DOM, no i18n. The admin tab (vts-score-admin-view.js)
 // and tests call it; the member board reads only the published projection.
 
-import { deadTroopPowerFromCounts, normalizeDeadTroopCounts } from './dead-troops.js';
+import { normalizeDeadTroopCounts } from './dead-troops.js';
 import { resolveConfirmedPlayerAlias } from './vts-player-aliases.js';
 
 export const COMPETITION_BASELINE_SEASON = 'season-2026';
@@ -299,7 +299,8 @@ export function resolveBaseline(player, options = {}) {
       source,
       match,
       // A pre-16.6.2 upload has no dead-troop split: its values are the alive
-      // reading, so growth for this row is measured alive-to-alive.
+      // reading. The board keeps every record's saved totals, so this flag
+      // only drives the baseline note.
       aliveOnly: !selected.deadTroopCounts,
     };
   }
@@ -328,18 +329,6 @@ function growthStep(from, to) {
   }
   const total = fields.totalCastlePower;
   return { fields, growthAbs: total.abs, growthPct: total.pct };
-}
-
-/** Remove a saved dead-troop component before an alive-to-alive comparison. */
-function stripDeadTroopPower(values, counts) {
-  const deadPower = deadTroopPowerFromCounts(counts) || 0;
-  if (!deadPower) return values;
-  for (const field of ['troopPower', 'totalCastlePower']) {
-    if (Number.isFinite(values[field])) {
-      values[field] = Math.max(0, values[field] - deadPower);
-    }
-  }
-  return values;
 }
 
 function inWindow(ms, window) {
@@ -380,15 +369,12 @@ export function computeGrowthRow(player, { baseline, raceScore = null, window = 
     baselineValues && baseline?.source !== 'signup'
       ? readCompetitionPowerValues(signupStats)
       : null;
-  const signupPoint = signupValues ? { ...signupValues } : null;
-  const reuploadPoint = reuploadValues ? { ...reuploadValues } : null;
-  // A legacy baseline is the alive reading only. Compare like with like:
-  // strip each later waypoint's own dead component, so every pair (baseline to
-  // sign-up, sign-up to re-upload, baseline to re-upload) is alive-to-alive.
-  if (baseline?.aliveOnly) {
-    if (signupPoint) stripDeadTroopPower(signupPoint, signupStats?.deadTroopCounts);
-    if (reuploadPoint) stripDeadTroopPower(reuploadPoint, raceScore?.deadTroopCounts);
-  }
+  // Waypoint values are the competition numbers as saved: dead troops are
+  // already folded into Troop Power and Total Power when the record was saved,
+  // so every pair compares full totals — dead troops are part of the player's
+  // power and are never stripped back out.
+  const signupPoint = signupValues;
+  const reuploadPoint = reuploadValues;
   let notRankedReason = null;
   if (!raceScore && !signupPoint) notRankedReason = 'no-reupload';
   else if (raceScore && !reuploadValues) notRankedReason = 'invalid-reupload';

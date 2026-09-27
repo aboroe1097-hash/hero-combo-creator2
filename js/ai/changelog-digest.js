@@ -1,10 +1,18 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.5";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.6";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.6.6",
+    "date": "2026-09-27",
+    "highlights": [
+      "Dead troops stay in the numbers. The Growth Board stripped the dead-troop component out of the sign-up and final upload whenever the baseline had no dead-troop split, hiding the power members had just entered. Troop Power and Total Power now show and compare the full saved total…",
+      "Growth board wording and layout: the baseline column reads \"Last season data\" for earlier uploads, \"Final upload\" replaces \"Re-upload\", the sign-up is named as the baseline once that record is what a player is measured from, and the Growth columns no longer get cut off at the ri…"
+    ]
+  },
   {
     "version": "16.6.5",
     "date": "2026-09-27",
@@ -87,13 +95,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-09-26",
     "highlights": [
       "Registration screenshot OCR now tries DeepSeek (`deepseek-flash`, the V4.1 Flash model that reads images, with thinking turned off) first when the OCR Worker has a `DEEPSEEK_API_KEY`. Qwen stays as the fallback: `qwen-vl-plus`, then `qwen-vl-max`. It moves to the next model when…"
-    ]
-  },
-  {
-    "version": "16.5.17",
-    "date": "2026-09-26",
-    "highlights": [
-      "Registration screenshot OCR still failed for some screenshots because the model kept writing until it hit its length limit, so its reply was cut off mid-way. The OCR Worker now keeps every value the model finished before the cut (the rest stay blank, with a note to check every v…"
     ]
   }
 ].map((release) =>

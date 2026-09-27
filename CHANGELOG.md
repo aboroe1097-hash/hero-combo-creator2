@@ -2,6 +2,11 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.6.6 - 2026-09-27
+
+- Dead troops stay in the numbers. The Growth Board stripped the dead-troop component out of the sign-up and final upload whenever the baseline had no dead-troop split, hiding the power members had just entered. Troop Power and Total Power now show and compare the full saved totals on every row and every pair. **Redeploy the vtsScore function after this release.**
+- Growth board wording and layout: the baseline column reads "Last season data" for earlier uploads, "Final upload" replaces "Re-upload", the sign-up is named as the baseline once that record is what a player is measured from, and the Growth columns no longer get cut off at the right edge of the standings.
+
 ## 16.6.5 - 2026-09-27
 
 - The Growth Board compares every waypoint a player has: the earlier season's upload, today's sign-up record and the growth re-upload once its window opens. Each row shows baseline → sign-up, sign-up → re-upload and baseline → re-upload changes for all nine power fields, so a member who uploaded in July and registered today sees real growth right away instead of waiting for the re-upload window; the re-upload replaces the sign-up side when it lands. A legacy baseline still compares alive-to-alive, with the dead-troop split stripped from each later waypoint. **Redeploy the vtsScore function after this release.**
