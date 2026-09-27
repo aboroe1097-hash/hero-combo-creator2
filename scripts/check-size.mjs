@@ -522,7 +522,10 @@ const LIMITS = {
     // what keeps this route from adding a deploy file. Retain about 1 KiB.
     // 16.5.2: the shared standalone footer and the branded Back-to-tools bar
     // replace the page's own one-line footer: 30.6 KiB. Retain about 1.4 KiB.
-    'vtsscore.html': { desktop: 32 * 1024, mobile: 32 * 1024 },
+    // 16.6.6: the growth board breaks out of the form column on wide windows
+    // (min(1100px, 100vw - 48px)) and measures 32.1 KiB; the cap moves by the
+    // measured minimum.
+    'vtsscore.html': { desktop: 33 * 1024, mobile: 33 * 1024 },
     // Community Downloads is a static list page: shared tokens plus the download
     // grid stylesheet, and no game data is loaded. Keep the same focused shape.
     'downloads.html': { desktop: 40 * 1024, mobile: 40 * 1024 },
