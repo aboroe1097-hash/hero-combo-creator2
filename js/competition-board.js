@@ -79,6 +79,11 @@ export const COMPETITION_BOARD_COPY_EN = Object.freeze({
   competitionBoardBaselineNoteVtsScore: 'Baseline: an earlier VtsScore upload.',
   competitionBoardBaselineNoteAliveOnly:
     'Baseline: an earlier record without a dead-troop split, so the re-upload is compared alive-to-alive.',
+  competitionBoardFinalNoteSignup:
+    'Now: the Competition #12 sign-up record; the re-upload replaces it when its window opens.',
+  competitionBoardStepBaselineSignup: 'Baseline → Sign-up',
+  competitionBoardStepSignupReupload: 'Sign-up → Re-upload',
+  competitionBoardStepBaselineReupload: 'Baseline → Re-upload',
   competitionBoardHistory: 'Upload history',
   competitionBoardTied: 'Tied',
   competitionBoardFieldTotal: 'Total power',
@@ -136,6 +141,11 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardBaselineNoteVtsScore: 'خط الأساس: رفع VtsScore سابق.',
     competitionBoardBaselineNoteAliveOnly:
       'خط الأساس: سجل سابق بدون تفصيل القوات المفقودة، لذا تتم مقارنة إعادة الرفع بقوة الأحياء فقط.',
+    competitionBoardFinalNoteSignup:
+      'الآن: سجل التسجيل في المسابقة رقم 12؛ وتحل إعادة الرفع محله عند فتح نافذتها.',
+    competitionBoardStepBaselineSignup: 'خط الأساس → التسجيل',
+    competitionBoardStepSignupReupload: 'التسجيل → إعادة الرفع',
+    competitionBoardStepBaselineReupload: 'خط الأساس → إعادة الرفع',
     competitionBoardHistory: 'سجل الرفع',
     competitionBoardTied: 'تعادل',
     competitionBoardFieldTotal: 'القوة الإجمالية',
@@ -190,6 +200,11 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardBaselineNoteVtsScore: 'Base: una subida anterior de VtsScore.',
     competitionBoardBaselineNoteAliveOnly:
       'Base: un registro anterior sin desglose de tropas muertas, así que la nueva subida se compara solo con tropas vivas.',
+    competitionBoardFinalNoteSignup:
+      'Ahora: el registro de inscripción de la Competición #12; la nueva subida lo reemplaza cuando se abre su ventana.',
+    competitionBoardStepBaselineSignup: 'Base → Inscripción',
+    competitionBoardStepSignupReupload: 'Inscripción → Nueva subida',
+    competitionBoardStepBaselineReupload: 'Base → Nueva subida',
     competitionBoardHistory: 'Historial de subidas',
     competitionBoardTied: 'Empate',
     competitionBoardFieldTotal: 'Poder total',
@@ -244,6 +259,11 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardBaselineNoteVtsScore: 'Base: um envio anterior do VtsScore.',
     competitionBoardBaselineNoteAliveOnly:
       'Base: um registo anterior sem detalhe de tropas mortas, por isso o novo envio é comparado apenas com tropas vivas.',
+    competitionBoardFinalNoteSignup:
+      'Agora: o registo de inscrição da Competição #12; o novo envio substitui-o quando a sua janela abrir.',
+    competitionBoardStepBaselineSignup: 'Base → Inscrição',
+    competitionBoardStepSignupReupload: 'Inscrição → Novo envio',
+    competitionBoardStepBaselineReupload: 'Base → Novo envio',
     competitionBoardHistory: 'Histórico de envios',
     competitionBoardTied: 'Empate',
     competitionBoardFieldTotal: 'Poder total',
@@ -298,6 +318,11 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardBaselineNoteVtsScore: 'Base : un envoi VtsScore antérieur.',
     competitionBoardBaselineNoteAliveOnly:
       'Base : un enregistrement antérieur sans détail des troupes mortes ; le nouvel envoi est donc comparé en troupes vivantes.',
+    competitionBoardFinalNoteSignup:
+      'Maintenant : le bulletin d’inscription à la Compétition #12 ; le nouvel envoi le remplacera à l’ouverture de sa fenêtre.',
+    competitionBoardStepBaselineSignup: 'Base → Inscription',
+    competitionBoardStepSignupReupload: 'Inscription → Nouvel envoi',
+    competitionBoardStepBaselineReupload: 'Base → Nouvel envoi',
     competitionBoardHistory: 'Historique des envois',
     competitionBoardTied: 'Égalité',
     competitionBoardFieldTotal: 'Puissance totale',
@@ -352,6 +377,11 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardBaselineNoteVtsScore: 'Basis: ein früherer VtsScore-Upload.',
     competitionBoardBaselineNoteAliveOnly:
       'Basis: ein früherer Datensatz ohne Aufteilung der toten Truppen; der neue Upload wird daher nur mit lebenden Truppen verglichen.',
+    competitionBoardFinalNoteSignup:
+      'Jetzt: der Anmeldedatensatz der Competition #12; der neue Upload ersetzt ihn, sobald sein Fenster öffnet.',
+    competitionBoardStepBaselineSignup: 'Basis → Anmeldung',
+    competitionBoardStepSignupReupload: 'Anmeldung → Neuer Upload',
+    competitionBoardStepBaselineReupload: 'Basis → Neuer Upload',
     competitionBoardHistory: 'Upload-Verlauf',
     competitionBoardTied: 'Gleichstand',
     competitionBoardFieldTotal: 'Gesamtmacht',
@@ -363,6 +393,417 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardFieldUnitSpecialty: 'Einheitenspezialisierungsmacht',
     competitionBoardFieldArtifact: 'Artefaktmacht',
     competitionBoardFieldRoyalTech: 'Königliche Technologiemacht',
+  }),
+  hr: Object.freeze({
+    competitionBoardTitle: 'Ploča rasta Natjecanja #12',
+    competitionBoardIntro:
+      'Rast od osnovice svakog igrača do njegovog ponovnog unosa, poredano prema % rasta ukupne moći. Izjednačenja se razrješavaju prema apsolutnom rastu.',
+    competitionBoardPublished: 'Ažurirano {date}',
+    competitionBoardWinnersTitle: 'Pobjednici',
+    competitionBoardStandingsTitle: 'Poredak',
+    competitionBoardRank: 'Mjesto',
+    competitionBoardPlayer: 'Igrač',
+    competitionBoardGrowthPct: 'Rast %',
+    competitionBoardGrowthAbs: 'Rast',
+    competitionBoardBaseline: 'Osnovica',
+    competitionBoardSourceVtsScore: 'VtsScore 2026',
+    competitionBoardSourceVtsScorePrior: 'Raniji VtsScore',
+    competitionBoardSourceSignup: 'Prijava',
+    competitionBoardSearch: 'Pretraži igrače',
+    competitionBoardSearchPlaceholder: 'Ime igrača',
+    competitionBoardSortBy: 'Sortiraj po',
+    competitionBoardSortPct: 'Rast %',
+    competitionBoardSortAbs: 'Rast',
+    competitionBoardSortName: 'Ime',
+    competitionBoardShowing: 'Prikazano {shown} od {total}',
+    competitionBoardConsentNote:
+      'Ovdje se pojavljuju samo igrači koji su pristali na javnu usporedbu. Svi ostali ostaju izvan ploče.',
+    competitionBoardNotRanked:
+      '{count} igrača nije rangirano: nemaju valjan ponovni unos u prozoru.',
+    competitionBoardEmpty: 'Ploča rasta pojavit će se nakon zatvaranja prozora za ponovni unos.',
+    competitionBoardNoOptInResults: 'Još nema spremnih prijavljenih ponovnih unosa.',
+    competitionBoardNoResults: 'Nijedan igrač ne odgovara tvojoj pretrazi.',
+    competitionBoardValuesPrivate: 'Vrijednosti privatne',
+    competitionBoardDetail: 'Potpuna usporedba',
+    competitionBoardCategory: 'Kategorija',
+    competitionBoardNow: 'Ponovni unos',
+    competitionBoardChange: 'Promjena',
+    competitionBoardChangePct: 'Promjena %',
+    competitionBoardTotalChange: 'Promjena ukupne moći',
+    competitionBoardNoTroopChange: 'Bez postrojbi',
+    competitionBoardBiggestDriver: 'Najveći pokretač',
+    competitionBoardBaselineNoteSignup: 'Osnovica: zapis prijave za Natjecanje #12.',
+    competitionBoardBaselineNoteVtsScore: 'Osnovica: raniji VtsScore unos.',
+    competitionBoardBaselineNoteAliveOnly:
+      'Osnovica: raniji zapis bez podjele mrtvih postrojbi, pa se ponovni unos uspoređuje živi-sa-živima.',
+    competitionBoardFinalNoteSignup:
+      'Sada: zapis prijave za Natjecanje #12; ponovni unos ga zamjenjuje kad se otvori njegov prozor.',
+    competitionBoardStepBaselineSignup: 'Osnovica → Prijava',
+    competitionBoardStepSignupReupload: 'Prijava → Ponovni unos',
+    competitionBoardStepBaselineReupload: 'Osnovica → Ponovni unos',
+    competitionBoardHistory: 'Povijest unosa',
+    competitionBoardTied: 'Izjednačeno',
+    competitionBoardFieldTotal: 'Ukupna moć',
+    competitionBoardFieldTroop: 'Moć postrojbi',
+    competitionBoardFieldBuilding: 'Moć zgrada',
+    competitionBoardFieldTechnology: 'Moć tehnologije',
+    competitionBoardFieldHero: 'Borbena moć heroja',
+    competitionBoardFieldDragon: 'Moć zmaja',
+    competitionBoardFieldUnitSpecialty: 'Moć specijalizacije jedinica',
+    competitionBoardFieldArtifact: 'Moć artefakata',
+    competitionBoardFieldRoyalTech: 'Moć kraljevske tehnologije',
+  }),
+  id: Object.freeze({
+    competitionBoardTitle: 'Papan pertumbuhan Kompetisi #12',
+    competitionBoardIntro:
+      'Pertumbuhan dari baseline setiap pemain hingga unggahan ulang mereka, diurutkan berdasarkan % pertumbuhan Total Power. Hasil seri dipecah berdasarkan pertumbuhan absolut.',
+    competitionBoardPublished: 'Diperbarui {date}',
+    competitionBoardWinnersTitle: 'Pemenang',
+    competitionBoardStandingsTitle: 'Klasemen',
+    competitionBoardRank: 'Peringkat',
+    competitionBoardPlayer: 'Pemain',
+    competitionBoardGrowthPct: 'Pertumbuhan %',
+    competitionBoardGrowthAbs: 'Pertumbuhan',
+    competitionBoardBaseline: 'Baseline',
+    competitionBoardSourceVtsScore: 'VtsScore 2026',
+    competitionBoardSourceVtsScorePrior: 'VtsScore sebelumnya',
+    competitionBoardSourceSignup: 'Pendaftaran',
+    competitionBoardSearch: 'Cari pemain',
+    competitionBoardSearchPlaceholder: 'Nama pemain',
+    competitionBoardSortBy: 'Urutkan berdasarkan',
+    competitionBoardSortPct: 'Pertumbuhan %',
+    competitionBoardSortAbs: 'Pertumbuhan',
+    competitionBoardSortName: 'Nama',
+    competitionBoardShowing: 'Menampilkan {shown} dari {total}',
+    competitionBoardConsentNote:
+      'Hanya pemain yang menyetujui perbandingan publik yang muncul di sini. Semua pemain lain tetap berada di luar papan.',
+    competitionBoardNotRanked:
+      '{count} pemain tidak berperingkat: mereka tidak memiliki unggahan ulang yang valid dalam jendela waktu.',
+    competitionBoardEmpty: 'Papan pertumbuhan akan muncul setelah jendela unggah ulang ditutup.',
+    competitionBoardNoOptInResults: 'Belum ada unggahan ulang publik yang siap.',
+    competitionBoardNoResults: 'Tidak ada pemain yang cocok dengan pencarianmu.',
+    competitionBoardValuesPrivate: 'Nilai pribadi',
+    competitionBoardDetail: 'Perbandingan lengkap',
+    competitionBoardCategory: 'Kategori',
+    competitionBoardNow: 'Unggahan ulang',
+    competitionBoardChange: 'Perubahan',
+    competitionBoardChangePct: 'Perubahan %',
+    competitionBoardTotalChange: 'Perubahan Total Power',
+    competitionBoardNoTroopChange: 'Tanpa pasukan',
+    competitionBoardBiggestDriver: 'Pendorong terbesar',
+    competitionBoardBaselineNoteSignup: 'Baseline: catatan pendaftaran Kompetisi #12.',
+    competitionBoardBaselineNoteVtsScore: 'Baseline: unggahan VtsScore sebelumnya.',
+    competitionBoardBaselineNoteAliveOnly:
+      'Baseline: catatan sebelumnya tanpa rincian pasukan mati, jadi unggahan ulang dibandingkan hidup-terhadap-hidup.',
+    competitionBoardFinalNoteSignup:
+      'Sekarang: catatan pendaftaran Kompetisi #12; unggahan ulang menggantikannya saat jendelanya dibuka.',
+    competitionBoardStepBaselineSignup: 'Baseline → Pendaftaran',
+    competitionBoardStepSignupReupload: 'Pendaftaran → Unggahan ulang',
+    competitionBoardStepBaselineReupload: 'Baseline → Unggahan ulang',
+    competitionBoardHistory: 'Riwayat unggahan',
+    competitionBoardTied: 'Seri',
+    competitionBoardFieldTotal: 'Total Power',
+    competitionBoardFieldTroop: 'Troop Power',
+    competitionBoardFieldBuilding: 'Building Power',
+    competitionBoardFieldTechnology: 'Technology Power',
+    competitionBoardFieldHero: 'Hero Combat Power',
+    competitionBoardFieldDragon: 'Dragon Power',
+    competitionBoardFieldUnitSpecialty: 'Unit Specialty Power',
+    competitionBoardFieldArtifact: 'Artifact Power',
+    competitionBoardFieldRoyalTech: 'Royal Tech Power',
+  }),
+  it: Object.freeze({
+    competitionBoardTitle: 'Classifica di crescita della Competizione #12',
+    competitionBoardIntro:
+      'Crescita dalla base di ogni giocatore al suo nuovo caricamento, ordinata per % di crescita della Potenza totale. I pareggi sono risolti dalla crescita assoluta.',
+    competitionBoardPublished: 'Aggiornata il {date}',
+    competitionBoardWinnersTitle: 'Vincitori',
+    competitionBoardStandingsTitle: 'Classifica',
+    competitionBoardRank: 'Posizione',
+    competitionBoardPlayer: 'Giocatore',
+    competitionBoardGrowthPct: 'Crescita %',
+    competitionBoardGrowthAbs: 'Crescita',
+    competitionBoardBaseline: 'Base',
+    competitionBoardSourceVtsScore: 'VtsScore 2026',
+    competitionBoardSourceVtsScorePrior: 'VtsScore precedente',
+    competitionBoardSourceSignup: 'Iscrizione',
+    competitionBoardSearch: 'Cerca giocatori',
+    competitionBoardSearchPlaceholder: 'Nome del giocatore',
+    competitionBoardSortBy: 'Ordina per',
+    competitionBoardSortPct: 'Crescita %',
+    competitionBoardSortAbs: 'Crescita',
+    competitionBoardSortName: 'Nome',
+    competitionBoardShowing: 'Mostrati {shown} di {total}',
+    competitionBoardConsentNote:
+      'Qui compaiono solo i giocatori che hanno accettato il confronto pubblico. Tutti gli altri restano fuori dalla classifica.',
+    competitionBoardNotRanked:
+      '{count} giocatori non sono in classifica: non hanno un nuovo caricamento valido nella finestra.',
+    competitionBoardEmpty:
+      'La classifica di crescita apparirà dopo la chiusura della finestra dei nuovi caricamenti.',
+    competitionBoardNoOptInResults: 'Nessun nuovo caricamento pubblico è ancora pronto.',
+    competitionBoardNoResults: 'Nessun giocatore corrisponde alla tua ricerca.',
+    competitionBoardValuesPrivate: 'Valori privati',
+    competitionBoardDetail: 'Confronto completo',
+    competitionBoardCategory: 'Categoria',
+    competitionBoardNow: 'Nuovo caricamento',
+    competitionBoardChange: 'Variazione',
+    competitionBoardChangePct: 'Variazione %',
+    competitionBoardTotalChange: 'Variazione della potenza totale',
+    competitionBoardNoTroopChange: 'Senza truppe',
+    competitionBoardBiggestDriver: 'Fattore principale',
+    competitionBoardBaselineNoteSignup: 'Base: il record di iscrizione alla Competizione #12.',
+    competitionBoardBaselineNoteVtsScore: 'Base: un caricamento VtsScore precedente.',
+    competitionBoardBaselineNoteAliveOnly:
+      'Base: un record precedente senza suddivisione delle truppe morte; il nuovo caricamento è quindi confrontato solo con le truppe vive.',
+    competitionBoardFinalNoteSignup:
+      'Ora: il record di iscrizione alla Competizione #12; il nuovo caricamento lo sostituirà all’apertura della sua finestra.',
+    competitionBoardStepBaselineSignup: 'Base → Iscrizione',
+    competitionBoardStepSignupReupload: 'Iscrizione → Nuovo caricamento',
+    competitionBoardStepBaselineReupload: 'Base → Nuovo caricamento',
+    competitionBoardHistory: 'Cronologia caricamenti',
+    competitionBoardTied: 'Parità',
+    competitionBoardFieldTotal: 'Potere totale',
+    competitionBoardFieldTroop: 'Potere delle truppe',
+    competitionBoardFieldBuilding: 'Potere degli edifici',
+    competitionBoardFieldTechnology: 'Potere della tecnologia',
+    competitionBoardFieldHero: 'Potere di combattimento degli eroi',
+    competitionBoardFieldDragon: 'Potere del drago',
+    competitionBoardFieldUnitSpecialty: 'Potere della specialità delle unità',
+    competitionBoardFieldArtifact: 'Potere degli artefatti',
+    competitionBoardFieldRoyalTech: 'Potere della Tecnologia Reale',
+  }),
+  kr: Object.freeze({
+    competitionBoardTitle: '대회 #12 성장 보드',
+    competitionBoardIntro:
+      '각 플레이어의 기준점부터 재업로드까지의 성장을 총 전투력 성장률로 정렬합니다. 동률은 절대 성장량으로 결정됩니다.',
+    competitionBoardPublished: '업데이트: {date}',
+    competitionBoardWinnersTitle: '우승자',
+    competitionBoardStandingsTitle: '순위',
+    competitionBoardRank: '순위',
+    competitionBoardPlayer: '플레이어',
+    competitionBoardGrowthPct: '성장률',
+    competitionBoardGrowthAbs: '성장',
+    competitionBoardBaseline: '기준',
+    competitionBoardSourceVtsScore: '2026 VtsScore',
+    competitionBoardSourceVtsScorePrior: '이전 VtsScore',
+    competitionBoardSourceSignup: '등록',
+    competitionBoardSearch: '플레이어 검색',
+    competitionBoardSearchPlaceholder: '플레이어 이름',
+    competitionBoardSortBy: '정렬 기준',
+    competitionBoardSortPct: '성장률',
+    competitionBoardSortAbs: '성장',
+    competitionBoardSortName: '이름',
+    competitionBoardShowing: '전체 {total}명 중 {shown}명 표시',
+    competitionBoardConsentNote:
+      '공개 비교에 동의한 플레이어만 여기에 표시됩니다. 다른 모든 플레이어는 보드에서 제외됩니다.',
+    competitionBoardNotRanked:
+      '{count}명의 플레이어는 순위에 없습니다. 기간 내 유효한 재업로드가 없습니다.',
+    competitionBoardEmpty: '재업로드 기간이 끝나면 성장 보드가 표시됩니다.',
+    competitionBoardNoOptInResults: '아직 공개 동의한 재업로드가 준비되지 않았습니다.',
+    competitionBoardNoResults: '검색과 일치하는 플레이어가 없습니다.',
+    competitionBoardValuesPrivate: '값 비공개',
+    competitionBoardDetail: '전체 비교',
+    competitionBoardCategory: '카테고리',
+    competitionBoardNow: '재업로드',
+    competitionBoardChange: '변화',
+    competitionBoardChangePct: '변화율',
+    competitionBoardTotalChange: '총 전투력 변화',
+    competitionBoardNoTroopChange: '병력 제외',
+    competitionBoardBiggestDriver: '최대 요인',
+    competitionBoardBaselineNoteSignup: '기준: 대회 #12 등록 기록.',
+    competitionBoardBaselineNoteVtsScore: '기준: 이전 VtsScore 업로드.',
+    competitionBoardBaselineNoteAliveOnly:
+      '기준: 사망 병력 구분이 없는 이전 기록이라 재업로드를 생존 병력끼리 비교합니다.',
+    competitionBoardFinalNoteSignup:
+      '현재: 대회 #12 등록 기록. 기간이 열리면 재업로드가 이를 대체합니다.',
+    competitionBoardStepBaselineSignup: '기준 → 등록',
+    competitionBoardStepSignupReupload: '등록 → 재업로드',
+    competitionBoardStepBaselineReupload: '기준 → 재업로드',
+    competitionBoardHistory: '업로드 내역',
+    competitionBoardTied: '동점',
+    competitionBoardFieldTotal: '총 전투력',
+    competitionBoardFieldTroop: '병력 전투력',
+    competitionBoardFieldBuilding: '건물 전투력',
+    competitionBoardFieldTechnology: '기술 전투력',
+    competitionBoardFieldHero: '영웅 전투력',
+    competitionBoardFieldDragon: '드래곤 전투력',
+    competitionBoardFieldUnitSpecialty: '병종 특화 전투력',
+    competitionBoardFieldArtifact: '유물 전투력',
+    competitionBoardFieldRoyalTech: '로열 테크 전투력',
+  }),
+  ru: Object.freeze({
+    competitionBoardTitle: 'Таблица роста соревнования №12',
+    competitionBoardIntro:
+      'Рост от базового значения каждого игрока до повторной загрузки, отсортированный по % роста общей силы. При равенстве — по абсолютному росту.',
+    competitionBoardPublished: 'Обновлено {date}',
+    competitionBoardWinnersTitle: 'Победители',
+    competitionBoardStandingsTitle: 'Рейтинг',
+    competitionBoardRank: 'Место',
+    competitionBoardPlayer: 'Игрок',
+    competitionBoardGrowthPct: 'Рост %',
+    competitionBoardGrowthAbs: 'Рост',
+    competitionBoardBaseline: 'База',
+    competitionBoardSourceVtsScore: 'VtsScore 2026',
+    competitionBoardSourceVtsScorePrior: 'Прежний VtsScore',
+    competitionBoardSourceSignup: 'Регистрация',
+    competitionBoardSearch: 'Найти игроков',
+    competitionBoardSearchPlaceholder: 'Имя игрока',
+    competitionBoardSortBy: 'Сортировать по',
+    competitionBoardSortPct: 'Рост %',
+    competitionBoardSortAbs: 'Рост',
+    competitionBoardSortName: 'Имя',
+    competitionBoardShowing: 'Показано {shown} из {total}',
+    competitionBoardConsentNote:
+      'Здесь отображаются только игроки, согласившиеся на публичное сравнение. Все остальные остаются за пределами таблицы.',
+    competitionBoardNotRanked:
+      '{count} игроков вне рейтинга: у них нет допустимой повторной загрузки в окне.',
+    competitionBoardEmpty: 'Таблица роста появится после закрытия окна повторной загрузки.',
+    competitionBoardNoOptInResults: 'Публичных повторных загрузок пока нет.',
+    competitionBoardNoResults: 'Ни один игрок не соответствует вашему поиску.',
+    competitionBoardValuesPrivate: 'Значения скрыты',
+    competitionBoardDetail: 'Полное сравнение',
+    competitionBoardCategory: 'Категория',
+    competitionBoardNow: 'Повторная загрузка',
+    competitionBoardChange: 'Изменение',
+    competitionBoardChangePct: 'Изменение %',
+    competitionBoardTotalChange: 'Изменение общей силы',
+    competitionBoardNoTroopChange: 'Без войск',
+    competitionBoardBiggestDriver: 'Главный фактор',
+    competitionBoardBaselineNoteSignup: 'База: запись регистрации на соревнование №12.',
+    competitionBoardBaselineNoteVtsScore: 'База: более ранняя загрузка VtsScore.',
+    competitionBoardBaselineNoteAliveOnly:
+      'База: более ранняя запись без разделения погибших войск, поэтому повторная загрузка сравнивается только по живым войскам.',
+    competitionBoardFinalNoteSignup:
+      'Сейчас: запись регистрации на соревнование №12; повторная загрузка заменит её при открытии окна.',
+    competitionBoardStepBaselineSignup: 'База → Регистрация',
+    competitionBoardStepSignupReupload: 'Регистрация → Повторная загрузка',
+    competitionBoardStepBaselineReupload: 'База → Повторная загрузка',
+    competitionBoardHistory: 'История загрузок',
+    competitionBoardTied: 'Ничья',
+    competitionBoardFieldTotal: 'Общая сила',
+    competitionBoardFieldTroop: 'Сила войск',
+    competitionBoardFieldBuilding: 'Сила строений',
+    competitionBoardFieldTechnology: 'Сила технологий',
+    competitionBoardFieldHero: 'Боевая сила героев',
+    competitionBoardFieldDragon: 'Сила дракона',
+    competitionBoardFieldUnitSpecialty: 'Сила специализации войск',
+    competitionBoardFieldArtifact: 'Сила артефактов',
+    competitionBoardFieldRoyalTech: 'Сила королевских технологий',
+  }),
+  tr: Object.freeze({
+    competitionBoardTitle: 'Yarışma #12 büyüme tablosu',
+    competitionBoardIntro:
+      'Her oyuncunun başlangıç değerinden yeniden yüklemesine kadar olan büyüme, Toplam güç büyüme yüzdesine göre sıralanır. Eşitlikler mutlak büyümeye göre bozulur.',
+    competitionBoardPublished: '{date} tarihinde güncellendi',
+    competitionBoardWinnersTitle: 'Kazananlar',
+    competitionBoardStandingsTitle: 'Sıralama',
+    competitionBoardRank: 'Sıra',
+    competitionBoardPlayer: 'Oyuncu',
+    competitionBoardGrowthPct: 'Büyüme %',
+    competitionBoardGrowthAbs: 'Büyüme',
+    competitionBoardBaseline: 'Başlangıç',
+    competitionBoardSourceVtsScore: '2026 VtsScore',
+    competitionBoardSourceVtsScorePrior: 'Önceki VtsScore',
+    competitionBoardSourceSignup: 'Kayıt',
+    competitionBoardSearch: 'Oyuncu ara',
+    competitionBoardSearchPlaceholder: 'Oyuncu adı',
+    competitionBoardSortBy: 'Şuna göre sırala',
+    competitionBoardSortPct: 'Büyüme %',
+    competitionBoardSortAbs: 'Büyüme',
+    competitionBoardSortName: 'Ad',
+    competitionBoardShowing: '{total} oyuncudan {shown} gösteriliyor',
+    competitionBoardConsentNote:
+      'Burada yalnızca herkese açık karşılaştırmayı kabul eden oyuncular görünür. Diğerleri tablonun dışında kalır.',
+    competitionBoardNotRanked:
+      '{count} oyuncu sıralamada değil: pencerede geçerli bir yeniden yükleme yok.',
+    competitionBoardEmpty: 'Büyüme tablosu, yeniden yükleme penceresi kapandıktan sonra görünecek.',
+    competitionBoardNoOptInResults: 'Henüz hazır herkese açık yeniden yükleme yok.',
+    competitionBoardNoResults: 'Aramanızla eşleşen oyuncu yok.',
+    competitionBoardValuesPrivate: 'Değerler gizli',
+    competitionBoardDetail: 'Tam karşılaştırma',
+    competitionBoardCategory: 'Kategori',
+    competitionBoardNow: 'Yeniden yükleme',
+    competitionBoardChange: 'Değişim',
+    competitionBoardChangePct: 'Değişim %',
+    competitionBoardTotalChange: 'Toplam güç değişimi',
+    competitionBoardNoTroopChange: 'Birlikler hariç',
+    competitionBoardBiggestDriver: 'En büyük etken',
+    competitionBoardBaselineNoteSignup: 'Başlangıç: Yarışma #12 kayıt kaydı.',
+    competitionBoardBaselineNoteVtsScore: 'Başlangıç: daha önceki bir VtsScore yüklemesi.',
+    competitionBoardBaselineNoteAliveOnly:
+      'Başlangıç: ölü birlik ayrımı olmayan daha önceki bir kayıt; bu yüzden yeniden yükleme yalnızca canlı birliklerle karşılaştırılır.',
+    competitionBoardFinalNoteSignup:
+      'Şimdi: Yarışma #12 kayıt kaydı; penceresi açıldığında yeniden yükleme onun yerini alır.',
+    competitionBoardStepBaselineSignup: 'Başlangıç → Kayıt',
+    competitionBoardStepSignupReupload: 'Kayıt → Yeniden yükleme',
+    competitionBoardStepBaselineReupload: 'Başlangıç → Yeniden yükleme',
+    competitionBoardHistory: 'Yükleme geçmişi',
+    competitionBoardTied: 'Berabere',
+    competitionBoardFieldTotal: 'Toplam güç',
+    competitionBoardFieldTroop: 'Birlik gücü',
+    competitionBoardFieldBuilding: 'Bina gücü',
+    competitionBoardFieldTechnology: 'Teknoloji gücü',
+    competitionBoardFieldHero: 'Kahraman savaş gücü',
+    competitionBoardFieldDragon: 'Dragon gücü',
+    competitionBoardFieldUnitSpecialty: 'Birim uzmanlık gücü',
+    competitionBoardFieldArtifact: 'Eser gücü',
+    competitionBoardFieldRoyalTech: 'Kraliyet Teknoloji gücü',
+  }),
+  zh: Object.freeze({
+    competitionBoardTitle: '第12届比赛成长榜',
+    competitionBoardIntro:
+      '从每位玩家的基准到重新上传之间的成长，按总战力成长百分比排名。并列时按绝对成长值决出胜负。',
+    competitionBoardPublished: '更新于 {date}',
+    competitionBoardWinnersTitle: '获胜者',
+    competitionBoardStandingsTitle: '排名',
+    competitionBoardRank: '名次',
+    competitionBoardPlayer: '玩家',
+    competitionBoardGrowthPct: '成长率',
+    competitionBoardGrowthAbs: '成长',
+    competitionBoardBaseline: '基准',
+    competitionBoardSourceVtsScore: '2026 VtsScore',
+    competitionBoardSourceVtsScorePrior: '以往 VtsScore',
+    competitionBoardSourceSignup: '报名',
+    competitionBoardSearch: '搜索玩家',
+    competitionBoardSearchPlaceholder: '玩家名称',
+    competitionBoardSortBy: '排序方式',
+    competitionBoardSortPct: '成长率',
+    competitionBoardSortAbs: '成长',
+    competitionBoardSortName: '名称',
+    competitionBoardShowing: '显示 {shown} / {total}',
+    competitionBoardConsentNote: '此处仅显示同意公开比较的玩家。其他玩家不会出现在榜单中。',
+    competitionBoardNotRanked: '{count} 名玩家未排名：窗口期内没有有效的重新上传。',
+    competitionBoardEmpty: '重新上传窗口关闭后，成长榜将显示。',
+    competitionBoardNoOptInResults: '暂无已同意的重新上传可供显示。',
+    competitionBoardNoResults: '没有玩家与你的搜索匹配。',
+    competitionBoardValuesPrivate: '数值保密',
+    competitionBoardDetail: '完整比较',
+    competitionBoardCategory: '类别',
+    competitionBoardNow: '重新上传',
+    competitionBoardChange: '变化',
+    competitionBoardChangePct: '变化率',
+    competitionBoardTotalChange: '总战力变化',
+    competitionBoardNoTroopChange: '不含部队',
+    competitionBoardBiggestDriver: '最大驱动因素',
+    competitionBoardBaselineNoteSignup: '基准：第12届比赛报名记录。',
+    competitionBoardBaselineNoteVtsScore: '基准：以往的 VtsScore 上传。',
+    competitionBoardBaselineNoteAliveOnly:
+      '基准：以往记录不含阵亡部队拆分，因此重新上传仅与存活部队比较。',
+    competitionBoardFinalNoteSignup: '当前：第12届比赛报名记录；窗口开启后，重新上传将取代它。',
+    competitionBoardStepBaselineSignup: '基准 → 报名',
+    competitionBoardStepSignupReupload: '报名 → 重新上传',
+    competitionBoardStepBaselineReupload: '基准 → 重新上传',
+    competitionBoardHistory: '上传历史',
+    competitionBoardTied: '平局',
+    competitionBoardFieldTotal: '总战力',
+    competitionBoardFieldTroop: '部队战力',
+    competitionBoardFieldBuilding: '建筑战力',
+    competitionBoardFieldTechnology: '科技战力',
+    competitionBoardFieldHero: '英雄战力',
+    competitionBoardFieldDragon: '龙战力',
+    competitionBoardFieldUnitSpecialty: '兵种专精战力',
+    competitionBoardFieldArtifact: '神器战力',
+    competitionBoardFieldRoyalTech: '皇家科技战力',
   }),
 });
 
@@ -455,11 +896,47 @@ export function normalizeCompetitionBoard(raw) {
           };
         })
         .filter((upload) => Object.keys(upload.values).length > 0);
+      const normalizeValues = (values) => {
+        if (!values || typeof values !== 'object') return null;
+        const out = {};
+        for (const [field] of FIELDS) {
+          const value = finite(values[field]);
+          if (value !== null) out[field] = value;
+        }
+        return Object.keys(out).length ? out : null;
+      };
+      const normalizeStep = (step) => {
+        if (!step || typeof step !== 'object') return null;
+        const fields = {};
+        for (const [field] of FIELDS) {
+          const entry = step.fields?.[field];
+          if (!entry) continue;
+          fields[field] = { abs: finite(entry.abs), pct: finite(entry.pct) };
+        }
+        return {
+          growthAbs: finite(step.growthAbs),
+          growthPct: finite(step.growthPct),
+          fields,
+        };
+      };
       return {
         rank: Number.isInteger(row?.rank) && row.rank > 0 ? row.rank : null,
         gameName,
         baselineSource: BASELINE_SOURCES.has(row?.baselineSource) ? row.baselineSource : 'signup',
         baselineAliveOnly: row?.baselineAliveOnly === true,
+        finalSource:
+          row?.finalSource === 'signup' || row?.finalSource === 'reupload'
+            ? row.finalSource
+            : null,
+        waypoints: {
+          signup: normalizeValues(row?.waypoints?.signup),
+          reupload: normalizeValues(row?.waypoints?.reupload),
+        },
+        steps: {
+          baselineToSignup: normalizeStep(row?.steps?.baselineToSignup),
+          signupToReupload: normalizeStep(row?.steps?.signupToReupload),
+          baselineToReupload: normalizeStep(row?.steps?.baselineToReupload),
+        },
         growthPct: finite(row?.growthPct),
         growthAbs: finite(row?.growthAbs),
         fields,
@@ -617,22 +1094,62 @@ function detailHtml(row, text, format) {
         }
       </div>`
     : '';
+  // Value columns: the baseline, then today's sign-up record and the growth
+  // re-upload when each exists. One change column per pair of waypoints, so a
+  // player with all three sees baseline to sign-up, sign-up to re-upload and
+  // baseline to re-upload.
+  const signup = row.waypoints?.signup || null;
+  const reupload = row.waypoints?.reupload || null;
+  const valueColumns = [{ key: 'competitionBoardBaseline', get: (entry) => entry.baseline }];
+  if (signup) {
+    valueColumns.push({
+      key: 'competitionBoardSourceSignup',
+      get: (entry, field) => signup[field] ?? null,
+    });
+  }
+  if (reupload) {
+    valueColumns.push({
+      key: 'competitionBoardNow',
+      get: (entry, field) => reupload[field] ?? null,
+    });
+  } else if (!signup) {
+    valueColumns.push({ key: 'competitionBoardNow', get: (entry) => entry.final });
+  }
+  const steps = [
+    ['baselineToSignup', 'competitionBoardStepBaselineSignup'],
+    ['signupToReupload', 'competitionBoardStepSignupReupload'],
+    ['baselineToReupload', 'competitionBoardStepBaselineReupload'],
+  ]
+    .map(([key, labelKey]) => ({ labelKey, step: row.steps?.[key] || null }))
+    .filter((item) => item.step);
   const body = entries
-    .map(
-      ([, key, entry]) => `<tr>
+    .map(([field, key, entry]) => {
+      const valueCells = valueColumns
+        .map((column) => `<td>${esc(format.num(column.get(entry, field)))}</td>`)
+        .join('');
+      const stepCells = steps
+        .map(({ step }) => {
+          const stepEntry = step.fields?.[field];
+          return `<td data-tone="${tone(stepEntry?.abs ?? null)}">${esc(
+            format.abs(stepEntry?.abs ?? null)
+          )}<br><small>${esc(format.pct(stepEntry?.pct ?? null))}</small></td>`;
+        })
+        .join('');
+      return `<tr>
         <th scope="row">${esc(text(key))}</th>
-        <td>${esc(format.num(entry.baseline))}</td>
-        <td>${esc(format.num(entry.final))}</td>
-        <td data-tone="${tone(entry.abs ?? null)}">${esc(format.abs(entry.abs ?? null))}</td>
-        <td data-tone="${tone(entry.pct ?? null)}">${esc(format.pct(entry.pct ?? null))}</td>
-      </tr>`
-    )
+        ${valueCells}${stepCells}
+      </tr>`;
+    })
     .join('');
   const noteKey = row.baselineAliveOnly
     ? 'competitionBoardBaselineNoteAliveOnly'
     : row.baselineSource === 'signup'
       ? 'competitionBoardBaselineNoteSignup'
       : 'competitionBoardBaselineNoteVtsScore';
+  const finalNote =
+    row.finalSource === 'signup'
+      ? `<p class="comp-board__detail-note">${esc(text('competitionBoardFinalNoteSignup'))}</p>`
+      : '';
   return `<details class="comp-board__detail">
     <summary>${esc(text('competitionBoardDetail'))}</summary>
     ${cards}
@@ -640,15 +1157,18 @@ function detailHtml(row, text, format) {
       <table class="comp-board__detail-table">
         <thead><tr>
           <th scope="col">${esc(text('competitionBoardCategory'))}</th>
-          <th scope="col">${esc(text('competitionBoardBaseline'))}</th>
-          <th scope="col">${esc(text('competitionBoardNow'))}</th>
-          <th scope="col">${esc(text('competitionBoardChange'))}</th>
-          <th scope="col">${esc(text('competitionBoardChangePct'))}</th>
+          ${valueColumns
+            .map((column) => `<th scope="col">${esc(text(column.key))}</th>`)
+            .join('')}
+          ${steps
+            .map(({ labelKey }) => `<th scope="col">${esc(text(labelKey))}</th>`)
+            .join('')}
         </tr></thead>
         <tbody>${body}</tbody>
       </table>
     </div>
     <p class="comp-board__detail-note">${esc(text(noteKey))}</p>
+    ${finalNote}
   </details>`;
 }
 

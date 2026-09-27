@@ -396,6 +396,13 @@
   font-weight: 700;
 }
 
+.comp-board .comp-board__detail-table td small {
+  display: block;
+  color: var(--cb-muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
 .comp-board__detail-note {
   margin: 0.5rem 0 0;
   color: var(--cb-muted);

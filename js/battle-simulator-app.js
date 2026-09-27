@@ -101,7 +101,7 @@ import {
   writeBattleProfileOverride,
 } from './battle-simulator-profile-store.js';
 
-const APP_VERSION = '16.6.4';
+const APP_VERSION = '16.6.5';
 const THEME_STORAGE_KEY = 'vts_theme';
 const SIDE_IDS = ['A', 'B'];
 const STAT_DISPLAY_ORDER = [

@@ -63,7 +63,7 @@ export function createDeadTroopsEditor(
 ) {
   const documentRef = mount?.ownerDocument || globalThis.document;
   const editorState = state || {
-    enabled: false,
+    enabled: true,
     unit: DEFAULT_DEAD_TROOP_UNIT,
     activeClass: 'footmen',
     counts: new Map(),
@@ -305,7 +305,7 @@ export function createDeadTroopsEditor(
         editorState.counts.set(key, convertDeadTroopCountUnit(count, 'troops', editorState.unit));
       }
     }
-    editorState.enabled = Object.values(normalized).some((count) => count > 0);
+    editorState.enabled = true;
     render();
     return true;
   }

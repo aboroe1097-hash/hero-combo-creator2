@@ -376,7 +376,7 @@ test('the VtsScore page carries the revived signup as its first member step', ()
   }
 });
 
-test('every signup string on the page exists in all six VtsScore languages', () => {
+test('every signup string on the page exists in every VtsScore language', () => {
   const page = readFileSync('vtsscore.html', 'utf8');
   const keys = new Set();
   for (const match of page.matchAll(/data-vts-i18n(?:-placeholder)?="([^"]+)"/g)) {
@@ -395,18 +395,18 @@ test('every signup string on the page exists in all six VtsScore languages', () 
   ]) {
     assert.ok(VTS_SCORE_COPY_KEYS.includes(key), `${key} must exist`);
   }
-  // Signup copy is complete in all six languages, not just English.
+  // Signup copy is complete in every VtsScore language, not just English.
   const source = readFileSync('js/vts-score-i18n.js', 'utf8');
   const signupBlock = source.slice(
     source.indexOf('const SIGNUP_COPY'),
     source.indexOf('const COPY =')
   );
-  for (const locale of ['en', 'ar', 'es', 'pt', 'fr', 'de']) {
+  for (const locale of VTS_SCORE_LANGUAGES) {
     assert.ok(signupBlock.includes(`\n  ${locale}: {`), `${locale} signup copy`);
   }
   for (const key of ['signupStateSaved']) {
     const uses = signupBlock.split(`${key}:`).length - 1;
-    assert.equal(uses, 6, `${key} must be translated in all six languages`);
+    assert.equal(uses, VTS_SCORE_LANGUAGES.length, `${key} must be translated in every language`);
   }
 });
 
@@ -533,7 +533,7 @@ test('the registration form collects Artifact Power, and Towers is named on the 
   // The specialty row names Towers, in every page locale, with that locale's
   // own word for Towers (not just any parenthetical).
   const specialty = copy.match(/fieldUnitSpecialtyPower: '[^']+'/g) || [];
-  assert.equal(specialty.length, 6, 'six page locales carry the label');
+  assert.equal(specialty.length, VTS_SCORE_LANGUAGES.length, 'every page locale carries the label');
   const breakdown = copy.slice(
     copy.indexOf('const FULL_BREAKDOWN_COPY'),
     copy.indexOf('const SIGNUP_COPY')
@@ -545,6 +545,13 @@ test('the registration form collects Artifact Power, and Towers is named on the 
     pt: 'Torres',
     fr: 'Tours',
     de: 'Türme',
+    hr: 'Kule',
+    id: 'Menara',
+    it: 'Torri',
+    kr: '타워',
+    ru: 'Башни',
+    tr: 'Kuleler',
+    zh: '塔楼',
   };
   assert.deepEqual(Object.keys(towersByLocale).sort(), [...VTS_SCORE_LANGUAGES].sort());
   for (const [locale, towers] of Object.entries(towersByLocale)) {

@@ -284,6 +284,30 @@ function growthOf(baseline, final) {
   return { abs, pct: baseline > 0 ? (abs / baseline) * 100 : null };
 }
 
+/** Copy of js/competition-growth.js growthStep(). */
+function growthStep(from, to) {
+  const fields = {};
+  for (const field of COMPETITION_GROWTH_FIELDS) {
+    const start = from?.[field] ?? null;
+    const end = to?.[field] ?? null;
+    fields[field] = { from: start, to: end, ...growthOf(start, end) };
+  }
+  const total = fields.totalCastlePower;
+  return { fields, growthAbs: total.abs, growthPct: total.pct };
+}
+
+/** Copy of js/competition-growth.js stripDeadTroopPower(). */
+function stripDeadTroopPower(values, counts) {
+  const deadPower = deadTroopPowerFromCounts(counts) || 0;
+  if (!deadPower) return values;
+  for (const field of ['troopPower', 'totalCastlePower']) {
+    if (Number.isFinite(values[field])) {
+      values[field] = Math.max(0, values[field] - deadPower);
+    }
+  }
+  return values;
+}
+
 function inWindow(ms, window) {
   if (!window) return true;
   const opens = toMillis(window.reuploadOpensAt ?? window.opensAt);
@@ -298,48 +322,67 @@ export function computeGrowthRow(player, { baseline, raceScore = null, window = 
   const gameName = cleanText(player?.gameName) || cleanText(raceScore?.gameName) || submissionUid;
   const consent = player?.commitment?.publicComparisonConsent === true;
   const baselineValues = baseline?.values || null;
-  const finalValues =
+  const reuploadValues =
     raceScore &&
     Number(raceScore.schemaVersion) === 2 &&
     readCompetitionDeadTroopCounts(raceScore.deadTroopCounts)
       ? readCompetitionPowerValues(raceScore.powerValues)
       : null;
-  // A legacy baseline (an upload from before the dead-troop split, or a
-  // sign-up predating it) is the alive reading only. Compare like with like:
-  // strip the re-upload's dead component from the two fields the helper
-  // inflates, so this row's growth is alive-to-alive and not inflated by the
-  // baseline's missing dead troops.
-  if (baseline?.aliveOnly && finalValues) {
-    const deadPower = deadTroopPowerFromCounts(raceScore?.deadTroopCounts) || 0;
-    for (const field of ['troopPower', 'totalCastlePower']) {
-      if (deadPower && Number.isFinite(finalValues[field])) {
-        finalValues[field] = Math.max(0, finalValues[field] - deadPower);
-      }
-    }
+  // The three waypoints a player can have: the earlier season's upload (the
+  // baseline, matched by in-game name because old seasons had no accounts),
+  // today's sign-up record, and the growth re-upload when its window opens. A
+  // player who registered today against an older upload has real growth to
+  // show right away; the re-upload replaces the sign-up side once it lands.
+  const signupStats = player?.confirmedStats || player?.stats || null;
+  const signupValues =
+    baselineValues && baseline?.source !== 'signup'
+      ? readCompetitionPowerValues(signupStats)
+      : null;
+  const signupPoint = signupValues ? { ...signupValues } : null;
+  const reuploadPoint = reuploadValues ? { ...reuploadValues } : null;
+  // A legacy baseline is the alive reading only. Compare like with like:
+  // strip each later waypoint's own dead component, so every pair (baseline to
+  // sign-up, sign-up to re-upload, baseline to re-upload) is alive-to-alive.
+  if (baseline?.aliveOnly) {
+    if (signupPoint) stripDeadTroopPower(signupPoint, signupStats?.deadTroopCounts);
+    if (reuploadPoint) stripDeadTroopPower(reuploadPoint, raceScore?.deadTroopCounts);
   }
   let notRankedReason = null;
-  if (!raceScore) notRankedReason = 'no-reupload';
-  else if (!finalValues) notRankedReason = 'invalid-reupload';
-  else if (!inWindow(uploadMillis(raceScore), window)) notRankedReason = 'outside-window';
-  else if (!baselineValues) notRankedReason = 'no-baseline';
-  const usableFinal = notRankedReason ? null : finalValues;
+  if (!raceScore && !signupPoint) notRankedReason = 'no-reupload';
+  else if (raceScore && !reuploadValues) notRankedReason = 'invalid-reupload';
+  else if (raceScore && !inWindow(uploadMillis(raceScore), window)) {
+    notRankedReason = 'outside-window';
+  } else if (!baselineValues) notRankedReason = 'no-baseline';
+  const usableSignup = notRankedReason ? null : signupPoint;
+  const usableReupload = notRankedReason ? null : reuploadPoint;
+  const steps = {
+    baselineToSignup:
+      baselineValues && usableSignup ? growthStep(baselineValues, usableSignup) : null,
+    signupToReupload:
+      usableSignup && usableReupload ? growthStep(usableSignup, usableReupload) : null,
+    baselineToReupload:
+      baselineValues && usableReupload ? growthStep(baselineValues, usableReupload) : null,
+  };
+  const primary = steps.baselineToReupload || steps.baselineToSignup;
   const fields = {};
   for (const field of COMPETITION_GROWTH_FIELDS) {
     const base = baselineValues?.[field] ?? null;
-    const final = usableFinal?.[field] ?? null;
+    const final = primary?.fields?.[field]?.to ?? null;
     fields[field] = { baseline: base, final, ...growthOf(base, final) };
   }
-  const total = fields.totalCastlePower;
   return {
     submissionUid,
     gameName,
     consent,
     baselineSource: baselineValues ? baseline.source : null,
     baselineAliveOnly: baseline?.aliveOnly === true,
+    finalSource: steps.baselineToReupload ? 'reupload' : steps.baselineToSignup ? 'signup' : null,
+    waypoints: { signup: usableSignup, reupload: usableReupload },
+    steps,
     match: baseline?.match || null,
     fields,
-    growthAbs: notRankedReason ? null : total.abs,
-    growthPct: notRankedReason ? null : total.pct,
+    growthAbs: primary ? primary.growthAbs : null,
+    growthPct: primary ? primary.growthPct : null,
     notRankedReason,
   };
 }
@@ -480,6 +523,31 @@ export function buildGrowthBoardProjection(input, options = {}) {
           .map(([field, value]) => [field, round(value, 0)])
       ),
     }));
+  const projectValues = (values) => {
+    if (!values) return null;
+    const out = {};
+    for (const field of COMPETITION_GROWTH_FIELDS) {
+      if (Number.isFinite(values[field])) out[field] = round(values[field], 0);
+    }
+    return Object.keys(out).length ? out : null;
+  };
+  const projectStep = (step) => {
+    if (!step) return null;
+    const fields = {};
+    for (const field of COMPETITION_GROWTH_FIELDS) {
+      const entry = step.fields?.[field];
+      if (!entry) continue;
+      fields[field] = {
+        abs: Number.isFinite(entry.abs) ? round(entry.abs, 0) : null,
+        pct: Number.isFinite(entry.pct) ? round(entry.pct, 4) : null,
+      };
+    }
+    return {
+      growthAbs: Number.isFinite(step.growthAbs) ? round(step.growthAbs, 0) : null,
+      growthPct: Number.isFinite(step.growthPct) ? round(step.growthPct, 4) : null,
+      fields,
+    };
+  };
   // Ranked and unranked names alike carry their history: an opted-in member
   // without a valid re-upload still has earlier uploads worth showing.
   const rows = [...publicRanking.ranked, ...publicNotRanked]
@@ -505,6 +573,16 @@ export function buildGrowthBoardProjection(input, options = {}) {
         gameName: row.gameName,
         baselineSource: row.baselineSource,
         baselineAliveOnly: row.baselineAliveOnly === true,
+        finalSource: row.finalSource || null,
+        waypoints: {
+          signup: projectValues(row.waypoints?.signup),
+          reupload: projectValues(row.waypoints?.reupload),
+        },
+        steps: {
+          baselineToSignup: projectStep(row.steps?.baselineToSignup),
+          signupToReupload: projectStep(row.steps?.signupToReupload),
+          baselineToReupload: projectStep(row.steps?.baselineToReupload),
+        },
         ...publicGrowth(row),
         fields,
         uploads: uploadHistory(row),
