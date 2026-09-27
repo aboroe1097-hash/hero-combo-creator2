@@ -3468,6 +3468,7 @@ Object.assign(zh, {
   c12CompareHint: '选择两名玩家，并排比较他们的成长。',
   c12CompareLeft: '玩家 A',
   c12CompareRight: '玩家 B',
+  c12AliveOnly: '仅比较存活部队',
   c12Confirmed: '已确认：{name}',
   c12Use: '使用 {name}（{total}）',
   c12Save: '保存决定',

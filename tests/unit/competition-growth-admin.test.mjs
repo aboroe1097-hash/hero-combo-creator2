@@ -98,3 +98,39 @@ test('the compare panel marks the higher current value for any two players', () 
   assert.match(html, /<option value="Alpha" selected>/);
   assert.match(html, /<option value="Bravo" selected>/);
 });
+
+test('the compare picker keys on the account id, not a possibly shared name', () => {
+  const field = (baseline, final) => ({
+    baseline,
+    final,
+    abs: final - baseline,
+    pct: 10,
+  });
+  const rows = [
+    {
+      submissionUid: 'uid-1',
+      gameName: 'Twin',
+      fields: { totalCastlePower: field(100, 200) },
+    },
+    {
+      submissionUid: 'uid-2',
+      gameName: 'Twin',
+      fields: { totalCastlePower: field(300, 700) },
+    },
+  ];
+  const html = buildCompetitionComparisonHtml(rows, {
+    left: 'uid-1',
+    right: 'uid-2',
+    t: (key) => key,
+    label: (name) => name,
+    num: (value) => String(value),
+    signed: (value) => String(value),
+  });
+  // Two accounts can share a name; the picker still compares the chosen rows.
+  assert.match(html, /value="uid-1" selected/);
+  assert.match(html, /value="uid-2" selected/);
+  assert.equal((html.match(/data-leads="true"/g) || []).length, 1);
+  assert.match(html, />100</);
+  assert.match(html, />300</);
+  assert.match(html, />700</);
+});

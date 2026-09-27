@@ -24,7 +24,7 @@
 // Pure: no Firestore, no DOM, no i18n. The admin tab (vts-score-admin-view.js)
 // and tests call it; the member board reads only the published projection.
 
-import { normalizeDeadTroopCounts } from './dead-troops.js';
+import { deadTroopPowerFromCounts, normalizeDeadTroopCounts } from './dead-troops.js';
 import { resolveConfirmedPlayerAlias } from './vts-player-aliases.js';
 
 export const COMPETITION_BASELINE_SEASON = 'season-2026';
@@ -113,12 +113,18 @@ export function readCompetitionPowerValues(source) {
   return values.totalCastlePower > 0 ? values : null;
 }
 
-function signupValues(submission) {
-  if (!submission || typeof submission !== 'object') return null;
-  return (
-    readCompetitionPowerValues(submission.confirmedStats) ||
-    readCompetitionPowerValues(submission.stats)
-  );
+/**
+ * A sign-up's baseline values plus whether they are alive-only. Sign-ups from
+ * before the dead-troop split existed (16.6.2) have no `deadTroopCounts`, so
+ * their stats are the game's alive reading, not the competition total.
+ */
+function signupBaseline(submission) {
+  for (const source of [submission?.confirmedStats, submission?.stats]) {
+    const values = readCompetitionPowerValues(source);
+    if (!values) continue;
+    return { values, aliveOnly: !normalizeDeadTroopCounts(source?.deadTroopCounts) };
+  }
+  return { values: null, aliveOnly: false };
 }
 
 function recordUid(record) {
@@ -288,10 +294,22 @@ export function resolveBaseline(player, options = {}) {
       selected.seasonId && selected.seasonId !== COMPETITION_BASELINE_SEASON
         ? 'vtsscore-prior'
         : 'vtsscore-2026';
-    return { values: { ...selected.values }, source, match };
+    return {
+      values: { ...selected.values },
+      source,
+      match,
+      // A pre-16.6.2 upload has no dead-troop split: its values are the alive
+      // reading, so growth for this row is measured alive-to-alive.
+      aliveOnly: !selected.deadTroopCounts,
+    };
   }
-  const values = signupValues(options.signup ?? player);
-  return { values, source: values ? 'signup' : null, match };
+  const signup = signupBaseline(options.signup ?? player);
+  return {
+    values: signup.values,
+    source: signup.values ? 'signup' : null,
+    match,
+    aliveOnly: signup.values ? signup.aliveOnly : false,
+  };
 }
 
 function growthOf(baseline, final) {
@@ -328,6 +346,19 @@ export function computeGrowthRow(player, { baseline, raceScore = null, window = 
     normalizeDeadTroopCounts(raceScore.deadTroopCounts)
       ? readCompetitionPowerValues(raceScore.powerValues)
       : null;
+  // A legacy baseline (an upload from before the dead-troop split, or a
+  // sign-up predating it) is the alive reading only. Compare like with like:
+  // strip the re-upload's dead component from the two fields the helper
+  // inflates, so this row's growth is alive-to-alive and not inflated by the
+  // baseline's missing dead troops.
+  if (baseline?.aliveOnly && finalValues) {
+    const deadPower = deadTroopPowerFromCounts(raceScore?.deadTroopCounts) || 0;
+    for (const field of ['troopPower', 'totalCastlePower']) {
+      if (deadPower && Number.isFinite(finalValues[field])) {
+        finalValues[field] = Math.max(0, finalValues[field] - deadPower);
+      }
+    }
+  }
   let notRankedReason = null;
   if (!raceScore) notRankedReason = 'no-reupload';
   else if (!finalValues) notRankedReason = 'invalid-reupload';
@@ -346,6 +377,7 @@ export function computeGrowthRow(player, { baseline, raceScore = null, window = 
     gameName,
     consent,
     baselineSource: baselineValues ? baseline.source : null,
+    baselineAliveOnly: baseline?.aliveOnly === true,
     match: baseline?.match || null,
     fields,
     growthAbs: notRankedReason ? null : total.abs,
@@ -541,6 +573,7 @@ export function buildGrowthBoardProjection(input, options = {}) {
         rank: Number.isFinite(row.rank) ? row.rank : null,
         gameName: row.gameName,
         baselineSource: row.baselineSource,
+        baselineAliveOnly: row.baselineAliveOnly === true,
         ...publicGrowth(row),
         fields,
         uploads: uploadHistory(row),

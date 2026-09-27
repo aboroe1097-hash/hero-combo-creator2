@@ -396,8 +396,42 @@ test('a prior upload without dead-troop counts is still the growth baseline', ()
     window: SCHEDULE,
   });
   assert.equal(rows[0].baselineSource, 'vtsscore-2026');
+  assert.equal(rows[0].baselineAliveOnly, true);
   assert.equal(rows[0].fields.totalCastlePower.baseline, 80_000_000);
   assert.equal(rows[0].growthPct, 50);
+});
+
+test('a legacy baseline compares alive-to-alive with the re-upload dead split removed', () => {
+  const prior = upload('prior', 'Alpha', 80_000_000, 1);
+  delete prior.deadTroopCounts;
+  const final = upload('a', 'Alpha', 100_000_000, SCHEDULE.reuploadOpensAt + 1);
+  // 1,000,000 Lofty dead = 8,200,000 power folded into the two inflated fields.
+  final.deadTroopCounts.FootmenLofty = 1_000_000;
+  final.powerValues.totalCastlePower += 8_200_000;
+  final.powerValues.troopPower += 8_200_000;
+  const rows = buildServerGrowthRows({
+    submissions: [submission('a', 'Alpha', 70_000_000)],
+    raceScores: [final],
+    priorSeasons: [{ seasonId: 'season-2026', raceScores: [prior] }],
+    window: SCHEDULE,
+  });
+  // 108,200,000 - 8,200,000 = 100,000,000 comparable; 20,000,000 = 25%.
+  assert.equal(rows[0].baselineAliveOnly, true);
+  assert.equal(rows[0].fields.totalCastlePower.final, 100_000_000);
+  assert.equal(rows[0].growthAbs, 20_000_000);
+  assert.equal(rows[0].growthPct, 25);
+
+  // A baseline WITH the split keeps the full competition number.
+  const splitBaseline = upload('prior', 'Alpha', 80_000_000, 1);
+  const withSplit = buildServerGrowthRows({
+    submissions: [submission('a', 'Alpha', 70_000_000)],
+    raceScores: [final],
+    priorSeasons: [{ seasonId: 'season-2026', raceScores: [splitBaseline] }],
+    window: SCHEDULE,
+  });
+  assert.equal(withSplit[0].baselineAliveOnly, false);
+  assert.equal(withSplit[0].fields.totalCastlePower.final, 108_200_000);
+  assert.equal(withSplit[0].growthAbs, 28_200_000);
 });
 
 test('the live board endpoint is the member vtsScore endpoint', async () => {

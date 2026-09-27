@@ -199,8 +199,10 @@ const LIMITS = {
   // 16.6.1: the dead-troops helper (pure module, render code and its 6-locale
   // copy) and Smart Generate (the selection engine and the 13-locale copy) grow
   // the built JS to 11847.4 KiB; the helper's styles ship as a lazy chunk.
-  // Retain ~20 KiB for CI's admin-auth injection.
-  totalJsBytes: 11868 * 1024,
+  // 16.6.3: the name-only baseline index, the alive-to-alive comparison, the
+  // board detail view, the admin two-player panel and sign-up delete grow the
+  // built JS to 11869.2 KiB. Retain ~20 KiB for CI's admin-auth injection.
+  totalJsBytes: 11870 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and

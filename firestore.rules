@@ -2846,7 +2846,9 @@ service cloud.firestore {
           && hasActiveAllStarBohGrant(season)
           && isAllStarBohRegistrationOpen(season)
           && validAllStarBohSubmissionUpdate(season, uid);
-        allow delete: if isAdmin();
+        // Removing a registration is a prize-relevant act: superadmin only,
+        // like publishing the board or setting the active season.
+        allow delete: if isSuperAdmin();
       }
 
       match /reviews/{uid} {
@@ -2881,7 +2883,11 @@ service cloud.firestore {
         // Members use the authenticated vtsScore Function. Keeping this
         // collection admin-only prevents clients from listing names, forging
         // another player's final value, or bypassing the OCR audit contract.
-        allow read, write: if isAdmin();
+        // Deleting a final upload is paired with deleting its sign-up and is
+        // prize-relevant, so it follows the sign-up delete: superadmin only.
+        allow read: if isAdmin();
+        allow create, update: if isAdmin();
+        allow delete: if isSuperAdmin();
       }
 
       match /drafts/{draftId} {

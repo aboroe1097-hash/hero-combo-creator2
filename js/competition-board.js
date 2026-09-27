@@ -77,6 +77,8 @@ export const COMPETITION_BOARD_COPY_EN = Object.freeze({
   competitionBoardBiggestDriver: 'Biggest driver',
   competitionBoardBaselineNoteSignup: 'Baseline: the Competition #12 sign-up record.',
   competitionBoardBaselineNoteVtsScore: 'Baseline: an earlier VtsScore upload.',
+  competitionBoardBaselineNoteAliveOnly:
+    'Baseline: an earlier record without a dead-troop split, so the re-upload is compared alive-to-alive.',
   competitionBoardHistory: 'Upload history',
   competitionBoardTied: 'Tied',
   competitionBoardFieldTotal: 'Total power',
@@ -132,6 +134,8 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardBiggestDriver: 'أكبر محرّك',
     competitionBoardBaselineNoteSignup: 'خط الأساس: سجل التسجيل في المسابقة رقم 12.',
     competitionBoardBaselineNoteVtsScore: 'خط الأساس: رفع VtsScore سابق.',
+    competitionBoardBaselineNoteAliveOnly:
+      'خط الأساس: سجل سابق بدون تفصيل القوات المفقودة، لذا تتم مقارنة إعادة الرفع بقوة الأحياء فقط.',
     competitionBoardHistory: 'سجل الرفع',
     competitionBoardTied: 'تعادل',
     competitionBoardFieldTotal: 'القوة الإجمالية',
@@ -184,6 +188,8 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardBiggestDriver: 'Mayor impulsor',
     competitionBoardBaselineNoteSignup: 'Base: el registro de inscripción de la Competición #12.',
     competitionBoardBaselineNoteVtsScore: 'Base: una subida anterior de VtsScore.',
+    competitionBoardBaselineNoteAliveOnly:
+      'Base: un registro anterior sin desglose de tropas muertas, así que la nueva subida se compara solo con tropas vivas.',
     competitionBoardHistory: 'Historial de subidas',
     competitionBoardTied: 'Empate',
     competitionBoardFieldTotal: 'Poder total',
@@ -236,6 +242,8 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardBiggestDriver: 'Maior impulsionador',
     competitionBoardBaselineNoteSignup: 'Base: o registo de inscrição da Competição #12.',
     competitionBoardBaselineNoteVtsScore: 'Base: um envio anterior do VtsScore.',
+    competitionBoardBaselineNoteAliveOnly:
+      'Base: um registo anterior sem detalhe de tropas mortas, por isso o novo envio é comparado apenas com tropas vivas.',
     competitionBoardHistory: 'Histórico de envios',
     competitionBoardTied: 'Empate',
     competitionBoardFieldTotal: 'Poder total',
@@ -288,6 +296,8 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardBiggestDriver: 'Principal moteur',
     competitionBoardBaselineNoteSignup: 'Base : le bulletin d’inscription à la Compétition #12.',
     competitionBoardBaselineNoteVtsScore: 'Base : un envoi VtsScore antérieur.',
+    competitionBoardBaselineNoteAliveOnly:
+      'Base : un enregistrement antérieur sans détail des troupes mortes ; le nouvel envoi est donc comparé en troupes vivantes.',
     competitionBoardHistory: 'Historique des envois',
     competitionBoardTied: 'Égalité',
     competitionBoardFieldTotal: 'Puissance totale',
@@ -340,6 +350,8 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardBiggestDriver: 'Größter Treiber',
     competitionBoardBaselineNoteSignup: 'Basis: der Anmeldedatensatz der Competition #12.',
     competitionBoardBaselineNoteVtsScore: 'Basis: ein früherer VtsScore-Upload.',
+    competitionBoardBaselineNoteAliveOnly:
+      'Basis: ein früherer Datensatz ohne Aufteilung der toten Truppen; der neue Upload wird daher nur mit lebenden Truppen verglichen.',
     competitionBoardHistory: 'Upload-Verlauf',
     competitionBoardTied: 'Gleichstand',
     competitionBoardFieldTotal: 'Gesamtmacht',
@@ -447,6 +459,7 @@ export function normalizeCompetitionBoard(raw) {
         rank: Number.isInteger(row?.rank) && row.rank > 0 ? row.rank : null,
         gameName,
         baselineSource: BASELINE_SOURCES.has(row?.baselineSource) ? row.baselineSource : 'signup',
+        baselineAliveOnly: row?.baselineAliveOnly === true,
         growthPct: finite(row?.growthPct),
         growthAbs: finite(row?.growthAbs),
         fields,
@@ -615,8 +628,9 @@ function detailHtml(row, text, format) {
       </tr>`
     )
     .join('');
-  const noteKey =
-    row.baselineSource === 'signup'
+  const noteKey = row.baselineAliveOnly
+    ? 'competitionBoardBaselineNoteAliveOnly'
+    : row.baselineSource === 'signup'
       ? 'competitionBoardBaselineNoteSignup'
       : 'competitionBoardBaselineNoteVtsScore';
   return `<details class="comp-board__detail">

@@ -3640,6 +3640,7 @@ const de = {
   c12CompareHint: 'Wähle zwei Spieler, um ihr Wachstum nebeneinander zu vergleichen.',
   c12CompareLeft: 'Spieler A',
   c12CompareRight: 'Spieler B',
+  c12AliveOnly: 'Vergleich nur lebende Truppen',
   c12Confirmed: 'Bestätigt: {name}',
   c12Use: '{name} verwenden ({total})',
   c12Save: 'Entscheidungen speichern',

@@ -3715,6 +3715,7 @@ Object.assign(id, {
   c12CompareHint: 'Pilih dua pemain untuk membandingkan pertumbuhan mereka berdampingan.',
   c12CompareLeft: 'Pemain A',
   c12CompareRight: 'Pemain B',
+  c12AliveOnly: 'perbandingan hanya pasukan hidup',
   c12Confirmed: 'Dikonfirmasi: {name}',
   c12Use: 'Gunakan {name} ({total})',
   c12Save: 'Simpan keputusan',

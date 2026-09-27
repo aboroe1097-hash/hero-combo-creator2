@@ -188,6 +188,7 @@ test('the normalizer drops unknown keys and malformed rows', () => {
     rank: null,
     gameName: 'Odd',
     baselineSource: 'signup',
+    baselineAliveOnly: false,
     growthPct: null,
     growthAbs: null,
     fields: {},

@@ -74,8 +74,11 @@ export function buildCompetitionComparisonHtml(rows, options = {}) {
   const num = typeof options.num === 'function' ? options.num : (value) => String(value);
   const signed = typeof options.signed === 'function' ? options.signed : (value) => String(value);
   const list = Array.isArray(rows) ? rows : [];
-  const left = list.find((row) => row.gameName === options.left) || null;
-  const right = list.find((row) => row.gameName === options.right) || null;
+  // Key on the account id: two different players can share a game name, and a
+  // name-keyed picker would silently compare the same row with itself.
+  const keyOf = (row) => String(row?.submissionUid || row?.gameName || '');
+  const left = list.find((row) => keyOf(row) === options.left) || null;
+  const right = list.find((row) => keyOf(row) === options.right) || null;
   const value = (number) => (Number.isFinite(number) ? num(number) : '—');
   const change = (number) => (number === null || number === undefined ? '—' : signed(number));
   const leads = (number, other) => number !== null && other !== null && number > other;
@@ -87,7 +90,7 @@ export function buildCompetitionComparisonHtml(rows, options = {}) {
         ${list
           .map(
             (row) =>
-              `<option value="${esc(row.gameName)}"${row.gameName === selected ? ' selected' : ''}>${esc(row.gameName)}</option>`
+              `<option value="${esc(keyOf(row))}"${keyOf(row) === selected ? ' selected' : ''}>${esc(row.gameName)}</option>`
           )
           .join('')}
       </select>
@@ -208,6 +211,11 @@ export function createCompetitionGrowthSection(options = {}) {
     const total = row.fields.totalCastlePower;
     const reason = NOT_RANKED_KEYS[row.notRankedReason];
     const pct = row.growthPct === null ? '—' : `${signed(row.growthPct, 2)}%`;
+    // A legacy baseline has no dead-troop split, so this row compares
+    // alive-to-alive and its Final column shows the comparable value.
+    const aliveMarker = row.baselineAliveOnly
+      ? `<br><span class="vts-admin-muted">${esc(t('c12AliveOnly'))}</span>`
+      : '';
     return `<tr><td>${row.rank ? `${row.rank}${row.tied ? '=' : ''}` : '—'}</td><th scope="row"><strong>${esc(row.gameName)}</strong>${reason ? `<br><span class="vts-admin-muted">${esc(t(reason))}</span>` : ''}${historyDetails(row)}</th><td><span class="vts-admin-chip">${esc(
       row.baselineSource === 'vtsscore-2026'
         ? t('c12SourceVtsScore')
@@ -216,7 +224,7 @@ export function createCompetitionGrowthSection(options = {}) {
           : row.baselineSource
             ? t('adminVtsScoreBaselineShort')
             : '—'
-    )}</span></td><td>${matchCell(row)}</td><td>${esc(total.baseline === null ? '—' : num(total.baseline))}</td><td>${esc(total.final === null ? '—' : num(total.final))}</td><td data-growth="${growthTone(row.growthAbs)}">${esc(signed(row.growthAbs))}</td><td data-growth="${growthTone(row.growthPct)}">${esc(pct)}</td><td>${esc(t(row.consent ? 'adminYes' : 'adminNo'))}</td></tr>`;
+    )}</span>${aliveMarker}</td><td>${matchCell(row)}</td><td>${esc(total.baseline === null ? '—' : num(total.baseline))}</td><td>${esc(total.final === null ? '—' : num(total.final))}</td><td data-growth="${growthTone(row.growthAbs)}">${esc(signed(row.growthAbs))}</td><td data-growth="${growthTone(row.growthPct)}">${esc(pct)}</td><td>${esc(t(row.consent ? 'adminYes' : 'adminNo'))}</td></tr>`;
   }
 
   function paint() {

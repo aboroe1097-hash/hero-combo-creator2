@@ -82,9 +82,46 @@ test('a prior VtsScore upload without dead-troop counts is still the growth base
     autoMatch: true,
   });
   assert.equal(rows[0].baselineSource, 'vtsscore-2026');
+  assert.equal(rows[0].baselineAliveOnly, true);
   assert.equal(rows[0].fields.totalCastlePower.baseline, 800);
   assert.equal(rows[0].growthAbs, 400);
   assert.equal(rows[0].growthPct, 50);
+});
+
+test('a legacy baseline compares alive-to-alive with the re-upload dead split removed', () => {
+  const legacy = upload('old-u1', 'Grower', 800);
+  delete legacy.deadTroopCounts;
+  const final = upload('u1', 'Grower', 1_200);
+  // 1,000 Lofty dead = 8,200 power folded into the two inflated fields.
+  final.deadTroopCounts.FootmenLofty = 1000;
+  final.powerValues.totalCastlePower += 8_200;
+  final.powerValues.troopPower += 8_200;
+  const rows = buildCompetitionGrowthRows({
+    submissions: [submission('u1', 'Grower', 1_000)],
+    raceScores: [final],
+    baselineRaceScores: [legacy],
+    window: WINDOW,
+    autoMatch: true,
+  });
+  // 9,400 - 8,200 = 1,200 comparable; 1,200 - 800 = 400 (50%).
+  assert.equal(rows[0].baselineAliveOnly, true);
+  assert.equal(rows[0].fields.totalCastlePower.final, 1_200);
+  assert.equal(rows[0].growthAbs, 400);
+  assert.equal(rows[0].growthPct, 50);
+
+  // A baseline WITH the split keeps the full competition number: the dead
+  // troops are part of both ends and no adjustment is applied.
+  const splitBaseline = upload('old-u1', 'Grower', 800);
+  const withSplit = buildCompetitionGrowthRows({
+    submissions: [submission('u1', 'Grower', 1_000)],
+    raceScores: [final],
+    baselineRaceScores: [splitBaseline],
+    window: WINDOW,
+    autoMatch: true,
+  });
+  assert.equal(withSplit[0].baselineAliveOnly, false);
+  assert.equal(withSplit[0].fields.totalCastlePower.final, 9_400);
+  assert.equal(withSplit[0].growthAbs, 8_600);
 });
 
 test('names match through case, spacing, the (VTS) prefix and confirmed aliases', () => {
@@ -360,9 +397,12 @@ test('the public projection holds only consenting players and ranks them indepen
     pct: null,
   });
   const serialized = JSON.stringify(projection);
-  // Nothing a non-consenting player uploaded or signed up with leaks.
+  // The projection ships only consenting rows: a private player's name must
+  // never be followed by any comparison value, growth or baseline/final.
   assert.doesNotMatch(serialized, /1776777|1777777|1777\.777|177677/);
   assert.ok(projection.rows.every((row) => !row.gameName.startsWith('Private')));
   assert.doesNotMatch(serialized, /submissionUid|consent/);
   assert.doesNotMatch(serialized, /Private (Winner|Loser)[^}]*growth/);
+  assert.doesNotMatch(serialized, /Private (Winner|Loser)[^}]*"baseline"/);
+  assert.doesNotMatch(serialized, /Private (Winner|Loser)[^}]*"final"/);
 });

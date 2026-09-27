@@ -3300,6 +3300,7 @@ const pt = {
   c12CompareHint: 'Escolha dois jogadores para comparar o crescimento lado a lado.',
   c12CompareLeft: 'Jogador A',
   c12CompareRight: 'Jogador B',
+  c12AliveOnly: 'comparação apenas de vivos',
   c12Confirmed: 'Confirmado: {name}',
   c12Use: 'Usar {name} ({total})',
   c12Save: 'Salvar decisões',

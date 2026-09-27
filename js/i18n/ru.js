@@ -3527,6 +3527,7 @@ Object.assign(ru, {
   c12CompareHint: 'Выберите двух игроков, чтобы сравнить их рост рядом.',
   c12CompareLeft: 'Игрок A',
   c12CompareRight: 'Игрок B',
+  c12AliveOnly: 'сравнение только по живым войскам',
   c12Confirmed: 'Подтверждено: {name}',
   c12Use: 'Взять {name} ({total})',
   c12Save: 'Сохранить решения',

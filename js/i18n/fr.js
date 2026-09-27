@@ -3760,6 +3760,7 @@ const fr = {
   c12CompareHint: 'Choisissez deux joueurs pour comparer leur progression côte à côte.',
   c12CompareLeft: 'Joueur A',
   c12CompareRight: 'Joueur B',
+  c12AliveOnly: 'comparaison en troupes vivantes',
   c12Confirmed: 'Confirmé : {name}',
   c12Use: 'Utiliser {name} ({total})',
   c12Save: 'Enregistrer les décisions',

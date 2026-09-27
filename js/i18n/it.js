@@ -2726,6 +2726,7 @@ const it = {
   c12CompareHint: 'Scegli due giocatori per confrontare la loro crescita fianco a fianco.',
   c12CompareLeft: 'Giocatore A',
   c12CompareRight: 'Giocatore B',
+  c12AliveOnly: 'confronto solo truppe vive',
   c12Confirmed: 'Confermato: {name}',
   c12Use: 'Usa {name} ({total})',
   c12Save: 'Salva decisioni',

@@ -882,6 +882,7 @@ async function refreshSuperAdminSurfaces() {
 }
 
 function applySuperAdminSurfaces(superadmin) {
+  const changed = dashSuperAdmin !== superadmin;
   dashSuperAdmin = superadmin;
   document.querySelectorAll('[data-requires-superadmin]').forEach((element) => {
     element.hidden = !superadmin;
@@ -898,6 +899,12 @@ function applySuperAdminSurfaces(superadmin) {
   document.querySelectorAll('[data-subtab-scope="global"]').forEach((nav) => {
     nav.hidden = !superadmin;
   });
+  // A rendered signups list carries its own superadmin-only Delete buttons, so
+  // it re-renders when the claim lands or changes.
+  if (changed && state.bohSignupsSnapshot) {
+    const root = $id('dashBohSignupsRoot');
+    if (root) renderBohSignupsSnapshot(root, state.bohSignupsSnapshot);
+  }
   return superadmin;
 }
 
@@ -8438,7 +8445,13 @@ function ensureCompetitionScheduleView() {
 }
 
 function renderBohSignupsSnapshot(root, snapshot) {
-  ensureBohSignupsView().render(root, snapshot);
+  // The row Delete is superadmin-only in the rules; the list mirrors that
+  // claim. dashSuperAdmin is null until the claim resolves, which reads as
+  // not-superadmin, so a slow claim never flashes a button that would refuse.
+  ensureBohSignupsView().render(root, {
+    ...snapshot,
+    superadmin: dashSuperAdmin === true,
+  });
   ensureCompetitionScheduleView().render(root, snapshot);
 }
 

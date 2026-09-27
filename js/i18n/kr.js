@@ -2190,6 +2190,7 @@ const kr = {
   c12CompareHint: '두 플레이어를 선택해 성장을 나란히 비교하세요.',
   c12CompareLeft: '플레이어 A',
   c12CompareRight: '플레이어 B',
+  c12AliveOnly: '생존 병력 기준 비교',
   c12Confirmed: '확인됨: {name}',
   c12Use: '{name} 사용 ({total})',
   c12Save: '결정 저장',

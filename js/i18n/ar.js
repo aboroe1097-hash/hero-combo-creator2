@@ -3596,6 +3596,7 @@ Object.assign(ar, {
   c12CompareHint: 'اختر لاعبين لمقارنة نموهما جنبًا إلى جنب.',
   c12CompareLeft: 'اللاعب أ',
   c12CompareRight: 'اللاعب ب',
+  c12AliveOnly: 'مقارنة بالأحياء فقط',
   c12Confirmed: 'مؤكَّد: {name}',
   c12Use: 'استخدام {name} ({total})',
   c12Save: 'حفظ القرارات',

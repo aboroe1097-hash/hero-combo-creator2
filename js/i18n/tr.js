@@ -2249,6 +2249,7 @@ const tr = {
   c12CompareHint: 'Büyümelerini yan yana karşılaştırmak için iki oyuncu seçin.',
   c12CompareLeft: 'Oyuncu A',
   c12CompareRight: 'Oyuncu B',
+  c12AliveOnly: 'yalnızca canlı karşılaştırma',
   c12Confirmed: 'Onaylandı: {name}',
   c12Use: '{name} kullan ({total})',
   c12Save: 'Kararları kaydet',

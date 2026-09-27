@@ -10,10 +10,10 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-09-27",
     "highlights": [
       "The Competition #12 growth board matches baselines by in-game name alone. Season-2026 uploads from before accounts existed now bind as each player's baseline instead of being skipped for a missing uid or dead-troop split, so the board shows real comparisons rather than \"not rank…",
+      "A legacy baseline (an upload or sign-up from before the dead-troop split) is the alive reading only, so those rows compare alive-to-alive: the re-upload's dead-troop component is removed from Troop Power and Total Power before growth is computed. A baseline that carries the spli…",
       "Every board row opens a full comparison: summary cards for total change, growth without troops and the biggest driver, then a table of baseline, re-upload, change and change % for all nine power fields. A consenting row without a re-upload still shows the baseline it will be mea…",
-      "VTS Admin → VtsScore gains a two-player comparison: pick any two sign-ups and read every category side by side, with the higher current value marked. **Deploy the vtsScore function after this release.**",
-      "VTS Admin → Signups can delete a sign-up and its final upload, for a bad or duplicate entry. The button asks for confirmation and names the player; the Firestore rules keep the delete admin-only, so no new deployment is needed for it.",
-      "Fixed: the score review's OCR correction flags no longer count the dead-troop component as a manual correction."
+      "VTS Admin → VtsScore gains a two-player comparison that keys on the account, not the name: pick any two sign-ups and read every category side by side, with the higher current value marked.",
+      "VTS Admin → Signups can delete a sign-up and its final upload in one atomic write, for a bad or duplicate entry. The button asks for confirmation and names the player, and both deletes are **superadmin-only** in the rules. **Redeploy Firestore rules after this release.** A publi…"
     ]
   },
   {

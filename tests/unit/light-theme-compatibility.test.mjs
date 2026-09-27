@@ -156,10 +156,11 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   assert.match(sizeCheck, /Specialization Towers, Alliance View, Skin Atlas, and All-Star BoH/);
   assert.match(sizeCheck, /8117\.7 KiB/);
   assert.match(sizeCheck, /1312\.1 KiB/);
-  // 11868 since 16.6.1: the dead-troops helper and Smart Generate grow the
-  // built JS to 11847.4 KiB (helper styles stay in a lazy CSS chunk); the cap
-  // moves by the measured minimum and keeps the CI injection headroom.
-  assert.match(sizeCheck, /totalJsBytes: 11868 \* 1024/);
+  // 11870 since 16.6.3: the name-only baseline index, alive-to-alive
+  // comparison, board detail view, admin comparison panel and sign-up delete
+  // grow the built JS to 11869.2 KiB; the cap moves by the measured minimum
+  // and keeps the CI injection headroom.
+  assert.match(sizeCheck, /totalJsBytes: 11870 \* 1024/);
   // 427 since 16.5.0 Phase 0: removing the unconsumed .u-* utilities from
   // atmosphere.css and four dead compatibility tokens from _tokens.css measured
   // 431,155 -> 428,135 bytes, so the ceiling drops by the verified reclaim.

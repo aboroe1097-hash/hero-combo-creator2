@@ -452,6 +452,7 @@ const en = {
   c12CompareHint: 'Pick two players to compare their growth side by side.',
   c12CompareLeft: 'Player A',
   c12CompareRight: 'Player B',
+  c12AliveOnly: 'alive-only comparison',
   c12Confirmed: 'Confirmed: {name}',
   c12Use: 'Use {name} ({total})',
   c12Save: 'Save decisions',

@@ -3593,6 +3593,7 @@ const es = {
   c12CompareHint: 'Elige dos jugadores para comparar su crecimiento lado a lado.',
   c12CompareLeft: 'Jugador A',
   c12CompareRight: 'Jugador B',
+  c12AliveOnly: 'comparación solo de vivos',
   c12Confirmed: 'Confirmado: {name}',
   c12Use: 'Usar {name} ({total})',
   c12Save: 'Guardar decisiones',
