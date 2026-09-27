@@ -1,10 +1,19 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.3";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.4";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.6.4",
+    "date": "2026-09-27",
+    "highlights": [
+      "Season registration saves again for members who record dead troops. The submission rules checked all fifteen counts with separate bound clauses, and that chain crossed Firestore's 1,000-expressions-per-request ceiling, so every create or edit carrying a dead-troop breakdown was …",
+      "The dead-troops helper opens in thousands, matching the K counts on the game's dead-troop screen, and each tier row shows its power per troop (×8.2 Lofty, ×7.5 T10, ×7.0 T9). Saved sign-ups reopen in the same unit.",
+      "Lady Zubbs and MalakKiji carry the R4 management tag wherever public player labels render, including Eden X2."
+    ]
+  },
   {
     "version": "16.6.3",
     "date": "2026-09-27",
@@ -84,15 +93,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "The Eden top lists (Most Banners Placed, march paths, shield walls and Most R5 Bonus Team Effort Points) show a linked banner or alt account under the player who runs it. Its banners, paths, shield walls and bonus points add to the owner's total, so ANGEL appears instead of Ange…",
       "Registration screenshot OCR no longer fails with \"OCR provider response is malformed\" when the model wraps its JSON in a sentence or code fence, splits it into parts, returns the power fields without the `extracted` wrapper, or leaves out the confidence block. A reply with no JS…"
-    ]
-  },
-  {
-    "version": "16.5.15",
-    "date": "2026-09-25",
-    "highlights": [
-      "Competition #12 registration no longer asks for the two long optional text answers or an OCR acknowledgment checkbox. Existing answers remain preserved when a member edits a saved registration; signed-in members can start with the game name saved on their account.",
-      "The Competition #12 growth board mount point remains visible throughout the season and checks again for a published board when results are ready. The member-controlled sharing checkbox remains off by default.",
-      "Stats OCR now leaves individually unreadable or out-of-range values blank with a review warning; malformed provider JSON or a missing extracted-data object still fails. Published Combos rankings can be read without signing in; only a superadmin can publish them."
     ]
   }
 ].map((release) =>

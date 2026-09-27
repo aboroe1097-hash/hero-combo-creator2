@@ -2,6 +2,12 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.6.4 - 2026-09-27
+
+- Season registration saves again for members who record dead troops. The submission rules checked all fifteen counts with separate bound clauses, and that chain crossed Firestore's 1,000-expressions-per-request ceiling, so every create or edit carrying a dead-troop breakdown was refused and the page reported closed registration or expired access. The counts now pass the same key, count and value checks in a cheaper form. **Deploy Firestore rules after this release.**
+- The dead-troops helper opens in thousands, matching the K counts on the game's dead-troop screen, and each tier row shows its power per troop (×8.2 Lofty, ×7.5 T10, ×7.0 T9). Saved sign-ups reopen in the same unit.
+- Lady Zubbs and MalakKiji carry the R4 management tag wherever public player labels render, including Eden X2.
+
 ## 16.6.3 - 2026-09-27
 
 - The Competition #12 growth board matches baselines by in-game name alone. Season-2026 uploads from before accounts existed now bind as each player's baseline instead of being skipped for a missing uid or dead-troop split, so the board shows real comparisons rather than "not ranked". A name used by two known accounts stays ambiguous and is still refused.

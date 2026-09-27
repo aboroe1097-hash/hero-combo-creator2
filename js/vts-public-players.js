@@ -12,12 +12,13 @@ function profile(name, rank, aliases = []) {
 
 export const PUBLIC_VTS_PLAYER_PROFILES = Object.freeze([
   profile('MalakAbo', 'R5', ['Abo']),
+  profile('MalakKiji', 'R4'),
   profile('Goodness', 'R4', ['Goodnes Graycious']),
   profile('Sarafino', 'R4'),
   profile('Big Boiie', 'R4'),
   profile('Bil', 'R4'),
   profile('BoneSmoker', 'R4', ['BoneSmoker 1097']),
-  profile('Zubbs', null, ['Lady Zubbs', 'Dr Zubbs']),
+  profile('Zubbs', 'R4', ['Lady Zubbs', 'Dr Zubbs']),
   profile('Loony', 'R4'),
   profile('Dr Thunder', 'R4', ['Dr Thunder 293', 'Dr Thunder VTS R4']),
   profile('Jasper', 'R4'),

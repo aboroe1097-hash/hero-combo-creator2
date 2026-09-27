@@ -3,9 +3,11 @@ import {
   DEAD_TROOP_COUNT_KEYS,
   DEAD_TROOP_UNITS,
   DEAD_TROOP_VARIANTS,
+  DEFAULT_DEAD_TROOP_UNIT,
   convertDeadTroopCountUnit,
   deadTroopActualCount,
   deadTroopCountKey,
+  deadTroopMultiplier,
   deadTroopRowPower,
   deadTroopsTotalPower,
   normalizeDeadTroopCounts,
@@ -62,7 +64,7 @@ export function createDeadTroopsEditor(
   const documentRef = mount?.ownerDocument || globalThis.document;
   const editorState = state || {
     enabled: false,
-    unit: 'troops',
+    unit: DEFAULT_DEAD_TROOP_UNIT,
     activeClass: 'footmen',
     counts: new Map(),
   };
@@ -211,7 +213,13 @@ export function createDeadTroopsEditor(
             `vts-score-dead-troops__badge${variant.includes('e') ? ' is-enhanced' : ''}`,
             badgeText(variant)
           ),
-          element(documentRef, 'span', 'vts-score-dead-troops__variant', text(VARIANT_LABELS[variant]))
+          element(documentRef, 'span', 'vts-score-dead-troops__variant', text(VARIANT_LABELS[variant])),
+          element(
+            documentRef,
+            'span',
+            'vts-score-dead-troops__multiplier',
+            `×${deadTroopMultiplier(variant).toFixed(1)}`
+          )
         );
         const entry = element(documentRef, 'div', 'vts-score-dead-troops__entry');
         const input = documentRef.createElement('input');
@@ -289,7 +297,14 @@ export function createDeadTroopsEditor(
         );
       }
     }
-    editorState.unit = 'troops';
+    // Saved counts are exact troop numbers; show them in the editor's default
+    // unit so a reopened signup reads the same way a fresh one does.
+    editorState.unit = DEFAULT_DEAD_TROOP_UNIT;
+    if (editorState.unit !== 'troops') {
+      for (const [key, count] of editorState.counts) {
+        editorState.counts.set(key, convertDeadTroopCountUnit(count, 'troops', editorState.unit));
+      }
+    }
     editorState.enabled = Object.values(normalized).some((count) => count > 0);
     render();
     return true;

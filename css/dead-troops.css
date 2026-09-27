@@ -176,6 +176,13 @@
   font-size: 0.82rem;
   font-weight: 650;
 }
+.vts-score-dead-troops__multiplier {
+  margin-inline-start: auto;
+  color: var(--vts-subtle);
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 .vts-score-dead-troops__entry {
   position: relative;
   min-width: 0;
