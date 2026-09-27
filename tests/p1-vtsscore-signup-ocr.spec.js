@@ -227,6 +227,19 @@ test('the registration Power step reads a screenshot into the power fields', asy
     await page.setViewportSize({ width, height: 900 });
     const wrapOverflow = await standingsWrap.evaluate((wrap) => wrap.scrollWidth - wrap.clientWidth);
     expect(wrapOverflow, `wrap overflow at ${width}px`).toBeLessThanOrEqual(1);
+    // The growth cells never wrap, so their text must fit the column at the
+    // runner's font metrics too — a too-narrow column overflows by a few px
+    // on Linux fonts even when it fits on a dev machine.
+    const worstCellOverflow = await boardMount.evaluate((mount) => {
+      let worst = 0;
+      for (const cell of mount.querySelectorAll('tbody[data-comp-board-rows] .comp-board__num')) {
+        const range = document.createRange();
+        range.selectNodeContents(cell);
+        worst = Math.max(worst, range.getBoundingClientRect().width - cell.clientWidth);
+      }
+      return worst;
+    });
+    expect(worstCellOverflow, `growth cell text clipped at ${width}px`).toBeLessThanOrEqual(1);
     const growthBox = await boardMount
       .locator('tbody[data-comp-board-rows] .comp-board__num')
       .first()
