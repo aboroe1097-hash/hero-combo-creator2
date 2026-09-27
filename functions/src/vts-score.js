@@ -21,6 +21,7 @@ import {
   getCompetitionPhase,
   normalizeCompetitionSchedule,
 } from './competition-phase.js';
+import { resolveConfirmedPlayerAlias } from './player-aliases.js';
 
 export const VTS_SCORE_SCHEMA_VERSION = 1;
 export const VTS_SCORE_RECORD_SCHEMA_VERSION = 2;
@@ -421,6 +422,9 @@ async function listPlayers(dependencies, uid) {
   const players = (snapshot?.docs || [])
     .map(eligiblePlayer)
     .filter(Boolean)
+    // The caller's own signup is marked so a name worn twice stays pickable:
+    // the member chooses "(you)" instead of guessing between twin rows.
+    .map((player) => Object.freeze({ ...player, self: player.submissionUid === uid }))
     .sort(
       (left, right) =>
         left.gameName.localeCompare(right.gameName, 'en', { sensitivity: 'base' }) ||
@@ -428,6 +432,45 @@ async function listPlayers(dependencies, uid) {
     )
     .slice(0, VTS_SCORE_MAX_PLAYERS);
   return { seasonId, players };
+}
+
+/**
+ * The names a signup can be checked against: every earlier season's upload
+ * names plus this season's signed-up players, resolved to their canonical
+ * spelling through the owner-confirmed aliases and deduped. Names only, no
+ * values; the member uses it to pick the exact spelling their history was
+ * recorded under.
+ */
+async function listKnownPlayerNames(dependencies, uid) {
+  const seasonId = await getGrant(dependencies, uid);
+  const inputs = await readCompetitionBoardInputs(dependencies.db, { seasonId });
+  const byKey = new Map();
+  const currentKeys = new Set();
+  const add = (value, current) => {
+    const raw = String(value ?? '')
+      .normalize('NFC')
+      .trim()
+      .slice(0, 160);
+    if (!raw) return;
+    const canonical = resolveConfirmedPlayerAlias(raw) || raw;
+    const key = canonical.toLowerCase();
+    if (!byKey.has(key)) byKey.set(key, canonical);
+    if (current) currentKeys.add(key);
+  };
+  for (const doc of inputs.submissions) {
+    if (doc?.status !== 'submitted') continue;
+    add(doc.gameName, true);
+  }
+  for (const season of inputs.priorSeasons) {
+    for (const score of season.raceScores) add(score.gameName, false);
+  }
+  return {
+    seasonId,
+    names: [...byKey.values()]
+      .sort((left, right) => left.localeCompare(right, 'en', { sensitivity: 'base' }))
+      .slice(0, 400),
+    currentNames: [...currentKeys].map((key) => byKey.get(key)).filter(Boolean),
+  };
 }
 
 async function loadCompetitionGrowthBoard(dependencies) {
@@ -587,6 +630,15 @@ export function createVtsScoreHandler(dependencies) {
             requestQuery(request, 'name').slice(0, 160)
           )
         );
+      }
+      if (method === 'GET' && requestQuery(request, 'view') === 'name-suggestions') {
+        const result = await listKnownPlayerNames(runtime, uid);
+        return sendJson(response, 200, {
+          schemaVersion: VTS_SCORE_SCHEMA_VERSION,
+          seasonId: result.seasonId,
+          names: result.names,
+          currentNames: result.currentNames,
+        });
       }
       if (method === 'GET') {
         const result = await listPlayers(runtime, uid);

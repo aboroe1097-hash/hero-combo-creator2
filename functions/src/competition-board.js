@@ -306,7 +306,7 @@ export function resolveServerBaseline(player, { index, contestedKeys, contestedL
   const match = {
     status: chosen
       ? 'matched'
-      : entry?.candidates?.length || looseEntry?.candidates?.length
+      : entry?.candidates?.length || looseEntry?.candidates?.length || contested || looseContested
         ? 'ambiguous'
         : 'none',
     decision: chosen ? 'vtsscore' : 'signup',

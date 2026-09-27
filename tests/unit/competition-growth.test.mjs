@@ -327,6 +327,17 @@ test('duplicate or ambiguous names are never auto-matched', () => {
   assert.equal(confirmed[0].trackerAbs, 600);
   assert.equal(confirmed[0].growthAbs, 100);
   assert.equal(confirmed[1].baselineSource, 'signup');
+
+  // Two signups sharing a name surface as ambiguous even without any earlier
+  // upload: the admin table shows the conflict instead of a silent dash.
+  const noData = buildCompetitionGrowthRows({
+    submissions: [submission('a', 'Solo', 1_000), submission('b', 'SOLO', 2_000)],
+    raceScores: [],
+    window: WINDOW,
+    autoMatch: true,
+  });
+  assert.equal(noData[0].match.status, 'ambiguous');
+  assert.equal(noData[1].match.status, 'ambiguous');
 });
 
 test('growth rows carry absolute and percentage growth per field', () => {

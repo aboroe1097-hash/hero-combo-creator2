@@ -280,8 +280,10 @@ export function proposeBaselineMatch(
   const entry = lookupIndex(source, key);
   const contested = contestedKeys instanceof Set && contestedKeys.has(key);
   // Uploads from before accounts existed carry no uid, so the name joins stay
-  // for exactly the records the account join cannot reach. Ambiguous names
-  // are refused rather than guessed.
+  // for exactly the records the account join cannot reach. Ambiguous or
+  // contested names are refused rather than guessed — and a name another
+  // signup also claims is surfaced as ambiguous even without any candidates,
+  // so the admin table shows the conflict instead of a silent dash.
   if (entry?.candidates?.length && entry.status === 'unique' && !contested) {
     return {
       status: 'matched',
@@ -290,11 +292,11 @@ export function proposeBaselineMatch(
       matchType: autoMatch ? 'exact-name' : null,
     };
   }
-  if (entry?.candidates?.length) {
+  if (entry?.candidates?.length || contested) {
     return {
       status: 'ambiguous',
       key,
-      candidates: entry.candidates,
+      candidates: entry?.candidates || [],
       matchType: autoMatch ? 'exact-name' : null,
     };
   }
@@ -311,11 +313,11 @@ export function proposeBaselineMatch(
       matchType: 'loose-name',
     };
   }
-  if (looseEntry?.candidates?.length) {
+  if (looseEntry?.candidates?.length || looseContested) {
     return {
       status: 'ambiguous',
       key: looseKey,
-      candidates: looseEntry.candidates,
+      candidates: looseEntry?.candidates || [],
       matchType: 'loose-name',
     };
   }
