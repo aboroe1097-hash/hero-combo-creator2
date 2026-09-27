@@ -42,7 +42,7 @@ export const COMPETITION_BOARD_COPY_EN = Object.freeze({
   competitionBoardIntro:
     'Growth from each player’s baseline to their final upload, ranked by Total Power growth %. Until the final upload lands, the sign-up record is compared instead. Ties are broken by absolute growth.',
   competitionBoardPublished: 'Updated {date}',
-  competitionBoardWinnersTitle: 'Winners',
+  competitionBoardWinnersTitle: 'The Standing',
   competitionBoardStandingsTitle: 'Standings',
   competitionBoardRank: 'Rank',
   competitionBoardPlayer: 'Player',
@@ -105,7 +105,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardIntro:
       'النمو من خط الأساس لكل لاعب إلى رفعه النهائي، مرتبًا بنسبة نمو القوة الكلية. حتى وصول الرفع النهائي، يُقارَن سجل التسجيل بدلًا منه. تُكسر التعادلات بالنمو المطلق.',
     competitionBoardPublished: 'آخر تحديث {date}',
-    competitionBoardWinnersTitle: 'الفائزون',
+    competitionBoardWinnersTitle: 'الترتيب',
     competitionBoardStandingsTitle: 'الترتيب',
     competitionBoardRank: 'المرتبة',
     competitionBoardPlayer: 'اللاعب',
@@ -165,7 +165,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardIntro:
       'Crecimiento desde la base de cada jugador hasta su subida final, ordenado por el % de crecimiento de la Poder total. Hasta que llegue la subida final, se compara en su lugar el registro de inscripción. Los empates se rompen por crecimiento absoluto.',
     competitionBoardPublished: 'Actualizada el {date}',
-    competitionBoardWinnersTitle: 'Ganadores',
+    competitionBoardWinnersTitle: 'La clasificación',
     competitionBoardStandingsTitle: 'Clasificación',
     competitionBoardRank: 'Puesto',
     competitionBoardPlayer: 'Jugador',
@@ -227,7 +227,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardIntro:
       'Crescimento da base de cada jogador até ao seu envio final, ordenada pela % de crescimento do Poder Total. Até o envio final chegar, compara-se o registo de inscrição. Os empates decidem-se pelo crescimento absoluto.',
     competitionBoardPublished: 'Atualizado em {date}',
-    competitionBoardWinnersTitle: 'Vencedores',
+    competitionBoardWinnersTitle: 'A classificação',
     competitionBoardStandingsTitle: 'Classificação',
     competitionBoardRank: 'Posição',
     competitionBoardPlayer: 'Jogador',
@@ -288,7 +288,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardIntro:
       'Croissance de la base de chaque joueur jusqu’à son envoi final, classée par le % de croissance de la Puissance totale. Tant que l’envoi final n’est pas là, c’est le bulletin d’inscription qui est comparé. Les égalités sont départagées par la croissance absolue.',
     competitionBoardPublished: 'Mis à jour le {date}',
-    competitionBoardWinnersTitle: 'Gagnants',
+    competitionBoardWinnersTitle: 'Le classement',
     competitionBoardStandingsTitle: 'Classement',
     competitionBoardRank: 'Rang',
     competitionBoardPlayer: 'Joueur',
@@ -349,7 +349,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardIntro:
       'Wachstum von der Basis jedes Spielers bis zu seinem finalen Upload, sortiert nach dem Wachstum der Gesamtkampfkraft in %. Bis der finale Upload vorliegt, wird stattdessen der Anmeldedatensatz verglichen. Gleichstand wird nach absolutem Wachstum aufgelöst.',
     competitionBoardPublished: 'Aktualisiert am {date}',
-    competitionBoardWinnersTitle: 'Gewinner',
+    competitionBoardWinnersTitle: 'Die Platzierung',
     competitionBoardStandingsTitle: 'Rangliste',
     competitionBoardRank: 'Rang',
     competitionBoardPlayer: 'Spieler',
@@ -410,7 +410,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardIntro:
       'Rast od osnovice svakog igrača do njegovog završnog unosa, rangirano po postotku rasta Ukupne snage. Dok završni unos ne stigne, uspoređuje se zapis prijave. Izjednačeni rezultati rješavaju se apsolutnim rastom.',
     competitionBoardPublished: 'Ažurirano {date}',
-    competitionBoardWinnersTitle: 'Pobjednici',
+    competitionBoardWinnersTitle: 'Poredak',
     competitionBoardStandingsTitle: 'Poredak',
     competitionBoardRank: 'Mjesto',
     competitionBoardPlayer: 'Igrač',
@@ -471,7 +471,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardIntro:
       'Pertumbuhan dari baseline setiap pemain hingga unggahan final, diurutkan berdasarkan % pertumbuhan Total Power. Sampai unggahan final tiba, catatan pendaftaran yang dibandingkan. Peringkat seri diputus dengan pertumbuhan absolut.',
     competitionBoardPublished: 'Diperbarui {date}',
-    competitionBoardWinnersTitle: 'Pemenang',
+    competitionBoardWinnersTitle: 'Klasemen',
     competitionBoardStandingsTitle: 'Klasemen',
     competitionBoardRank: 'Peringkat',
     competitionBoardPlayer: 'Pemain',
@@ -532,7 +532,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardIntro:
       'Crescita dalla base di ogni giocatore fino al suo caricamento finale, ordinata per la % di crescita della Potenza totale. Finché non arriva il caricamento finale, si confronta il registro di iscrizione. I pareggi si sciolgono con la crescita assoluta.',
     competitionBoardPublished: 'Aggiornata il {date}',
-    competitionBoardWinnersTitle: 'Vincitori',
+    competitionBoardWinnersTitle: 'La classifica',
     competitionBoardStandingsTitle: 'Classifica',
     competitionBoardRank: 'Posizione',
     competitionBoardPlayer: 'Giocatore',
@@ -594,7 +594,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardIntro:
       '각 플레이어의 기준값부터 최종 업로드까지의 성장을 총 전투력 성장률 %로 순위 매깁니다. 최종 업로드가 들어올 때까지는 등록 기록을 대신 비교합니다. 동률은 절대 성장으로 가릅니다.',
     competitionBoardPublished: '업데이트: {date}',
-    competitionBoardWinnersTitle: '우승자',
+    competitionBoardWinnersTitle: '순위',
     competitionBoardStandingsTitle: '순위',
     competitionBoardRank: '순위',
     competitionBoardPlayer: '플레이어',
@@ -652,7 +652,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardIntro:
       'Рост от базы каждого игрока до финальной загрузки, ранжируется по % роста Общей силы. Пока финальная загрузка не загружена, сравнивается запись регистрации. При равенстве сравнивается абсолютный рост.',
     competitionBoardPublished: 'Обновлено {date}',
-    competitionBoardWinnersTitle: 'Победители',
+    competitionBoardWinnersTitle: 'Рейтинг',
     competitionBoardStandingsTitle: 'Рейтинг',
     competitionBoardRank: 'Место',
     competitionBoardPlayer: 'Игрок',
@@ -713,7 +713,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardIntro:
       'Her oyuncunun başlangıç değerinden nihai yüklemesine kadar büyüme, Toplam Güç büyüme yüzdesine göre sıralanır. Nihai yükleme gelene kadar kayıt kaydı karşılaştırılır. Eşitlikler mutlak büyümeyle çözülür.',
     competitionBoardPublished: '{date} tarihinde güncellendi',
-    competitionBoardWinnersTitle: 'Kazananlar',
+    competitionBoardWinnersTitle: 'Sıralama',
     competitionBoardStandingsTitle: 'Sıralama',
     competitionBoardRank: 'Sıra',
     competitionBoardPlayer: 'Oyuncu',
@@ -773,7 +773,7 @@ export const COMPETITION_BOARD_COPY = Object.freeze({
     competitionBoardTitle: '第12届比赛成长榜',
     competitionBoardIntro: '从每位玩家的基准值到最终上传的成长，按总战力成长率%排名。在最终上传到达之前，改为比较报名记录。平局以绝对成长决出。',
     competitionBoardPublished: '更新于 {date}',
-    competitionBoardWinnersTitle: '获胜者',
+    competitionBoardWinnersTitle: '排名',
     competitionBoardStandingsTitle: '排名',
     competitionBoardRank: '名次',
     competitionBoardPlayer: '玩家',
@@ -1225,21 +1225,27 @@ function historyHtml(row, text, format) {
 /** The table body for the current search/sort state. */
 export function buildCompetitionBoardRowsHtml(rows, text, format) {
   return rows
-    .map(
-      (row) => `<tr>
+    .map((row) => {
+      // The comparison is a seven-column table of its own, so it opens as a
+      // full-width row under the player instead of squeezing into the name
+      // cell (where it forced the whole standings to scroll sideways).
+      const expandable = `${detailHtml(row, text, format)}${historyHtml(row, text, format)}`;
+      return `<tr class="comp-board__player-row">
       <td class="comp-board__rank" data-label="${esc(text('competitionBoardRank'))}">${esc(row.rank ?? '—')}</td>
       <th scope="row" class="comp-board__name" data-label="${esc(text('competitionBoardPlayer'))}">
         <span dir="auto">${esc(row.gameName)}</span>
         <span class="comp-board__chip">${esc(
           text(SOURCE_LABEL_KEYS[row.baselineSource] || 'competitionBoardSourceSignup')
         )}</span>
-        ${detailHtml(row, text, format)}
-        ${historyHtml(row, text, format)}
       </th>
       <td class="comp-board__num" data-label="${esc(text('competitionBoardGrowthPct'))}" data-tone="${tone(row.growthPct)}">${esc(format.pct(row.growthPct))}</td>
       <td class="comp-board__num" data-label="${esc(text('competitionBoardGrowthAbs'))}" data-tone="${tone(row.growthAbs)}">${esc(format.abs(row.growthAbs))}</td>
-    </tr>`
-    )
+    </tr>${
+      expandable
+        ? `<tr class="comp-board__detail-row"><td colspan="4">${expandable}</td></tr>`
+        : ''
+    }`;
+    })
     .join('');
 }
 

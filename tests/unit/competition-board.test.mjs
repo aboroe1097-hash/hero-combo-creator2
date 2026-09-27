@@ -81,10 +81,10 @@ test('the page translator wins, then the locale copy, then English', () => {
   const pageT = (key) => (key === 'competitionBoardTitle' ? 'Page title' : key);
   const text = board.createCompetitionBoardTranslator({ t: pageT, locale: 'fr-FR' });
   assert.equal(text('competitionBoardTitle'), 'Page title');
-  assert.equal(text('competitionBoardWinnersTitle'), 'Gagnants');
+  assert.equal(text('competitionBoardWinnersTitle'), 'Le classement');
   assert.equal(
     board.createCompetitionBoardTranslator({ locale: 'ja' })('competitionBoardWinnersTitle'),
-    'Winners'
+    'The Standing'
   );
   assert.equal(
     board.createCompetitionBoardTranslator({ locale: 'de' })('competitionBoardShowing', {
@@ -114,7 +114,7 @@ test('the board escapes names, names private winners without values, and notes c
 test('Arabic renders right-to-left with the Arabic copy', () => {
   const html = board.buildCompetitionBoardHtml(PROJECTION, { locale: 'ar' });
   assert.match(html, /dir="rtl"/);
-  assert.match(html, /الفائزون/);
+  assert.match(html, /الترتيب/);
 });
 
 test('a row renders the full comparison: summary cards, category table, baseline note', () => {

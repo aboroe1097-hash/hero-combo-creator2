@@ -200,7 +200,10 @@ test('the registration Power step reads a screenshot into the power fields', asy
   // The board renders the two-player-ready standings and each row opens the
   // full baseline-versus-now comparison.
   const boardMount = page.locator('#vtsScoreGrowthBoard [data-growth-board-mount]');
-  await expect(boardMount.locator('tbody[data-comp-board-rows] > tr')).toHaveCount(3);
+  await expect(boardMount.locator('tbody[data-comp-board-rows] .comp-board__player-row')).toHaveCount(
+    3
+  );
+  await expect(boardMount.locator('tbody[data-comp-board-rows] .comp-board__detail-row')).toHaveCount(3);
   await expect(boardMount.locator('.comp-board__detail')).toHaveCount(3);
   await boardMount.locator('.comp-board__detail summary').first().click();
   await expect(boardMount.locator('.comp-board__card').first()).toContainText('Total power change');
@@ -223,7 +226,7 @@ test('the registration Power step reads a screenshot into the power fields', asy
   await expect(boardMount.locator('.comp-board__detail-table').nth(1)).toBeVisible();
   const standingsWrap = boardMount.locator('.comp-board__table-wrap');
   const originalViewport = page.viewportSize();
-  for (const width of [390, 640, 768, 1280]) {
+  for (const width of [390, 640, 768, 1133, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     const wrapOverflow = await standingsWrap.evaluate((wrap) => wrap.scrollWidth - wrap.clientWidth);
     expect(wrapOverflow, `wrap overflow at ${width}px`).toBeLessThanOrEqual(1);
@@ -240,6 +243,18 @@ test('the registration Power step reads a screenshot into the power fields', asy
       return worst;
     });
     expect(worstCellOverflow, `growth cell text clipped at ${width}px`).toBeLessThanOrEqual(1);
+    if (width >= 1024) {
+      // At desktop widths the whole comparison is visible without scrolling:
+      // the board breaks out of the form column and the table's labels wrap.
+      const worstComparison = await boardMount.evaluate((mount) => {
+        let worst = 0;
+        for (const scroll of mount.querySelectorAll('.comp-board__detail-scroll')) {
+          worst = Math.max(worst, scroll.scrollWidth - scroll.clientWidth);
+        }
+        return worst;
+      });
+      expect(worstComparison, `comparison scrolls at ${width}px`).toBeLessThanOrEqual(1);
+    }
     const growthBox = await boardMount
       .locator('tbody[data-comp-board-rows] .comp-board__num')
       .first()

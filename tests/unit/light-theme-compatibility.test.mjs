@@ -186,5 +186,5 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   );
   // The member registration route now has a measured line of its own: it hosts
   // the signup form, so its stylesheet can no longer grow unmeasured.
-  assert.match(sizeCheck, /'vtsscore\.html': \{ desktop: 32 \* 1024, mobile: 32 \* 1024 \}/);
+  assert.match(sizeCheck, /'vtsscore\.html': \{ desktop: 33 \* 1024, mobile: 33 \* 1024 \}/);
 });

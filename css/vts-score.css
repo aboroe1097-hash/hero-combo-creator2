@@ -75,6 +75,14 @@ input {
   padding: 32px 0 24px;
 }
 
+/* The growth board carries the widest content on the page (the comparison
+   table), so it uses more of the window than the form column whenever there
+   is room, while never overflowing the viewport. */
+.vts-score-growth-board {
+  width: min(1100px, calc(100vw - 48px));
+  margin-inline: calc((100% - min(1100px, calc(100vw - 48px))) / 2);
+}
+
 .vts-score-hero,
 .vts-score-card {
   border: 1px solid var(--vts-border);
