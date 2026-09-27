@@ -2,6 +2,10 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.6.7 - 2026-09-27
+
+- The VtsScore language picker offers all thirteen languages. Croatian, Indonesian, Italian, Korean, Russian, Turkish and Chinese were translated in 16.6.5 but never added to the page's selector, so members could not choose them. A unit test now keeps the picker and the translation catalogue in lockstep.
+
 ## 16.6.6 - 2026-09-27
 
 - Dead troops stay in the numbers. The Growth Board stripped the dead-troop component out of the sign-up and final upload whenever the baseline had no dead-troop split, hiding the power members had just entered. Troop Power and Total Power now show and compare the full saved totals on every row and every pair. **Redeploy the vtsScore function after this release.**

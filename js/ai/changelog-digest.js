@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.6";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.7";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.6.7",
+    "date": "2026-09-27",
+    "highlights": [
+      "The VtsScore language picker offers all thirteen languages. Croatian, Indonesian, Italian, Korean, Russian, Turkish and Chinese were translated in 16.6.5 but never added to the page's selector, so members could not choose them. A unit test now keeps the picker and the translatio…"
+    ]
+  },
   {
     "version": "16.6.6",
     "date": "2026-09-27",
@@ -88,13 +95,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "The Competition #12 growth board can be built on the server. In VTS Admin → VtsScore, \"Build and publish on server\" (superadmin) has the vtsScore function build the board from the season's sign-ups and re-uploads plus every earlier VtsScore season, and publish it straight away. …",
       "Each player's baseline is their latest upload from any earlier VtsScore season. It is matched automatically when their exact name (ignoring case, spacing and the \"(VTS)\" prefix) belongs to one account; a name shared by two accounts, or claimed by two players, uses sign-up stats …"
-    ]
-  },
-  {
-    "version": "16.5.18",
-    "date": "2026-09-26",
-    "highlights": [
-      "Registration screenshot OCR now tries DeepSeek (`deepseek-flash`, the V4.1 Flash model that reads images, with thinking turned off) first when the OCR Worker has a `DEEPSEEK_API_KEY`. Qwen stays as the fallback: `qwen-vl-plus`, then `qwen-vl-max`. It moves to the next model when…"
     ]
   }
 ].map((release) =>

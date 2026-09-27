@@ -59,6 +59,12 @@ test('VtsScore light/dark and every offered language have complete UI copy', () 
     'tr',
     'zh',
   ]);
+  // The page's picker must offer every language the catalogue carries. The
+  // seven extra locales were translated but never added to the markup, so
+  // members could not select them; this keeps the two lists in lockstep.
+  const page = readFileSync('vtsscore.html', 'utf8');
+  const options = [...page.matchAll(/<option value="([a-z]{2})">/gu)].map((match) => match[1]);
+  assert.deepEqual(options, [...VTS_SCORE_LANGUAGES]);
   assert.deepEqual(auditVtsScoreI18n(), { ok: true, missing: [] });
 });
 
