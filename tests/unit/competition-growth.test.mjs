@@ -124,6 +124,100 @@ test('a legacy baseline compares alive-to-alive with the re-upload dead split re
   assert.equal(withSplit[0].growthAbs, 8_600);
 });
 
+test('a prior upload is compared with today’s sign-up before any re-upload', () => {
+  const legacy = upload('old-u1', 'Grower', 800);
+  delete legacy.deadTroopCounts;
+  const rows = buildCompetitionGrowthRows({
+    submissions: [submission('u1', 'Grower', 1_000)],
+    raceScores: [],
+    baselineRaceScores: [legacy],
+    window: WINDOW,
+    autoMatch: true,
+  });
+  const [row] = rows;
+  assert.equal(row.finalSource, 'signup');
+  assert.equal(row.notRankedReason, null);
+  assert.equal(row.fields.totalCastlePower.final, 1_000);
+  assert.equal(row.growthAbs, 200);
+  assert.equal(row.growthPct, 25);
+  assert.equal(row.waypoints.signup.totalCastlePower, 1_000);
+  assert.equal(row.waypoints.reupload, null);
+  assert.equal(row.steps.baselineToSignup.growthAbs, 200);
+  assert.equal(row.steps.signupToReupload, null);
+  assert.equal(row.steps.baselineToReupload, null);
+});
+
+test('all three waypoints compare baseline→sign-up, sign-up→re-upload and baseline→re-upload', () => {
+  const legacy = upload('old-u1', 'Grower', 800);
+  delete legacy.deadTroopCounts;
+  const rows = buildCompetitionGrowthRows({
+    submissions: [submission('u1', 'Grower', 1_000)],
+    raceScores: [upload('u1', 'Grower', 1_200)],
+    baselineRaceScores: [legacy],
+    window: WINDOW,
+    autoMatch: true,
+  });
+  const [row] = rows;
+  assert.equal(row.finalSource, 'reupload');
+  assert.equal(row.waypoints.signup.totalCastlePower, 1_000);
+  assert.equal(row.waypoints.reupload.totalCastlePower, 1_200);
+  assert.equal(row.steps.baselineToSignup.growthAbs, 200);
+  assert.equal(row.steps.signupToReupload.growthAbs, 200);
+  assert.equal(row.steps.baselineToReupload.growthAbs, 400);
+  assert.equal(row.fields.totalCastlePower.final, 1_200);
+  assert.equal(row.growthAbs, 400);
+});
+
+test('a legacy baseline strips the dead split from both later waypoints', () => {
+  const legacy = upload('old-u1', 'Grower', 800);
+  delete legacy.deadTroopCounts;
+  // 1,000 Lofty dead = 8,200 power folded into the sign-up's inflated fields.
+  const player = submission('u1', 'Grower', 1_000);
+  player.stats.deadTroopCounts = Object.fromEntries(DEAD_TROOP_COUNT_KEYS.map((key) => [key, 0]));
+  player.stats.deadTroopCounts.FootmenLofty = 1000;
+  player.stats.totalCastlePower += 8_200;
+  player.stats.troopPower += 8_200;
+  // The same split on the re-upload.
+  const final = upload('u1', 'Grower', 1_200);
+  final.deadTroopCounts.FootmenLofty = 1000;
+  final.powerValues.totalCastlePower += 8_200;
+  final.powerValues.troopPower += 8_200;
+  const rows = buildCompetitionGrowthRows({
+    submissions: [player],
+    raceScores: [final],
+    baselineRaceScores: [legacy],
+    window: WINDOW,
+    autoMatch: true,
+  });
+  const [row] = rows;
+  // Both later waypoints are shown in alive terms, so every pair is like-for-like.
+  assert.equal(row.waypoints.signup.totalCastlePower, 1_000);
+  assert.equal(row.waypoints.reupload.totalCastlePower, 1_200);
+  assert.equal(row.steps.baselineToSignup.growthAbs, 200);
+  assert.equal(row.steps.signupToReupload.growthAbs, 200);
+  assert.equal(row.steps.baselineToReupload.growthAbs, 400);
+});
+
+test('the public projection carries the waypoints and pairwise steps', () => {
+  const legacy = upload('old-u1', 'Grower', 800);
+  delete legacy.deadTroopCounts;
+  const rows = buildCompetitionGrowthRows({
+    submissions: [submission('u1', 'Grower', 1_000)],
+    raceScores: [],
+    baselineRaceScores: [legacy],
+    window: WINDOW,
+    autoMatch: true,
+  });
+  const projection = buildGrowthBoardProjection(rows, { seasonId: 'competition-12' });
+  const row = projection.rows[0];
+  assert.equal(row.finalSource, 'signup');
+  assert.equal(row.waypoints.signup.totalCastlePower, 1_000);
+  assert.equal(row.waypoints.reupload, null);
+  assert.equal(row.steps.baselineToSignup.growthAbs, 200);
+  assert.equal(row.steps.signupToReupload, null);
+  assert.equal(row.steps.baselineToReupload, null);
+});
+
 test('names match through case, spacing, the (VTS) prefix and confirmed aliases', () => {
   assert.equal(competitionNameKey('  (VTS)  Malak   Abo '), competitionNameKey('malak abo'));
   // A confirmed alias group resolves to its canonical spelling.

@@ -2,6 +2,12 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.6.5 - 2026-09-27
+
+- The Growth Board compares every waypoint a player has: the earlier season's upload, today's sign-up record and the growth re-upload once its window opens. Each row shows baseline → sign-up, sign-up → re-upload and baseline → re-upload changes for all nine power fields, so a member who uploaded in July and registered today sees real growth right away instead of waiting for the re-upload window; the re-upload replaces the sign-up side when it lands. A legacy baseline still compares alive-to-alive, with the dead-troop split stripped from each later waypoint. **Redeploy the vtsScore function after this release.**
+- "I have dead troops to count" starts checked on registration and score review, and the helper opens in thousands.
+- VtsScore and the Growth Board speak all 13 site languages: Croatian, Indonesian, Italian, Korean, Russian, Turkish and Chinese join the existing six.
+
 ## 16.6.4 - 2026-09-27
 
 - Season registration saves again for members who record dead troops. The submission rules checked all fifteen counts with separate bound clauses, and that chain crossed Firestore's 1,000-expressions-per-request ceiling, so every create or edit carrying a dead-troop breakdown was refused and the page reported closed registration or expired access. The counts now pass the same key, count and value checks in a cheaper form. **Deploy Firestore rules after this release.**

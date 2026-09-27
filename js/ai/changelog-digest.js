@@ -1,10 +1,19 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.4";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.5";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.6.5",
+    "date": "2026-09-27",
+    "highlights": [
+      "The Growth Board compares every waypoint a player has: the earlier season's upload, today's sign-up record and the growth re-upload once its window opens. Each row shows baseline → sign-up, sign-up → re-upload and baseline → re-upload changes for all nine power fields, so a memb…",
+      "\"I have dead troops to count\" starts checked on registration and score review, and the helper opens in thousands.",
+      "VtsScore and the Growth Board speak all 13 site languages: Croatian, Indonesian, Italian, Korean, Russian, Turkish and Chinese join the existing six."
+    ]
+  },
   {
     "version": "16.6.4",
     "date": "2026-09-27",
@@ -85,14 +94,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-09-26",
     "highlights": [
       "Registration screenshot OCR still failed for some screenshots because the model kept writing until it hit its length limit, so its reply was cut off mid-way. The OCR Worker now keeps every value the model finished before the cut (the rest stay blank, with a note to check every v…"
-    ]
-  },
-  {
-    "version": "16.5.16",
-    "date": "2026-09-25",
-    "highlights": [
-      "The Eden top lists (Most Banners Placed, march paths, shield walls and Most R5 Bonus Team Effort Points) show a linked banner or alt account under the player who runs it. Its banners, paths, shield walls and bonus points add to the owner's total, so ANGEL appears instead of Ange…",
-      "Registration screenshot OCR no longer fails with \"OCR provider response is malformed\" when the model wraps its JSON in a sentence or code fence, splits it into parts, returns the power fields without the `extracted` wrapper, or leaves out the confidence block. A reply with no JS…"
     ]
   }
 ].map((release) =>

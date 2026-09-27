@@ -44,7 +44,21 @@ test('VtsScore page is one focused, searchable, single-image OCR flow', () => {
 test('VtsScore light/dark and every offered language have complete UI copy', () => {
   const css = readFileSync('css/vts-score.css', 'utf8');
   assert.match(css, /:root\[data-theme='light'\]/);
-  assert.equal(VTS_SCORE_LANGUAGES.length, 6);
+  assert.deepEqual([...VTS_SCORE_LANGUAGES].sort(), [
+    'ar',
+    'de',
+    'en',
+    'es',
+    'fr',
+    'hr',
+    'id',
+    'it',
+    'kr',
+    'pt',
+    'ru',
+    'tr',
+    'zh',
+  ]);
   assert.deepEqual(auditVtsScoreI18n(), { ok: true, missing: [] });
 });
 

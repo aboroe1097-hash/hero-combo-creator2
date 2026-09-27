@@ -54,7 +54,14 @@ test('every page language has a complete copy with the same placeholders', () =>
     'en',
     'es',
     'fr',
+    'hr',
+    'id',
+    'it',
+    'kr',
     'pt',
+    'ru',
+    'tr',
+    'zh',
   ]);
   for (const [lang, copy] of Object.entries(board.COMPETITION_BOARD_COPY)) {
     assert.deepEqual(Object.keys(copy).sort(), [...keys].sort(), lang);
@@ -76,7 +83,7 @@ test('the page translator wins, then the locale copy, then English', () => {
   assert.equal(text('competitionBoardTitle'), 'Page title');
   assert.equal(text('competitionBoardWinnersTitle'), 'Gagnants');
   assert.equal(
-    board.createCompetitionBoardTranslator({ locale: 'kr' })('competitionBoardWinnersTitle'),
+    board.createCompetitionBoardTranslator({ locale: 'ja' })('competitionBoardWinnersTitle'),
     'Winners'
   );
   assert.equal(
@@ -117,18 +124,52 @@ test('a row renders the full comparison: summary cards, category table, baseline
     publishedAt: '2026-11-05T10:00:00.000Z',
     rows: [
       {
+        // All three waypoints: the July upload, today's sign-up, the re-upload.
         rank: 1,
         gameName: 'Grower',
-        baselineSource: 'signup',
+        baselineSource: 'vtsscore-2026',
+        baselineAliveOnly: true,
+        finalSource: 'reupload',
         growthPct: 30,
         growthAbs: 300,
+        waypoints: {
+          signup: { totalCastlePower: 1100, troopPower: 880, buildingPower: 105 },
+          reupload: { totalCastlePower: 1300, troopPower: 1040, buildingPower: 110 },
+        },
+        steps: {
+          baselineToSignup: {
+            growthAbs: 100,
+            growthPct: 10,
+            fields: {
+              totalCastlePower: { abs: 100, pct: 10 },
+              troopPower: { abs: 80, pct: 10 },
+            },
+          },
+          signupToReupload: {
+            growthAbs: 200,
+            growthPct: 18.18,
+            fields: {
+              totalCastlePower: { abs: 200, pct: 18.18 },
+              troopPower: { abs: 160, pct: 18.18 },
+            },
+          },
+          baselineToReupload: {
+            growthAbs: 300,
+            growthPct: 30,
+            fields: {
+              totalCastlePower: { abs: 300, pct: 30 },
+              troopPower: { abs: 240, pct: 30 },
+            },
+          },
+        },
         fields: {
           totalCastlePower: { baseline: 1000, final: 1300, abs: 300, pct: 30 },
           troopPower: { baseline: 800, final: 1040, abs: 240, pct: 30 },
-          buildingPower: { baseline: 100, final: 100, abs: 0, pct: 0 },
+          buildingPower: { baseline: 100, final: 110, abs: 10, pct: 10 },
         },
       },
       {
+        // A prior upload with no sign-up values yet: baseline only.
         rank: null,
         gameName: 'Pending',
         baselineSource: 'vtsscore-2026',
@@ -136,6 +177,40 @@ test('a row renders the full comparison: summary cards, category table, baseline
         growthAbs: null,
         fields: {
           totalCastlePower: { baseline: 500, final: null, abs: null, pct: null },
+        },
+      },
+      {
+        // A prior upload compared with today's sign-up: no re-upload yet.
+        rank: 2,
+        gameName: 'Fresh',
+        baselineSource: 'vtsscore-2026',
+        finalSource: 'signup',
+        growthPct: 5,
+        growthAbs: 50,
+        waypoints: {
+          signup: { totalCastlePower: 1050, troopPower: 820 },
+        },
+        steps: {
+          baselineToSignup: {
+            growthAbs: 50,
+            growthPct: 5,
+            fields: { totalCastlePower: { abs: 50, pct: 5 }, troopPower: { abs: 20, pct: 2.5 } },
+          },
+        },
+        fields: {
+          totalCastlePower: { baseline: 1000, final: 1050, abs: 50, pct: 5 },
+          troopPower: { baseline: 800, final: 820, abs: 20, pct: 2.5 },
+        },
+      },
+      {
+        // No earlier upload: the sign-up itself is the baseline.
+        rank: null,
+        gameName: 'Newbie',
+        baselineSource: 'signup',
+        growthPct: null,
+        growthAbs: null,
+        fields: {
+          totalCastlePower: { baseline: 700, final: null, abs: null, pct: null },
         },
       },
     ],
@@ -147,15 +222,22 @@ test('a row renders the full comparison: summary cards, category table, baseline
   assert.match(html, /Total power change/);
   assert.match(html, /Without troops/);
   assert.match(html, /Biggest driver/);
-  // Category table headers and values.
+  // Category table headers and values: every waypoint column and each pair.
   assert.match(html, /Full comparison/);
   assert.match(html, />Category</);
+  assert.match(html, />Sign-up</);
   assert.match(html, />Re-upload</);
-  assert.match(html, />Change %</);
+  assert.match(html, /Baseline → Sign-up/);
+  assert.match(html, /Sign-up → Re-upload/);
+  assert.match(html, /Baseline → Re-upload/);
   assert.match(html, /1,300/);
+  assert.match(html, /1,100/);
   // The pending row keeps its baseline and carries the earlier-upload note.
   assert.match(html, />500</);
   assert.match(html, /Baseline: an earlier VtsScore upload\./);
+  // Which side is "now" is spelled out: sign-up values until the re-upload.
+  assert.match(html, /Now: the Competition #12 sign-up record/);
+  assert.match(html, /Baseline: an earlier record without a dead-troop split/);
   assert.equal((html.match(/Baseline: the Competition #12 sign-up record\./g) || []).length, 1);
 });
 
@@ -189,6 +271,9 @@ test('the normalizer drops unknown keys and malformed rows', () => {
     gameName: 'Odd',
     baselineSource: 'signup',
     baselineAliveOnly: false,
+    finalSource: null,
+    waypoints: { signup: null, reupload: null },
+    steps: { baselineToSignup: null, signupToReupload: null, baselineToReupload: null },
     growthPct: null,
     growthAbs: null,
     fields: {},
