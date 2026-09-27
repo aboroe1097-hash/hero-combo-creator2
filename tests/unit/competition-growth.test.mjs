@@ -88,7 +88,7 @@ test('a prior VtsScore upload without dead-troop counts is still the growth base
   assert.equal(rows[0].growthPct, 50);
 });
 
-test('a legacy baseline compares alive-to-alive with the re-upload dead split removed', () => {
+test('a legacy baseline keeps the full saved totals including dead troops', () => {
   const legacy = upload('old-u1', 'Grower', 800);
   delete legacy.deadTroopCounts;
   const final = upload('u1', 'Grower', 1_200);
@@ -103,14 +103,14 @@ test('a legacy baseline compares alive-to-alive with the re-upload dead split re
     window: WINDOW,
     autoMatch: true,
   });
-  // 9,400 - 8,200 = 1,200 comparable; 1,200 - 800 = 400 (50%).
+  // 9,400 - 800 = 8,600 (1,075%): dead troops are part of the player's power,
+  // so the comparison keeps the saved totals instead of stripping them back out.
   assert.equal(rows[0].baselineAliveOnly, true);
-  assert.equal(rows[0].fields.totalCastlePower.final, 1_200);
-  assert.equal(rows[0].growthAbs, 400);
-  assert.equal(rows[0].growthPct, 50);
+  assert.equal(rows[0].fields.totalCastlePower.final, 9_400);
+  assert.equal(rows[0].growthAbs, 8_600);
+  assert.equal(rows[0].growthPct, 1_075);
 
-  // A baseline WITH the split keeps the full competition number: the dead
-  // troops are part of both ends and no adjustment is applied.
+  // A baseline WITH the split behaves the same: both ends are full totals.
   const splitBaseline = upload('old-u1', 'Grower', 800);
   const withSplit = buildCompetitionGrowthRows({
     submissions: [submission('u1', 'Grower', 1_000)],
@@ -168,7 +168,7 @@ test('all three waypoints compare baseline→sign-up, sign-up→re-upload and ba
   assert.equal(row.growthAbs, 400);
 });
 
-test('a legacy baseline strips the dead split from both later waypoints', () => {
+test('later waypoints keep the dead-troop component in the saved totals', () => {
   const legacy = upload('old-u1', 'Grower', 800);
   delete legacy.deadTroopCounts;
   // 1,000 Lofty dead = 8,200 power folded into the sign-up's inflated fields.
@@ -190,12 +190,12 @@ test('a legacy baseline strips the dead split from both later waypoints', () => 
     autoMatch: true,
   });
   const [row] = rows;
-  // Both later waypoints are shown in alive terms, so every pair is like-for-like.
-  assert.equal(row.waypoints.signup.totalCastlePower, 1_000);
-  assert.equal(row.waypoints.reupload.totalCastlePower, 1_200);
-  assert.equal(row.steps.baselineToSignup.growthAbs, 200);
+  // Both later waypoints show the saved totals, dead troops included.
+  assert.equal(row.waypoints.signup.totalCastlePower, 9_200);
+  assert.equal(row.waypoints.reupload.totalCastlePower, 9_400);
+  assert.equal(row.steps.baselineToSignup.growthAbs, 8_400);
   assert.equal(row.steps.signupToReupload.growthAbs, 200);
-  assert.equal(row.steps.baselineToReupload.growthAbs, 400);
+  assert.equal(row.steps.baselineToReupload.growthAbs, 8_600);
 });
 
 test('the public projection carries the waypoints and pairwise steps', () => {

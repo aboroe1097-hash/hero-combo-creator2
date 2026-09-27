@@ -401,7 +401,7 @@ test('a prior upload without dead-troop counts is still the growth baseline', ()
   assert.equal(rows[0].growthPct, 50);
 });
 
-test('a legacy baseline compares alive-to-alive with the re-upload dead split removed', () => {
+test('a legacy baseline keeps the full saved totals including dead troops', () => {
   const prior = upload('prior', 'Alpha', 80_000_000, 1);
   delete prior.deadTroopCounts;
   const final = upload('a', 'Alpha', 100_000_000, SCHEDULE.reuploadOpensAt + 1);
@@ -415,13 +415,14 @@ test('a legacy baseline compares alive-to-alive with the re-upload dead split re
     priorSeasons: [{ seasonId: 'season-2026', raceScores: [prior] }],
     window: SCHEDULE,
   });
-  // 108,200,000 - 8,200,000 = 100,000,000 comparable; 20,000,000 = 25%.
+  // 108,200,000 - 80,000,000 = 28,200,000 (35.25%): dead troops are part of
+  // the player's power, so the comparison keeps the saved totals.
   assert.equal(rows[0].baselineAliveOnly, true);
-  assert.equal(rows[0].fields.totalCastlePower.final, 100_000_000);
-  assert.equal(rows[0].growthAbs, 20_000_000);
-  assert.equal(rows[0].growthPct, 25);
+  assert.equal(rows[0].fields.totalCastlePower.final, 108_200_000);
+  assert.equal(rows[0].growthAbs, 28_200_000);
+  assert.ok(Math.abs(rows[0].growthPct - 35.25) < 1e-9);
 
-  // A baseline WITH the split keeps the full competition number.
+  // A baseline WITH the split behaves the same: both ends are full totals.
   const splitBaseline = upload('prior', 'Alpha', 80_000_000, 1);
   const withSplit = buildServerGrowthRows({
     submissions: [submission('a', 'Alpha', 70_000_000)],

@@ -225,20 +225,22 @@ test('a row renders the full comparison: summary cards, category table, baseline
   // Category table headers and values: every waypoint column and each pair.
   assert.match(html, /Full comparison/);
   assert.match(html, />Category</);
+  assert.match(html, />Last season data</);
   assert.match(html, />Sign-up</);
-  assert.match(html, />Re-upload</);
-  assert.match(html, /Baseline → Sign-up/);
-  assert.match(html, /Sign-up → Re-upload/);
-  assert.match(html, /Baseline → Re-upload/);
+  assert.match(html, />Final upload</);
+  assert.match(html, /Last season → Sign-up/);
+  assert.match(html, /Sign-up → Final upload/);
+  assert.match(html, /Last season → Final upload/);
   assert.match(html, /1,300/);
   assert.match(html, /1,100/);
   // The pending row keeps its baseline and carries the earlier-upload note.
   assert.match(html, />500</);
-  assert.match(html, /Baseline: an earlier VtsScore upload\./);
-  // Which side is "now" is spelled out: sign-up values until the re-upload.
+  assert.match(html, /Last season data: an earlier VtsScore upload\./);
+  // Which side is "now" is spelled out: sign-up values until the final upload.
   assert.match(html, /Now: the Competition #12 sign-up record/);
-  assert.match(html, /Baseline: an earlier record without a dead-troop split/);
-  assert.equal((html.match(/Baseline: the Competition #12 sign-up record\./g) || []).length, 1);
+  assert.match(html, /Last season data: an earlier record without a dead-troop split/);
+  // A player with no earlier upload shows the sign-up itself as the baseline.
+  assert.match(html, /Baseline: the Competition #12 sign-up record\./);
 });
 
 test('a board without results shows the empty state', () => {
@@ -364,7 +366,7 @@ test('renderCompetitionBoard wires search and sorting without touching Firebase'
   assert.equal(container.sorts[1].attributes['aria-pressed'], 'true');
   assert.equal(container.sorts[0].attributes['aria-pressed'], 'false');
   handle.update(null);
-  assert.match(container.innerHTML, /will appear after the re-upload window closes/);
+  assert.match(container.innerHTML, /will appear after the final upload window closes/);
 });
 
 test('loadCompetitionBoard reads the published board document', async () => {

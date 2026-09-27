@@ -431,6 +431,32 @@
 
   .comp-board__table {
     display: table;
+    /* The player cell carries the nested comparison table. A fixed layout
+       keeps its nowrap cells from widening the standings and pushing the
+       Growth columns out of the card; the nested table scrolls inside its
+       own container instead. */
+    table-layout: fixed;
+  }
+
+  .comp-board__table thead th:nth-child(1) {
+    inline-size: 2.75rem;
+  }
+
+  .comp-board__table thead th:nth-child(3) {
+    inline-size: 6.5rem;
+  }
+
+  .comp-board__table thead th:nth-child(4) {
+    inline-size: 8rem;
+  }
+
+  .comp-board__name,
+  .comp-board__name > * {
+    min-inline-size: 0;
+  }
+
+  .comp-board__detail-scroll {
+    max-inline-size: 100%;
   }
 
   .comp-board__table tbody {

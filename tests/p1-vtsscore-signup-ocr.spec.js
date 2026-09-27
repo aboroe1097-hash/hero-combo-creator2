@@ -153,6 +153,18 @@ test('the registration Power step reads a screenshot into the power fields', asy
   await expect(boardMount.locator('.comp-board__detail-note').nth(1)).toContainText(
     'earlier VtsScore'
   );
+  // The expanded comparison must not push the standings' Growth columns out of
+  // the card: the standings wrap keeps its width and the growth cell stays
+  // inside it (the nested comparison table scrolls on its own).
+  const standingsWrap = boardMount.locator('.comp-board__table-wrap');
+  const wrapOverflow = await standingsWrap.evaluate((wrap) => wrap.scrollWidth - wrap.clientWidth);
+  expect(wrapOverflow).toBeLessThanOrEqual(1);
+  const growthBox = await boardMount
+    .locator('tbody[data-comp-board-rows] .comp-board__num')
+    .first()
+    .boundingBox();
+  const wrapBox = await standingsWrap.boundingBox();
+  expect(growthBox.x + growthBox.width).toBeLessThanOrEqual(wrapBox.x + wrapBox.width + 1);
 
   // The helper works before OCR as well as after it. Thousands is the default
   // unit, matching the K counts on the game's dead-troop screen, and each
