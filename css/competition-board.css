@@ -452,12 +452,16 @@
     inline-size: 2.75rem;
   }
 
+  /* Growth columns hold signed tabular numbers that may not wrap, so they are
+     sized for the widest expected strings at the widest common digit metrics
+     (14-char signed totals, 9-char signed percentages): narrower columns let
+     the text overflow the last cell and scroll the whole standings wrap. */
   .comp-board__table thead th:nth-child(3) {
-    inline-size: 6.5rem;
+    inline-size: 7.5rem;
   }
 
   .comp-board__table thead th:nth-child(4) {
-    inline-size: 8rem;
+    inline-size: 10.5rem;
   }
 
   .comp-board__name,
