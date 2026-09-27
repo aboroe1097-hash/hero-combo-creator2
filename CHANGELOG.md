@@ -2,6 +2,14 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.6.3 - 2026-09-27
+
+- The Competition #12 growth board matches baselines by in-game name alone. Season-2026 uploads from before accounts existed now bind as each player's baseline instead of being skipped for a missing uid or dead-troop split, so the board shows real comparisons rather than "not ranked". A name used by two known accounts stays ambiguous and is still refused.
+- A legacy baseline (an upload or sign-up from before the dead-troop split) is the alive reading only, so those rows compare alive-to-alive: the re-upload's dead-troop component is removed from Troop Power and Total Power before growth is computed. A baseline that carries the split is compared as the full competition number, dead troops included. The board notes which basis each row uses. **Deploy the vtsScore function after this release.**
+- Every board row opens a full comparison: summary cards for total change, growth without troops and the biggest driver, then a table of baseline, re-upload, change and change % for all nine power fields. A consenting row without a re-upload still shows the baseline it will be measured from.
+- VTS Admin → VtsScore gains a two-player comparison that keys on the account, not the name: pick any two sign-ups and read every category side by side, with the higher current value marked.
+- VTS Admin → Signups can delete a sign-up and its final upload in one atomic write, for a bad or duplicate entry. The button asks for confirmation and names the player, and both deletes are **superadmin-only** in the rules. **Redeploy Firestore rules after this release.** A published growth board keeps the deleted row until its next rebuild.
+
 ## 16.6.2 - 2026-09-26
 
 - The same compact dead-troops editor is shared by Competition #12 registration and score review. It defaults to exact counts and adds temporarily dead troops to the alive power total. Tier counts are stored with sign-ups and final uploads so edits restore the split without counting it twice; historical baselines without that component use the current sign-up baseline.

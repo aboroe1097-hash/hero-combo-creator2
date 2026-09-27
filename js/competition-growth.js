@@ -24,7 +24,7 @@
 // Pure: no Firestore, no DOM, no i18n. The admin tab (vts-score-admin-view.js)
 // and tests call it; the member board reads only the published projection.
 
-import { normalizeDeadTroopCounts } from './dead-troops.js';
+import { deadTroopPowerFromCounts, normalizeDeadTroopCounts } from './dead-troops.js';
 import { resolveConfirmedPlayerAlias } from './vts-player-aliases.js';
 
 export const COMPETITION_BASELINE_SEASON = 'season-2026';
@@ -113,12 +113,18 @@ export function readCompetitionPowerValues(source) {
   return values.totalCastlePower > 0 ? values : null;
 }
 
-function signupValues(submission) {
-  if (!submission || typeof submission !== 'object') return null;
-  return (
-    readCompetitionPowerValues(submission.confirmedStats) ||
-    readCompetitionPowerValues(submission.stats)
-  );
+/**
+ * A sign-up's baseline values plus whether they are alive-only. Sign-ups from
+ * before the dead-troop split existed (16.6.2) have no `deadTroopCounts`, so
+ * their stats are the game's alive reading, not the competition total.
+ */
+function signupBaseline(submission) {
+  for (const source of [submission?.confirmedStats, submission?.stats]) {
+    const values = readCompetitionPowerValues(source);
+    if (!values) continue;
+    return { values, aliveOnly: !normalizeDeadTroopCounts(source?.deadTroopCounts) };
+  }
+  return { values: null, aliveOnly: false };
 }
 
 function recordUid(record) {
@@ -161,7 +167,6 @@ export function buildVtsScoreBaselineIndex(raceScores = []) {
       right.uploadedAt - left.uploadedAt || left.seasonId.localeCompare(right.seasonId)
   );
   const index = new Map();
-  index.byUid = new Map();
   index.byExactName = new Map();
   const grouped = new Map();
   const exactGrouped = new Map();
@@ -171,9 +176,6 @@ export function buildVtsScoreBaselineIndex(raceScores = []) {
     map.get(key).push(upload);
   };
   for (const candidate of uploads) {
-    if (candidate.submissionUid && !index.byUid.has(candidate.submissionUid)) {
-      index.byUid.set(candidate.submissionUid, candidate);
-    }
     add(grouped, competitionNameKey(candidate.gameName), candidate);
     add(exactGrouped, normalizeName(candidate.gameName), candidate);
   }
@@ -182,26 +184,29 @@ export function buildVtsScoreBaselineIndex(raceScores = []) {
   return index;
 }
 
-/** Keep each account's latest upload, and only propose scores with a saved
- * dead-troop breakdown so signup and re-upload totals use the same definition. */
+/**
+ * Keep each account's latest upload. Matching is by in-game name alone, because
+ * uploads from before member accounts existed carry no usable uid; a saved
+ * dead-troop breakdown is optional history, not a matching requirement. A name
+ * used by two different known accounts keeps every candidate but proposes none.
+ */
 function baselineEntry(uploads) {
   const accounts = new Set(
     uploads.map((upload) => upload.submissionUid).filter((submissionUid) => submissionUid)
   );
   const seen = new Set();
-  const latestByAccount = [];
+  const latest = [];
   for (const upload of uploads) {
-    const identity = upload.submissionUid || 'unknown-account';
+    const identity = upload.submissionUid || 'legacy-name';
     if (seen.has(identity)) continue;
     seen.add(identity);
-    latestByAccount.push(upload);
+    latest.push(upload);
   }
-  const candidates = latestByAccount.filter((upload) => upload.deadTroopCounts);
   const status = accounts.size > 1 ? 'ambiguous' : 'unique';
   return {
     status,
-    candidate: status === 'unique' ? candidates[0] || null : null,
-    candidates,
+    candidate: status === 'unique' ? latest[0] || null : null,
+    candidates: latest,
     uploads,
   };
 }
@@ -221,8 +226,9 @@ export function proposeBaselineMatch(player, index, { contestedKeys, autoMatch =
   const source = autoMatch && index?.byExactName instanceof Map ? index.byExactName : index;
   const entry = lookupIndex(source, key);
   const contested = contestedKeys instanceof Set && contestedKeys.has(key);
-  // The in-game name is the match: uploads from before accounts existed only
-  // carry a name. The uid is a last resort for records whose name changed.
+  // The in-game name is the only join: uploads from before accounts existed
+  // carry no uid, so a uid match would miss exactly the records this board
+  // needs. Ambiguous names are refused rather than guessed.
   if (entry?.candidates?.length && entry.status === 'unique' && !contested) {
     return {
       status: 'matched',
@@ -230,11 +236,6 @@ export function proposeBaselineMatch(player, index, { contestedKeys, autoMatch =
       candidates: entry.candidates,
       matchType: autoMatch ? 'exact-name' : null,
     };
-  }
-  const sameAccount =
-    autoMatch && index?.byUid instanceof Map ? index.byUid.get(recordUid(player)) : null;
-  if (sameAccount?.deadTroopCounts) {
-    return { status: 'matched', key, candidates: [sameAccount], matchType: 'uid' };
   }
   if (entry?.candidates?.length) {
     return {
@@ -293,10 +294,22 @@ export function resolveBaseline(player, options = {}) {
       selected.seasonId && selected.seasonId !== COMPETITION_BASELINE_SEASON
         ? 'vtsscore-prior'
         : 'vtsscore-2026';
-    return { values: { ...selected.values }, source, match };
+    return {
+      values: { ...selected.values },
+      source,
+      match,
+      // A pre-16.6.2 upload has no dead-troop split: its values are the alive
+      // reading, so growth for this row is measured alive-to-alive.
+      aliveOnly: !selected.deadTroopCounts,
+    };
   }
-  const values = signupValues(options.signup ?? player);
-  return { values, source: values ? 'signup' : null, match };
+  const signup = signupBaseline(options.signup ?? player);
+  return {
+    values: signup.values,
+    source: signup.values ? 'signup' : null,
+    match,
+    aliveOnly: signup.values ? signup.aliveOnly : false,
+  };
 }
 
 function growthOf(baseline, final) {
@@ -333,6 +346,19 @@ export function computeGrowthRow(player, { baseline, raceScore = null, window = 
     normalizeDeadTroopCounts(raceScore.deadTroopCounts)
       ? readCompetitionPowerValues(raceScore.powerValues)
       : null;
+  // A legacy baseline (an upload from before the dead-troop split, or a
+  // sign-up predating it) is the alive reading only. Compare like with like:
+  // strip the re-upload's dead component from the two fields the helper
+  // inflates, so this row's growth is alive-to-alive and not inflated by the
+  // baseline's missing dead troops.
+  if (baseline?.aliveOnly && finalValues) {
+    const deadPower = deadTroopPowerFromCounts(raceScore?.deadTroopCounts) || 0;
+    for (const field of ['troopPower', 'totalCastlePower']) {
+      if (deadPower && Number.isFinite(finalValues[field])) {
+        finalValues[field] = Math.max(0, finalValues[field] - deadPower);
+      }
+    }
+  }
   let notRankedReason = null;
   if (!raceScore) notRankedReason = 'no-reupload';
   else if (!finalValues) notRankedReason = 'invalid-reupload';
@@ -351,6 +377,7 @@ export function computeGrowthRow(player, { baseline, raceScore = null, window = 
     gameName,
     consent,
     baselineSource: baselineValues ? baseline.source : null,
+    baselineAliveOnly: baseline?.aliveOnly === true,
     match: baseline?.match || null,
     fields,
     growthAbs: notRankedReason ? null : total.abs,
@@ -530,13 +557,23 @@ export function buildGrowthBoardProjection(input, options = {}) {
       const fields = {};
       for (const field of COMPETITION_GROWTH_FIELDS) {
         const entry = row.fields?.[field];
-        if (!Number.isFinite(entry?.abs)) continue;
-        fields[field] = { abs: round(entry.abs, 0), pct: round(entry.pct, 4) };
+        // Baseline values ship even without a re-upload: an opted-in member
+        // whose comparison is still pending can at least see where they start.
+        const baseline = Number.isFinite(entry?.baseline) ? round(entry.baseline, 0) : null;
+        const final = Number.isFinite(entry?.final) ? round(entry.final, 0) : null;
+        if (baseline === null && final === null) continue;
+        fields[field] = {
+          baseline,
+          final,
+          abs: Number.isFinite(entry?.abs) ? round(entry.abs, 0) : null,
+          pct: Number.isFinite(entry?.pct) ? round(entry.pct, 4) : null,
+        };
       }
       return {
         rank: Number.isFinite(row.rank) ? row.rank : null,
         gameName: row.gameName,
         baselineSource: row.baselineSource,
+        baselineAliveOnly: row.baselineAliveOnly === true,
         ...publicGrowth(row),
         fields,
         uploads: uploadHistory(row),

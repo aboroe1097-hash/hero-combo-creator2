@@ -608,7 +608,7 @@ test('Firestore grant helper requires a matching active server grant and preserv
   assert.doesNotMatch(helper, /request\.auth\.token\.bohAllStar/);
 });
 
-test('Firestore submissions are owner-written while admins can list and delete test signups', () => {
+test('Firestore submissions are owner-written while admins list and superadmins delete', () => {
   const rules = readRepositoryFile('firestore.rules');
   const block = rulesMatch(
     rules,
@@ -625,7 +625,9 @@ test('Firestore submissions are owner-written while admins can list and delete t
     /allow create: if isOwner\(uid\)[\s\S]*hasActiveAllStarBohGrant\(season\)[\s\S]*validAllStarBohSubmissionCreate/
   );
   assert.match(block, /allow update: if isOwner\(uid\)[\s\S]*validAllStarBohSubmissionUpdate/);
-  assert.match(block, /allow delete: if isAdmin\(\)/);
+  // Removing a registration decides a prize: superadmin only.
+  assert.match(block, /allow delete: if isSuperAdmin\(\)/);
+  assert.doesNotMatch(block, /allow delete: if isAdmin\(\)/);
   assert.doesNotMatch(block, /allow (?:create|update): if isAdmin/);
 
   const updateValidator = rulesMatch(

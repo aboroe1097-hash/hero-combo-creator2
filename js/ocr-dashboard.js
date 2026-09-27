@@ -168,6 +168,7 @@ import {
   BOH_SIGNUP_SLOT_CATALOGS,
   bohSignupAdminSlotProblem,
   createBohSignupAdminView,
+  deleteBohSignup,
   readBohSignupAdminError,
   saveBohSignupSeasonConfig,
   syncBohSlotPicker,
@@ -881,6 +882,7 @@ async function refreshSuperAdminSurfaces() {
 }
 
 function applySuperAdminSurfaces(superadmin) {
+  const changed = dashSuperAdmin !== superadmin;
   dashSuperAdmin = superadmin;
   document.querySelectorAll('[data-requires-superadmin]').forEach((element) => {
     element.hidden = !superadmin;
@@ -897,6 +899,12 @@ function applySuperAdminSurfaces(superadmin) {
   document.querySelectorAll('[data-subtab-scope="global"]').forEach((nav) => {
     nav.hidden = !superadmin;
   });
+  // A rendered signups list carries its own superadmin-only Delete buttons, so
+  // it re-renders when the claim lands or changes.
+  if (changed && state.bohSignupsSnapshot) {
+    const root = $id('dashBohSignupsRoot');
+    if (root) renderBohSignupsSnapshot(root, state.bohSignupsSnapshot);
+  }
   return superadmin;
 }
 
@@ -8437,7 +8445,13 @@ function ensureCompetitionScheduleView() {
 }
 
 function renderBohSignupsSnapshot(root, snapshot) {
-  ensureBohSignupsView().render(root, snapshot);
+  // The row Delete is superadmin-only in the rules; the list mirrors that
+  // claim. dashSuperAdmin is null until the claim resolves, which reads as
+  // not-superadmin, so a slow claim never flashes a button that would refuse.
+  ensureBohSignupsView().render(root, {
+    ...snapshot,
+    superadmin: dashSuperAdmin === true,
+  });
   ensureCompetitionScheduleView().render(root, snapshot);
 }
 
@@ -8641,17 +8655,41 @@ function bindBohSignupsControls() {
     cancelEdit.addEventListener('click', () => ensureBohSignupsView().fillForm(root, null));
   }
 
-  // The rows are re-rendered on every load, so the edit action is delegated.
+  // The rows are re-rendered on every load, so the row actions are delegated.
   const list = $id('dashBohSignupsList');
   if (list && !list.dataset.bound) {
     list.dataset.bound = '1';
-    list.addEventListener('click', (event) => {
+    list.addEventListener('click', async (event) => {
+      const signupFor = (uid) =>
+        (state.bohSignupsSnapshot?.signups || []).find((entry) => entry.submissionUid === uid) ||
+        null;
+
+      const deleteButton = event.target.closest('[data-boh-signup-delete]');
+      if (deleteButton) {
+        const uid = deleteButton.dataset.bohSignupDelete;
+        const signup = signupFor(uid);
+        if (!signup) return;
+        const name = signup.gameName || uid;
+        if (!window.confirm(dashT('adminBohSignupDeleteAsk', { name }))) return;
+        deleteButton.disabled = true;
+        setBohSignupsStatus(dashT('adminBohSignupSaving'), 'info');
+        try {
+          await deleteBohSignup(
+            { seasonId: state.bohSignupsSnapshot?.season || '', submissionUid: uid },
+            await window.getVtsAdminFirestoreContext()
+          );
+          await loadBohSignupsAdmin({ force: true });
+          setBohSignupsStatus(dashT('adminBohSignupDeleted'), 'success');
+        } catch (err) {
+          setBohSignupsStatus(readBohSignupAdminError(err, { t: dashT }), 'error');
+        }
+        return;
+      }
+
       const button = event.target.closest('[data-boh-signup-edit]');
       if (!button) return;
       const uid = button.dataset.bohSignupEdit;
-      const signup = (state.bohSignupsSnapshot?.signups || []).find(
-        (entry) => entry.submissionUid === uid
-      );
+      const signup = signupFor(uid);
       if (!signup) return;
       ensureBohSignupsView().fillForm(root, signup);
       setBohSignupsStatus(dashT('adminBohSignupManualTitle'), 'info');

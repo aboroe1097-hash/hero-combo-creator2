@@ -100,7 +100,7 @@ test('the copied growth, ranking and projection match the browser builder', () =
   );
 });
 
-test('the baseline is the latest earlier upload, matched automatically only when the name is unique', () => {
+test('the baseline is the latest earlier upload, matched by name alone when it is unique', () => {
   const index = buildPriorSeasonBaselineIndex([
     {
       seasonId: 'season-2026',
@@ -119,19 +119,19 @@ test('the baseline is the latest earlier upload, matched automatically only when
       ],
     },
   ]);
-  // A name claimed by different accounts in any earlier season is ambiguous.
+  // A name claimed by different accounts in any earlier season is ambiguous,
+  // even when the member's own account uploaded under it: matching is by name
+  // so a uid fallback would silently adopt the wrong history.
   assert.equal(index.byName.get('alpha').status, 'ambiguous');
   assert.equal(index.byName.get('twin').status, 'ambiguous');
-  assert.equal(index.byUid.get('only-old').seasonId, 'season-2026');
 
-  const auto = resolveServerBaseline(submission('new-alpha', 'alpha', 1), { index });
-  assert.equal(auto.source, 'vtsscore-prior');
-  assert.equal(auto.seasonId, 'season-2027a');
-  assert.equal(auto.values.totalCastlePower, 95_000_000);
-  assert.equal(auto.match.how, 'uid');
+  const ambiguous = resolveServerBaseline(submission('new-alpha', 'alpha', 1), { index });
+  assert.equal(ambiguous.source, 'signup');
+  assert.equal(ambiguous.match.status, 'ambiguous');
 
   const legacy = resolveServerBaseline(submission('p2', 'Oldie', 1), { index });
   assert.equal(legacy.source, 'vtsscore-2026');
+  assert.equal(legacy.match.how, 'exact-name');
 
   const contested = resolveServerBaseline(submission('p1', 'Alpha', 70_000_000), {
     index,
@@ -386,7 +386,7 @@ test('rows without an earlier upload fall back to sign-up stats', () => {
   assert.equal(rows[0].growthPct, 20);
 });
 
-test('a prior upload without dead-troop counts falls back to the signup baseline', () => {
+test('a prior upload without dead-troop counts is still the growth baseline', () => {
   const prior = upload('prior', 'Alpha', 80_000_000, 1);
   delete prior.deadTroopCounts;
   const rows = buildServerGrowthRows({
@@ -395,8 +395,43 @@ test('a prior upload without dead-troop counts falls back to the signup baseline
     priorSeasons: [{ seasonId: 'season-2026', raceScores: [prior] }],
     window: SCHEDULE,
   });
-  assert.equal(rows[0].baselineSource, 'signup');
-  assert.equal(rows[0].fields.totalCastlePower.baseline, 100_000_000);
+  assert.equal(rows[0].baselineSource, 'vtsscore-2026');
+  assert.equal(rows[0].baselineAliveOnly, true);
+  assert.equal(rows[0].fields.totalCastlePower.baseline, 80_000_000);
+  assert.equal(rows[0].growthPct, 50);
+});
+
+test('a legacy baseline compares alive-to-alive with the re-upload dead split removed', () => {
+  const prior = upload('prior', 'Alpha', 80_000_000, 1);
+  delete prior.deadTroopCounts;
+  const final = upload('a', 'Alpha', 100_000_000, SCHEDULE.reuploadOpensAt + 1);
+  // 1,000,000 Lofty dead = 8,200,000 power folded into the two inflated fields.
+  final.deadTroopCounts.FootmenLofty = 1_000_000;
+  final.powerValues.totalCastlePower += 8_200_000;
+  final.powerValues.troopPower += 8_200_000;
+  const rows = buildServerGrowthRows({
+    submissions: [submission('a', 'Alpha', 70_000_000)],
+    raceScores: [final],
+    priorSeasons: [{ seasonId: 'season-2026', raceScores: [prior] }],
+    window: SCHEDULE,
+  });
+  // 108,200,000 - 8,200,000 = 100,000,000 comparable; 20,000,000 = 25%.
+  assert.equal(rows[0].baselineAliveOnly, true);
+  assert.equal(rows[0].fields.totalCastlePower.final, 100_000_000);
+  assert.equal(rows[0].growthAbs, 20_000_000);
+  assert.equal(rows[0].growthPct, 25);
+
+  // A baseline WITH the split keeps the full competition number.
+  const splitBaseline = upload('prior', 'Alpha', 80_000_000, 1);
+  const withSplit = buildServerGrowthRows({
+    submissions: [submission('a', 'Alpha', 70_000_000)],
+    raceScores: [final],
+    priorSeasons: [{ seasonId: 'season-2026', raceScores: [splitBaseline] }],
+    window: SCHEDULE,
+  });
+  assert.equal(withSplit[0].baselineAliveOnly, false);
+  assert.equal(withSplit[0].fields.totalCastlePower.final, 108_200_000);
+  assert.equal(withSplit[0].growthAbs, 28_200_000);
 });
 
 test('the live board endpoint is the member vtsScore endpoint', async () => {

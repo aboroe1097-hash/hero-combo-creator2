@@ -56,7 +56,40 @@ test('the registration Power step reads a screenshot into the power fields', asy
         getVtsScorePlayers: async () => ({
           players: [{ submissionUid: 'member-1', gameName: 'Test Member' }],
         }),
-        getCompetitionGrowthBoard: async () => ({ board: null }),
+        getCompetitionGrowthBoard: async () => ({
+          board: {
+            schemaVersion: 1,
+            seasonId: '2027',
+            publishedAt: new Date().toISOString(),
+            rows: [
+              {
+                rank: 1,
+                gameName: 'Test Member',
+                baselineSource: 'signup',
+                growthPct: 30,
+                growthAbs: 30_000,
+                fields: {
+                  totalCastlePower: { baseline: 100_000, final: 130_000, abs: 30_000, pct: 30 },
+                  troopPower: { baseline: 50_000, final: 65_000, abs: 15_000, pct: 30 },
+                },
+                uploads: [],
+              },
+              {
+                rank: null,
+                gameName: 'Pending Member',
+                baselineSource: 'vtsscore-2026',
+                growthPct: null,
+                growthAbs: null,
+                fields: {
+                  totalCastlePower: { baseline: 80_000, final: null, abs: null, pct: null },
+                },
+                uploads: [],
+              },
+            ],
+            winners: [{ rank: 1, gameName: 'Test Member', growthPct: 30, growthAbs: 30_000 }],
+            notRanked: 1,
+          },
+        }),
         submitVtsScore: async (payload) => {
           window.__scorePayload = payload;
           return {
@@ -102,6 +135,24 @@ test('the registration Power step reads a screenshot into the power fields', asy
       Boolean(signup.compareDocumentPosition(document.querySelector('#vtsScoreGrowthBoard')) & 4)
     )
   ).toBe(true);
+
+  // The board renders the two-player-ready standings and each row opens the
+  // full baseline-versus-now comparison.
+  const boardMount = page.locator('#vtsScoreGrowthBoard [data-growth-board-mount]');
+  await expect(boardMount.locator('tbody[data-comp-board-rows] > tr')).toHaveCount(2);
+  await expect(boardMount.locator('.comp-board__detail')).toHaveCount(2);
+  await boardMount.locator('.comp-board__detail summary').first().click();
+  await expect(boardMount.locator('.comp-board__card').first()).toContainText('Total power change');
+  await expect(boardMount.locator('.comp-board__detail-table').first()).toBeVisible();
+  await expect(
+    boardMount.locator('.comp-board__detail-table').first().locator('tbody tr').first()
+  ).toContainText('130,000');
+  await expect(boardMount.locator('.comp-board__detail-note').first()).toContainText(
+    'sign-up record'
+  );
+  await expect(boardMount.locator('.comp-board__detail-note').nth(1)).toContainText(
+    'earlier VtsScore'
+  );
 
   // The helper works before OCR as well as after it. Exact counts are the
   // default, and each troop type has its own recognizable icon and five tiers.

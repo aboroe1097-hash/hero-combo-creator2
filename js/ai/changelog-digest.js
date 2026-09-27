@@ -1,10 +1,21 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.2";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.3";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.6.3",
+    "date": "2026-09-27",
+    "highlights": [
+      "The Competition #12 growth board matches baselines by in-game name alone. Season-2026 uploads from before accounts existed now bind as each player's baseline instead of being skipped for a missing uid or dead-troop split, so the board shows real comparisons rather than \"not rank…",
+      "A legacy baseline (an upload or sign-up from before the dead-troop split) is the alive reading only, so those rows compare alive-to-alive: the re-upload's dead-troop component is removed from Troop Power and Total Power before growth is computed. A baseline that carries the spli…",
+      "Every board row opens a full comparison: summary cards for total change, growth without troops and the biggest driver, then a table of baseline, re-upload, change and change % for all nine power fields. A consenting row without a re-upload still shows the baseline it will be mea…",
+      "VTS Admin → VtsScore gains a two-player comparison that keys on the account, not the name: pick any two sign-ups and read every category side by side, with the higher current value marked.",
+      "VTS Admin → Signups can delete a sign-up and its final upload in one atomic write, for a bad or duplicate entry. The button asks for confirmation and names the player, and both deletes are **superadmin-only** in the rules. **Redeploy Firestore rules after this release.** A publi…"
+    ]
+  },
   {
     "version": "16.6.2",
     "date": "2026-09-26",
@@ -82,16 +93,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Competition #12 registration no longer asks for the two long optional text answers or an OCR acknowledgment checkbox. Existing answers remain preserved when a member edits a saved registration; signed-in members can start with the game name saved on their account.",
       "The Competition #12 growth board mount point remains visible throughout the season and checks again for a published board when results are ready. The member-controlled sharing checkbox remains off by default.",
       "Stats OCR now leaves individually unreadable or out-of-range values blank with a review warning; malformed provider JSON or a missing extracted-data object still fails. Published Combos rankings can be read without signing in; only a superadmin can publish them."
-    ]
-  },
-  {
-    "version": "16.5.14",
-    "date": "2026-09-25",
-    "highlights": [
-      "VTS Admin has a Combos tab (Beta) running the Combos Planner: the full ranking with its filters, an overlap check, and every lineup editable (rename heroes or skin, reorder, remove). The same planner runs on a PC with `npm run combos:plan`.",
-      "Placing new X8 lineups is fast: each unplaced lineup gets a suggested slot with its reason (for example \"above #58 · shares Lawman + The Avalanche\"), learned from similar lineups and from the placements already made, and paid lineups keep their place above free ones. Keys: J/K t…",
-      "The planner shows about 35 compact rows at once, focuses the ranking around the lineup being placed, groups the queue by X8 hero with progress, places several lineups as one block, drafts every suggestion in one undoable step, keeps an automatic draft, accepts a pasted list of l…",
-      "A superadmin can publish the ranking live from VTS Admin: players get it on their next page load without a site update, the Combo Generator, Hero Atlas and counter tables follow it, and \"Use shipped list\" switches back. The site checks every published lineup and keeps the shippe…"
     ]
   }
 ].map((release) =>

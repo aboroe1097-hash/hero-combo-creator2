@@ -14,6 +14,7 @@ import {
   BOH_SIGNUP_ADMIN_ERROR_KEYS,
   bohSignupAdminSlotProblem,
   buildBohSignupAdminRequest,
+  deleteBohSignup,
   renderBohSignupRows,
   saveBohSignupSeasonConfig,
   toggleOrderedSlot,
@@ -646,6 +647,51 @@ test('the season picker writes exactly the keys the rules validator allows', asy
   assert.equal(writes.length, 1, 'a rejected setting never reaches Firestore');
 });
 
+test('deleting a sign-up removes its document and its final upload in one batch', async () => {
+  const deleted = [];
+  let commits = 0;
+  const batch = {
+    delete: (ref) => deleted.push(ref.path),
+    commit: async () => {
+      commits += 1;
+    },
+  };
+  const context = {
+    db: { kind: 'test' },
+    firestore: {
+      doc: (_db, path) => ({ path }),
+      writeBatch: () => batch,
+    },
+  };
+  await deleteBohSignup({ seasonId: SEASON, submissionUid: 'uid-1' }, context);
+  assert.deepEqual(deleted, [
+    `boh_allstar/${SEASON}/submissions/uid-1`,
+    `boh_allstar/${SEASON}/raceScores/uid-1`,
+  ]);
+  assert.equal(commits, 1, 'both deletes commit together: never one without the other');
+  await assert.rejects(
+    deleteBohSignup({ seasonId: 'not a season', submissionUid: 'uid-1' }, context),
+    (error) => error.code === 'invalid_signup_delete'
+  );
+  await assert.rejects(
+    deleteBohSignup({ seasonId: SEASON, submissionUid: '' }, context),
+    (error) => error.code === 'invalid_signup_delete'
+  );
+  assert.equal(deleted.length, 2, 'a rejected request never reaches Firestore');
+  assert.equal(commits, 1);
+  // Both deletes are prize-relevant: the rules reserve them to a superadmin,
+  // like publishing the board or setting the active season.
+  const rules = readFileSync('firestore.rules', 'utf8');
+  const submissions = rules.match(/match \/submissions\/\{uid\} \{[\s\S]*?\n {6}\}/)[0];
+  assert.match(submissions, /allow delete: if isSuperAdmin\(\);/);
+  assert.doesNotMatch(submissions, /allow delete: if isAdmin\(\);/);
+  const raceScores = rules.match(/match \/raceScores\/\{submissionUid\} \{[\s\S]*?\n {6}\}/)[0];
+  assert.match(raceScores, /allow read: if isAdmin\(\);/);
+  assert.match(raceScores, /allow create, update: if isAdmin\(\);/);
+  assert.match(raceScores, /allow delete: if isSuperAdmin\(\);/);
+  assert.doesNotMatch(raceScores, /allow read, write:/);
+});
+
 test('the admin tab is wired into the dashboard and the nav', () => {
   const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
   assert.match(dashboard, /if \(name === 'bohSignups'\) renderBohSignupsPanel\(\);/);
@@ -773,15 +819,20 @@ test('the signup list shows each signup’s slots in order and its consent', () 
 });
 
 test('the signup list renders an edit action per row', () => {
-  const html = renderBohSignupRows(
-    [
-      { submissionUid: 'uid-1', gameName: 'Bil.', revision: 2, entryMethod: 'manual' },
-      { submissionUid: 'uid-2', gameName: 'MalakAbo', revision: 1, entryMethod: 'ocr' },
-    ],
-    (key, _vars, fallback) => fallback || key
-  );
+  const signups = [
+    { submissionUid: 'uid-1', gameName: 'Bil.', revision: 2, entryMethod: 'manual' },
+    { submissionUid: 'uid-2', gameName: 'MalakAbo', revision: 1, entryMethod: 'ocr' },
+  ];
+  const t = (key, _vars, fallback) => fallback || key;
+  const html = renderBohSignupRows(signups, t, { superadmin: true });
   assert.match(html, /data-boh-signup-edit="uid-1"/);
   assert.doesNotMatch(html, /data-boh-signup-edit="uid-2"/, 'member signups are read-only here');
+  // Delete is offered on every row to a superadmin: a bad or duplicate entry
+  // must be removable.
+  assert.match(html, /data-boh-signup-delete="uid-1"/);
+  assert.match(html, /data-boh-signup-delete="uid-2"/);
+  // A plain admin sees no Delete button; the rules would refuse the write.
+  assert.doesNotMatch(renderBohSignupRows(signups, t), /data-boh-signup-delete/);
   assert.match(html, /Bil\./);
   assert.match(html, /MalakAbo/);
   assert.match(html, /<td>2<\/td>/);

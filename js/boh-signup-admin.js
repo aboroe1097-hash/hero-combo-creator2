@@ -240,7 +240,7 @@ export function renderBohSignupProfileOptions(selectedId) {
   }).join('');
 }
 
-export function renderBohSignupRows(signups, t) {
+export function renderBohSignupRows(signups, t, { superadmin = false } = {}) {
   if (!Array.isArray(signups) || !signups.length) {
     return `<div class="dash-empty">${esc(
       t('adminBohSignupListEmpty', {}, 'No signups yet in this season.')
@@ -261,14 +261,22 @@ export function renderBohSignupRows(signups, t) {
             ? esc(t('adminBohSignupManualChip', {}, 'Added by leadership'))
             : esc(t('adminBohSignupMemberChip', {}, 'Member form'))
         }</td>
-        <td>${
+        <td class="dash-boh-actions-cell">${
           // A member's own signup carries fields the admin form cannot show, so
           // only rows leadership added by hand can be edited from here.
           manual
             ? `<button class="dash-btn" type="button" data-boh-signup-edit="${esc(
                 signup.submissionUid
               )}">${esc(t('adminBohSignupEdit', {}, 'Edit'))}</button>`
-            : '—'
+            : ''
+        }${
+          // Deleting a sign-up is superadmin-only in the rules; a plain admin
+          // gets no button rather than a refused click.
+          superadmin
+            ? `<button class="dash-btn dash-btn-danger" type="button" data-boh-signup-delete="${esc(
+                signup.submissionUid
+              )}">${esc(t('adminBohSignupDelete', {}, 'Delete'))}</button>`
+            : ''
         }</td>
       </tr>`;
     })
@@ -292,7 +300,7 @@ export function renderBohSignupRows(signups, t) {
  */
 export function createBohSignupAdminView(options = {}) {
   const t = typeof options.t === 'function' ? options.t : (key, _vars, fallback) => fallback || key;
-  const state = { signups: [], season: '', config: null, target: '' };
+  const state = { signups: [], season: '', config: null, target: '', superadmin: false };
 
   function fillForm(root, signup) {
     const form = root.querySelector('#dashBohSignupForm');
@@ -355,9 +363,12 @@ export function createBohSignupAdminView(options = {}) {
 
   function render(root, snapshot = {}) {
     state.signups = Array.isArray(snapshot.signups) ? snapshot.signups : [];
+    state.superadmin = snapshot.superadmin === true;
     renderConfig(root, snapshot);
     const list = root.querySelector('#dashBohSignupsList');
-    if (list) list.innerHTML = renderBohSignupRows(state.signups, t);
+    if (list) {
+      list.innerHTML = renderBohSignupRows(state.signups, t, { superadmin: state.superadmin });
+    }
   }
 
   /** Reads the form and returns the Function request for the current mode. */
@@ -399,6 +410,28 @@ export function createBohSignupAdminView(options = {}) {
   }
 
   return Object.freeze({ render, fillForm, collectRequest, readSeasonConfig, state });
+}
+
+/**
+ * Deletes one sign-up and its final upload in a single atomic batch. The
+ * rules admit a superadmin to both deletes, so this is a direct client write;
+ * the dashboard asks for confirmation first. One batch means a partial failure
+ * cannot leave a sign-up behind without its upload: either both go or neither.
+ */
+export async function deleteBohSignup({ seasonId, submissionUid }, context) {
+  const season = String(seasonId || '').trim();
+  const uid = String(submissionUid || '').trim();
+  if (!BOH_SIGNUP_SEASON_PATTERN.test(season) || !uid) {
+    const error = new Error('A season and sign-up are required.');
+    error.code = 'invalid_signup_delete';
+    throw error;
+  }
+  const { firestore, db } = context;
+  const { doc, writeBatch } = firestore;
+  const batch = writeBatch(db);
+  batch.delete(doc(db, `boh_allstar/${season}/submissions/${uid}`));
+  batch.delete(doc(db, `boh_allstar/${season}/raceScores/${uid}`));
+  await batch.commit();
 }
 
 export class BohSignupSeasonError extends Error {

@@ -199,8 +199,10 @@ const LIMITS = {
   // 16.6.1: the dead-troops helper (pure module, render code and its 6-locale
   // copy) and Smart Generate (the selection engine and the 13-locale copy) grow
   // the built JS to 11847.4 KiB; the helper's styles ship as a lazy chunk.
-  // Retain ~20 KiB for CI's admin-auth injection.
-  totalJsBytes: 11868 * 1024,
+  // 16.6.3: the name-only baseline index, the alive-to-alive comparison, the
+  // board detail view, the admin two-player panel and sign-up delete grow the
+  // built JS to 11869.2 KiB. Retain ~20 KiB for CI's admin-auth injection.
+  totalJsBytes: 11870 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -474,7 +476,9 @@ const LIMITS = {
     // admin mobile route (786.1 KiB measured); retain ~0.9 KiB.
     // 16.6.2: the Smart Generate button adds shared component styles;
     // measured 691.0 / 787.7 KiB after build, within these narrow ceilings.
-    'admin.html': { desktop: 692 * 1024, mobile: 788 * 1024 },
+    // 16.6.3: the two-player comparison panel adds admin-only rules;
+    // measured 691.9 / 788.5 KiB. Raise mobile by the measured minimum.
+    'admin.html': { desktop: 692 * 1024, mobile: 789 * 1024 },
     // Eden used to carry every admin dashboard style, because it imports
     // ocr-dashboard.css for weighted-contribution detail; 16.0.14 had lifted the
     // ceiling to 806/909 KiB for admin-only rules alone. 16.0.15 moves the
