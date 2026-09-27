@@ -156,10 +156,10 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   assert.match(sizeCheck, /Specialization Towers, Alliance View, Skin Atlas, and All-Star BoH/);
   assert.match(sizeCheck, /8117\.7 KiB/);
   assert.match(sizeCheck, /1312\.1 KiB/);
-  // 11973 since 16.6.6: the growth-board terminology across 13 languages and
-  // the full-totals comparison grow the built JS to 11972.2 KiB; the cap moves
-  // by the measured minimum.
-  assert.match(sizeCheck, /totalJsBytes: 11973 \* 1024/);
+  // 11981 since 16.6.9: the competition ranking from sign-up to final upload,
+  // the personal growth tracker and the account/loose-name joins grow the
+  // built JS to 11980.6 KiB; the cap moves by the measured minimum.
+  assert.match(sizeCheck, /totalJsBytes: 11981 \* 1024/);
   // 427 since 16.5.0 Phase 0: removing the unconsumed .u-* utilities from
   // atmosphere.css and four dead compatibility tokens from _tokens.css measured
   // 431,155 -> 428,135 bytes, so the ceiling drops by the verified reclaim.
