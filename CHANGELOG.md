@@ -2,6 +2,10 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.6.11 - 2026-09-27
+
+- The admin signup table and the VTS Admin growth table flag rows whose dead-troop values were never entered ("No dead values"). An untouched member editor saves an all-zero map and a hand-filed row saves none at all; either way the player's comparison is missing a component worth hundreds of millions, so leadership can see who to chase before the standings matter.
+
 ## 16.6.10 - 2026-09-27
 
 - Reverted the account-id baseline join from 16.6.9: matching is by in-game name again (exact, then the confirmed-alias loose key). One browser or account often files uploads for several people — a member uploading for a friend carries their account id — so a shared account id had bound the wrong history to players (a sign-up compared against a friend's earlier numbers). A same-account upload under a different name is no longer adopted. **Redeploy the vtsScore function after this release.**

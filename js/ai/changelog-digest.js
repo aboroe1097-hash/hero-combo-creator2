@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.10";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.11";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.6.11",
+    "date": "2026-09-27",
+    "highlights": [
+      "The admin signup table and the VTS Admin growth table flag rows whose dead-troop values were never entered (\"No dead values\"). An untouched member editor saves an all-zero map and a hand-filed row saves none at all; either way the player's comparison is missing a component worth…"
+    ]
+  },
   {
     "version": "16.6.10",
     "date": "2026-09-27",
@@ -82,18 +89,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "The unlocked Growth Board is visible after the registration and score-entry workspace in every phase.",
       "Smart Generate is a single prominent option before Generate Best Combos and uses the best four of five lineups. The homepage Eden voting callout and Arcade game banner open their intended destinations.",
       "When a Google linking conflict has no reusable credential, the guest session stays active and the member is directed to the explicit Sign in with Google flow."
-    ]
-  },
-  {
-    "version": "16.6.1",
-    "date": "2026-09-26",
-    "highlights": [
-      "The VtsScore power form has a dead-troops helper. Members whose troops died tick \"I have dead troops to count\", choose Footmen, Cavalry, or Archers using the sword, horseshoe, and target icons in the game's left-to-right order, then enter counts for the five tiers shown on the g…",
-      "The homepage callout now sends members to the Eden page to vote for the best members instead of promoting Velo's Rampart; the Arcade lobby keeps its own Rampart banner.",
-      "Hero info panels start hidden: the \"Show Hero Info Panels\" toggle is off by default now, and each visitor's choice is still remembered.",
-      "Smart Generate joins the Combo Generator. Unlike Generate Best Combos, which takes the greedily highest lineups, Smart #1 shows five lineups whose best four total as high as possible (the fifth only has to fit) and Smart #2 maximises the total of all five, which can leave the ro…",
-      "The VtsScore Growth Board stays hidden until VtsScore is unlocked instead of loading for every visitor.",
-      "The VTS Admin growth preview reads earlier seasons correctly again: the season parents are not documents, so a plain listing saw no prior seasons and every baseline fell back to sign-up values. It now reads the uploads as a collection group and falls back to the 2026 baseline se…"
     ]
   }
 ].map((release) =>

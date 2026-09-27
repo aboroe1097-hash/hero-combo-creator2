@@ -213,6 +213,17 @@
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
+#ocrDashboardRoot .dash-boh-dead-missing {
+  display: inline-block;
+  margin-top: 2px;
+  padding: 1px 6px;
+  border: 1px solid color-mix(in srgb, var(--ff-gold, #d4a017) 45%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ff-gold, #d4a017) 12%, transparent);
+  color: var(--ff-gold, #d4a017);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
 #ocrDashboardRoot .dash-boh-consent {
   display: inline-block;
   padding: 2px 8px;

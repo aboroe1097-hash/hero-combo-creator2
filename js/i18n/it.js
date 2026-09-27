@@ -1220,7 +1220,8 @@ const it = {
   generatorGenerateBtn: 'Genera le combo migliori',
   generatorDownloadBtn: 'Scarica i risultati come immagine',
   generatorRandomBtn: 'Sorprendimi (casuale)',
-  generatorSmartTop4: 'Crea cinque formazioni senza eroi ripetuti e massimizza il punteggio totale delle quattro migliori.',
+  generatorSmartTop4:
+    'Crea cinque formazioni senza eroi ripetuti e massimizza il punteggio totale delle quattro migliori.',
   generatorSmartBtn: 'Generazione intelligente',
   generatorNoHeroesSelected: 'Nessun eroe selezionato. Tocca gli eroi nell’elenco qui sotto.',
   generatorMinHeroesMessage: 'Seleziona almeno 12 eroi.',
@@ -2961,6 +2962,7 @@ const it = {
   adminBohSignupSlotsLegacy: 'Classico {slots}',
   adminBohSignupConsentColumn: 'Bacheca crescita',
   adminBohSignupSourceColumn: 'Origine',
+  adminBohSignupDeadMissing: 'Nessun valore di truppe morte',
   adminBohSignupConsentYes: 'Bacheca pubblica',
   adminBohSignupConsentNo: 'Privato',
   adminBohSignupPreferredRole: 'Ruolo preferito',

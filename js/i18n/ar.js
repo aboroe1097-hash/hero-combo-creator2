@@ -2345,6 +2345,7 @@ const ar = {
   adminBohSignupSlotsLegacy: 'الأوقات السابقة {slots}',
   adminBohSignupConsentColumn: 'لوحة النمو',
   adminBohSignupSourceColumn: 'المصدر',
+  adminBohSignupDeadMissing: 'لا قيم للقوات المفقودة',
   adminBohSignupConsentYes: 'لوحة عامة',
   adminBohSignupConsentNo: 'خاص',
   adminBohSignupPreferredRole: 'الدور المفضل',

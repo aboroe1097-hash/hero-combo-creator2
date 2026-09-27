@@ -216,7 +216,12 @@ export function createCompetitionGrowthSection(options = {}) {
     const aliveMarker = row.baselineAliveOnly
       ? `<br><span class="vts-admin-muted">${esc(t('c12AliveOnly'))}</span>`
       : '';
-    return `<tr><td>${row.rank ? `${row.rank}${row.tied ? '=' : ''}` : '—'}</td><th scope="row"><strong>${esc(row.gameName)}</strong>${reason ? `<br><span class="vts-admin-muted">${esc(t(reason))}</span>` : ''}${historyDetails(row)}</th><td><span class="vts-admin-chip">${esc(
+    // The signup's dead-troop values drive every comparison: flag the rows
+    // whose owner never entered them so leadership can chase the numbers.
+    const deadMarker = row.deadValuesMissing
+      ? `<br><span class="vts-admin-warn">${esc(t('adminBohSignupDeadMissing'))}</span>`
+      : '';
+    return `<tr><td>${row.rank ? `${row.rank}${row.tied ? '=' : ''}` : '—'}</td><th scope="row"><strong>${esc(row.gameName)}</strong>${deadMarker}${reason ? `<br><span class="vts-admin-muted">${esc(t(reason))}</span>` : ''}${historyDetails(row)}</th><td><span class="vts-admin-chip">${esc(
       row.baselineSource === 'vtsscore-2026'
         ? t('c12SourceVtsScore')
         : row.baselineSource === 'vtsscore-prior'

@@ -627,3 +627,19 @@ test('the personal tracker ranks the board until the first final upload lands', 
   assert.equal(rankedFinals.ranked[0].growthPct, 30);
   assert.equal(finals.find((row) => row.gameName === 'Alpha').notRankedReason, 'no-reupload');
 });
+
+test('growth rows report whether the signup carried dead-troop values', () => {
+  const bare = computeGrowthRow(submission('u1', 'Grower', 1_000), {
+    baseline: resolveBaseline(submission('u1', 'Grower', 1_000), {
+      vtsScore2026ByName: new Map(),
+    }),
+  });
+  assert.equal(bare.deadValuesMissing, true);
+
+  const withDead = submission('u2', 'Dead Grower', 1_000);
+  withDead.stats.deadTroopCounts = { FootmenLofty: 1000 };
+  const filled = computeGrowthRow(withDead, {
+    baseline: resolveBaseline(withDead, { vtsScore2026ByName: new Map() }),
+  });
+  assert.equal(filled.deadValuesMissing, false);
+});

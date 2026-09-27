@@ -21,6 +21,7 @@ import {
   COMPETITION_EPIC_SLOTS,
   slotToGameClock,
 } from './competition-schedule.js';
+import { deadTroopPowerFromCounts } from './dead-troops.js';
 
 export const BOH_SIGNUP_ADMIN_ENDPOINT =
   'https://us-central1-abocombo.cloudfunctions.net/bohSignupAdmin';
@@ -260,9 +261,21 @@ export function renderBohSignupRows(signups, t, { superadmin = false } = {}) {
       // with the admin's uid while uid stays the member/name id, so only rows
       // whose writer is someone else are leadership's own.
       const byLeadership = Boolean(signup.updatedBy) && signup.updatedBy !== signup.uid;
+      // A comparison needs the dead-troop component: member editors that were
+      // left untouched save an all-zero map, hand-filed rows save none at all,
+      // and both understate the player until leadership chases the values.
+      const statsSource = signup?.confirmedStats || signup?.stats || null;
+      const deadPower = deadTroopPowerFromCounts(statsSource?.deadTroopCounts);
+      const missingDead = deadPower === null || deadPower <= 0;
       const slots = slotSummary(signup, t);
       return `<tr>
-        <th scope="row">${name}</th>
+        <th scope="row">${name}${
+          missingDead
+            ? `<br><span class="dash-boh-dead-missing">${esc(
+                t('adminBohSignupDeadMissing', {}, 'No dead values')
+              )}</span>`
+            : ''
+        }</th>
         <td>${esc(String(signup.revision ?? ''))}</td>
         <td class="dash-boh-slots-cell">${slots || '—'}</td>
         <td>${consentBadge(signup, t)}</td>

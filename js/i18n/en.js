@@ -1226,7 +1226,8 @@ const en = {
   generatorGenerateBtn: 'Generate Best Combos',
   generatorDownloadBtn: 'Download Results as Image',
   generatorRandomBtn: 'Surprise Me (Random)',
-  generatorSmartTop4: 'Build five non-overlapping lineups; maximize the combined score of the best four.',
+  generatorSmartTop4:
+    'Build five non-overlapping lineups; maximize the combined score of the best four.',
   generatorSmartBtn: 'Smart Generate',
   generatorNoHeroesSelected: 'No heroes selected. Tap heroes from the list below.',
   generatorMinHeroesMessage: 'Select at least 12 heroes.',
@@ -2818,6 +2819,7 @@ const en = {
   adminBohSignupSlotsLegacy: 'Classic {slots}',
   adminBohSignupConsentColumn: 'Growth board',
   adminBohSignupSourceColumn: 'Source',
+  adminBohSignupDeadMissing: 'No dead values',
   adminBohSignupConsentYes: 'Public board',
   adminBohSignupConsentNo: 'Private',
   adminBohSignupPreferredRole: 'Preferred role',

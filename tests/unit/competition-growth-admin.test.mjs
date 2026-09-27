@@ -134,3 +134,41 @@ test('the compare picker keys on the account id, not a possibly shared name', ()
   assert.match(html, />300</);
   assert.match(html, />700</);
 });
+
+test('the admin table flags signups whose dead-troop values were never entered', async () => {
+  const section = createCompetitionGrowthSection({
+    t: (key) => key,
+    num: String,
+    signed: String,
+    load: async () => ({
+      season: 'competition-12',
+      submissions: [
+        {
+          submissionUid: 'no-dead',
+          status: 'submitted',
+          gameName: 'NoDead',
+          stats: { totalCastlePower: 1000 },
+          commitment: { publicComparisonConsent: true },
+        },
+        {
+          submissionUid: 'has-dead',
+          status: 'submitted',
+          gameName: 'HasDead',
+          stats: { totalCastlePower: 1000, deadTroopCounts: { FootmenLofty: 100 } },
+          commitment: { publicComparisonConsent: true },
+        },
+      ],
+      raceScores: [],
+      baselineRaceScores: [],
+      schedule: null,
+    }),
+  });
+  const element = { innerHTML: '', querySelectorAll: () => [] };
+  section.mount(element);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.match(
+    element.innerHTML,
+    /NoDead<\/strong><br><span class="vts-admin-warn">adminBohSignupDeadMissing<\/span>/
+  );
+  assert.doesNotMatch(element.innerHTML, /HasDead<\/strong><br><span class="vts-admin-warn">/);
+});

@@ -741,7 +741,8 @@ const de = {
   generatorGenerateBtn: 'Beste Kombos generieren',
   generatorDownloadBtn: 'Ergebnisse speichern',
   generatorRandomBtn: 'Überrasch mich (Zufall)',
-  generatorSmartTop4: 'Erstellt fünf überschneidungsfreie Aufstellungen und maximiert die Gesamtpunktzahl der vier besten.',
+  generatorSmartTop4:
+    'Erstellt fünf überschneidungsfreie Aufstellungen und maximiert die Gesamtpunktzahl der vier besten.',
   generatorSmartBtn: 'Smart generieren',
   generatorNoHeroesSelected: 'Noch keine Helden gewählt.',
   generatorMinHeroesMessage: 'Wähle mindestens 12 Helden.',
@@ -3876,6 +3877,7 @@ const de = {
   adminBohSignupSlotsLegacy: 'Klassisch {slots}',
   adminBohSignupConsentColumn: 'Wachstumstafel',
   adminBohSignupSourceColumn: 'Quelle',
+  adminBohSignupDeadMissing: 'Keine Werte für tote Truppen',
   adminBohSignupConsentYes: 'Öffentlich',
   adminBohSignupConsentNo: 'Privat',
   adminBohSignupPreferredRole: 'Bevorzugte Rolle',
