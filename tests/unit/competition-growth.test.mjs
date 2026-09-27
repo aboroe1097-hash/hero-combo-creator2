@@ -568,7 +568,7 @@ test('a loose key shared by two upload accounts is refused', () => {
   assert.equal(rows[0].baselineSource, 'signup');
 });
 
-test('the account join reaches last-season data after a rename', () => {
+test('a rename never adopts an earlier upload that only shares the account id', () => {
   const rows = buildCompetitionGrowthRows({
     submissions: [submission('u1', 'NewName', 1_000)],
     raceScores: [],
@@ -576,9 +576,10 @@ test('the account join reaches last-season data after a rename', () => {
     window: WINDOW,
     autoMatch: true,
   });
-  assert.equal(rows[0].match.matchType, 'account');
-  assert.equal(rows[0].baselineSource, 'vtsscore-2026');
-  assert.equal(rows[0].trackerAbs, 200);
+  // Matching is by name alone: the account id is not identity for the board.
+  assert.equal(rows[0].match.status, 'none');
+  assert.equal(rows[0].match.matchType, null);
+  assert.equal(rows[0].baselineSource, 'signup');
 });
 
 test('separated look-alike accounts never fold into one loose key', () => {
