@@ -2175,10 +2175,10 @@ const id = {
     'Memerlukan persetujuan untuk chat ini dan akun admin terverifikasi yang sudah masuk',
   // Eden 2027 signups: the active-season invitation and the admin tab that
   // publishes the season/scoring version and files entries by hand.
-  edenX1SignupPromptKicker: 'PENDAFTARAN MUSIM',
-  edenX1SignupPromptTitle: 'Daftar untuk musim 2027',
+  edenX1SignupPromptKicker: 'KOMPETISI',
+  edenX1SignupPromptTitle: 'Kompetisi VTS',
   edenX1SignupPromptCopy:
-    'Satu formulir menetapkan garis dasar kekuatanmu, peranmu, dan waktu kamu bisa bertarung. Pendaftaran juga menautkan akunmu ke barismu di guild, jadi Statistik Saya terbuka langsung pada angkamu dan nama di surat suara terisi sendiri.',
+    'Satu formulir mendaftarkanmu ke kompetisi VTS: garis dasar kekuatanmu, peran pilihanmu, dan waktu kamu bisa bertarung. Pendaftaran menautkan akunmu, jadi Statistik Saya terbuka langsung pada angkamu dan nama di surat suara terisi sendiri.',
   edenX1SignupPromptLinked: 'Masuk sebagai {player}: statistik dan nama votemu sudah siap.',
   edenX1SignupPromptCta: 'Buka formulir pendaftaran',
   adminBohSignupsTab: 'Pendaftaran 2027',

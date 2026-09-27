@@ -2350,10 +2350,10 @@ const zh = {
     '服务器拒绝了这次写入。可能是此账户不是管理员，或已部署的安全规则比此应用旧——R5 可能需要重新部署 firestore.rules。',
   // Eden 2027 signups: the active-season invitation and the admin tab that
   // publishes the season/scoring version and files entries by hand.
-  edenX1SignupPromptKicker: '赛季登记',
-  edenX1SignupPromptTitle: '登记 2027 赛季',
+  edenX1SignupPromptKicker: '竞赛',
+  edenX1SignupPromptTitle: 'VTS 竞赛',
   edenX1SignupPromptCopy:
-    '一张表格确定你的战力基线、角色和可出战时间。登记还会把你的账号与公会名册中的那一行关联，因此“我的数据”会直接打开你的数值，投票姓名也会自动填入。',
+    '一张表格即可报名 VTS 竞赛：你的战力基线、偏好角色和可出战时间。登记会关联你的账号，因此“我的数据”会直接打开你的数值，投票姓名也会自动填入。',
   edenX1SignupPromptLinked: '已登录为 {player}：数据与投票姓名已就绪。',
   edenX1SignupPromptCta: '打开登记表',
   adminBohSignupsTab: '2027 登记',

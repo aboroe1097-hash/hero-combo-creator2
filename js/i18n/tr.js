@@ -2276,10 +2276,10 @@ const tr = {
   adminBohStatRoyalTechPower: 'Kraliyet Teknoloji gücü',
   // Eden 2027 signups: the active-season invitation and the admin tab that
   // publishes the season/scoring version and files entries by hand.
-  edenX1SignupPromptKicker: 'SEZON KAYDI',
-  edenX1SignupPromptTitle: '2027 sezonu için kaydol',
+  edenX1SignupPromptKicker: 'YARIŞMA',
+  edenX1SignupPromptTitle: 'VTS Yarışması',
   edenX1SignupPromptCopy:
-    'Tek bir form güç temelini, rollerini ve savaşabileceğin saatleri belirler. Kayıt ayrıca hesabını lonca satırınla eşleştirir; böylece İstatistiklerim kendi sayılarınla açılır ve oy adı kendiliğinden dolar.',
+    'Tek bir form seni VTS yarışmasına kaydeder: güç temelin, tercih ettiğin rol ve savaşabileceğin saatler. Kayıt hesabını eşleştirir; böylece İstatistiklerim kendi sayılarınla açılır ve oy adı kendiliğinden dolar.',
   edenX1SignupPromptLinked: '{player} olarak giriş yapıldı: istatistiklerin ve oy adın hazır.',
   edenX1SignupPromptCta: 'Kayıt formunu aç',
   adminBohSignupsTab: '2027 Kayıtları',

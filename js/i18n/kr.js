@@ -2217,10 +2217,10 @@ const kr = {
   adminBohStatRoyalTechPower: '로열 테크 전투력',
   // Eden 2027 signups: the active-season invitation and the admin tab that
   // publishes the season/scoring version and files entries by hand.
-  edenX1SignupPromptKicker: '시즌 등록',
-  edenX1SignupPromptTitle: '2027 시즌에 등록하세요',
+  edenX1SignupPromptKicker: '대회',
+  edenX1SignupPromptTitle: 'VTS 대회',
   edenX1SignupPromptCopy:
-    '양식 하나로 전투력 기준선과 역할, 싸울 수 있는 시간이 정해집니다. 등록하면 계정이 길드 명단과 연결되어 내 통계가 바로 내 수치로 열리고 투표 이름도 자동으로 채워집니다.',
+    '한 번의 양식으로 VTS 대회에 등록됩니다: 전투력 기준선, 선호 역할, 싸울 수 있는 시간이 정해집니다. 등록하면 계정이 연결되어 내 통계가 내 수치로 열리고 투표 이름도 자동으로 채워집니다.',
   edenX1SignupPromptLinked: '{player} 님으로 로그인됨: 통계와 투표 이름이 준비되었습니다.',
   edenX1SignupPromptCta: '등록 양식 열기',
   adminBohSignupsTab: '2027 등록',
