@@ -232,6 +232,17 @@
   text-align: start;
 }
 
+/* The open comparison and upload history are their own full-width row. */
+.comp-board__table tr.comp-board__detail-row > td {
+  grid-column: 1 / -1;
+  padding: 0 0 0.75rem;
+}
+
+/* One separator per player: the rule belongs to the group's last row. */
+.comp-board__table tr:has(+ .comp-board__detail-row) {
+  border-block-end: 0;
+}
+
 .comp-board__rank {
   grid-row: span 3;
   font-weight: 800;
@@ -378,8 +389,13 @@
   border-block-end: 1px solid var(--cb-border);
   text-align: end;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
   vertical-align: top;
+}
+
+/* Numbers never wrap; the column and category labels may, which keeps the
+   wide three-stage comparison inside the board at desktop widths. */
+.comp-board .comp-board__detail-table td {
+  white-space: nowrap;
 }
 
 .comp-board .comp-board__detail-table thead th {
@@ -496,6 +512,14 @@
     padding: 0.6rem 0.5rem;
     border-block-end: 1px solid var(--cb-border);
     vertical-align: top;
+  }
+
+  .comp-board__table tr:has(+ .comp-board__detail-row) > * {
+    border-block-end: 0;
+  }
+
+  .comp-board__table tr.comp-board__detail-row > td {
+    padding: 0.25rem 0.5rem 0.75rem;
   }
 
   .comp-board__table thead th {
