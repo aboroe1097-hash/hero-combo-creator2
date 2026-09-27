@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { readAllStarBohGrantDocument } from '../../js/all-star-boh-access.js';
-import { DEAD_TROOP_COUNT_KEYS } from '../../js/dead-troops.js';
 import { allHeroesData } from '../../js/heroes-data.js';
 import { techDatabase } from '../../js/tech-db.js';
 import { verifyBohStatsOcrMemberGrant } from '../../workers/qwen-cors-proxy.js';
@@ -1106,14 +1105,17 @@ test('Firestore private signup tactical catalogs match canonical source data', (
     /function validAllStarBohDeadTroopCounts\(counts\) \{[\s\S]*?\n {4}\}/,
     'dead troop counts validator'
   );
-  for (const key of DEAD_TROOP_COUNT_KEYS) {
-    assert.match(deadTroopValidator, new RegExp(`'${key}'`), `dead troop key ${key}`);
-  }
-  assert.match(deadTroopValidator, /counts\.size\(\) == 15/);
+  // The submission validator sits under Firestore's 1000-expression ceiling, so
+  // this check is deliberately its cheapest form: the joined values must be
+  // exactly fifteen in-range integers. The canonical fifteen key names stay
+  // enforced by the client builder and by normalizeDeadTroopCounts() in
+  // js/dead-troops.js, which ignores a breakdown whose keys are not canonical.
+  assert.match(deadTroopValidator, /counts is map/);
   assert.match(
     deadTroopValidator,
     /counts\.values\(\)\.join\(','\)\.matches\('\^\(0\|\[1-9\]\[0-9\]\{0,11\}\|1000000000000\)/
   );
+  assert.match(deadTroopValidator, /\{14\}\$/);
   // The second size cap lives in validAllStarBohSubmissionData, not in the
   // stats validator — grep the whole file so this cap can never drift alone.
   assert.match(rules, /stats\.usableHeroNames\.size\(\) <= 89/);

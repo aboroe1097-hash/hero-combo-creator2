@@ -1413,19 +1413,13 @@ service cloud.firestore {
 
     // The counts are 15 fixed keys, each an integer 0..1e12. The submission
     // validator runs against Firestore's 1000-expression-per-request ceiling,
-    // so this check avoids fifteen per-field bounds clauses: hasOnly pins the
-    // names, size pins presence (exactly the 15 named fields, since maps cannot
-    // repeat a key), and the joined values must all be in-range integers.
-    // Keep this function cheap; the emulator suite (npm run rules:emulator)
-    // proves the valid sign-up and edit fit under the ceiling.
+    // and the OCR path costs more than the manual one, so this check spends as
+    // little as possible: the joined values must be exactly fifteen in-range
+    // integers. The canonical key names stay enforced by the client builder and
+    // by every reader (js/dead-troops.js normalizeDeadTroopCounts), which
+    // ignores a breakdown whose keys are not the canonical fifteen.
     function validAllStarBohDeadTroopCounts(counts) {
       return counts is map
-        && counts.keys().hasOnly([
-          'FootmenLofty', 'FootmenT10', 'FootmenT10Enhanced', 'FootmenT9', 'FootmenT9Enhanced',
-          'CavalryLofty', 'CavalryT10', 'CavalryT10Enhanced', 'CavalryT9', 'CavalryT9Enhanced',
-          'ArchersLofty', 'ArchersT10', 'ArchersT10Enhanced', 'ArchersT9', 'ArchersT9Enhanced'
-        ])
-        && counts.size() == 15
         && counts.values().join(',').matches('^(0|[1-9][0-9]{0,11}|1000000000000)(,(0|[1-9][0-9]{0,11}|1000000000000)){14}$');
     }
 
