@@ -2727,10 +2727,10 @@ const en = {
   edenPlaybookAltFort: 'Blue Down fortress unlock specialization route',
   // Eden 2027 signups: the active-season invitation and the admin tab that
   // publishes the season/scoring version and files entries by hand.
-  edenX1SignupPromptKicker: 'SEASON SIGNUP',
-  edenX1SignupPromptTitle: 'Sign up for the 2027 season',
+  edenX1SignupPromptKicker: 'COMPETITION',
+  edenX1SignupPromptTitle: 'VTS Competition',
   edenX1SignupPromptCopy:
-    'One form sets your power baseline, your roles, and the times you can fight. Signing up also links your account to your guild row, so My Stats opens on your own numbers and the vote name fills itself in.',
+    'One form registers you for the VTS competition: your power baseline, your preferred role, and the times you can fight. Signing up links your account, so My Stats opens on your own numbers and your vote name fills itself in.',
   edenX1SignupPromptLinked: 'Signed in as {player}: your stats and your vote name are ready.',
   edenX1SignupPromptCta: 'Open the signup form',
   adminBohSignupsTab: '2027 Signups',

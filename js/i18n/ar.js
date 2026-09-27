@@ -2256,10 +2256,10 @@ const ar = {
     'لا يمكن الوصول إلى خدمة Google الآمنة المطلوبة للتسجيل من هذه الشبكة أو المنطقة. جرّب VPN أو شبكة مختلفة، ثم اضغط إعادة المحاولة. لم يُرفض رمز PIN الخاص بك.',
   // Eden 2027 signups: the active-season invitation and the admin tab that
   // publishes the season/scoring version and files entries by hand.
-  edenX1SignupPromptKicker: 'تسجيل الموسم',
-  edenX1SignupPromptTitle: 'سجّل في موسم 2027',
+  edenX1SignupPromptKicker: 'المسابقة',
+  edenX1SignupPromptTitle: 'مسابقة VTS',
   edenX1SignupPromptCopy:
-    'نموذج واحد يحدد خط أساس قوتك وأدوارك والأوقات التي يمكنك القتال فيها. التسجيل يربط حسابك أيضًا بصفك في التحالف، فيفتح «إحصاءاتي» على أرقامك ويملأ اسمك في التصويت تلقائيًا.',
+    'نموذج واحد يسجّلك في مسابقة VTS: خط أساس قوتك، ودورك المفضّل، والأوقات التي يمكنك القتال فيها. التسجيل يربط حسابك، فيفتح «إحصاءاتي» على أرقامك ويملأ اسمك في التصويت تلقائيًا.',
   edenX1SignupPromptLinked: 'مسجّل الدخول باسم {player}: إحصاءاتك واسمك في التصويت جاهزان.',
   edenX1SignupPromptCta: 'افتح نموذج التسجيل',
   adminBohSignupsTab: 'تسجيلات 2027',

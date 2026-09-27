@@ -3901,10 +3901,10 @@ const fr = {
   staminaAffordable: 'Abordable',
   // Eden 2027 signups: the active-season invitation and the admin tab that
   // publishes the season/scoring version and files entries by hand.
-  edenX1SignupPromptKicker: 'INSCRIPTION DE SAISON',
-  edenX1SignupPromptTitle: 'Inscrivez-vous pour la saison 2027',
+  edenX1SignupPromptKicker: 'COMPÉTITION',
+  edenX1SignupPromptTitle: 'Compétition VTS',
   edenX1SignupPromptCopy:
-    'Un seul formulaire fixe votre base de puissance, vos rôles et vos heures de combat. L’inscription relie aussi votre compte à votre ligne de guilde : Mes statistiques s’ouvre donc sur vos chiffres et le nom du vote se remplit tout seul.',
+    'Un seul formulaire vous inscrit à la compétition VTS : votre base de puissance, votre rôle préféré et vos heures de combat. L’inscription relie votre compte : Mes statistiques s’ouvre donc sur vos chiffres et le nom du vote se remplit tout seul.',
   edenX1SignupPromptLinked:
     'Connecté en tant que {player} : vos statistiques et votre nom de vote sont prêts.',
   edenX1SignupPromptCta: 'Ouvrir le formulaire d’inscription',
