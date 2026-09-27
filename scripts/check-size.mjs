@@ -209,10 +209,10 @@ const LIMITS = {
   // dead-troop-full totals and the standings layout guard grow it to
   // 11972.2 KiB; the cap moves by the measured minimum.
   // 16.6.9: the competition ranking from sign-up to final upload, the personal
-  // growth tracker that ranks until finals land, the account and loose-name
-  // baseline joins and their copy grow it to 11980.6 KiB; the cap moves by the
-  // measured minimum.
-  totalJsBytes: 11981 * 1024,
+  // growth tracker, the account and loose-name baseline joins, the sign-up
+  // name suggestions and the "(you)" picker mark grow it to 11986.4 KiB; the
+  // cap moves by the measured minimum.
+  totalJsBytes: 11987 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
