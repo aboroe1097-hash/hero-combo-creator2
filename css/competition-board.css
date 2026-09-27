@@ -327,9 +327,19 @@
   font-variant-numeric: tabular-nums;
 }
 
+.comp-board__detail {
+  /* The name cell is a justify-items:start grid, so an open comparison would
+     otherwise size to its widest content and push the Growth columns out of
+     the standings. Pin the box to the cell; the inner table scrolls instead. */
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
 .comp-board__detail-scroll {
   margin: 0.6rem 0 0;
   overflow-x: auto;
+  max-inline-size: 100%;
+  min-inline-size: 0;
 }
 
 /* The detail table lives inside the standings table, so every rule is scoped

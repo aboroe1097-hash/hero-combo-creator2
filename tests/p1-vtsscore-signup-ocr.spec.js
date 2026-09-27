@@ -75,6 +75,67 @@ test('the registration Power step reads a screenshot into the power fields', asy
                 uploads: [],
               },
               {
+                // The widest case: last season data, today's sign-up and the
+                // final upload, all three pairs, billion-scale numbers.
+                rank: 2,
+                gameName: 'Wide Row',
+                baselineSource: 'vtsscore-2026',
+                finalSource: 'reupload',
+                growthPct: 16.86,
+                growthAbs: 187_526_805,
+                waypoints: {
+                  signup: {
+                    totalCastlePower: 1_173_125_244,
+                    troopPower: 1_048_728_009,
+                  },
+                  reupload: {
+                    totalCastlePower: 1_300_000_000,
+                    troopPower: 1_180_000_000,
+                  },
+                },
+                steps: {
+                  baselineToSignup: {
+                    growthAbs: 60_652_049,
+                    growthPct: 5.45,
+                    fields: {
+                      totalCastlePower: { abs: 60_652_049, pct: 5.45 },
+                      troopPower: { abs: 49_651_871, pct: 4.97 },
+                    },
+                  },
+                  signupToReupload: {
+                    growthAbs: 126_874_756,
+                    growthPct: 10.81,
+                    fields: {
+                      totalCastlePower: { abs: 126_874_756, pct: 10.81 },
+                      troopPower: { abs: 131_271_991, pct: 12.52 },
+                    },
+                  },
+                  baselineToReupload: {
+                    growthAbs: 187_526_805,
+                    growthPct: 16.86,
+                    fields: {
+                      totalCastlePower: { abs: 187_526_805, pct: 16.86 },
+                      troopPower: { abs: 180_923_862, pct: 18.11 },
+                    },
+                  },
+                },
+                fields: {
+                  totalCastlePower: {
+                    baseline: 1_112_473_195,
+                    final: 1_300_000_000,
+                    abs: 187_526_805,
+                    pct: 16.86,
+                  },
+                  troopPower: {
+                    baseline: 999_076_138,
+                    final: 1_180_000_000,
+                    abs: 180_923_862,
+                    pct: 18.11,
+                  },
+                },
+                uploads: [],
+              },
+              {
                 rank: null,
                 gameName: 'Pending Member',
                 baselineSource: 'vtsscore-2026',
@@ -139,8 +200,8 @@ test('the registration Power step reads a screenshot into the power fields', asy
   // The board renders the two-player-ready standings and each row opens the
   // full baseline-versus-now comparison.
   const boardMount = page.locator('#vtsScoreGrowthBoard [data-growth-board-mount]');
-  await expect(boardMount.locator('tbody[data-comp-board-rows] > tr')).toHaveCount(2);
-  await expect(boardMount.locator('.comp-board__detail')).toHaveCount(2);
+  await expect(boardMount.locator('tbody[data-comp-board-rows] > tr')).toHaveCount(3);
+  await expect(boardMount.locator('.comp-board__detail')).toHaveCount(3);
   await boardMount.locator('.comp-board__detail summary').first().click();
   await expect(boardMount.locator('.comp-board__card').first()).toContainText('Total power change');
   await expect(boardMount.locator('.comp-board__detail-table').first()).toBeVisible();
@@ -154,17 +215,28 @@ test('the registration Power step reads a screenshot into the power fields', asy
     'earlier VtsScore'
   );
   // The expanded comparison must not push the standings' Growth columns out of
-  // the card: the standings wrap keeps its width and the growth cell stays
-  // inside it (the nested comparison table scrolls on its own).
+  // the card at any width: the standings wrap keeps its width and the nested
+  // comparison table scrolls in its own container. The three-stage row with
+  // billion-scale values is the widest case, checked at phone and tablet
+  // widths where it regressed in review.
+  await boardMount.locator('.comp-board__detail summary').nth(1).click();
+  await expect(boardMount.locator('.comp-board__detail-table').nth(1)).toBeVisible();
   const standingsWrap = boardMount.locator('.comp-board__table-wrap');
-  const wrapOverflow = await standingsWrap.evaluate((wrap) => wrap.scrollWidth - wrap.clientWidth);
-  expect(wrapOverflow).toBeLessThanOrEqual(1);
-  const growthBox = await boardMount
-    .locator('tbody[data-comp-board-rows] .comp-board__num')
-    .first()
-    .boundingBox();
-  const wrapBox = await standingsWrap.boundingBox();
-  expect(growthBox.x + growthBox.width).toBeLessThanOrEqual(wrapBox.x + wrapBox.width + 1);
+  const originalViewport = page.viewportSize();
+  for (const width of [390, 640, 768, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    const wrapOverflow = await standingsWrap.evaluate((wrap) => wrap.scrollWidth - wrap.clientWidth);
+    expect(wrapOverflow, `wrap overflow at ${width}px`).toBeLessThanOrEqual(1);
+    const growthBox = await boardMount
+      .locator('tbody[data-comp-board-rows] .comp-board__num')
+      .first()
+      .boundingBox();
+    const wrapBox = await standingsWrap.boundingBox();
+    expect(growthBox.x + growthBox.width, `growth clipped at ${width}px`).toBeLessThanOrEqual(
+      wrapBox.x + wrapBox.width + 1
+    );
+  }
+  await page.setViewportSize(originalViewport);
 
   // The helper works before OCR as well as after it. Thousands is the default
   // unit, matching the K counts on the game's dead-troop screen, and each
