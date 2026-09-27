@@ -2344,6 +2344,7 @@ const ar = {
   adminBohSignupSlotsEpic: 'Epic {slots}',
   adminBohSignupSlotsLegacy: 'الأوقات السابقة {slots}',
   adminBohSignupConsentColumn: 'لوحة النمو',
+  adminBohSignupSourceColumn: 'المصدر',
   adminBohSignupConsentYes: 'لوحة عامة',
   adminBohSignupConsentNo: 'خاص',
   adminBohSignupPreferredRole: 'الدور المفضل',

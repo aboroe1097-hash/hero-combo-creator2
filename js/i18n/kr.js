@@ -2307,6 +2307,7 @@ const kr = {
   adminBohSignupSlotsEpic: 'Epic {slots}',
   adminBohSignupSlotsLegacy: '기존 {slots}',
   adminBohSignupConsentColumn: '성장 보드',
+  adminBohSignupSourceColumn: '출처',
   adminBohSignupConsentYes: '공개',
   adminBohSignupConsentNo: '비공개',
   adminBohSignupPreferredRole: '선호 역할',

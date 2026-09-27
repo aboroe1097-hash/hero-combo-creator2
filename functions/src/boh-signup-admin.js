@@ -664,9 +664,11 @@ async function updateManualSignup(dependencies, uid, input) {
     }
     // The admin form only knows a subset of the member form's fields and writes
     // the rest empty, so editing a member's own signup here would wipe their
-    // troop roster, heroes and research. Only hand-filed signups are editable.
-    if (existing.entryMethod !== 'manual') {
-      throw adminError(409, 'member_owned', 'Only manually added signups can be edited here.');
+    // troop roster, heroes and research. Only hand-filed signups are editable:
+    // they carry the admin's uid in updatedBy while uid is the member/name id,
+    // whereas a member's own row was written by its own uid.
+    if (!existing.updatedBy || existing.updatedBy === existing.uid) {
+      throw adminError(409, 'member_owned', 'Only signups added by leadership can be edited here.');
     }
     const revision =
       Number.isInteger(existing.revision) && existing.revision > 0 ? existing.revision + 1 : 1;

@@ -441,7 +441,15 @@ test('update bumps the revision and keeps the stored createdAt', async () => {
   const createdAt = { seconds: 1_600_000_000 };
   const path = `boh_allstar/${SEASON}/submissions/${accountId}`;
   const { handler, state } = handlerWith({
-    docs: { [path]: { uid: accountId, revision: 4, createdAt, entryMethod: 'manual' } },
+    docs: {
+      [path]: {
+        uid: accountId,
+        revision: 4,
+        createdAt,
+        entryMethod: 'manual',
+        updatedBy: 'admin-uid-1',
+      },
+    },
   });
   const body = {
     ...buildBohSignupAdminRequest({
@@ -475,7 +483,15 @@ test('update refuses a member-filed signup instead of wiping its fields', async 
   const accountId = createBohManualPlayerId('MalakAbo');
   const path = `boh_allstar/${SEASON}/submissions/${accountId}`;
   const { handler, state } = handlerWith({
-    docs: { [path]: { uid: accountId, revision: 2, entryMethod: 'ocr', stats: { heroes: 9 } } },
+    docs: {
+      [path]: {
+        uid: accountId,
+        revision: 2,
+        entryMethod: 'ocr',
+        updatedBy: accountId,
+        stats: { heroes: 9 },
+      },
+    },
   });
   const body = {
     ...buildBohSignupAdminRequest({
@@ -781,6 +797,8 @@ test('the signup list shows each signup’s slots in order and its consent', () 
     [
       {
         submissionUid: 'uid-1',
+        uid: 'uid-1',
+        updatedBy: 'admin-1',
         gameName: 'Bil.',
         revision: 1,
         entryMethod: 'manual',
@@ -792,6 +810,8 @@ test('the signup list shows each signup’s slots in order and its consent', () 
       },
       {
         submissionUid: 'uid-2',
+        uid: 'uid-2',
+        updatedBy: 'uid-2',
         gameName: 'Old',
         revision: 1,
         entryMethod: 'ocr',
@@ -799,6 +819,8 @@ test('the signup list shows each signup’s slots in order and its consent', () 
       },
       {
         submissionUid: 'uid-3',
+        uid: 'uid-3',
+        updatedBy: 'uid-3',
         gameName: 'Quiet',
         revision: 1,
         entryMethod: 'ocr',
@@ -811,21 +833,47 @@ test('the signup list shows each signup’s slots in order and its consent', () 
     ],
     (key, _vars, fallback) => fallback || key
   );
-  assert.match(html, /BoH 20:00 › 08:00 · Epic 10:00/);
-  assert.match(html, /Classic \+12 › \+16/);
+  // One badge per slot, no joined "›" string.
+  assert.match(html, /class="dash-boh-slot-badge">BoH 20:00</);
+  assert.match(html, /class="dash-boh-slot-badge">BoH 08:00</);
+  assert.match(html, /class="dash-boh-slot-badge">Epic 10:00</);
+  assert.match(html, /class="dash-boh-slot-badge">Classic \+12</);
+  assert.match(html, /class="dash-boh-slot-badge">Classic \+16</);
+  assert.doesNotMatch(html, /›/);
+  // The source chip follows who wrote the row, not the entry method: uid-1 is
+  // hand-filed (updatedBy is the admin), the other two are member rows.
+  assert.equal((html.match(/Added by leadership/g) || []).length, 1);
+  assert.equal((html.match(/Member form/g) || []).length, 2);
   assert.match(html, /class="dash-boh-consent is-public">Public board</);
   assert.match(html, /class="dash-boh-consent">Private</);
   assert.match(html, /Times \(game time\)/);
+  assert.match(html, />Source</);
 });
 
 test('the signup list renders an edit action per row', () => {
   const signups = [
-    { submissionUid: 'uid-1', gameName: 'Bil.', revision: 2, entryMethod: 'manual' },
-    { submissionUid: 'uid-2', gameName: 'MalakAbo', revision: 1, entryMethod: 'ocr' },
+    {
+      submissionUid: 'uid-1',
+      uid: 'uid-1',
+      updatedBy: 'admin-1',
+      gameName: 'Bil.',
+      revision: 2,
+      entryMethod: 'manual',
+    },
+    {
+      submissionUid: 'uid-2',
+      uid: 'uid-2',
+      updatedBy: 'uid-2',
+      gameName: 'MalakAbo',
+      revision: 1,
+      entryMethod: 'manual',
+    },
   ];
   const t = (key, _vars, fallback) => fallback || key;
   const html = renderBohSignupRows(signups, t, { superadmin: true });
   assert.match(html, /data-boh-signup-edit="uid-1"/);
+  // A member's manual row is not editable here even though entryMethod says
+  // 'manual': the marker is who wrote it.
   assert.doesNotMatch(html, /data-boh-signup-edit="uid-2"/, 'member signups are read-only here');
   // Delete is offered on every row to a superadmin: a bad or duplicate entry
   // must be removable.

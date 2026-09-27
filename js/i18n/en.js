@@ -2817,6 +2817,7 @@ const en = {
   adminBohSignupSlotsEpic: 'Epic {slots}',
   adminBohSignupSlotsLegacy: 'Classic {slots}',
   adminBohSignupConsentColumn: 'Growth board',
+  adminBohSignupSourceColumn: 'Source',
   adminBohSignupConsentYes: 'Public board',
   adminBohSignupConsentNo: 'Private',
   adminBohSignupPreferredRole: 'Preferred role',

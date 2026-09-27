@@ -200,7 +200,18 @@
   font-size: 0.72rem;
 }
 #ocrDashboardRoot .dash-boh-slots-cell {
-  white-space: nowrap;
+  white-space: normal;
+}
+#ocrDashboardRoot .dash-boh-slot-badge {
+  display: inline-block;
+  margin: 0 4px 4px 0;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill, 999px);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 #ocrDashboardRoot .dash-boh-consent {
   display: inline-block;

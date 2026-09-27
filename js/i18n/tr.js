@@ -2366,6 +2366,7 @@ const tr = {
   adminBohSignupSlotsEpic: 'Epic {slots}',
   adminBohSignupSlotsLegacy: 'Klasik {slots}',
   adminBohSignupConsentColumn: 'Gelişim panosu',
+  adminBohSignupSourceColumn: 'Kaynak',
   adminBohSignupConsentYes: 'Herkese açık',
   adminBohSignupConsentNo: 'Gizli',
   adminBohSignupPreferredRole: 'Tercih edilen rol',

@@ -3534,6 +3534,7 @@ const pt = {
   adminBohSignupSlotsEpic: 'Epic {slots}',
   adminBohSignupSlotsLegacy: 'Clássico {slots}',
   adminBohSignupConsentColumn: 'Painel de crescimento',
+  adminBohSignupSourceColumn: 'Origem',
   adminBohSignupConsentYes: 'Painel público',
   adminBohSignupConsentNo: 'Privado',
   adminBohSignupPreferredRole: 'Papel preferido',

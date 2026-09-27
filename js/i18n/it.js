@@ -2960,6 +2960,7 @@ const it = {
   adminBohSignupSlotsEpic: 'Epic {slots}',
   adminBohSignupSlotsLegacy: 'Classico {slots}',
   adminBohSignupConsentColumn: 'Bacheca crescita',
+  adminBohSignupSourceColumn: 'Origine',
   adminBohSignupConsentYes: 'Bacheca pubblica',
   adminBohSignupConsentNo: 'Privato',
   adminBohSignupPreferredRole: 'Ruolo preferito',

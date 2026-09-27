@@ -2390,6 +2390,7 @@ const ru = {
   adminBohSignupSlotsEpic: 'Epic {slots}',
   adminBohSignupSlotsLegacy: 'Прежние {slots}',
   adminBohSignupConsentColumn: 'Доска роста',
+  adminBohSignupSourceColumn: 'Источник',
   adminBohSignupConsentYes: 'Публично',
   adminBohSignupConsentNo: 'Скрыто',
   adminBohSignupPreferredRole: 'Предпочтительная роль',
