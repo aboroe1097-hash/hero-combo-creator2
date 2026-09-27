@@ -18,6 +18,7 @@ const growth = await import('../../js/competition-growth.js');
 const PROJECTION = Object.freeze({
   schemaVersion: 1,
   seasonId: 'competition-12',
+  mode: 'competition',
   publishedAt: '2026-11-05T10:00:00.000Z',
   rows: [
     {
@@ -225,20 +226,20 @@ test('a row renders the full comparison: summary cards, category table, baseline
   // Category table headers and values: every waypoint column and each pair.
   assert.match(html, /Full comparison/);
   assert.match(html, />Category</);
-  assert.match(html, />Last season data</);
+  assert.match(html, />Last season</);
   assert.match(html, />Sign-up</);
   assert.match(html, />Final upload</);
-  assert.match(html, /Last season → Sign-up/);
-  assert.match(html, /Sign-up → Final upload/);
-  assert.match(html, /Last season → Final upload/);
+  assert.match(html, /Personal: last season → sign-up/);
+  assert.match(html, /Competition: sign-up → final upload/);
+  assert.match(html, /Personal: last season → final upload/);
   assert.match(html, /1,300/);
   assert.match(html, /1,100/);
   // The pending row keeps its baseline and carries the earlier-upload note.
   assert.match(html, />500</);
-  assert.match(html, /Last season data: an earlier VtsScore upload\./);
-  // Which side is "now" is spelled out: sign-up values until the final upload.
-  assert.match(html, /Now: the Competition #12 sign-up record/);
-  assert.match(html, /Last season data: an earlier record without a dead-troop split/);
+  assert.match(html, /Last season: an earlier VtsScore upload\./);
+  // Which side is current is spelled out: sign-up values until the final upload.
+  assert.match(html, /Current: the Competition #12 sign-up record/);
+  assert.match(html, /Last season: an earlier record without a dead-troop split/);
   // A player with no earlier upload shows the sign-up itself as the baseline.
   assert.match(html, /Baseline: the Competition #12 sign-up record\./);
 });

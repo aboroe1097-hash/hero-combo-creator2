@@ -22,6 +22,7 @@ import {
   COMPETITION_SCHEDULE_DOC_PATH,
   normalizeCompetitionSchedule,
 } from './competition-phase.js';
+import { protectedVtsAccountKey, resolveConfirmedPlayerAlias } from './player-aliases.js';
 
 export const COMPETITION_BOARD_SCHEMA_VERSION = 1;
 export const COMPETITION_BOARD_MAX_ROWS = 200;
@@ -85,6 +86,26 @@ export function competitionExactNameKey(name) {
     .replace(/\s+/gu, ' ')
     .trim()
     .toLowerCase();
+}
+
+/**
+ * The loosest key two spellings of one account can share: the confirmed and
+ * taught aliases resolve to their canonical spelling, then case, whitespace,
+ * punctuation and decoration characters are dropped ("〽️ Anne〽️" → "anne",
+ * "~Sarafino~" → "sarafino"). Accounts the owner separated from their
+ * look-alikes keep their protected key. The loose key is only consulted after
+ * the account and exact joins miss, and a loose key shared by two upload
+ * accounts or claimed by two current signups is refused like any ambiguity.
+ */
+export function competitionLooseNameKey(value) {
+  const raw = cleanText(value);
+  if (!raw) return '';
+  const canonical = resolveConfirmedPlayerAlias(raw) || raw;
+  const key = canonical
+    .normalize('NFKC')
+    .replace(/[^\p{L}\p{N}]+/gu, '')
+    .toLowerCase();
+  return protectedVtsAccountKey(raw, key);
 }
 
 function toMillis(value) {
@@ -177,14 +198,40 @@ function newestFirst(left, right) {
   return right.uploadedAt - left.uploadedAt || left.seasonId.localeCompare(right.seasonId);
 }
 
+// Only distinct known accounts make a name ambiguous: uid-less uploads are
+// the pre-account era and cannot prove a second account used the name.
+function baselineEntryFor(list) {
+  const accounts = new Set(
+    list.map((upload) => upload.submissionUid).filter((submissionUid) => submissionUid)
+  );
+  const latest = [];
+  const seen = new Set();
+  for (const upload of list) {
+    const identity = upload.submissionUid || 'legacy-name';
+    if (seen.has(identity)) continue;
+    seen.add(identity);
+    latest.push(upload);
+  }
+  const status = accounts.size > 1 ? 'ambiguous' : 'unique';
+  return {
+    status,
+    candidate: status === 'unique' ? latest[0] || null : null,
+    candidates: latest,
+    uploads: list,
+  };
+}
+
 /**
- * Indexes every earlier season's VtsScore uploads by in-game name. Matching is
- * by name alone because uploads from before member accounts existed carry no
- * usable uid; a saved dead-troop breakdown is optional history, not a matching
- * requirement. A name used by two different known accounts is still not a safe
- * match and keeps every candidate without proposing one.
+ * Indexes every earlier season's VtsScore uploads four ways, and matching
+ * tries them in order:
+ *   1. by account — the upload document id is the signup uid its numbers
+ *      belong to, so it joins even after a rename;
+ *   2. by exact in-game name (ignores case, spacing and the "(VTS)" prefix);
+ *   3. by loose name — confirmed aliases resolved and decorations dropped.
+ * A name used by two different known accounts is not a safe match and keeps
+ * every candidate without proposing one.
  * @param {Array<{seasonId: string, raceScores: object[]}>} priorSeasons
- * @returns {{byName: Map}} byName: name key -> {status, candidate, candidates, uploads}
+ * @returns {{byName: Map, byLoose: Map, byUid: Map}}
  */
 export function buildPriorSeasonBaselineIndex(priorSeasons = []) {
   const uploads = [];
@@ -208,54 +255,68 @@ export function buildPriorSeasonBaselineIndex(priorSeasons = []) {
   }
   uploads.sort(newestFirst);
   const grouped = new Map();
+  const looseGrouped = new Map();
+  const byUid = new Map();
+  const add = (map, key, upload) => {
+    if (!key) return;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(upload);
+  };
   for (const upload of uploads) {
-    const key = competitionExactNameKey(upload.gameName);
-    if (!key) continue;
-    if (!grouped.has(key)) grouped.set(key, []);
-    grouped.get(key).push(upload);
+    add(grouped, competitionExactNameKey(upload.gameName), upload);
+    add(looseGrouped, competitionLooseNameKey(upload.gameName), upload);
+    add(byUid, upload.submissionUid, upload);
   }
   const byName = new Map();
-  for (const [key, list] of grouped) {
-    // Only distinct known accounts make a name ambiguous: uid-less uploads are
-    // the pre-account era and cannot prove a second account used the name.
-    const accounts = new Set(
-      list.map((upload) => upload.submissionUid).filter((submissionUid) => submissionUid)
-    );
-    const latest = [];
-    const seen = new Set();
-    for (const upload of list) {
-      const identity = upload.submissionUid || 'legacy-name';
-      if (seen.has(identity)) continue;
-      seen.add(identity);
-      latest.push(upload);
-    }
-    const status = accounts.size > 1 ? 'ambiguous' : 'unique';
-    byName.set(key, {
-      status,
-      candidate: status === 'unique' ? latest[0] || null : null,
-      candidates: latest,
-      uploads: list,
-    });
-  }
-  return { byName };
+  for (const [key, list] of grouped) byName.set(key, baselineEntryFor(list));
+  const byLoose = new Map();
+  for (const [key, list] of looseGrouped) byLoose.set(key, baselineEntryFor(list));
+  // Every upload under one account id is the same account by construction.
+  for (const [key, list] of byUid) byUid.set(key, baselineEntryFor(list));
+  return { byName, byLoose, byUid };
 }
 
 /**
- * The baseline one player is measured from.
+ * The baseline one player is measured from, strongest join first: their
+ * account (the upload document id is the signup uid), then the exact name,
+ * then the loose name.
  * @returns {{values: object|null, source: string|null, seasonId: string|null, match: object}}
  */
-export function resolveServerBaseline(player, { index, contestedKeys } = {}) {
+export function resolveServerBaseline(player, { index, contestedKeys, contestedLooseKeys } = {}) {
+  // The account join is the same account by construction: every upload under
+  // one account id is that account, so no ambiguity check applies.
+  const accountKey = recordUid(player);
+  const accountEntry = accountKey ? index?.byUid?.get(accountKey) || null : null;
+  const accountChosen = accountEntry?.candidates?.length ? accountEntry.candidate : null;
   const key = competitionExactNameKey(player?.gameName);
   const entry = key ? index?.byName?.get(key) || null : null;
   const contested = contestedKeys instanceof Set && contestedKeys.has(key);
-  // The in-game name is the only join: uploads from before accounts existed
-  // carry no uid, so a uid match would miss exactly the records this board
-  // needs. Ambiguous names are refused rather than guessed.
-  const chosen = entry?.status === 'unique' && !contested ? entry.candidate : null;
+  // Uploads from before accounts existed carry no uid, so the name joins stay
+  // for exactly the records the account join cannot reach. Ambiguous or
+  // contested names are refused rather than guessed.
+  const exactChosen = entry?.status === 'unique' && !contested ? entry.candidate : null;
+  const looseKey = competitionLooseNameKey(player?.gameName);
+  const looseEntry = looseKey ? index?.byLoose?.get(looseKey) || null : null;
+  const looseContested = contestedLooseKeys instanceof Set && contestedLooseKeys.has(looseKey);
+  const looseChosen =
+    !entry?.candidates?.length && looseEntry?.status === 'unique' && !looseContested
+      ? looseEntry.candidate
+      : null;
+  const chosen = accountChosen || exactChosen || looseChosen;
   const match = {
-    status: chosen ? 'matched' : entry?.status === 'ambiguous' ? 'ambiguous' : 'none',
+    status: chosen
+      ? 'matched'
+      : entry?.candidates?.length || looseEntry?.candidates?.length
+        ? 'ambiguous'
+        : 'none',
     decision: chosen ? 'vtsscore' : 'signup',
-    how: chosen ? 'exact-name' : 'none',
+    how: accountChosen
+      ? 'account'
+      : exactChosen
+        ? 'exact-name'
+        : looseChosen
+          ? 'loose-name'
+          : 'none',
   };
   if (chosen) {
     return {
@@ -305,55 +366,51 @@ function inWindow(ms, window) {
   return Number.isFinite(ms) && ms >= opens && ms < closes;
 }
 
-/** Copy of js/competition-growth.js computeGrowthRow(). */
+/**
+ * Copy of js/competition-growth.js computeGrowthRow(). The competition ranks
+ * sign-up -> final upload; last season -> now is the personal growth tracker
+ * that rides along. applyGrowthMode() picks the ranked metric.
+ */
 export function computeGrowthRow(player, { baseline, raceScore = null, window = null } = {}) {
   const submissionUid = recordUid(player);
   const gameName = cleanText(player?.gameName) || cleanText(raceScore?.gameName) || submissionUid;
   const consent = player?.commitment?.publicComparisonConsent === true;
   const baselineValues = baseline?.values || null;
+  // Only an earlier season's upload is the tracker's far side; a sign-up
+  // baseline is the competition baseline, not last season's data.
+  const lastSeasonValues = baselineValues && baseline?.source !== 'signup' ? baselineValues : null;
   const reuploadValues =
     raceScore &&
     Number(raceScore.schemaVersion) === 2 &&
     readCompetitionDeadTroopCounts(raceScore.deadTroopCounts)
       ? readCompetitionPowerValues(raceScore.powerValues)
       : null;
-  // The three waypoints a player can have: the earlier season's upload (the
-  // baseline, matched by in-game name because old seasons had no accounts),
-  // today's sign-up record, and the growth re-upload when its window opens. A
-  // player who registered today against an older upload has real growth to
-  // show right away; the re-upload replaces the sign-up side once it lands.
-  const signupStats = player?.confirmedStats || player?.stats || null;
-  const signupValues =
-    baselineValues && baseline?.source !== 'signup'
-      ? readCompetitionPowerValues(signupStats)
-      : null;
+  // The three waypoints a player can have: last season's upload, today's
+  // sign-up record, and the final upload once its window opens.
+  const signupValues = readCompetitionPowerValues(player?.confirmedStats || player?.stats || null);
+  let finalProblem = null;
+  if (!raceScore) finalProblem = 'no-reupload';
+  else if (!reuploadValues) finalProblem = 'invalid-reupload';
+  else if (!inWindow(uploadMillis(raceScore), window)) finalProblem = 'outside-window';
+  const usableReupload = finalProblem ? null : reuploadValues;
   // Waypoint values are the competition numbers as saved: dead troops are
   // already folded into Troop Power and Total Power when the record was saved,
   // so every pair compares full totals — dead troops are part of the player's
   // power and are never stripped back out.
-  const signupPoint = signupValues;
-  const reuploadPoint = reuploadValues;
-  let notRankedReason = null;
-  if (!raceScore && !signupPoint) notRankedReason = 'no-reupload';
-  else if (raceScore && !reuploadValues) notRankedReason = 'invalid-reupload';
-  else if (raceScore && !inWindow(uploadMillis(raceScore), window)) {
-    notRankedReason = 'outside-window';
-  } else if (!baselineValues) notRankedReason = 'no-baseline';
-  const usableSignup = notRankedReason ? null : signupPoint;
-  const usableReupload = notRankedReason ? null : reuploadPoint;
   const steps = {
     baselineToSignup:
-      baselineValues && usableSignup ? growthStep(baselineValues, usableSignup) : null,
+      lastSeasonValues && signupValues ? growthStep(lastSeasonValues, signupValues) : null,
     signupToReupload:
-      usableSignup && usableReupload ? growthStep(usableSignup, usableReupload) : null,
+      signupValues && usableReupload ? growthStep(signupValues, usableReupload) : null,
     baselineToReupload:
-      baselineValues && usableReupload ? growthStep(baselineValues, usableReupload) : null,
+      lastSeasonValues && usableReupload ? growthStep(lastSeasonValues, usableReupload) : null,
   };
-  const primary = steps.baselineToReupload || steps.baselineToSignup;
+  const tracker = steps.baselineToReupload || steps.baselineToSignup;
+  const competition = steps.signupToReupload;
   const fields = {};
   for (const field of COMPETITION_GROWTH_FIELDS) {
-    const base = baselineValues?.[field] ?? null;
-    const final = primary?.fields?.[field]?.to ?? null;
+    const base = tracker?.fields?.[field]?.from ?? null;
+    const final = tracker?.fields?.[field]?.to ?? null;
     fields[field] = { baseline: base, final, ...growthOf(base, final) };
   }
   return {
@@ -362,21 +419,72 @@ export function computeGrowthRow(player, { baseline, raceScore = null, window = 
     consent,
     baselineSource: baselineValues ? baseline.source : null,
     baselineAliveOnly: baseline?.aliveOnly === true,
-    finalSource: steps.baselineToReupload ? 'reupload' : steps.baselineToSignup ? 'signup' : null,
-    waypoints: { signup: usableSignup, reupload: usableReupload },
+    finalSource:
+      steps.signupToReupload || steps.baselineToReupload
+        ? 'reupload'
+        : signupValues
+          ? 'signup'
+          : null,
+    waypoints: { signup: signupValues, reupload: usableReupload },
     steps,
     match: baseline?.match || null,
+    trackerAbs: tracker ? tracker.growthAbs : null,
+    trackerPct: tracker ? tracker.growthPct : null,
+    competitionAbs: competition ? competition.growthAbs : null,
+    competitionPct: competition ? competition.growthPct : null,
+    finalProblem,
+    // Replaced by applyGrowthMode() with the ranked metric's fields.
     fields,
-    growthAbs: primary ? primary.growthAbs : null,
-    growthPct: primary ? primary.growthPct : null,
-    notRankedReason,
+    growthAbs: tracker ? tracker.growthAbs : null,
+    growthPct: tracker ? tracker.growthPct : null,
+    notRankedReason: tracker ? null : 'no-baseline',
   };
 }
 
-function nameKeysClaimedTwice(players) {
+/**
+ * Copy of js/competition-growth.js applyGrowthMode(). Picks the ranked metric
+ * for a whole board: the competition (sign-up -> final upload) as soon as one
+ * valid final upload exists, otherwise the personal growth tracker so the
+ * board stays alive until the re-upload window opens.
+ */
+export function applyGrowthMode(rows = []) {
+  const list = Array.isArray(rows) ? rows : [];
+  const mode = list.some((row) => row.competitionAbs != null || row.competitionPct != null)
+    ? 'competition'
+    : 'tracker';
+  return list.map((row) => {
+    const step =
+      mode === 'competition'
+        ? row.steps?.signupToReupload || null
+        : row.steps?.baselineToReupload || row.steps?.baselineToSignup || null;
+    const fields = {};
+    for (const field of COMPETITION_GROWTH_FIELDS) {
+      const entry = step?.fields?.[field];
+      // Without a ranked step the sign-up still ships as the displayed
+      // baseline, so a pending member can see where they start.
+      const base = step ? (entry?.from ?? null) : (row.waypoints?.signup?.[field] ?? null);
+      const final = step ? (entry?.to ?? null) : null;
+      fields[field] = { baseline: base, final, ...growthOf(base, final) };
+    }
+    return {
+      ...row,
+      mode,
+      fields,
+      growthAbs: step ? step.growthAbs : null,
+      growthPct: step ? step.growthPct : null,
+      notRankedReason: step
+        ? null
+        : mode === 'competition'
+          ? row.finalProblem || 'no-baseline'
+          : 'no-baseline',
+    };
+  });
+}
+
+function nameKeysClaimedTwice(players, keyFor = competitionExactNameKey) {
   const seen = new Map();
   for (const player of players) {
-    const key = competitionExactNameKey(player?.gameName);
+    const key = keyFor(player?.gameName);
     if (key) seen.set(key, (seen.get(key) || 0) + 1);
   }
   return new Set([...seen].filter(([, count]) => count > 1).map(([key]) => key));
@@ -398,45 +506,71 @@ export function buildServerGrowthRows({
   );
   const index = buildPriorSeasonBaselineIndex(priorSeasons);
   const contestedKeys = nameKeysClaimedTwice(players);
-  return players.map((player) => {
-    const submissionUid = recordUid(player);
-    const raceScore = scores.get(submissionUid) || null;
-    const baseline = resolveServerBaseline(player, {
-      index,
-      contestedKeys,
-    });
-    const row = computeGrowthRow(player, { baseline, raceScore, window });
-    // Everything this name ever uploaded, newest first: the current-season
-    // upload plus every earlier season's uploads matched by in-game name.
-    const key = competitionExactNameKey(player?.gameName);
-    const uploads = [];
-    if (raceScore) {
-      const values = readCompetitionPowerValues(raceScore?.powerValues);
-      const uploadedAt = uploadMillis(raceScore);
-      if (values) {
-        uploads.push({
-          seasonId: cleanText(seasonId),
-          uploadedAt: Number.isFinite(uploadedAt) ? uploadedAt : 0,
-          values,
-        });
-      }
-    }
-    const entry = key ? index?.byName?.get(key) || null : null;
-    // An ambiguous name is an unsafe match: another account's uploads must
-    // never be published under it. Only a unique, unclaimed name carries
-    // history; the row's own current upload always stays.
-    const safeHistory = entry && entry.status === 'unique' && !contestedKeys.has(key);
-    const priorUploads = safeHistory ? entry.uploads : [];
-    for (const upload of priorUploads) {
-      uploads.push({
-        seasonId: upload.seasonId,
-        uploadedAt: upload.uploadedAt,
-        values: upload.values,
+  const contestedLooseKeys = nameKeysClaimedTwice(players, competitionLooseNameKey);
+  // Every submitted player's growth row, with the ranked metric applied once
+  // the whole set is known.
+  return applyGrowthMode(
+    players.map((player) => {
+      const submissionUid = recordUid(player);
+      const raceScore = scores.get(submissionUid) || null;
+      const baseline = resolveServerBaseline(player, {
+        index,
+        contestedKeys,
+        contestedLooseKeys,
       });
-    }
-    uploads.sort(newestFirst);
-    return { ...row, uploads };
-  });
+      const row = computeGrowthRow(player, { baseline, raceScore, window });
+      // Everything this player ever uploaded, newest first: the current-season
+      // upload plus the earlier uploads joined by account first, then name.
+      const key = competitionExactNameKey(player?.gameName);
+      const looseKey = competitionLooseNameKey(player?.gameName);
+      const uploads = [];
+      if (raceScore) {
+        const values = readCompetitionPowerValues(raceScore?.powerValues);
+        const uploadedAt = uploadMillis(raceScore);
+        if (values) {
+          uploads.push({
+            seasonId: cleanText(seasonId),
+            uploadedAt: Number.isFinite(uploadedAt) ? uploadedAt : 0,
+            values,
+          });
+        }
+      }
+      const seenUploads = new Set();
+      const pushUploads = (entry) => {
+        for (const upload of entry?.uploads || []) {
+          const identity = `${upload.seasonId}:${upload.submissionUid}:${upload.uploadedAt}`;
+          if (seenUploads.has(identity)) continue;
+          seenUploads.add(identity);
+          uploads.push({
+            seasonId: upload.seasonId,
+            uploadedAt: upload.uploadedAt,
+            values: upload.values,
+          });
+        }
+      };
+      const accountEntry = submissionUid ? index?.byUid?.get(submissionUid) || null : null;
+      if (accountEntry?.candidates?.length) {
+        pushUploads(accountEntry);
+      } else {
+        // An ambiguous name is an unsafe match: another account's uploads must
+        // never be published under it. Only a unique, unclaimed match carries
+        // history; the row's own current upload always stays.
+        const exactEntry = key ? index?.byName?.get(key) || null : null;
+        const safeExact =
+          exactEntry?.status === 'unique' && !contestedKeys.has(key) ? exactEntry : null;
+        const looseEntry = index?.byLoose?.get(looseKey) || null;
+        const safeLoose =
+          !exactEntry?.candidates?.length &&
+          looseEntry?.status === 'unique' &&
+          !contestedLooseKeys.has(looseKey)
+            ? looseEntry
+            : null;
+        pushUploads(safeExact || safeLoose);
+      }
+      uploads.sort(newestFirst);
+      return { ...row, uploads };
+    })
+  );
 }
 
 function byName(left, right) {
@@ -586,6 +720,9 @@ export function buildGrowthBoardProjection(input, options = {}) {
     schemaVersion: COMPETITION_BOARD_SCHEMA_VERSION,
     seasonId: cleanText(options.seasonId),
     publishedAt: cleanText(options.publishedAt) || new Date().toISOString(),
+    // Which comparison the ranks use: the competition once any final upload
+    // exists, the personal growth tracker until then.
+    mode: [...ranked, ...notRanked].find((row) => row.mode)?.mode || 'tracker',
     rows,
     winners,
     notRanked: publicNotRanked.length,

@@ -120,12 +120,21 @@ test('the baseline is the latest earlier upload, matched by name alone when it i
     },
   ]);
   // A name claimed by different accounts in any earlier season is ambiguous,
-  // even when the member's own account uploaded under it: matching is by name
-  // so a uid fallback would silently adopt the wrong history.
+  // and without a matching account id the name is refused rather than guessed.
   assert.equal(index.byName.get('alpha').status, 'ambiguous');
   assert.equal(index.byName.get('twin').status, 'ambiguous');
 
-  const ambiguous = resolveServerBaseline(submission('new-alpha', 'alpha', 1), { index });
+  assert.equal(index.byUid.get('new-alpha').candidates.length, 1);
+
+  // The member's own account uploaded under the contested name before, so the
+  // account join reaches exactly that record: the owner's rule is that the
+  // same account UID wins, no name guessing required.
+  const ownUpload = resolveServerBaseline(submission('new-alpha', 'alpha', 1), { index });
+  assert.equal(ownUpload.source, 'vtsscore-prior');
+  assert.equal(ownUpload.match.how, 'account');
+
+  // A different account wearing the contested name matches nothing.
+  const ambiguous = resolveServerBaseline(submission('fresh-account', 'alpha', 1), { index });
   assert.equal(ambiguous.source, 'signup');
   assert.equal(ambiguous.match.status, 'ambiguous');
 
@@ -182,14 +191,17 @@ function boardInputs() {
   };
 }
 
-test('the server board ranks from earlier-season baselines and keeps private values private', () => {
+test('the server board ranks the competition and keeps private values private', () => {
   const { board, summary } = buildCompetitionBoardFromInputs(boardInputs(), { nowMs: T0 });
-  // Alpha grew 80M -> 120M (+50%), Bravo 200M -> 260M (+30%) from sign-up stats.
+  // The competition ranks sign-up -> final upload: Alpha 100M -> 120M (+20%).
+  // Bravo 200M -> 260M (+30%) would win but never consented, so nothing of it
+  // ships. Alpha's last season (80M) still feeds his personal tracker.
   assert.deepEqual(
     board.winners.map((winner) => [winner.rank, winner.gameName]),
     [[1, 'Alpha']]
   );
-  assert.equal(board.winners[0].growthPct, 50);
+  assert.equal(board.winners[0].growthPct, 20);
+  assert.equal(board.mode, 'competition');
   assert.doesNotMatch(JSON.stringify(board), /Bravo/);
   assert.deepEqual(
     board.rows.map((row) => [row.gameName, row.baselineSource]),
@@ -386,7 +398,7 @@ test('rows without an earlier upload fall back to sign-up stats', () => {
   assert.equal(rows[0].growthPct, 20);
 });
 
-test('a prior upload without dead-troop counts is still the growth baseline', () => {
+test('a prior upload without dead-troop counts still feeds the personal tracker', () => {
   const prior = upload('prior', 'Alpha', 80_000_000, 1);
   delete prior.deadTroopCounts;
   const rows = buildServerGrowthRows({
@@ -397,8 +409,11 @@ test('a prior upload without dead-troop counts is still the growth baseline', ()
   });
   assert.equal(rows[0].baselineSource, 'vtsscore-2026');
   assert.equal(rows[0].baselineAliveOnly, true);
-  assert.equal(rows[0].fields.totalCastlePower.baseline, 80_000_000);
-  assert.equal(rows[0].growthPct, 50);
+  assert.equal(rows[0].mode, 'competition');
+  // The tracker uses the legacy upload (80M -> 120M); the competition ranks
+  // the sign-up -> final pair (100M -> 120M).
+  assert.equal(rows[0].trackerPct, 50);
+  assert.equal(rows[0].growthPct, 20);
 });
 
 test('a legacy baseline keeps the full saved totals including dead troops', () => {
@@ -415,12 +430,17 @@ test('a legacy baseline keeps the full saved totals including dead troops', () =
     priorSeasons: [{ seasonId: 'season-2026', raceScores: [prior] }],
     window: SCHEDULE,
   });
-  // 108,200,000 - 80,000,000 = 28,200,000 (35.25%): dead troops are part of
-  // the player's power, so the comparison keeps the saved totals.
+  // The tracker keeps the full saved totals: 108,200,000 - 80,000,000 =
+  // 28,200,000 (35.25%) — dead troops are part of the player's power, so the
+  // comparison keeps the saved totals.
   assert.equal(rows[0].baselineAliveOnly, true);
+  assert.equal(rows[0].trackerAbs, 28_200_000);
+  assert.ok(Math.abs(rows[0].trackerPct - 35.25) < 1e-9);
+  // The competition ranks the sign-up pair: 108,200,000 - 70,000,000 =
+  // 38,200,000 (54.5714%).
   assert.equal(rows[0].fields.totalCastlePower.final, 108_200_000);
-  assert.equal(rows[0].growthAbs, 28_200_000);
-  assert.ok(Math.abs(rows[0].growthPct - 35.25) < 1e-9);
+  assert.equal(rows[0].growthAbs, 38_200_000);
+  assert.ok(Math.abs(rows[0].growthPct - (38_200_000 / 70_000_000) * 100) < 1e-9);
 
   // A baseline WITH the split behaves the same: both ends are full totals.
   const splitBaseline = upload('prior', 'Alpha', 80_000_000, 1);
@@ -432,7 +452,8 @@ test('a legacy baseline keeps the full saved totals including dead troops', () =
   });
   assert.equal(withSplit[0].baselineAliveOnly, false);
   assert.equal(withSplit[0].fields.totalCastlePower.final, 108_200_000);
-  assert.equal(withSplit[0].growthAbs, 28_200_000);
+  assert.equal(withSplit[0].trackerAbs, 28_200_000);
+  assert.equal(withSplit[0].growthAbs, 38_200_000);
 });
 
 test('the live board endpoint is the member vtsScore endpoint', async () => {
@@ -441,4 +462,28 @@ test('the live board endpoint is the member vtsScore endpoint', async () => {
     fs.readFileSync('js/all-star-boh-access.js', 'utf8')
   );
   assert.ok(source.includes(`'${VTS_SCORE_ENDPOINT}'`));
+});
+
+test('the server board joins last-season uploads by account, then loose name', () => {
+  const rows = buildServerGrowthRows({
+    submissions: [submission('a', 'NewName', 100_000_000), submission('b', 'Anne', 50_000_000)],
+    raceScores: [],
+    priorSeasons: [
+      {
+        seasonId: 'season-2026',
+        raceScores: [
+          upload('a', 'OldName', 80_000_000, 1),
+          upload('anne-1', '〽️ Anne〽️', 40_000_000, 2),
+        ],
+      },
+    ],
+    window: SCHEDULE,
+  });
+  const renamed = rows.find((row) => row.gameName === 'NewName');
+  assert.equal(renamed.match.how, 'account');
+  assert.equal(renamed.baselineSource, 'vtsscore-2026');
+  assert.equal(renamed.trackerPct, 25);
+  const anne = rows.find((row) => row.gameName === 'Anne');
+  assert.equal(anne.match.how, 'loose-name');
+  assert.equal(anne.trackerPct, 25);
 });
