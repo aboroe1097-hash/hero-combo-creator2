@@ -2,6 +2,10 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.6.8 - 2026-09-27
+
+- The Eden X2 hub's invitation card is now the VTS Competition section: the old "Season signup / Sign up for the 2027 season" kicker and title read "Competition / VTS Competition" in every locale, and the copy describes the competition registration — baseline, role, fight times and the linked account — instead of the retired season signup.
+
 ## 16.6.7 - 2026-09-27
 
 - The VtsScore language picker offers all thirteen languages. Croatian, Indonesian, Italian, Korean, Russian, Turkish and Chinese were translated in 16.6.5 but never added to the page's selector, so members could not choose them. A unit test now keeps the picker and the translation catalogue in lockstep.
