@@ -3,12 +3,16 @@
 // The vtsScore Function builds the consent-filtered public projection directly
 // from current records whenever the board is requested.
 //
-// Owner decisions (2026-09-26):
-//   - Baseline: each player's LATEST VtsScore upload from ANY earlier season,
-//     else their Competition #12 sign-up stats.
-//   - Matching: the same account UID wins; otherwise a unique exact game name
-//     (ignoring case, spacing and the "(VTS)" prefix) is used. An ambiguous
-//     name uses sign-up stats.
+// Owner decisions (2026-09-26; the account-uid join was reverted on
+// 2026-09-27 after one browser/account uploading for several people — e.g. a
+// member filing for a friend — showed the id is not identity):
+//   - Competition ranking: Total Power growth from the sign-up to the final
+//     upload; the earlier-season comparison is the personal growth tracker
+//     that ranks the board until finals land.
+//   - Matching: a unique in-game name binds the tracker — exact (case,
+//     spacing and the "(VTS)" prefix ignored), then the loose key with
+//     confirmed aliases resolved and decorations dropped. An ambiguous or
+//     twice-claimed name uses sign-up stats and reports as ambiguous.
 //
 // computeGrowthRow(), rankCompetitionGrowth() and buildGrowthBoardProjection()
 // are copies of js/competition-growth.js (the Functions package cannot import
@@ -222,16 +226,13 @@ function baselineEntryFor(list) {
 }
 
 /**
- * Indexes every earlier season's VtsScore uploads four ways, and matching
- * tries them in order:
- *   1. by account — the upload document id is the signup uid its numbers
- *      belong to, so it joins even after a rename;
- *   2. by exact in-game name (ignores case, spacing and the "(VTS)" prefix);
- *   3. by loose name — confirmed aliases resolved and decorations dropped.
+ * Indexes every earlier season's VtsScore uploads by in-game name. Matching
+ * tries the exact name (case, spacing and the "(VTS)" prefix ignored) first,
+ * then the loose key with confirmed aliases resolved and decorations dropped.
  * A name used by two different known accounts is not a safe match and keeps
  * every candidate without proposing one.
  * @param {Array<{seasonId: string, raceScores: object[]}>} priorSeasons
- * @returns {{byName: Map, byLoose: Map, byUid: Map}}
+ * @returns {{byName: Map, byLoose: Map}}
  */
 export function buildPriorSeasonBaselineIndex(priorSeasons = []) {
   const uploads = [];
@@ -256,7 +257,6 @@ export function buildPriorSeasonBaselineIndex(priorSeasons = []) {
   uploads.sort(newestFirst);
   const grouped = new Map();
   const looseGrouped = new Map();
-  const byUid = new Map();
   const add = (map, key, upload) => {
     if (!key) return;
     if (!map.has(key)) map.set(key, []);
@@ -265,29 +265,20 @@ export function buildPriorSeasonBaselineIndex(priorSeasons = []) {
   for (const upload of uploads) {
     add(grouped, competitionExactNameKey(upload.gameName), upload);
     add(looseGrouped, competitionLooseNameKey(upload.gameName), upload);
-    add(byUid, upload.submissionUid, upload);
   }
   const byName = new Map();
   for (const [key, list] of grouped) byName.set(key, baselineEntryFor(list));
   const byLoose = new Map();
   for (const [key, list] of looseGrouped) byLoose.set(key, baselineEntryFor(list));
-  // Every upload under one account id is the same account by construction.
-  for (const [key, list] of byUid) byUid.set(key, baselineEntryFor(list));
-  return { byName, byLoose, byUid };
+  return { byName, byLoose };
 }
 
 /**
- * The baseline one player is measured from, strongest join first: their
- * account (the upload document id is the signup uid), then the exact name,
- * then the loose name.
+ * The baseline one player is measured from, by in-game name: the exact name
+ * first, then the loose key that folds confirmed aliases and decorations.
  * @returns {{values: object|null, source: string|null, seasonId: string|null, match: object}}
  */
 export function resolveServerBaseline(player, { index, contestedKeys, contestedLooseKeys } = {}) {
-  // The account join is the same account by construction: every upload under
-  // one account id is that account, so no ambiguity check applies.
-  const accountKey = recordUid(player);
-  const accountEntry = accountKey ? index?.byUid?.get(accountKey) || null : null;
-  const accountChosen = accountEntry?.candidates?.length ? accountEntry.candidate : null;
   const key = competitionExactNameKey(player?.gameName);
   const entry = key ? index?.byName?.get(key) || null : null;
   const contested = contestedKeys instanceof Set && contestedKeys.has(key);
@@ -302,7 +293,7 @@ export function resolveServerBaseline(player, { index, contestedKeys, contestedL
     !entry?.candidates?.length && looseEntry?.status === 'unique' && !looseContested
       ? looseEntry.candidate
       : null;
-  const chosen = accountChosen || exactChosen || looseChosen;
+  const chosen = exactChosen || looseChosen;
   const match = {
     status: chosen
       ? 'matched'
@@ -310,13 +301,7 @@ export function resolveServerBaseline(player, { index, contestedKeys, contestedL
         ? 'ambiguous'
         : 'none',
     decision: chosen ? 'vtsscore' : 'signup',
-    how: accountChosen
-      ? 'account'
-      : exactChosen
-        ? 'exact-name'
-        : looseChosen
-          ? 'loose-name'
-          : 'none',
+    how: exactChosen ? 'exact-name' : looseChosen ? 'loose-name' : 'none',
   };
   if (chosen) {
     return {
@@ -548,25 +533,20 @@ export function buildServerGrowthRows({
           });
         }
       };
-      const accountEntry = submissionUid ? index?.byUid?.get(submissionUid) || null : null;
-      if (accountEntry?.candidates?.length) {
-        pushUploads(accountEntry);
-      } else {
-        // An ambiguous name is an unsafe match: another account's uploads must
-        // never be published under it. Only a unique, unclaimed match carries
-        // history; the row's own current upload always stays.
-        const exactEntry = key ? index?.byName?.get(key) || null : null;
-        const safeExact =
-          exactEntry?.status === 'unique' && !contestedKeys.has(key) ? exactEntry : null;
-        const looseEntry = index?.byLoose?.get(looseKey) || null;
-        const safeLoose =
-          !exactEntry?.candidates?.length &&
-          looseEntry?.status === 'unique' &&
-          !contestedLooseKeys.has(looseKey)
-            ? looseEntry
-            : null;
-        pushUploads(safeExact || safeLoose);
-      }
+      const exactEntry = key ? index?.byName?.get(key) || null : null;
+      // An ambiguous name is an unsafe match: another account's uploads must
+      // never be published under it. Only a unique, unclaimed match carries
+      // history; the row's own current upload always stays.
+      const safeExact =
+        exactEntry?.status === 'unique' && !contestedKeys.has(key) ? exactEntry : null;
+      const looseEntry = index?.byLoose?.get(looseKey) || null;
+      const safeLoose =
+        !exactEntry?.candidates?.length &&
+        looseEntry?.status === 'unique' &&
+        !contestedLooseKeys.has(looseKey)
+          ? looseEntry
+          : null;
+      pushUploads(safeExact || safeLoose);
       uploads.sort(newestFirst);
       return { ...row, uploads };
     })

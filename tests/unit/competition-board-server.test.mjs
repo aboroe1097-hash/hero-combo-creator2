@@ -119,24 +119,17 @@ test('the baseline is the latest earlier upload, matched by name alone when it i
       ],
     },
   ]);
-  // A name claimed by different accounts in any earlier season is ambiguous,
-  // and without a matching account id the name is refused rather than guessed.
+  // A name claimed by different accounts in any earlier season is ambiguous
+  // and refused for every account: names are the board's only identity.
   assert.equal(index.byName.get('alpha').status, 'ambiguous');
   assert.equal(index.byName.get('twin').status, 'ambiguous');
 
-  assert.equal(index.byUid.get('new-alpha').candidates.length, 1);
-
-  // The member's own account uploaded under the contested name before, so the
-  // account join reaches exactly that record: the owner's rule is that the
-  // same account UID wins, no name guessing required.
-  const ownUpload = resolveServerBaseline(submission('new-alpha', 'alpha', 1), { index });
-  assert.equal(ownUpload.source, 'vtsscore-prior');
-  assert.equal(ownUpload.match.how, 'account');
-
-  // A different account wearing the contested name matches nothing.
-  const ambiguous = resolveServerBaseline(submission('fresh-account', 'alpha', 1), { index });
-  assert.equal(ambiguous.source, 'signup');
-  assert.equal(ambiguous.match.status, 'ambiguous');
+  for (const uid of ['new-alpha', 'fresh-account']) {
+    const ambiguous = resolveServerBaseline(submission(uid, 'alpha', 1), { index });
+    assert.equal(ambiguous.source, 'signup');
+    assert.equal(ambiguous.match.status, 'ambiguous');
+    assert.equal(ambiguous.match.how, 'none');
+  }
 
   const legacy = resolveServerBaseline(submission('p2', 'Oldie', 1), { index });
   assert.equal(legacy.source, 'vtsscore-2026');
@@ -464,7 +457,7 @@ test('the live board endpoint is the member vtsScore endpoint', async () => {
   assert.ok(source.includes(`'${VTS_SCORE_ENDPOINT}'`));
 });
 
-test('the server board joins last-season uploads by account, then loose name', () => {
+test('the server board matches last-season uploads by name only, including the loose key', () => {
   const rows = buildServerGrowthRows({
     submissions: [submission('a', 'NewName', 100_000_000), submission('b', 'Anne', 50_000_000)],
     raceScores: [],
@@ -479,10 +472,12 @@ test('the server board joins last-season uploads by account, then loose name', (
     ],
     window: SCHEDULE,
   });
+  // The account id is not identity for the board: a renamed player keeps the
+  // sign-up baseline instead of adopting a same-account upload.
   const renamed = rows.find((row) => row.gameName === 'NewName');
-  assert.equal(renamed.match.how, 'account');
-  assert.equal(renamed.baselineSource, 'vtsscore-2026');
-  assert.equal(renamed.trackerPct, 25);
+  assert.equal(renamed.match.how, 'none');
+  assert.equal(renamed.baselineSource, 'signup');
+  // Decorated spellings still reach the earlier upload through the loose key.
   const anne = rows.find((row) => row.gameName === 'Anne');
   assert.equal(anne.match.how, 'loose-name');
   assert.equal(anne.trackerPct, 25);

@@ -160,10 +160,9 @@ function uploadMillis(record) {
 }
 
 /**
- * Indexes VtsScore uploads four ways, and matching tries them in order:
- *   1. by account — the upload document id is the signup uid the numbers
- *      belong to, so it joins even after a rename;
- *   2. by exact in-game name, the historical join for pre-account uploads;
+ * Indexes VtsScore uploads three ways, and matching tries them in order:
+ *   1. by exact in-game name;
+ *   2. by alias-resolved name (confirmed/taught aliases, then normalisation);
  *   3. by loose name — confirmed aliases resolved and decorations dropped —
  *      for spellings like "〽️ Anne〽️".
  * A name used by two different known accounts is ambiguous: it keeps every
@@ -196,7 +195,6 @@ export function buildVtsScoreBaselineIndex(raceScores = []) {
   const index = new Map();
   index.byExactName = new Map();
   index.byLooseName = new Map();
-  index.byUid = new Map();
   const grouped = new Map();
   const exactGrouped = new Map();
   const looseGrouped = new Map();
@@ -209,13 +207,10 @@ export function buildVtsScoreBaselineIndex(raceScores = []) {
     add(grouped, competitionNameKey(candidate.gameName), candidate);
     add(exactGrouped, normalizeName(candidate.gameName), candidate);
     add(looseGrouped, competitionLooseNameKey(candidate.gameName), candidate);
-    add(index.byUid, candidate.submissionUid, candidate);
   }
   for (const [key, list] of grouped) index.set(key, baselineEntry(list));
   for (const [key, list] of exactGrouped) index.byExactName.set(key, baselineEntry(list));
   for (const [key, list] of looseGrouped) index.byLooseName.set(key, baselineEntry(list));
-  // Every upload under one account id is the same account by construction.
-  for (const [key, list] of index.byUid) index.byUid.set(key, baselineEntry(list));
   return index;
 }
 
@@ -253,28 +248,16 @@ function lookupIndex(index, key) {
 }
 
 /**
- * The proposal for one player, strongest join first: their account (the
- * upload document id is the signup uid), then the exact in-game name, then
- * the loose name. 'matched' (one candidate), 'ambiguous' (several, or
- * contested by another player), or 'none'.
+ * The proposal for one player, by in-game name only: the exact name first,
+ * then the loose key that folds owner-confirmed aliases and decorations.
+ * 'matched' (one candidate), 'ambiguous' (several, or contested by another
+ * player), or 'none'.
  */
 export function proposeBaselineMatch(
   player,
   index,
   { contestedKeys, contestedLooseKeys, autoMatch = false } = {}
 ) {
-  // The account join cannot belong to two players: every upload under one
-  // account id is that account by construction, so no ambiguity check applies.
-  const accountKey = recordUid(player);
-  const accountEntry = accountKey ? lookupIndex(index?.byUid, accountKey) : null;
-  if (accountEntry?.candidates?.length) {
-    return {
-      status: 'matched',
-      key: accountKey,
-      candidates: accountEntry.candidates,
-      matchType: 'account',
-    };
-  }
   const key = autoMatch ? normalizeName(player?.gameName) : competitionNameKey(player?.gameName);
   const source = autoMatch && index?.byExactName instanceof Map ? index.byExactName : index;
   const entry = lookupIndex(source, key);
@@ -589,7 +572,7 @@ export function buildCompetitionGrowthRows({
       });
       const row = computeGrowthRow(player, { baseline, raceScore, window });
       // Everything this player ever uploaded, newest first: the current-season
-      // upload plus the earlier uploads joined by account first, then name.
+      // upload plus the earlier uploads matched by in-game name.
       const key = nameKey(player?.gameName);
       const looseKey = competitionLooseNameKey(player?.gameName);
       const uploads = [];
@@ -617,25 +600,16 @@ export function buildCompetitionGrowthRows({
           });
         }
       };
-      const accountEntry = submissionUid ? lookupIndex(index?.byUid, submissionUid) : null;
-      if (accountEntry) {
-        pushUploads(accountEntry);
+      const exactEntry = lookupIndex(
+        autoMatch && index?.byExactName instanceof Map ? index.byExactName : index,
+        key
+      );
+      if (exactEntry && exactEntry.status !== 'ambiguous' && !contestedKeys.has(key)) {
+        pushUploads(exactEntry);
       } else {
-        const exactEntry = lookupIndex(
-          autoMatch && index?.byExactName instanceof Map ? index.byExactName : index,
-          key
-        );
-        if (exactEntry && exactEntry.status !== 'ambiguous' && !contestedKeys.has(key)) {
-          pushUploads(exactEntry);
-        } else {
-          const looseEntry = lookupIndex(index?.byLooseName, looseKey);
-          if (
-            looseEntry &&
-            looseEntry.status !== 'ambiguous' &&
-            !contestedLooseKeys.has(looseKey)
-          ) {
-            pushUploads(looseEntry);
-          }
+        const looseEntry = lookupIndex(index?.byLooseName, looseKey);
+        if (looseEntry && looseEntry.status !== 'ambiguous' && !contestedLooseKeys.has(looseKey)) {
+          pushUploads(looseEntry);
         }
       }
       uploads.sort(
