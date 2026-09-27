@@ -1,10 +1,21 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.8";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.9";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.6.9",
+    "date": "2026-09-27",
+    "highlights": [
+      "Competition #12 ranks sign-up → final upload now: winners and standings use that Total Power growth, and the last-season comparison becomes the personal growth tracker. Until the first final upload lands the tracker ranks the board so the standing stays alive, the projection car…",
+      "Growth baselines join in order of confidence: the account id (the upload document id is the sign-up uid its numbers belong to), the exact in-game name, then a loose key that resolves owner-confirmed aliases and drops decorations (\"〽️ Anne〽️\", \"~Sarafino~\"). Accounts the owner se…",
+      "Sign-up assist: the name field suggests the closest known names (this season's sign-ups and every earlier upload, canonical spellings only) and warns when the typed name is already registered this season. The score picker marks your own row \"(you)\" so twin names cannot be mixed …",
+      "Sign-up admin: rows show whether leadership added them or the member filed them (the writer marker, not entryMethod), each chosen time renders as its own badge instead of one \"›\" string, and the edit form refuses member-filed rows instead of overwriting the fields it cannot show.",
+      "The rules emulator pins the heaviest OCR sign-up (30 known names, 20 warnings, the full confidence map) as a create and an update, and the total JS budget moves by the measured minimum. **Redeploy the vtsScore and bohSignupAdmin functions after this release.**"
+    ]
+  },
   {
     "version": "16.6.8",
     "date": "2026-09-27",
@@ -86,14 +97,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "The VtsScore Growth Board is no longer tied to results. It builds from live uploads in every phase and refreshes as members upload, and every opted-in name lists every upload it ever had — date and values, newest first — including names without a valid re-upload.",
       "Previous scores are matched by in-game name first. Uploads from before accounts existed carry no uid and used to be skipped; now the name is the join and the account uid is only a last resort for names that changed. When nothing matches a saved, opting-in member's name, the form…",
       "VTS Admin → VtsScore is the window into previous members' values: the Competition #12 table loads every earlier VtsScore season, and each sign-up row shows the full upload history it maps to, values included. **Deploy the vtsScore function after this release.** The OCR Worker is…"
-    ]
-  },
-  {
-    "version": "16.5.20",
-    "date": "2026-09-26",
-    "highlights": [
-      "Competition #12 now builds the public growth board directly from saved registrations and current and earlier VtsScore uploads whenever results are available. No admin publish or scheduled board write is needed. Only submitted registrations whose members opted into public sharing…",
-      "Previous scores match the same account first. Otherwise, an exact game name is accepted only when it belongs to one earlier account and one current member; ambiguous names use registration stats. A saved, consenting member with a safe prior match sees a friendly comparison-ready…"
     ]
   }
 ].map((release) =>

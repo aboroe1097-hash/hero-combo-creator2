@@ -31,6 +31,12 @@ test('VtsScore page is one focused, searchable, single-image OCR flow', () => {
   const page = readFileSync('vtsscore.html', 'utf8');
   assert.match(page, /id="vtsScorePlayer"[\s\S]*role="combobox"/);
   assert.match(page, /id="vtsScorePlayerResults"[\s\S]*role="listbox"/);
+  // The signup name field owns a suggestions listbox too: expose it as the
+  // combobox that controls it, or screen readers announce the options as
+  // unattached text.
+  assert.match(page, /id="vtsScoreSignupName"[\s\S]*role="combobox"/);
+  assert.match(page, /id="vtsScoreSignupName"[\s\S]*aria-controls="vtsScoreSignupNameSuggestions"/);
+  assert.match(page, /id="vtsScoreSignupNameSuggestions"[\s\S]*role="listbox"/);
   assert.match(page, /id="vtsScoreImage"[\s\S]*accept="image\/png,image\/jpeg,image\/webp"/);
   assert.match(page, /id="vtsScoreReadButton"/);
   assert.match(page, /id="vtsScorePowerFields"/);

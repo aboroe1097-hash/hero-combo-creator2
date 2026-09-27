@@ -3995,6 +3995,7 @@ const fr = {
   adminBohSignupSlotsEpic: 'Epic {slots}',
   adminBohSignupSlotsLegacy: 'Classique {slots}',
   adminBohSignupConsentColumn: 'Tableau de progression',
+  adminBohSignupSourceColumn: 'Source',
   adminBohSignupConsentYes: 'Tableau public',
   adminBohSignupConsentNo: 'Privé',
   adminBohSignupPreferredRole: 'Rôle préféré',

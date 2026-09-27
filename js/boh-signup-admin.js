@@ -203,17 +203,23 @@ export function bohSignupAdminSlotProblem(request) {
 
 function slotSummary(signup, t) {
   const commitment = signup?.commitment || {};
-  const clocks = (slots) => stringList(slots).map(slotToGameClock).join(' › ');
-  const boh = clocks(commitment.bohTimeSlots);
-  const epic = clocks(commitment.epicTimeSlots);
-  const parts = [];
-  if (boh) parts.push(t('adminBohSignupSlotsBoh', { slots: boh }, `BoH ${boh}`));
-  if (epic) parts.push(t('adminBohSignupSlotsEpic', { slots: epic }, `Epic ${epic}`));
-  if (!parts.length) {
-    const legacy = stringList(commitment.fightingTimeIds).join(' › ');
-    if (legacy) parts.push(t('adminBohSignupSlotsLegacy', { slots: legacy }, `Classic ${legacy}`));
-  }
-  return parts.join(' · ');
+  // One badge per slot: the joined "14:00 › 12:00 › 20:00" string was hard to
+  // read, especially in RTL cells, so each chosen time is its own chip.
+  const badges = [];
+  const addBadges = (key, fallbackPrefix, slots) => {
+    for (const slot of stringList(slots)) {
+      const clock = key === 'adminBohSignupSlotsLegacy' ? slot : slotToGameClock(slot);
+      badges.push(
+        `<span class="dash-boh-slot-badge">${esc(
+          t(key, { slots: clock }, `${fallbackPrefix} ${clock}`)
+        )}</span>`
+      );
+    }
+  };
+  addBadges('adminBohSignupSlotsBoh', 'BoH', commitment.bohTimeSlots);
+  addBadges('adminBohSignupSlotsEpic', 'Epic', commitment.epicTimeSlots);
+  if (!badges.length) addBadges('adminBohSignupSlotsLegacy', 'Classic', commitment.fightingTimeIds);
+  return badges.join('');
 }
 
 function consentBadge(signup, t) {
@@ -249,22 +255,26 @@ export function renderBohSignupRows(signups, t, { superadmin = false } = {}) {
   const rows = signups
     .map((signup) => {
       const name = esc(signup.gameName || signup.submissionUid);
-      const manual = signup.entryMethod === 'manual';
+      // Who added the row, not how the numbers got in: a member who typed the
+      // form also has entryMethod 'manual'. The admin Function stamps updatedBy
+      // with the admin's uid while uid stays the member/name id, so only rows
+      // whose writer is someone else are leadership's own.
+      const byLeadership = Boolean(signup.updatedBy) && signup.updatedBy !== signup.uid;
       const slots = slotSummary(signup, t);
       return `<tr>
         <th scope="row">${name}</th>
         <td>${esc(String(signup.revision ?? ''))}</td>
-        <td class="dash-boh-slots-cell"><bdi>${slots ? esc(slots) : '—'}</bdi></td>
+        <td class="dash-boh-slots-cell">${slots || '—'}</td>
         <td>${consentBadge(signup, t)}</td>
         <td>${
-          manual
+          byLeadership
             ? esc(t('adminBohSignupManualChip', {}, 'Added by leadership'))
             : esc(t('adminBohSignupMemberChip', {}, 'Member form'))
         }</td>
         <td class="dash-boh-actions-cell">${
           // A member's own signup carries fields the admin form cannot show, so
           // only rows leadership added by hand can be edited from here.
-          manual
+          byLeadership
             ? `<button class="dash-btn" type="button" data-boh-signup-edit="${esc(
                 signup.submissionUid
               )}">${esc(t('adminBohSignupEdit', {}, 'Edit'))}</button>`
@@ -287,7 +297,7 @@ export function renderBohSignupRows(signups, t, { superadmin = false } = {}) {
       <th scope="col">${esc(t('adminBohSignupRevision', {}, 'Revision'))}</th>
       <th scope="col">${esc(t('adminBohSignupSlotsColumn', {}, 'Times (game time)'))}</th>
       <th scope="col">${esc(t('adminBohSignupConsentColumn', {}, 'Growth board'))}</th>
-      <th scope="col">${esc(t('adminBohSignupManualChip', {}, 'Added by leadership'))}</th>
+      <th scope="col">${esc(t('adminBohSignupSourceColumn', {}, 'Source'))}</th>
       <th scope="col">${esc(t('adminBohSignupActions', {}, 'Actions'))}</th>
     </tr></thead>
     <tbody>${rows}</tbody>

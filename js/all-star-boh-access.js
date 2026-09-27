@@ -459,10 +459,17 @@ export function createAllStarBohAccessClient(options = {}) {
       const submissionUid =
         typeof player?.submissionUid === 'string' ? player.submissionUid.trim() : '';
       const gameName = typeof player?.gameName === 'string' ? player.gameName.trim() : '';
+      const hasSelf = Object.prototype.hasOwnProperty.call(player || {}, 'self');
+      const shapeOk =
+        (keys.length === 2 && keys[0] === 'gameName' && keys[1] === 'submissionUid') ||
+        (hasSelf &&
+          keys.length === 3 &&
+          keys[0] === 'gameName' &&
+          keys[1] === 'self' &&
+          keys[2] === 'submissionUid' &&
+          typeof player.self === 'boolean');
       if (
-        keys.length !== 2 ||
-        keys[0] !== 'gameName' ||
-        keys[1] !== 'submissionUid' ||
+        !shapeOk ||
         !submissionUid ||
         !gameName ||
         submissionUid.length > 128 ||
@@ -470,9 +477,47 @@ export function createAllStarBohAccessClient(options = {}) {
       ) {
         throw accessError('invalid_response', 'The VtsScore player list is invalid.');
       }
-      return Object.freeze({ submissionUid, gameName });
+      return Object.freeze({ submissionUid, gameName, self: player.self === true });
     });
     return Object.freeze({ seasonId: grant.seasonId, players: Object.freeze(players) });
+  }
+
+  /**
+   * The canonical names a signup can be checked against: this season's
+   * sign-ups plus every earlier season's upload names. Names only, no values.
+   */
+  async function getVtsScoreNameSuggestions() {
+    const user = await resolveUser();
+    const grant = await getAccessGrant({ minimumRemainingSeconds: 5 });
+    if (!grant) throw accessError('access_expired', 'Member access has expired.');
+    const credentials = await requestCredentials(user, false);
+    const response = await requestJson(
+      `${scoreEndpoint}?view=name-suggestions`,
+      { method: 'GET' },
+      credentials,
+      options.scoreTimeoutMs || SCORE_TIMEOUT_MS,
+      'score_failed'
+    );
+    const names = Array.isArray(response?.names) ? response.names : null;
+    const currentNames = Array.isArray(response?.currentNames) ? response.currentNames : null;
+    const validName = (value) =>
+      typeof value === 'string' && value.trim() && Array.from(value).length <= 160;
+    if (
+      response.schemaVersion !== 1 ||
+      normalizeSeason(response.seasonId) !== grant.seasonId ||
+      !names ||
+      !currentNames ||
+      names.length > 400 ||
+      !names.every(validName) ||
+      !currentNames.every(validName)
+    ) {
+      throw accessError('invalid_response', 'The VtsScore name list is invalid.');
+    }
+    return Object.freeze({
+      seasonId: grant.seasonId,
+      names: Object.freeze(names.map((name) => name.trim())),
+      currentNames: Object.freeze(currentNames.map((name) => name.trim())),
+    });
   }
 
   async function getCompetitionGrowthBoard() {
@@ -580,6 +625,7 @@ export function createAllStarBohAccessClient(options = {}) {
     process: processOcr,
     processOcr,
     getVtsScorePlayers,
+    getVtsScoreNameSuggestions,
     getCompetitionGrowthBoard,
     getPreviousComparisonStatus,
     submitVtsScore,

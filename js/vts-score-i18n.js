@@ -1,6 +1,20 @@
 const STORAGE_KEY = 'vts_hero_lang';
 
-export const VTS_SCORE_LANGUAGES = Object.freeze(['en', 'ar', 'es', 'pt', 'fr', 'de', 'hr', 'id', 'it', 'kr', 'ru', 'tr', 'zh']);
+export const VTS_SCORE_LANGUAGES = Object.freeze([
+  'en',
+  'ar',
+  'es',
+  'pt',
+  'fr',
+  'de',
+  'hr',
+  'id',
+  'it',
+  'kr',
+  'ru',
+  'tr',
+  'zh',
+]);
 
 const BASE_COPY = Object.freeze({
   en: {
@@ -22,6 +36,9 @@ const BASE_COPY = Object.freeze({
     saved: 'FINAL SCORE SAVED',
     thankYou: 'Thank you,',
     closestNames: 'Closest signed-up player names',
+    playerIsYou: '(you)',
+    signupNameTaken:
+      'This name is already registered this season. If it is not you, check the spelling before saving.',
   },
   ar: {
     language: 'اللغة',
@@ -41,6 +58,8 @@ const BASE_COPY = Object.freeze({
     saved: 'تم حفظ النتيجة النهائية',
     thankYou: 'شكرًا،',
     closestNames: 'أقرب أسماء اللاعبين المسجلين',
+    playerIsYou: '(أنت)',
+    signupNameTaken: 'هذا الاسم مسجّل بالفعل هذا الموسم. إذا لم يكن لك، تحقق من الإملاء قبل الحفظ.',
   },
   es: {
     language: 'Idioma',
@@ -61,6 +80,9 @@ const BASE_COPY = Object.freeze({
     saved: 'PUNTUACIÓN FINAL GUARDADA',
     thankYou: 'Gracias,',
     closestNames: 'Nombres inscritos más cercanos',
+    playerIsYou: '(tú)',
+    signupNameTaken:
+      'Este nombre ya está registrado esta temporada. Si no eres tú, revisa la ortografía antes de guardar.',
   },
   pt: {
     language: 'Idioma',
@@ -82,6 +104,9 @@ const BASE_COPY = Object.freeze({
     saved: 'PONTUAÇÃO FINAL SALVA',
     thankYou: 'Obrigado,',
     closestNames: 'Nomes inscritos mais próximos',
+    playerIsYou: '(você)',
+    signupNameTaken:
+      'Este nome já está registado nesta temporada. Se não for você, verifique a grafia antes de guardar.',
   },
   fr: {
     language: 'Langue',
@@ -103,6 +128,9 @@ const BASE_COPY = Object.freeze({
     saved: 'SCORE FINAL ENREGISTRÉ',
     thankYou: 'Merci,',
     closestNames: 'Noms d’inscrits les plus proches',
+    playerIsYou: '(vous)',
+    signupNameTaken:
+      'Ce nom est déjà inscrit pour cette saison. S’il ne s’agit pas de vous, vérifiez l’orthographe avant d’enregistrer.',
   },
   de: {
     language: 'Sprache',
@@ -124,6 +152,9 @@ const BASE_COPY = Object.freeze({
     saved: 'ENDSTAND GESPEICHERT',
     thankYou: 'Danke,',
     closestNames: 'Ähnlichste angemeldete Spielernamen',
+    playerIsYou: '(du)',
+    signupNameTaken:
+      'Dieser Name ist in dieser Saison bereits angemeldet. Wenn das nicht du bist, prüfe die Schreibweise vor dem Speichern.',
   },
   hr: {
     language: 'Jezik',
@@ -144,6 +175,9 @@ const BASE_COPY = Object.freeze({
     saved: 'KONAČNI REZULTAT SPREMLJEN',
     thankYou: 'Hvala ti,',
     closestNames: 'Najbliža imena prijavljenih igrača',
+    playerIsYou: '(vi)',
+    signupNameTaken:
+      'Ovo je ime već prijavljeno ove sezone. Ako to niste vi, provjerite pravopis prije spremanja.',
   },
   id: {
     language: 'Bahasa',
@@ -155,8 +189,7 @@ const BASE_COPY = Object.freeze({
     gameNameHelp: 'Cari semua pemain yang terdaftar, lalu pilih nama persis kamu.',
     gameNamePlaceholder: 'Mulai ketik nama kamu di dalam game',
     searchHint: 'Ketik sebagian nama; hasil pendaftaran terdekat akan muncul.',
-    noMatch:
-      'Tidak ada pendaftaran dengan nama itu. Periksa ejaannya, atau hubungi kepemimpinan.',
+    noMatch: 'Tidak ada pendaftaran dengan nama itu. Periksa ejaannya, atau hubungi kepemimpinan.',
     screenshot: 'Tangkapan layar kekuatan saat ini',
     screenshotHelp:
       'Unggah satu gambar rincian kekuatan akun yang jelas. PNG, JPEG, atau WebP; maks 10 MB.',
@@ -165,6 +198,9 @@ const BASE_COPY = Object.freeze({
     saved: 'SKOR AKHIR TERSIMPAN',
     thankYou: 'Terima kasih,',
     closestNames: 'Nama pemain terdaftar terdekat',
+    playerIsYou: '(kamu)',
+    signupNameTaken:
+      'Nama ini sudah terdaftar musim ini. Jika bukan kamu, periksa ejaannya sebelum menyimpan.',
   },
   it: {
     language: 'Lingua',
@@ -186,6 +222,9 @@ const BASE_COPY = Object.freeze({
     saved: 'PUNTEGGIO FINALE SALVATO',
     thankYou: 'Grazie,',
     closestNames: 'Nomi dei giocatori iscritti più vicini',
+    playerIsYou: '(tu)',
+    signupNameTaken:
+      'Questo nome è già iscritto in questa stagione. Se non sei tu, controlla l’ortografia prima di salvare.',
   },
   kr: {
     language: '언어',
@@ -206,6 +245,9 @@ const BASE_COPY = Object.freeze({
     saved: '최종 점수 저장됨',
     thankYou: '감사합니다,',
     closestNames: '가장 가까운 가입 플레이어 이름',
+    playerIsYou: '(나)',
+    signupNameTaken:
+      '이 이름은 이번 시즌에 이미 등록되어 있습니다. 본인이 아니라면 저장하기 전에 철자를 확인하세요.',
   },
   ru: {
     language: 'Язык',
@@ -227,6 +269,9 @@ const BASE_COPY = Object.freeze({
     saved: 'ИТОГОВЫЙ РЕЗУЛЬТАТ СОХРАНЁН',
     thankYou: 'Спасибо,',
     closestNames: 'Ближайшие имена зарегистрированных игроков',
+    playerIsYou: '(вы)',
+    signupNameTaken:
+      'Это имя уже зарегистрировано в этом сезоне. Если это не вы, проверьте написание перед сохранением.',
   },
   tr: {
     language: 'Dil',
@@ -238,8 +283,7 @@ const BASE_COPY = Object.freeze({
     gameNameHelp: 'Kayıtlı tüm oyuncuları arayın, ardından tam adınızı seçin.',
     gameNamePlaceholder: 'Oyun adınızı yazmaya başlayın',
     searchHint: 'Adın bir kısmını yazın; en yakın kayıt eşleşmeleri görünecektir.',
-    noMatch:
-      'Bu adla kayıt bulunamadı. Yazımı kontrol edin veya yönetimle iletişime geçin.',
+    noMatch: 'Bu adla kayıt bulunamadı. Yazımı kontrol edin veya yönetimle iletişime geçin.',
     screenshot: 'Güncel güç ekran görüntüsü',
     screenshotHelp:
       'Hesap güç dökümünün net bir görüntüsünü yükleyin. PNG, JPEG veya WebP; en fazla 10 MB.',
@@ -248,6 +292,9 @@ const BASE_COPY = Object.freeze({
     saved: 'FİNAL SKORU KAYDEDİLDİ',
     thankYou: 'Teşekkürler,',
     closestNames: 'En yakın kayıtlı oyuncu adları',
+    playerIsYou: '(sen)',
+    signupNameTaken:
+      'Bu ad bu sezon zaten kayıtlı. Siz değilseniz kaydetmeden önce yazımı kontrol edin.',
   },
   zh: {
     language: '语言',
@@ -266,6 +313,8 @@ const BASE_COPY = Object.freeze({
     saved: '最终得分已保存',
     thankYou: '谢谢，',
     closestNames: '最接近的已报名玩家名称',
+    playerIsYou: '（你）',
+    signupNameTaken: '该名称本赛季已注册。如果不是你，请在保存前检查拼写。',
   },
 });
 
@@ -437,7 +486,8 @@ const FULL_BREAKDOWN_COPY = Object.freeze({
     confirmedHelp: 'Periksa setiap angka dengan tangkapan layar dan perbaiki kesalahan OCR.',
     submit: 'Kirim rincian kekuatan lengkap',
     successPrefix: 'Rincian lengkap kamu tersimpan. Total Kekuatan:',
-    successSuffix: 'Kepemimpinan kini dapat membandingkan setiap nilai dengan data awal pendaftaran kamu.',
+    successSuffix:
+      'Kepemimpinan kini dapat membandingkan setiap nilai dengan data awal pendaftaran kamu.',
     fieldTotalCastlePower: 'Kekuatan Tempur Total',
     fieldTroopPower: 'Kekuatan Pasukan',
     fieldBuildingPower: 'Kekuatan Bangunan',
@@ -506,7 +556,8 @@ const FULL_BREAKDOWN_COPY = Object.freeze({
     confirmedHelp: 'Сверьте каждое число со снимком и исправьте ошибки OCR.',
     submit: 'Отправить полную разбивку силы',
     successPrefix: 'Полная разбивка сохранена. Общая сила:',
-    successSuffix: 'Руководство теперь может сравнить каждое значение с вашей исходной регистрацией.',
+    successSuffix:
+      'Руководство теперь может сравнить каждое значение с вашей исходной регистрацией.',
     fieldTotalCastlePower: 'Общая боевая сила',
     fieldTroopPower: 'Сила войск',
     fieldBuildingPower: 'Сила строений',
@@ -867,7 +918,8 @@ const SIGNUP_COPY = Object.freeze({
   hr: {
     signupForSeason: 'Sezona {season}',
     signupStateNone: 'Za ovu sezonu još nema prijave. Ispuni obrazac jednom i spremi.',
-    signupStateSaved: 'Tvoja prijava je spremljena (revizija {revision}). Ponovno spremanje zamjenjuje je.',
+    signupStateSaved:
+      'Tvoja prijava je spremljena (revizija {revision}). Ponovno spremanje zamjenjuje je.',
     signupNameHelp: 'Koristi točno ime u igri koje vodstvo vidi na popisu ceha.',
     signupPowerTitle: 'Vrijednosti snage',
     signupPowerHint: 'Prekopiraj svaku vrijednost iz pregleda snage točno kako je igra prikazuje.',
@@ -912,10 +964,12 @@ const SIGNUP_COPY = Object.freeze({
   id: {
     signupForSeason: 'Musim {season}',
     signupStateNone: 'Belum ada pendaftaran untuk musim ini. Isi formulir sekali, lalu simpan.',
-    signupStateSaved: 'Pendaftaran kamu tersimpan (revisi {revision}). Menyimpan lagi akan menggantikannya.',
+    signupStateSaved:
+      'Pendaftaran kamu tersimpan (revisi {revision}). Menyimpan lagi akan menggantikannya.',
     signupNameHelp: 'Gunakan nama in-game persis yang dilihat kepemimpinan di daftar guild.',
     signupPowerTitle: 'Angka kekuatan',
-    signupPowerHint: 'Salin setiap nilai dari rincian kekuatan kamu persis seperti yang ditampilkan game.',
+    signupPowerHint:
+      'Salin setiap nilai dari rincian kekuatan kamu persis seperti yang ditampilkan game.',
     signupTroopsTitle: 'Pasukan dan hero',
     signupListHint: 'Pisahkan beberapa nilai dengan koma.',
     signupT9TroopTypes: 'Jenis pasukan T9',
@@ -956,11 +1010,14 @@ const SIGNUP_COPY = Object.freeze({
   },
   it: {
     signupForSeason: 'Stagione {season}',
-    signupStateNone: 'Ancora nessuna iscrizione per questa stagione. Compila il modulo una volta e salva.',
-    signupStateSaved: 'La tua iscrizione è salvata (revisione {revision}). Salvare di nuovo la sostituisce.',
+    signupStateNone:
+      'Ancora nessuna iscrizione per questa stagione. Compila il modulo una volta e salva.',
+    signupStateSaved:
+      'La tua iscrizione è salvata (revisione {revision}). Salvare di nuovo la sostituisce.',
     signupNameHelp: 'Usa il nome esatto in gioco che la dirigenza vede nell’elenco della gilda.',
     signupPowerTitle: 'Valori di potenza',
-    signupPowerHint: 'Copia ogni valore dal riepilogo della potenza esattamente come lo mostra il gioco.',
+    signupPowerHint:
+      'Copia ogni valore dal riepilogo della potenza esattamente come lo mostra il gioco.',
     signupTroopsTitle: 'Truppe ed eroi',
     signupListHint: 'Separa più valori con virgole.',
     signupT9TroopTypes: 'Tipi di truppa T9',
@@ -993,7 +1050,8 @@ const SIGNUP_COPY = Object.freeze({
     signupSavedSuffix: 'Torna quando vuoi, finché l’iscrizione è aperta, per aggiornarla.',
     signupErrorAccess:
       'L’iscrizione è chiusa in questo momento o il tuo accesso membro è scaduto. Sblocca di nuovo con il PIN e riprova.',
-    signupErrorClosed: 'L’iscrizione è chiusa per questa stagione. Chiedi alla dirigenza quando apre.',
+    signupErrorClosed:
+      'L’iscrizione è chiusa per questa stagione. Chiedi alla dirigenza quando apre.',
     signupErrorNetwork: 'Impossibile salvare l’iscrizione. Controlla la connessione e riprova.',
     signupErrorSession:
       'La tua sessione membro non è pronta. Ricarica la pagina, sblocca con il PIN e riprova.',
@@ -1047,10 +1105,12 @@ const SIGNUP_COPY = Object.freeze({
   ru: {
     signupForSeason: 'Сезон {season}',
     signupStateNone: 'На этот сезон регистрации ещё нет. Заполните форму один раз и сохраните.',
-    signupStateSaved: 'Ваша регистрация сохранена (версия {revision}). Повторное сохранение заменит её.',
+    signupStateSaved:
+      'Ваша регистрация сохранена (версия {revision}). Повторное сохранение заменит её.',
     signupNameHelp: 'Используйте точное игровое имя, которое руководство видит в списке гильдии.',
     signupPowerTitle: 'Значения силы',
-    signupPowerHint: 'Скопируйте каждое значение из разбивки силы точно так, как его показывает игра.',
+    signupPowerHint:
+      'Скопируйте каждое значение из разбивки силы точно так, как его показывает игра.',
     signupTroopsTitle: 'Войска и герои',
     signupListHint: 'Разделяйте несколько значений запятыми.',
     signupT9TroopTypes: 'Типы войск T9',
@@ -1083,8 +1143,10 @@ const SIGNUP_COPY = Object.freeze({
     signupSavedSuffix: 'Возвращайтесь в любое время, пока регистрация открыта, чтобы обновить её.',
     signupErrorAccess:
       'Регистрация сейчас закрыта или срок вашего доступа участника истёк. Разблокируйте снова с помощью PIN и повторите попытку.',
-    signupErrorClosed: 'Регистрация на этот сезон закрыта. Узнайте у руководства, когда она откроется.',
-    signupErrorNetwork: 'Не удалось сохранить регистрацию. Проверьте соединение и попробуйте снова.',
+    signupErrorClosed:
+      'Регистрация на этот сезон закрыта. Узнайте у руководства, когда она откроется.',
+    signupErrorNetwork:
+      'Не удалось сохранить регистрацию. Проверьте соединение и попробуйте снова.',
     signupErrorSession:
       'Ваша сессия участника не готова. Обновите страницу, разблокируйте с помощью PIN и повторите попытку.',
     signupErrorGeneric: 'Не удалось сохранить регистрацию. Пожалуйста, попробуйте снова.',
@@ -1092,7 +1154,8 @@ const SIGNUP_COPY = Object.freeze({
   tr: {
     signupForSeason: 'Sezon {season}',
     signupStateNone: 'Bu sezon için henüz kayıt yok. Formu bir kez doldurup kaydedin.',
-    signupStateSaved: 'Kaydınız kaydedildi (revizyon {revision}). Tekrar kaydetmek onun yerine geçer.',
+    signupStateSaved:
+      'Kaydınız kaydedildi (revizyon {revision}). Tekrar kaydetmek onun yerine geçer.',
     signupNameHelp: 'Yönetimin lonca listesinde gördüğü oyun içi adı tam olarak kullanın.',
     signupPowerTitle: 'Güç değerleri',
     signupPowerHint: 'Güç dökümünüzdeki her değeri oyunun gösterdiği şekilde kopyalayın.',
@@ -1887,7 +1950,8 @@ const COMPETITION_COPY = Object.freeze({
     signupOcrConfirm: 'Provjerio sam svaki broj u odnosu na snimku zaslona.',
     signupOcrConfirmRequired:
       'Označi kućicu kako bi potvrdio da si provjerio brojeve očitane sa snimke zaslona.',
-    signupOcrFilled: 'Vrijednosti su ispunjene iz tvoje snimke zaslona. Provjeri svaki broj, zatim spremi.',
+    signupOcrFilled:
+      'Vrijednosti su ispunjene iz tvoje snimke zaslona. Provjeri svaki broj, zatim spremi.',
     signupCommitmentTitle: 'Aktivna vremena i obveza',
     kicker: 'VTS 1097 · NATJECANJE #12',
     title: 'Natjecanje #12 · Priprema pred sezonu',
@@ -1897,9 +1961,11 @@ const COMPETITION_COPY = Object.freeze({
     unlockHelp: 'Koristi članski PIN VTS-a koji ti je podijelilo vodstvo.',
     signupKicker: 'NATJECANJE #12 · PRIJAVA',
     signupTitle: 'Prijavi se za Natjecanje #12',
-    signupIntro: 'Tvoja snaga, uloge i aktivna vremena. Ovo je tvoja početna vrijednost za ponovno učitavanje rasta.',
+    signupIntro:
+      'Tvoja snaga, uloge i aktivna vremena. Ovo je tvoja početna vrijednost za ponovno učitavanje rasta.',
     signupRolesTitle: 'Uloge, aktivna vremena i obveza',
-    signupErrorInvalid: 'Neke vrijednosti nije bilo moguće spremiti. Provjeri brojeve snage i svoja aktivna vremena.',
+    signupErrorInvalid:
+      'Neke vrijednosti nije bilo moguće spremiti. Provjeri brojeve snage i svoja aktivna vremena.',
     signupErrorBohSlots: 'Odaberi barem jedno aktivno vrijeme za Battle of Honor.',
     signupErrorEpicSlots: 'Odaberi barem jedno aktivno vrijeme za Epic Showdown.',
     slotBohLegend: 'Aktivna vremena za Battle of Honor (BoH)',
@@ -1910,7 +1976,8 @@ const COMPETITION_COPY = Object.freeze({
     slotChosenLabel: '{label}, odabir {rank}',
     slotNotChosenLabel: '{label}, nije odabrano',
     publicConsent: 'Prikaži moje vrijednosti i rast na javnoj ploči rasta',
-    publicConsentHelp: 'Prema zadanim postavkama isključeno. Uključi samo ako želiš da tvoji rezultati budu vidljivi svima.',
+    publicConsentHelp:
+      'Prema zadanim postavkama isključeno. Uključi samo ako želiš da tvoji rezultati budu vidljivi svima.',
     previousComparisonReadyPublic:
       'Tvoji podaci iz prošle sezone su spremni. Nakon što učitaš svoje trenutačne statistike, tvoja usporedba pojavit će se na ploči rasta ispod.',
     previousComparisonNoMatch:
@@ -1947,7 +2014,8 @@ const COMPETITION_COPY = Object.freeze({
     phaseNowUnconfigured: 'Vodstvo još nije objavilo raspored. Sada se možeš prijaviti.',
     phaseNowUpcoming: 'Prijava još nije otvorena.',
     phaseNowRegistration: 'Prijavi svoja aktivna vremena i učitaj svoje podatke.',
-    phaseNowFinalCheck: 'Prijavljeni članovi još mogu ispraviti svoje podatke. Nove prijave su zatvorene.',
+    phaseNowFinalCheck:
+      'Prijavljeni članovi još mogu ispraviti svoje podatke. Nove prijave su zatvorene.',
     phaseNowWaiting: 'Prijave su zaključane. Nastavi rasti do ponovnog učitavanja.',
     phaseNowReupload: 'Sada učitaj svoje trenutačne vrijednosti kako bi izmjerio svoj rast.',
     phaseNowResultsPending: 'Ponovna učitavanja su zatvorena. Rezultati se provjeravaju.',
@@ -1971,7 +2039,8 @@ const COMPETITION_COPY = Object.freeze({
     submitReupload: 'Pošalji ponovno učitavanje rasta',
     savedReupload: 'PONOVNO UČITAVANJE RASTA SPREMLJENO',
     growthBoardKicker: 'PLOČA RASTA',
-    growthBoardPending: 'Ploča rasta za prijavljene članove ažurira se automatski dok članovi učitavaju.',
+    growthBoardPending:
+      'Ploča rasta za prijavljene članove ažurira se automatski dok članovi učitavaju.',
     statusEnterPin: 'Unesi članski PIN VTS-a za nastavak.',
     statusChecking: 'Provjera članskog pristupa…',
     statusUnlocking: 'Otključavanje…',
@@ -2007,9 +2076,11 @@ const COMPETITION_COPY = Object.freeze({
     unlockHelp: 'Gunakan PIN anggota VTS yang dibagikan kepemimpinan kepadamu.',
     signupKicker: 'KOMPETISI #12 · PENDAFTARAN',
     signupTitle: 'Daftar untuk Kompetisi #12',
-    signupIntro: 'Kekuatan, peran, dan waktu aktif kamu. Ini adalah baseline kamu untuk unggah ulang pertumbuhan.',
+    signupIntro:
+      'Kekuatan, peran, dan waktu aktif kamu. Ini adalah baseline kamu untuk unggah ulang pertumbuhan.',
     signupRolesTitle: 'Peran, waktu aktif, dan komitmen',
-    signupErrorInvalid: 'Beberapa nilai tidak dapat disimpan. Periksa angka kekuatan dan waktu aktif kamu.',
+    signupErrorInvalid:
+      'Beberapa nilai tidak dapat disimpan. Periksa angka kekuatan dan waktu aktif kamu.',
     signupErrorBohSlots: 'Pilih setidaknya satu waktu aktif Battle of Honor.',
     signupErrorEpicSlots: 'Pilih setidaknya satu waktu aktif Epic Showdown.',
     slotBohLegend: 'Waktu aktif Battle of Honor (BoH)',
@@ -2034,7 +2105,8 @@ const COMPETITION_COPY = Object.freeze({
     deadTroopsMillions: 'Jutaan',
     deadTroopsPowerBack: 'Kekuatan kembali',
     deadTroopsRowReadout: '{troops} pasukan · +{power} kekuatan',
-    deadTroopsTotal: 'Kekuatan pasukan gugur, ditambahkan ke Kekuatan Pasukan dan Total saat mengirim',
+    deadTroopsTotal:
+      'Kekuatan pasukan gugur, ditambahkan ke Kekuatan Pasukan dan Total saat mengirim',
     deadTroopsPreview: 'Dengan pasukan gugur: Kekuatan Pasukan {troop} · Total {total}',
     deadTroopsClassFootmen: 'Infanteri',
     deadTroopsClassCavalry: 'Kavaleri',
@@ -2058,7 +2130,8 @@ const COMPETITION_COPY = Object.freeze({
     phaseNowUnconfigured: 'Kepemimpinan belum menerbitkan jadwal. Kamu dapat mendaftar sekarang.',
     phaseNowUpcoming: 'Pendaftaran belum dibuka.',
     phaseNowRegistration: 'Daftarkan waktu aktif kamu dan unggah data kamu.',
-    phaseNowFinalCheck: 'Anggota terdaftar masih dapat memperbaiki data mereka. Pendaftaran baru ditutup.',
+    phaseNowFinalCheck:
+      'Anggota terdaftar masih dapat memperbaiki data mereka. Pendaftaran baru ditutup.',
     phaseNowWaiting: 'Pendaftaran terkunci. Terus bertumbuh hingga unggah ulang.',
     phaseNowReupload: 'Unggah nilai kamu saat ini sekarang untuk mengukur pertumbuhan kamu.',
     phaseNowResultsPending: 'Unggah ulang ditutup. Hasil sedang diperiksa.',
@@ -2147,7 +2220,8 @@ const COMPETITION_COPY = Object.freeze({
     deadTroopsMillions: 'Milioni',
     deadTroopsPowerBack: 'Potenza recuperata',
     deadTroopsRowReadout: '{troops} truppe · +{power} potenza',
-    deadTroopsTotal: 'Potenza delle truppe cadute, aggiunta alla Potenza delle truppe e al Totale all’invio',
+    deadTroopsTotal:
+      'Potenza delle truppe cadute, aggiunta alla Potenza delle truppe e al Totale all’invio',
     deadTroopsPreview: 'Con truppe cadute: Potenza delle truppe {troop} · Totale {total}',
     deadTroopsClassFootmen: 'Fanteria',
     deadTroopsClassCavalry: 'Cavalleria',
@@ -2168,10 +2242,12 @@ const COMPETITION_COPY = Object.freeze({
     phaseNameResultsPending: 'Risultati in sospeso',
     phaseNameWinners: 'Vincitori',
     phaseNameClosed: 'Conclusa',
-    phaseNowUnconfigured: 'La dirigenza non ha ancora pubblicato il calendario. Puoi iscriverti ora.',
+    phaseNowUnconfigured:
+      'La dirigenza non ha ancora pubblicato il calendario. Puoi iscriverti ora.',
     phaseNowUpcoming: 'Le iscrizioni non sono ancora aperte.',
     phaseNowRegistration: 'Registra i tuoi orari attivi e carica i tuoi dati.',
-    phaseNowFinalCheck: 'I membri iscritti possono ancora correggere i propri dati. Le nuove iscrizioni sono chiuse.',
+    phaseNowFinalCheck:
+      'I membri iscritti possono ancora correggere i propri dati. Le nuove iscrizioni sono chiuse.',
     phaseNowWaiting: 'Le iscrizioni sono bloccate. Continua a crescere fino al nuovo caricamento.',
     phaseNowReupload: 'Carica ora i tuoi valori attuali per misurare la tua crescita.',
     phaseNowResultsPending: 'I nuovi caricamenti sono chiusi. I risultati sono in verifica.',
@@ -2185,9 +2261,11 @@ const COMPETITION_COPY = Object.freeze({
     phaseNoticeUpcoming: 'Le iscrizioni aprono il {date}.',
     phaseNoticeFinalCheckClosed:
       'Le iscrizioni sono chiuse. Solo i membri iscritti possono modificare fino al {date}.',
-    phaseNoticeWaiting: 'La tua iscrizione è confermata. Il nuovo caricamento di crescita apre il {date}.',
+    phaseNoticeWaiting:
+      'La tua iscrizione è confermata. Il nuovo caricamento di crescita apre il {date}.',
     phaseNoticeNotRegistered: 'Non ti sei iscritto alla Competizione n. 12.',
-    phaseNoticeResultsPending: 'I nuovi caricamenti sono chiusi. I vincitori verranno annunciati il {date}.',
+    phaseNoticeResultsPending:
+      'I nuovi caricamenti sono chiusi. I vincitori verranno annunciati il {date}.',
     uploadKickerFinal: 'PUNTEGGIO FINALE',
     uploadTitleFinal: 'Carica il tuo punteggio finale',
     uploadKickerReupload: 'NUOVO CARICAMENTO DI CRESCITA',
@@ -2220,8 +2298,7 @@ const COMPETITION_COPY = Object.freeze({
     signupOcrPrivacy:
       '스크린샷은 보이는 숫자를 읽기 위해 안전한 OCR 서비스로 전송되며, 이미지 자체는 저장되지 않습니다.',
     signupOcrConfirm: '스크린샷과 대조하여 모든 숫자를 확인했습니다.',
-    signupOcrConfirmRequired:
-      '스크린샷에서 읽은 숫자를 확인했음을 확정하려면 확인란을 선택하세요.',
+    signupOcrConfirmRequired: '스크린샷에서 읽은 숫자를 확인했음을 확정하려면 확인란을 선택하세요.',
     signupOcrFilled: '스크린샷에서 값이 채워졌습니다. 모든 숫자를 확인한 후 저장하세요.',
     signupCommitmentTitle: '활동 시간 및 참여 의지',
     kicker: 'VTS 1097 · 대회 #12',
@@ -2294,7 +2371,8 @@ const COMPETITION_COPY = Object.freeze({
     gameTimeAt: '{time} 게임 시간',
     localTimeAt: '{time} 현지 시간',
     phaseNoticeUpcoming: '등록은 {date}에 열립니다.',
-    phaseNoticeFinalCheckClosed: '등록이 마감되었습니다. {date}까지 등록 회원만 변경할 수 있습니다.',
+    phaseNoticeFinalCheckClosed:
+      '등록이 마감되었습니다. {date}까지 등록 회원만 변경할 수 있습니다.',
     phaseNoticeWaiting: '등록이 확정되었습니다. 성장 재업로드는 {date}에 열립니다.',
     phaseNoticeNotRegistered: '대회 #12에 등록하지 않았습니다.',
     phaseNoticeResultsPending: '재업로드가 마감되었습니다. 우승자는 {date}에 발표됩니다.',
@@ -2331,7 +2409,8 @@ const COMPETITION_COPY = Object.freeze({
     signupOcrConfirm: 'Я проверил каждое число по своему снимку.',
     signupOcrConfirmRequired:
       'Отметьте поле, чтобы подтвердить, что вы проверили числа, прочитанные из снимка.',
-    signupOcrFilled: 'Значения заполнены из вашего снимка. Проверьте каждое число, затем сохраните.',
+    signupOcrFilled:
+      'Значения заполнены из вашего снимка. Проверьте каждое число, затем сохраните.',
     signupCommitmentTitle: 'Активное время и обязательства',
     kicker: 'VTS 1097 · СОРЕВНОВАНИЕ №12',
     title: 'Соревнование №12 · Подготовка к сезону',
@@ -2391,10 +2470,12 @@ const COMPETITION_COPY = Object.freeze({
     phaseNameResultsPending: 'Результаты в обработке',
     phaseNameWinners: 'Победители',
     phaseNameClosed: 'Завершено',
-    phaseNowUnconfigured: 'Руководство ещё не опубликовало расписание. Вы можете зарегистрироваться сейчас.',
+    phaseNowUnconfigured:
+      'Руководство ещё не опубликовало расписание. Вы можете зарегистрироваться сейчас.',
     phaseNowUpcoming: 'Регистрация ещё не открыта.',
     phaseNowRegistration: 'Укажите активное время и загрузите свои данные.',
-    phaseNowFinalCheck: 'Зарегистрированные участники могут исправить свои данные. Новые регистрации закрыты.',
+    phaseNowFinalCheck:
+      'Зарегистрированные участники могут исправить свои данные. Новые регистрации закрыты.',
     phaseNowWaiting: 'Регистрации заблокированы. Продолжайте расти до повторной загрузки.',
     phaseNowReupload: 'Загрузите текущие значения сейчас, чтобы измерить свой рост.',
     phaseNowResultsPending: 'Повторные загрузки закрыты. Результаты проверяются.',
@@ -2455,9 +2536,11 @@ const COMPETITION_COPY = Object.freeze({
     unlockHelp: 'Yönetimin sizinle paylaştığı VTS üye PIN’ini kullanın.',
     signupKicker: 'YARIŞMA #12 · KAYIT',
     signupTitle: 'Yarışma #12’ye kaydolun',
-    signupIntro: 'Gücünüz, rolleriniz ve aktif saatleriniz. Bu, büyüme yeniden yüklemesi için başlangıcınızdır.',
+    signupIntro:
+      'Gücünüz, rolleriniz ve aktif saatleriniz. Bu, büyüme yeniden yüklemesi için başlangıcınızdır.',
     signupRolesTitle: 'Roller, aktif saatler ve taahhüt',
-    signupErrorInvalid: 'Bazı değerler kaydedilemedi. Güç sayılarını ve aktif saatlerinizi kontrol edin.',
+    signupErrorInvalid:
+      'Bazı değerler kaydedilemedi. Güç sayılarını ve aktif saatlerinizi kontrol edin.',
     signupErrorBohSlots: 'En az bir Battle of Honor aktif saati seçin.',
     signupErrorEpicSlots: 'En az bir Epic Showdown aktif saati seçin.',
     slotBohLegend: 'Battle of Honor (BoH) aktif saatleri',
@@ -2522,7 +2605,8 @@ const COMPETITION_COPY = Object.freeze({
       'Kayıt kapalı. {date} tarihine kadar yalnızca kayıtlı üyeler değişiklik yapabilir.',
     phaseNoticeWaiting: 'Kaydınız kilitlendi. Büyüme yeniden yüklemesi {date} tarihinde açılıyor.',
     phaseNoticeNotRegistered: 'Yarışma #12’ye kaydolmadınız.',
-    phaseNoticeResultsPending: 'Yeniden yüklemeler kapalı. Kazananlar {date} tarihinde açıklanacak.',
+    phaseNoticeResultsPending:
+      'Yeniden yüklemeler kapalı. Kazananlar {date} tarihinde açıklanacak.',
     uploadKickerFinal: 'FİNAL SKORU',
     uploadTitleFinal: 'Final skorunuzu yükleyin',
     uploadKickerReupload: 'BÜYÜME YENİDEN YÜKLEMESİ',
@@ -2736,6 +2820,10 @@ export function createVtsScoreI18n(root = document) {
     if (select) select.value = language;
     const results = root.getElementById?.('vtsScorePlayerResults');
     if (results) results.setAttribute('aria-label', text('closestNames'));
+    const signupResults =
+      root.getElementById?.('vtsScoreSignupNameSuggestions') ||
+      root.querySelector('#vtsScoreSignupNameSuggestions');
+    if (signupResults) signupResults.setAttribute('aria-label', text('closestNames'));
     window.dispatchEvent(new CustomEvent('vts:language-change', { detail: { lang: language } }));
   }
 

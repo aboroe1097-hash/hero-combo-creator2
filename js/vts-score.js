@@ -22,6 +22,7 @@ import { createDeadTroopsEditor } from './dead-troops-ui.js';
 import { buildSignupOcrAudit, mapOcrReviewToSignupFields } from './vts-score-signup-ocr.js';
 import {
   buildVtsScoreSubmission,
+  normalizeVtsScoreSearch,
   rankVtsScorePlayers,
   resolveVtsScorePlayer,
   VTS_SCORE_POWER_FIELDS,
@@ -243,6 +244,9 @@ export async function bootVtsScore(options = {}) {
     previousComparisonLoading: false,
     previousComparisonTimer: 0,
     growthBoardRefreshTimer: 0,
+    signupNames: { ready: false, names: [], currentNames: [] },
+    signupNameVisible: [],
+    signupNameHighlight: -1,
   };
   const now = () => (typeof options.now === 'function' ? options.now() : Date.now());
   const pinPanel = element('vtsScoreGate');
@@ -250,6 +254,8 @@ export async function bootVtsScore(options = {}) {
   const signupSuccess = element('vtsScoreSignupSuccess');
   const signupForm = element('vtsScoreSignupForm');
   const signupNameInput = signupForm?.querySelector('[data-boh-field="gameName"]');
+  const signupNameSuggestions = element('vtsScoreSignupNameSuggestions');
+  const signupNameNote = element('vtsScoreSignupNameNote');
   const signupPublicConsent = element('vtsScoreSignupPublicConsent');
   const signupButton = element('vtsScoreSignupSubmit');
   const scorePanel = element('vtsScoreWorkspace');
@@ -321,12 +327,130 @@ export async function bootVtsScore(options = {}) {
     }
   }
 
+  function normalizeSignupNameKey(value) {
+    return normalizeVtsScoreSearch(value);
+  }
+
+  function closeSignupNameSuggestions() {
+    state.signupNameVisible = [];
+    state.signupNameHighlight = -1;
+    setHidden(signupNameSuggestions, true);
+    signupNameInput?.setAttribute('aria-expanded', 'false');
+    signupNameInput?.removeAttribute('aria-activedescendant');
+  }
+
+  function chooseSignupNameSuggestion(suggestion) {
+    if (!signupNameInput || !suggestion) return;
+    signupNameInput.value = suggestion.gameName;
+    signupNameTouched = true;
+    closeSignupNameSuggestions();
+    renderSignupNameNote();
+    renderPreviousComparisonHint();
+    if (savedComparisonKey()) {
+      clearTimeout(state.previousComparisonTimer);
+      state.previousComparisonTimer = setTimeout(() => void checkPreviousComparison(), 350);
+    }
+  }
+
+  /** Closest known names (canonical spellings) under the signup name field. */
+  function renderSignupNameSuggestions() {
+    if (!signupNameSuggestions) return;
+    const pool = state.signupNames.ready
+      ? state.signupNames.names.map((gameName) => ({ gameName }))
+      : [];
+    state.signupNameVisible = rankVtsScorePlayers(pool, signupNameInput?.value || '', 5);
+    state.signupNameHighlight = -1;
+    signupNameSuggestions.replaceChildren();
+    for (const [index, suggestion] of state.signupNameVisible.entries()) {
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.id = `vtsScoreSignupNameOption${index}`;
+      option.className = 'vts-score-player-option';
+      option.setAttribute('role', 'option');
+      option.setAttribute('aria-selected', 'false');
+      option.textContent = suggestion.gameName;
+      option.addEventListener('pointerdown', (event) => event.preventDefault());
+      option.addEventListener('click', () => chooseSignupNameSuggestion(suggestion));
+      signupNameSuggestions.append(option);
+    }
+    const open = state.signupNameVisible.length > 0;
+    setHidden(signupNameSuggestions, !open);
+    signupNameInput?.setAttribute('aria-expanded', String(open));
+  }
+
+  /**
+   * Warn when the typed name is already a signup this season and it is not the
+   * member's own saved name: a duplicate row silently blocks both players'
+   * earlier-season data until leadership removes one.
+   */
+  function renderSignupNameNote() {
+    if (!signupNameNote) return;
+    const typed = normalizeSignupNameKey(signupNameInput?.value);
+    const own = normalizeSignupNameKey(state.signup?.gameName);
+    const taken =
+      Boolean(typed) &&
+      typed !== own &&
+      state.signupNames.ready &&
+      state.signupNames.currentNames.some((name) => normalizeSignupNameKey(name) === typed);
+    setHidden(signupNameNote, !taken);
+    if (taken) signupNameNote.textContent = i18n.text('signupNameTaken');
+  }
+
+  async function loadSignupNameSuggestions() {
+    if (state.signupNames.ready) return;
+    if (typeof state.client?.getVtsScoreNameSuggestions !== 'function') return;
+    try {
+      const result = await state.client.getVtsScoreNameSuggestions();
+      state.signupNames = {
+        ready: true,
+        names: [...result.names],
+        currentNames: [...result.currentNames],
+      };
+      renderSignupNameNote();
+    } catch {
+      // Name suggestions are an assist, never a gate on registering.
+    }
+  }
+
   signupNameInput?.addEventListener('input', () => {
     signupNameTouched = true;
     renderPreviousComparisonHint();
+    renderSignupNameSuggestions();
+    renderSignupNameNote();
     if (!savedComparisonKey()) return;
     clearTimeout(state.previousComparisonTimer);
     state.previousComparisonTimer = setTimeout(() => void checkPreviousComparison(), 350);
+  });
+  signupNameInput?.addEventListener('focus', () => {
+    if (signupNameInput.value.trim()) renderSignupNameSuggestions();
+  });
+  signupNameInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeSignupNameSuggestions();
+      return;
+    }
+    if (event.key === 'Enter' && state.signupNameHighlight >= 0) {
+      event.preventDefault();
+      chooseSignupNameSuggestion(state.signupNameVisible[state.signupNameHighlight]);
+      return;
+    }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (signupNameSuggestions?.hidden) renderSignupNameSuggestions();
+      const count = state.signupNameVisible.length;
+      if (!count) return;
+      state.signupNameHighlight =
+        (state.signupNameHighlight + (event.key === 'ArrowDown' ? 1 : -1) + count) % count;
+      const options = [...signupNameSuggestions.querySelectorAll('.vts-score-player-option')];
+      options.forEach((option, index) => {
+        const selected = index === state.signupNameHighlight;
+        option.setAttribute('aria-selected', String(selected));
+        if (selected) {
+          signupNameInput.setAttribute('aria-activedescendant', option.id);
+          option.scrollIntoView({ block: 'nearest' });
+        }
+      });
+    }
   });
   signupPublicConsent?.addEventListener('change', () => {
     renderPreviousComparisonHint();
@@ -513,7 +637,9 @@ export async function bootVtsScore(options = {}) {
       option.className = 'vts-score-player-option';
       option.setAttribute('role', 'option');
       option.setAttribute('aria-selected', 'false');
-      option.textContent = player.gameName;
+      option.textContent = player.self
+        ? `${player.gameName} ${i18n.text('playerIsYou')}`
+        : player.gameName;
       option.addEventListener('pointerdown', (event) => event.preventDefault());
       option.addEventListener('click', () => choosePlayer(player));
       playerResults.append(option);
@@ -546,6 +672,9 @@ export async function bootVtsScore(options = {}) {
   document.addEventListener('pointerdown', (event) => {
     if (event.target !== playerInput && !playerResults?.contains(event.target)) {
       closePlayerResults();
+    }
+    if (event.target !== signupNameInput && !signupNameSuggestions?.contains(event.target)) {
+      closeSignupNameSuggestions();
     }
   });
 
@@ -871,6 +1000,8 @@ export async function bootVtsScore(options = {}) {
     }
     renderPreviousComparisonHint();
     void checkPreviousComparison();
+    renderSignupNameNote();
+    void loadSignupNameSuggestions();
   }
 
   /** The season badge and the state line, both re-rendered on a language change. */

@@ -38,48 +38,135 @@ function val(v) {
 }
 async function seed(path, data) {
   const fields = Object.fromEntries(Object.entries(data).map(([k, v]) => [k, val(v)]));
-  const res = await fetch(`${BASE}/${path}`, { method: 'PATCH', headers: { Authorization: 'Bearer owner', 'content-type': 'application/json' }, body: JSON.stringify({ fields }) });
+  const res = await fetch(`${BASE}/${path}`, {
+    method: 'PATCH',
+    headers: { Authorization: 'Bearer owner', 'content-type': 'application/json' },
+    body: JSON.stringify({ fields }),
+  });
   if (!res.ok) throw new Error(`seed ${path}: ${res.status} ${await res.text()}`);
 }
 async function wipe() {
-  await fetch(`http://127.0.0.1:8080/emulator/v1/projects/${PROJECT}/databases/(default)/documents`, { method: 'DELETE' });
+  await fetch(
+    `http://127.0.0.1:8080/emulator/v1/projects/${PROJECT}/databases/(default)/documents`,
+    { method: 'DELETE' }
+  );
 }
 function schedule(offsetsH) {
   const now = Date.now();
-  const keys = ['opensAt','phase1ClosesAt','deadlineAt','reuploadOpensAt','reuploadClosesAt','winnersStartAt','winnersEndAt'];
+  const keys = [
+    'opensAt',
+    'phase1ClosesAt',
+    'deadlineAt',
+    'reuploadOpensAt',
+    'reuploadClosesAt',
+    'winnersStartAt',
+    'winnersEndAt',
+  ];
   return Object.fromEntries(keys.map((k, i) => [k, new Date(now + offsetsH[i] * H)]));
 }
 async function seedBase(offsets, flags = { open: true, acceptNewSignups: true }) {
-  await seed('boh_allstar_config/current', { activeSeason: SEASON, grantDurationMinutes: 720, scoringProfileId: 'all-star-boh-2027-v1', ...flags });
-  for (const uid of ['m1', 'm2']) {
-    await seed(`boh_allstar_member_grants/${uid}`, { schemaVersion: 1, uid, seasonId: SEASON, issuedAt: new Date(Date.now() - H), expiresAt: new Date(Date.now() + 5 * H) });
+  await seed('boh_allstar_config/current', {
+    activeSeason: SEASON,
+    grantDurationMinutes: 720,
+    scoringProfileId: 'all-star-boh-2027-v1',
+    ...flags,
+  });
+  for (const uid of ['m1', 'm2', 'm3']) {
+    await seed(`boh_allstar_member_grants/${uid}`, {
+      schemaVersion: 1,
+      uid,
+      seasonId: SEASON,
+      issuedAt: new Date(Date.now() - H),
+      expiresAt: new Date(Date.now() + 5 * H),
+    });
   }
-  if (offsets) await seed('boh_allstar_competition/current', { seasonId: SEASON, title: 'Competition #12', ...schedule(offsets), updatedAt: new Date(), updatedBy: 'seed' });
+  if (offsets)
+    await seed('boh_allstar_competition/current', {
+      seasonId: SEASON,
+      title: 'Competition #12',
+      ...schedule(offsets),
+      updatedAt: new Date(),
+      updatedBy: 'seed',
+    });
 }
 const values = (extra = {}) => ({
   gameName: 'MalakAbo',
-   stats: { totalCastlePower: 1_112_481_395, troopPower: 999_084_338, deadTroopCounts: { ...DEAD_TROOP_COUNTS }, buildingPower: 6_477_467, technologyPower: 38_902_234, heroCombatPower: 30_585_714, dragonPower: 16_306_050, unitSpecialtyPower: 21_125_570, t9TroopTypes: ['Spearman'], readySpeedHeroes: [], level50HeroCount: 12, rocLevel: 55 },
-  commitment: { availability: 'all', preferredRole: 'offensive', bohTimeSlots: ['+20', '+8'], epicTimeSlots: ['+10'], publicComparisonConsent: true, vts1097Member: true, ...extra },
+  stats: {
+    totalCastlePower: 1_112_481_395,
+    troopPower: 999_084_338,
+    deadTroopCounts: { ...DEAD_TROOP_COUNTS },
+    buildingPower: 6_477_467,
+    technologyPower: 38_902_234,
+    heroCombatPower: 30_585_714,
+    dragonPower: 16_306_050,
+    unitSpecialtyPower: 21_125_570,
+    t9TroopTypes: ['Spearman'],
+    readySpeedHeroes: [],
+    level50HeroCount: 12,
+    rocLevel: 55,
+  },
+  commitment: {
+    availability: 'all',
+    preferredRole: 'offensive',
+    bohTimeSlots: ['+20', '+8'],
+    epicTimeSlots: ['+10'],
+    publicComparisonConsent: true,
+    vts1097Member: true,
+    ...extra,
+  },
 });
 function signupDoc(uid, createdAt, revision = 1, v = values()) {
-  const d = buildBohSignupDocument({ uid, seasonId: SEASON, values: v, createdAt, updatedAt: serverTimestamp() });
+  const d = buildBohSignupDocument({
+    uid,
+    seasonId: SEASON,
+    values: v,
+    createdAt,
+    updatedAt: serverTimestamp(),
+  });
   d.revision = revision;
   return d;
 }
 const results = [];
-async function expectOk(label, fn) { try { await fn(); results.push(`PASS allow  ${label}`); } catch (e) { results.push(`FAIL allow  ${label}: ${e.code} ${String(e.message).slice(0, 600)}`); } }
-async function expectDenied(label, fn) { try { await fn(); results.push(`FAIL deny   ${label}: was allowed`); } catch (e) { results.push(e.code === 'permission-denied' ? `PASS deny   ${label}` : `FAIL deny   ${label}: ${e.code || e.message}`); } }
+async function expectOk(label, fn) {
+  try {
+    await fn();
+    results.push(`PASS allow  ${label}`);
+  } catch (e) {
+    results.push(`FAIL allow  ${label}: ${e.code} ${String(e.message).slice(0, 600)}`);
+  }
+}
+async function expectDenied(label, fn) {
+  try {
+    await fn();
+    results.push(`FAIL deny   ${label}: was allowed`);
+  } catch (e) {
+    results.push(
+      e.code === 'permission-denied'
+        ? `PASS deny   ${label}`
+        : `FAIL deny   ${label}: ${e.code || e.message}`
+    );
+  }
+}
 
 const m1 = client({ sub: 'm1', firebase: { sign_in_provider: 'anonymous' } });
 const m2 = client({ sub: 'm2', firebase: { sign_in_provider: 'anonymous' } });
+const m3 = client({ sub: 'm3', firebase: { sign_in_provider: 'anonymous' } });
 const anon = client({ sub: 'anon1', firebase: { sign_in_provider: 'anonymous' } });
 const admin = client({ sub: 'adm', admin: true, firebase: { sign_in_provider: 'password' } });
-const superadmin = client({ sub: 'sup', admin: true, superadmin: true, firebase: { sign_in_provider: 'password' } });
+const superadmin = client({
+  sub: 'sup',
+  admin: true,
+  superadmin: true,
+  firebase: { sign_in_provider: 'password' },
+});
 const subPath = (uid) => `boh_allstar/${SEASON}/submissions/${uid}`;
 
 // Registration phase (the sync Function sets open + acceptNewSignups)
-await wipe(); await seedBase([-1, 24, 48, 72, 96, 120, 144]);
-await expectOk('member registers with slots during registration', () => setDoc(doc(m1, subPath('m1')), signupDoc('m1', serverTimestamp())));
+await wipe();
+await seedBase([-1, 24, 48, 72, 96, 120, 144]);
+await expectOk('member registers with slots during registration', () =>
+  setDoc(doc(m1, subPath('m1')), signupDoc('m1', serverTimestamp()))
+);
 await expectDenied('negative dead troop counts are rejected', () => {
   const invalid = signupDoc('m2', serverTimestamp());
   invalid.stats.deadTroopCounts.FootmenLofty = -1;
@@ -110,38 +197,170 @@ await expectOk('the cap itself is accepted', () => {
   valid.stats.deadTroopCounts.CavalryT9 = 1000000000000;
   return setDoc(doc(m2, subPath('m2')), valid);
 });
-await expectDenied('an unknown commitment key is rejected', () => { const d = signupDoc('m2', serverTimestamp()); d.commitment.favouriteColour = 'red'; return setDoc(doc(m2, subPath('m2')), d); });
+// Worst-case OCR payload: the 30-name cap (displayName plus 29 known names),
+// 20 OCR warnings and the full confidence map. The OCR path costs the most
+// validator expressions, so this pin keeps the 1,000-expression ceiling honest
+// for screenshot users.
+const heavyValues = values();
+heavyValues.entryMethod = 'ocr';
+heavyValues.knownNames = Array.from({ length: 29 }, (_, index) => `Known Name ${index + 1}`);
+const heavyOcr = {
+  used: true,
+  valuesConfirmed: true,
+  confidence: 0.98,
+  warnings: Array.from({ length: 20 }, (_, index) => `Low confidence warning ${index + 1}`),
+  fieldConfidence: {
+    totalCastlePower: 0.98,
+    troopPower: 0.97,
+    buildingPower: 0.96,
+    technologyPower: 0.95,
+    heroCombatPower: 0.94,
+    dragonPower: 0.93,
+  },
+};
+const heavyDoc = (createdAt, revision) => {
+  const document = buildBohSignupDocument({
+    uid: 'm3',
+    seasonId: SEASON,
+    values: heavyValues,
+    ocr: heavyOcr,
+    createdAt,
+    updatedAt: serverTimestamp(),
+  });
+  document.revision = revision;
+  return document;
+};
+await expectOk('the heaviest OCR sign-up saves', () =>
+  setDoc(doc(m3, subPath('m3')), heavyDoc(serverTimestamp(), 1))
+);
+const heavyStored = (await getDoc(doc(m3, subPath('m3')))).data();
+await expectOk('the heaviest OCR sign-up updates', () =>
+  setDoc(doc(m3, subPath('m3')), heavyDoc(heavyStored.createdAt, 2))
+);
+await expectDenied('an unknown commitment key is rejected', () => {
+  const d = signupDoc('m2', serverTimestamp());
+  d.commitment.favouriteColour = 'red';
+  return setDoc(doc(m2, subPath('m2')), d);
+});
 if (process.env.COMPETITION12_SIGNUP_ONLY === '1') {
   console.log(results.join('\n'));
   process.exit(results.some((result) => result.startsWith('FAIL')) ? 1 : 0);
 }
-await expectOk('anonymous visitor reads the schedule', () => getDoc(doc(anon, 'boh_allstar_competition/current')));
+await expectOk('anonymous visitor reads the schedule', () =>
+  getDoc(doc(anon, 'boh_allstar_competition/current'))
+);
 // Final check: no new sign-ups, edits allowed
 const stored = (await getDoc(doc(m1, subPath('m1')))).data();
 await seedBase([-48, -1, 24, 48, 72, 96, 120], { open: true, acceptNewSignups: false });
-await expectDenied('new sign-up after phase 1 closes', () => setDoc(doc(m2, subPath('m2')), signupDoc('m2', serverTimestamp())));
-await expectOk('existing member edits during final check', () => setDoc(doc(m1, subPath('m1')), signupDoc('m1', stored.createdAt, 2)));
+await expectDenied('new sign-up after phase 1 closes', () =>
+  setDoc(doc(m2, subPath('m2')), signupDoc('m2', serverTimestamp()))
+);
+await expectOk('existing member edits during final check', () =>
+  setDoc(doc(m1, subPath('m1')), signupDoc('m1', stored.createdAt, 2))
+);
 // After the deadline: registration closed
 await seedBase([-72, -48, -1, 24, 48, 72, 96], { open: false, acceptNewSignups: false });
-await expectDenied('edit after the deadline', () => setDoc(doc(m1, subPath('m1')), signupDoc('m1', stored.createdAt, 3)));
+await expectDenied('edit after the deadline', () =>
+  setDoc(doc(m1, subPath('m1')), signupDoc('m1', stored.createdAt, 3))
+);
 // Schedule writes
-const good = { seasonId: SEASON, title: 'Competition #12', ...Object.fromEntries(Object.entries(schedule([1, 2, 3, 4, 5, 6, 7])).map(([k, v]) => [k, Timestamp.fromDate(v)])) };
-await expectDenied('plain admin cannot set the schedule', () => setDoc(doc(admin, 'boh_allstar_competition/current'), { ...good, updatedAt: serverTimestamp(), updatedBy: 'adm' }));
-await expectOk('superadmin sets a valid schedule', () => setDoc(doc(superadmin, 'boh_allstar_competition/current'), { ...good, updatedAt: serverTimestamp(), updatedBy: 'sup' }));
-await expectDenied('out-of-order schedule is rejected', () => setDoc(doc(superadmin, 'boh_allstar_competition/current'), { ...good, deadlineAt: good.opensAt, updatedAt: serverTimestamp(), updatedBy: 'sup' }));
-await expectDenied('member cannot set the schedule', () => setDoc(doc(m1, 'boh_allstar_competition/current'), { ...good, updatedAt: serverTimestamp(), updatedBy: 'm1' }));
+const good = {
+  seasonId: SEASON,
+  title: 'Competition #12',
+  ...Object.fromEntries(
+    Object.entries(schedule([1, 2, 3, 4, 5, 6, 7])).map(([k, v]) => [k, Timestamp.fromDate(v)])
+  ),
+};
+await expectDenied('plain admin cannot set the schedule', () =>
+  setDoc(doc(admin, 'boh_allstar_competition/current'), {
+    ...good,
+    updatedAt: serverTimestamp(),
+    updatedBy: 'adm',
+  })
+);
+await expectOk('superadmin sets a valid schedule', () =>
+  setDoc(doc(superadmin, 'boh_allstar_competition/current'), {
+    ...good,
+    updatedAt: serverTimestamp(),
+    updatedBy: 'sup',
+  })
+);
+await expectDenied('out-of-order schedule is rejected', () =>
+  setDoc(doc(superadmin, 'boh_allstar_competition/current'), {
+    ...good,
+    deadlineAt: good.opensAt,
+    updatedAt: serverTimestamp(),
+    updatedBy: 'sup',
+  })
+);
+await expectDenied('member cannot set the schedule', () =>
+  setDoc(doc(m1, 'boh_allstar_competition/current'), {
+    ...good,
+    updatedAt: serverTimestamp(),
+    updatedBy: 'm1',
+  })
+);
 // The growth board and baseline match decisions are written and read by the
 // vtsScore Function with admin credentials; no client session may touch them
 // directly (see tests/unit/competition-board-rules.test.mjs).
-const board = { schemaVersion: 1, seasonId: SEASON, rows: [], winners: [], notRanked: 0, publishedAt: new Date().toISOString() };
-await expectDenied('superadmin cannot write the growth board directly', () => setDoc(doc(superadmin, 'boh_allstar_competition/board'), { ...board, updatedAt: serverTimestamp(), updatedBy: 'sup' }));
-await expectDenied('anonymous visitor cannot read the growth board directly', () => getDoc(doc(anon, 'boh_allstar_competition/board')));
-await expectDenied('plain admin cannot write baseline match decisions directly', () => setDoc(doc(admin, 'boh_allstar_competition/matches'), { schemaVersion: 1, seasonId: SEASON, decisions: {}, updatedAt: serverTimestamp(), updatedBy: 'adm' }));
-await expectDenied('admin cannot read baseline match decisions directly', () => getDoc(doc(admin, 'boh_allstar_competition/matches')));
+const board = {
+  schemaVersion: 1,
+  seasonId: SEASON,
+  rows: [],
+  winners: [],
+  notRanked: 0,
+  publishedAt: new Date().toISOString(),
+};
+await expectDenied('superadmin cannot write the growth board directly', () =>
+  setDoc(doc(superadmin, 'boh_allstar_competition/board'), {
+    ...board,
+    updatedAt: serverTimestamp(),
+    updatedBy: 'sup',
+  })
+);
+await expectDenied('anonymous visitor cannot read the growth board directly', () =>
+  getDoc(doc(anon, 'boh_allstar_competition/board'))
+);
+await expectDenied('plain admin cannot write baseline match decisions directly', () =>
+  setDoc(doc(admin, 'boh_allstar_competition/matches'), {
+    schemaVersion: 1,
+    seasonId: SEASON,
+    decisions: {},
+    updatedAt: serverTimestamp(),
+    updatedBy: 'adm',
+  })
+);
+await expectDenied('admin cannot read baseline match decisions directly', () =>
+  getDoc(doc(admin, 'boh_allstar_competition/matches'))
+);
 // No schedule: the 2026 shape still works under the open switch alone
-await wipe(); await seedBase(null);
-const legacy = { ...values(), commitment: { availability: 'all', preferredRole: 'offensive', fightingTimeIds: ['+12', '+14'], vts1097Member: true } };
-await expectOk('2026-shape sign-up without a schedule', () => setDoc(doc(m1, subPath('m1')), (() => { const d = buildBohSignupDocument({ uid: 'm1', seasonId: SEASON, values: legacy, requireCompetitionSlots: false, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }); return d; })()));
+await wipe();
+await seedBase(null);
+const legacy = {
+  ...values(),
+  commitment: {
+    availability: 'all',
+    preferredRole: 'offensive',
+    fightingTimeIds: ['+12', '+14'],
+    vts1097Member: true,
+  },
+};
+await expectOk('2026-shape sign-up without a schedule', () =>
+  setDoc(
+    doc(m1, subPath('m1')),
+    (() => {
+      const d = buildBohSignupDocument({
+        uid: 'm1',
+        seasonId: SEASON,
+        values: legacy,
+        requireCompetitionSlots: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      return d;
+    })()
+  )
+);
 // Shared Eden Operations counters: admins write bounded increments and any
 // signed-in member (including an anonymous session) can read the alliance totals.
 await wipe();
@@ -162,11 +381,9 @@ await expectOk('anonymous visitor reads the shared counters', () =>
   getDoc(doc(anon, operationsPath))
 );
 await expectDenied('member cannot change shared counters', () =>
-  setDoc(
-    doc(m1, operationsPath),
-    counterUpdate({ 'gate-1': { attackers: increment(1) } }, 'm1'),
-    { merge: true }
-  )
+  setDoc(doc(m1, operationsPath), counterUpdate({ 'gate-1': { attackers: increment(1) } }, 'm1'), {
+    merge: true,
+  })
 );
 await expectDenied('unknown objective is rejected', () =>
   setDoc(
@@ -176,11 +393,9 @@ await expectDenied('unknown objective is rejected', () =>
   )
 );
 await expectDenied('counter above 500 is rejected', () =>
-  setDoc(
-    doc(admin, operationsPath),
-    counterUpdate({ 'gate-1': { attackers: 501 } }, 'adm'),
-    { merge: true }
-  )
+  setDoc(doc(admin, operationsPath), counterUpdate({ 'gate-1': { attackers: 501 } }, 'adm'), {
+    merge: true,
+  })
 );
 await expectDenied('unknown counter fields are rejected', () =>
   setDoc(
@@ -211,10 +426,7 @@ await expectOk('an objective update preserves other counters', () =>
   )
 );
 const operationsCounts = (await getDoc(doc(admin, operationsPath))).data().counts;
-if (
-  operationsCounts['gate-1']?.attackers !== 3 ||
-  operationsCounts['city-1']?.support !== 1
-) {
+if (operationsCounts['gate-1']?.attackers !== 3 || operationsCounts['city-1']?.support !== 1) {
   results.push('FAIL shared increments: concurrent or partial updates lost a counter');
 } else {
   results.push('PASS shared increments preserve concurrent and unrelated counters');

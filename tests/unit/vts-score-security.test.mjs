@@ -64,10 +64,11 @@ function responseRecorder() {
   };
 }
 
-function request(method, body) {
+function request(method, body, query = null) {
   return {
     method,
     body,
+    ...(query ? { query } : {}),
     headers: {
       origin: 'https://roc-vts.com',
       authorization: 'Bearer auth-token',
@@ -118,6 +119,15 @@ function dependencies() {
               .filter(([key]) => key.startsWith(prefix) && !key.slice(prefix.length).includes('/'))
               .map(([key, value]) => snapshot(key.split('/').at(-1), value)),
           };
+        },
+        async listDocuments() {
+          const prefix = `${path}/`;
+          const ids = new Set(
+            [...documents.keys()]
+              .filter((key) => key.startsWith(prefix))
+              .map((key) => key.slice(prefix.length).split('/')[0])
+          );
+          return [...ids].map((id) => ({ id, path: `${path}/${id}` }));
         },
       };
     },
@@ -176,9 +186,25 @@ test('VtsScore GET exposes only eligible signup identity', async () => {
   await handler(request('GET'), response);
   assert.equal(response.statusCode, 200);
   assert.deepEqual(response.body.players, [
-    { submissionUid: 'signup-uid', gameName: 'Dragon One' },
+    { submissionUid: 'signup-uid', gameName: 'Dragon One', self: false },
   ]);
   assert.doesNotMatch(JSON.stringify(response.body), /dragonPower|stats|ocr/i);
+});
+
+test('VtsScore name suggestions expose canonical names and never values', async () => {
+  const runtime = dependencies();
+  runtime.documents.set('boh_allstar/season-2026/raceScores/old-1', {
+    gameName: 'AK Чанай',
+    powerValues: { totalCastlePower: 12_345_678 },
+  });
+  const handler = createVtsScoreHandler(runtime);
+  const response = responseRecorder();
+  await handler(request('GET', null, { view: 'name-suggestions' }), response);
+  assert.equal(response.statusCode, 200);
+  // The mangled OCR spelling resolves to the confirmed canonical name.
+  assert.deepEqual(response.body.names, ['AK Чапай', 'Dragon One']);
+  assert.deepEqual(response.body.currentNames, ['Dragon One']);
+  assert.doesNotMatch(JSON.stringify(response.body), /powerValues|12345678/);
 });
 
 test('VtsScore POST verifies the target signup and stores no screenshot bytes', async () => {

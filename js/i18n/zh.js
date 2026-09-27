@@ -2435,6 +2435,7 @@ const zh = {
   adminBohSignupSlotsEpic: 'Epic {slots}',
   adminBohSignupSlotsLegacy: '旧版 {slots}',
   adminBohSignupConsentColumn: '成长榜',
+  adminBohSignupSourceColumn: '来源',
   adminBohSignupConsentYes: '公开',
   adminBohSignupConsentNo: '不公开',
   adminBohSignupPreferredRole: '偏好角色',

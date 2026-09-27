@@ -3875,6 +3875,7 @@ const de = {
   adminBohSignupSlotsEpic: 'Epic {slots}',
   adminBohSignupSlotsLegacy: 'Klassisch {slots}',
   adminBohSignupConsentColumn: 'Wachstumstafel',
+  adminBohSignupSourceColumn: 'Quelle',
   adminBohSignupConsentYes: 'Öffentlich',
   adminBohSignupConsentNo: 'Privat',
   adminBohSignupPreferredRole: 'Bevorzugte Rolle',

@@ -2,6 +2,14 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.6.9 - 2026-09-27
+
+- Competition #12 ranks sign-up → final upload now: winners and standings use that Total Power growth, and the last-season comparison becomes the personal growth tracker. Until the first final upload lands the tracker ranks the board so the standing stays alive, the projection carries which mode is in force, and the board copy names both sides ("Last season", "Sign-up", "Final upload", Personal/Competition step labels) in every locale.
+- Growth baselines join in order of confidence: the account id (the upload document id is the sign-up uid its numbers belong to), the exact in-game name, then a loose key that resolves owner-confirmed aliases and drops decorations ("〽️ Anne〽️", "~Sarafino~"). Accounts the owner separated (Sarafina, Kika alts, RedBull#2) stay apart, and a name claimed twice is refused and shown as ambiguous rather than guessed.
+- Sign-up assist: the name field suggests the closest known names (this season's sign-ups and every earlier upload, canonical spellings only) and warns when the typed name is already registered this season. The score picker marks your own row "(you)" so twin names cannot be mixed up.
+- Sign-up admin: rows show whether leadership added them or the member filed them (the writer marker, not entryMethod), each chosen time renders as its own badge instead of one "›" string, and the edit form refuses member-filed rows instead of overwriting the fields it cannot show.
+- The rules emulator pins the heaviest OCR sign-up (30 known names, 20 warnings, the full confidence map) as a create and an update, and the total JS budget moves by the measured minimum. **Redeploy the vtsScore and bohSignupAdmin functions after this release.**
+
 ## 16.6.8 - 2026-09-27
 
 - The Eden X2 hub's invitation card is now the VTS Competition section: the old "Season signup / Sign up for the 2027 season" kicker and title read "Competition / VTS Competition" in every locale, and the copy describes the competition registration — baseline, role, fight times and the linked account — instead of the retired season signup.

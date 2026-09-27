@@ -3828,6 +3828,7 @@ const es = {
   adminBohSignupSlotsEpic: 'Epic {slots}',
   adminBohSignupSlotsLegacy: 'Clásico {slots}',
   adminBohSignupConsentColumn: 'Tablero de crecimiento',
+  adminBohSignupSourceColumn: 'Origen',
   adminBohSignupConsentYes: 'Tablero público',
   adminBohSignupConsentNo: 'Privado',
   adminBohSignupPreferredRole: 'Rol preferido',

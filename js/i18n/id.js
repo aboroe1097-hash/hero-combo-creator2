@@ -2266,6 +2266,7 @@ const id = {
   adminBohSignupSlotsEpic: 'Epic {slots}',
   adminBohSignupSlotsLegacy: 'Klasik {slots}',
   adminBohSignupConsentColumn: 'Papan pertumbuhan',
+  adminBohSignupSourceColumn: 'Sumber',
   adminBohSignupConsentYes: 'Papan publik',
   adminBohSignupConsentNo: 'Pribadi',
   adminBohSignupPreferredRole: 'Peran yang diinginkan',

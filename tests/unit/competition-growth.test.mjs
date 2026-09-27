@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   COMPETITION_BASELINE_SEASON,
+  applyGrowthMode,
   buildCompetitionGrowthRows,
   buildGrowthBoardProjection,
   buildVtsScoreBaselineIndex,
@@ -71,7 +72,7 @@ test('a player without a VtsScore upload is measured from their sign-up stats', 
   assert.equal(baseline.match.status, 'none');
 });
 
-test('a prior VtsScore upload without dead-troop counts is still the growth baseline', () => {
+test('a prior VtsScore upload without dead-troop counts still feeds the personal tracker', () => {
   const legacy = upload('old-u1', 'Grower', 800);
   delete legacy.deadTroopCounts;
   const rows = buildCompetitionGrowthRows({
@@ -83,9 +84,14 @@ test('a prior VtsScore upload without dead-troop counts is still the growth base
   });
   assert.equal(rows[0].baselineSource, 'vtsscore-2026');
   assert.equal(rows[0].baselineAliveOnly, true);
-  assert.equal(rows[0].fields.totalCastlePower.baseline, 800);
-  assert.equal(rows[0].growthAbs, 400);
-  assert.equal(rows[0].growthPct, 50);
+  assert.equal(rows[0].mode, 'competition');
+  // The competition ranks sign-up 1,000 -> final 1,200.
+  assert.equal(rows[0].growthAbs, 200);
+  assert.equal(rows[0].growthPct, 20);
+  // The legacy upload still carries the personal tracker: 800 -> 1,200.
+  assert.equal(rows[0].trackerAbs, 400);
+  assert.equal(rows[0].trackerPct, 50);
+  assert.equal(rows[0].steps.baselineToReupload.growthAbs, 400);
 });
 
 test('a legacy baseline keeps the full saved totals including dead troops', () => {
@@ -103,12 +109,18 @@ test('a legacy baseline keeps the full saved totals including dead troops', () =
     window: WINDOW,
     autoMatch: true,
   });
-  // 9,400 - 800 = 8,600 (1,075%): dead troops are part of the player's power,
-  // so the comparison keeps the saved totals instead of stripping them back out.
+  // 9,400 - 800 = 8,600 (1,075%) on the personal tracker: dead troops are part
+  // of the player's power, so the comparison keeps the saved totals instead of
+  // stripping them back out.
   assert.equal(rows[0].baselineAliveOnly, true);
+  assert.equal(rows[0].trackerAbs, 8_600);
+  assert.equal(rows[0].trackerPct, 1_075);
+  assert.equal(rows[0].steps.baselineToReupload.fields.totalCastlePower.to, 9_400);
+  // The competition ranks sign-up 1,000 -> final 9,400.
+  assert.equal(rows[0].fields.totalCastlePower.baseline, 1_000);
   assert.equal(rows[0].fields.totalCastlePower.final, 9_400);
-  assert.equal(rows[0].growthAbs, 8_600);
-  assert.equal(rows[0].growthPct, 1_075);
+  assert.equal(rows[0].growthAbs, 8_400);
+  assert.equal(rows[0].growthPct, 840);
 
   // A baseline WITH the split behaves the same: both ends are full totals.
   const splitBaseline = upload('old-u1', 'Grower', 800);
@@ -121,7 +133,8 @@ test('a legacy baseline keeps the full saved totals including dead troops', () =
   });
   assert.equal(withSplit[0].baselineAliveOnly, false);
   assert.equal(withSplit[0].fields.totalCastlePower.final, 9_400);
-  assert.equal(withSplit[0].growthAbs, 8_600);
+  assert.equal(withSplit[0].trackerAbs, 8_600);
+  assert.equal(withSplit[0].growthAbs, 8_400);
 });
 
 test('a prior upload is compared with today’s sign-up before any re-upload', () => {
@@ -158,6 +171,7 @@ test('all three waypoints compare baseline→sign-up, sign-up→re-upload and ba
     autoMatch: true,
   });
   const [row] = rows;
+  assert.equal(row.mode, 'competition');
   assert.equal(row.finalSource, 'reupload');
   assert.equal(row.waypoints.signup.totalCastlePower, 1_000);
   assert.equal(row.waypoints.reupload.totalCastlePower, 1_200);
@@ -165,7 +179,9 @@ test('all three waypoints compare baseline→sign-up, sign-up→re-upload and ba
   assert.equal(row.steps.signupToReupload.growthAbs, 200);
   assert.equal(row.steps.baselineToReupload.growthAbs, 400);
   assert.equal(row.fields.totalCastlePower.final, 1_200);
-  assert.equal(row.growthAbs, 400);
+  // Ranked: the competition, sign-up -> final. The tracker rides along.
+  assert.equal(row.growthAbs, 200);
+  assert.equal(row.trackerAbs, 400);
 });
 
 test('later waypoints keep the dead-troop component in the saved totals', () => {
@@ -306,18 +322,35 @@ test('duplicate or ambiguous names are never auto-matched', () => {
     window: WINDOW,
   });
   assert.equal(confirmed[0].baselineSource, 'vtsscore-2026');
-  assert.equal(confirmed[0].growthAbs, 600);
+  // The tracker uses the confirmed last season (500 -> 1,100); the
+  // competition ranks sign-up -> final (1,000 -> 1,100).
+  assert.equal(confirmed[0].trackerAbs, 600);
+  assert.equal(confirmed[0].growthAbs, 100);
   assert.equal(confirmed[1].baselineSource, 'signup');
+
+  // Two signups sharing a name surface as ambiguous even without any earlier
+  // upload: the admin table shows the conflict instead of a silent dash.
+  const noData = buildCompetitionGrowthRows({
+    submissions: [submission('a', 'Solo', 1_000), submission('b', 'SOLO', 2_000)],
+    raceScores: [],
+    window: WINDOW,
+    autoMatch: true,
+  });
+  assert.equal(noData[0].match.status, 'ambiguous');
+  assert.equal(noData[1].match.status, 'ambiguous');
 });
 
 test('growth rows carry absolute and percentage growth per field', () => {
   const player = submission('u1', 'Grower', 1_000_000);
   const baseline = resolveBaseline(player, { vtsScore2026ByName: new Map() });
-  const row = computeGrowthRow(player, {
-    baseline,
-    raceScore: upload('u1', 'Grower', 1_250_000),
-    window: WINDOW,
-  });
+  const [row] = applyGrowthMode([
+    computeGrowthRow(player, {
+      baseline,
+      raceScore: upload('u1', 'Grower', 1_250_000),
+      window: WINDOW,
+    }),
+  ]);
+  assert.equal(row.mode, 'competition');
   assert.equal(row.growthAbs, 250_000);
   assert.equal(row.growthPct, 25);
   assert.equal(row.fields.troopPower.abs, 200_000);
@@ -359,12 +392,17 @@ test('a missing, invalid or out-of-window re-upload is not ranked, never zero', 
 test('a final upload without dead-troop counts is not ranked', () => {
   const final = upload('u1', 'Grower', 1_200);
   delete final.deadTroopCounts;
+  // A peer with a valid final upload puts the board in competition mode, where
+  // only a valid final can rank; the invalid record never ranks as zero.
   const rows = buildCompetitionGrowthRows({
-    submissions: [submission('u1', 'Grower', 1_000)],
-    raceScores: [final],
+    submissions: [submission('u1', 'Grower', 1_000), submission('u2', 'Peer', 1_000)],
+    raceScores: [final, upload('u2', 'Peer', 1_100)],
     window: WINDOW,
   });
+  assert.equal(rows[0].mode, 'competition');
   assert.equal(rows[0].notRankedReason, 'invalid-reupload');
+  assert.equal(rows[0].finalProblem, 'invalid-reupload');
+  assert.equal(rows[1].notRankedReason, null);
 });
 
 test('a normalized schedule limits re-uploads to its re-upload window, not registration', () => {
@@ -447,7 +485,9 @@ test('the public projection holds only consenting players and ranks them indepen
   assert.equal(projection.schemaVersion, 1);
   assert.equal(projection.seasonId, 'competition-12');
   assert.equal(projection.publishedAt, '2026-11-05T00:00:00.000Z');
+  assert.equal(projection.mode, 'competition');
   assert.deepEqual(Object.keys(projection).sort(), [
+    'mode',
     'notRanked',
     'publishedAt',
     'rows',
@@ -499,4 +539,90 @@ test('the public projection holds only consenting players and ranks them indepen
   assert.doesNotMatch(serialized, /Private (Winner|Loser)[^}]*growth/);
   assert.doesNotMatch(serialized, /Private (Winner|Loser)[^}]*"baseline"/);
   assert.doesNotMatch(serialized, /Private (Winner|Loser)[^}]*"final"/);
+});
+
+test('decorated spellings and confirmed aliases still reach the last-season upload', () => {
+  const rows = buildCompetitionGrowthRows({
+    submissions: [submission('anne-1', 'Anne', 1_000)],
+    raceScores: [],
+    baselineRaceScores: [upload('old-anne', '〽️ Anne〽️', 800)],
+    window: WINDOW,
+    autoMatch: true,
+  });
+  assert.equal(rows[0].baselineSource, 'vtsscore-2026');
+  assert.equal(rows[0].match.status, 'matched');
+  assert.equal(rows[0].match.matchType, 'loose-name');
+  assert.equal(rows[0].trackerAbs, 200);
+  assert.equal(rows[0].mode, 'tracker');
+});
+
+test('a loose key shared by two upload accounts is refused', () => {
+  const rows = buildCompetitionGrowthRows({
+    submissions: [submission('anne-1', 'Anne', 1_000)],
+    raceScores: [],
+    baselineRaceScores: [upload('old-1', '〽️ Anne〽️', 800), upload('old-2', '✨ANNE✨', 900)],
+    window: WINDOW,
+    autoMatch: true,
+  });
+  assert.equal(rows[0].match.status, 'ambiguous');
+  assert.equal(rows[0].baselineSource, 'signup');
+});
+
+test('the account join reaches last-season data after a rename', () => {
+  const rows = buildCompetitionGrowthRows({
+    submissions: [submission('u1', 'NewName', 1_000)],
+    raceScores: [],
+    baselineRaceScores: [upload('u1', 'OldName', 800)],
+    window: WINDOW,
+    autoMatch: true,
+  });
+  assert.equal(rows[0].match.matchType, 'account');
+  assert.equal(rows[0].baselineSource, 'vtsscore-2026');
+  assert.equal(rows[0].trackerAbs, 200);
+});
+
+test('separated look-alike accounts never fold into one loose key', () => {
+  const rows = buildCompetitionGrowthRows({
+    submissions: [submission('s1', 'Sarafino', 1_000)],
+    raceScores: [],
+    baselineRaceScores: [upload('s2', '~Sarafina~', 900)],
+    window: WINDOW,
+    autoMatch: true,
+  });
+  assert.equal(rows[0].match.status, 'none');
+  assert.equal(rows[0].baselineSource, 'signup');
+});
+
+test('the personal tracker ranks the board until the first final upload lands', () => {
+  const pending = buildCompetitionGrowthRows({
+    submissions: [submission('a', 'Alpha', 1_000), submission('b', 'Bravo', 1_000)],
+    raceScores: [],
+    baselineRaceScores: [upload('old-a', 'Alpha', 800), upload('old-b', 'Bravo', 950)],
+    window: WINDOW,
+    autoMatch: true,
+  });
+  assert.equal(pending[0].mode, 'tracker');
+  const tracker = rankCompetitionGrowth(pending);
+  // Alpha: 800 -> 1,000 (+25%); Bravo: 950 -> 1,000 (+5.26%).
+  assert.deepEqual(
+    tracker.ranked.map((row) => row.gameName),
+    ['Alpha', 'Bravo']
+  );
+
+  // One final upload flips the whole board to the competition metric.
+  const finals = buildCompetitionGrowthRows({
+    submissions: [submission('a', 'Alpha', 1_000), submission('b', 'Bravo', 1_000)],
+    raceScores: [upload('b', 'Bravo', 1_300)],
+    baselineRaceScores: [upload('old-a', 'Alpha', 800), upload('old-b', 'Bravo', 950)],
+    window: WINDOW,
+    autoMatch: true,
+  });
+  assert.equal(finals[0].mode, 'competition');
+  const rankedFinals = rankCompetitionGrowth(finals);
+  assert.deepEqual(
+    rankedFinals.ranked.map((row) => row.gameName),
+    ['Bravo']
+  );
+  assert.equal(rankedFinals.ranked[0].growthPct, 30);
+  assert.equal(finals.find((row) => row.gameName === 'Alpha').notRankedReason, 'no-reupload');
 });
