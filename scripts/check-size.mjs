@@ -202,7 +202,10 @@ const LIMITS = {
   // 16.6.3: the name-only baseline index, the alive-to-alive comparison, the
   // board detail view, the admin two-player panel and sign-up delete grow the
   // built JS to 11869.2 KiB. Retain ~20 KiB for CI's admin-auth injection.
-  totalJsBytes: 11870 * 1024,
+  // 16.6.5: the three-waypoint growth comparison, the growth board steps and
+  // the 13-language VtsScore copy (seven new locale blocks across four consts)
+  // grow the built JS to 11969.7 KiB; the cap moves by the measured minimum.
+  totalJsBytes: 11970 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
