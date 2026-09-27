@@ -4404,6 +4404,18 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
   font-weight: 700;
 }
 
+#ocrDashboardRoot .vts-admin-warn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--ff-gold) 45%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ff-gold) 12%, transparent);
+  color: var(--ff-gold);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
 #ocrDashboardRoot .vts-admin-exempt-form {
   display: flex;
   flex-wrap: wrap;

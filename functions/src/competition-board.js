@@ -372,7 +372,13 @@ export function computeGrowthRow(player, { baseline, raceScore = null, window = 
       : null;
   // The three waypoints a player can have: last season's upload, today's
   // sign-up record, and the final upload once its window opens.
-  const signupValues = readCompetitionPowerValues(player?.confirmedStats || player?.stats || null);
+  const signupStatsSource = player?.confirmedStats || player?.stats || null;
+  const signupValues = readCompetitionPowerValues(signupStatsSource);
+  // A signup whose dead-troop values are absent or all zero understates the
+  // player in every comparison; the admin tables flag it so leadership can
+  // chase the missing numbers.
+  const deadPower = deadTroopPowerFromCounts(signupStatsSource?.deadTroopCounts);
+  const deadValuesMissing = deadPower === null || deadPower <= 0;
   let finalProblem = null;
   if (!raceScore) finalProblem = 'no-reupload';
   else if (!reuploadValues) finalProblem = 'invalid-reupload';
@@ -418,6 +424,7 @@ export function computeGrowthRow(player, { baseline, raceScore = null, window = 
     competitionAbs: competition ? competition.growthAbs : null,
     competitionPct: competition ? competition.growthPct : null,
     finalProblem,
+    deadValuesMissing,
     // Replaced by applyGrowthMode() with the ranked metric's fields.
     fields,
     growthAbs: tracker ? tracker.growthAbs : null,

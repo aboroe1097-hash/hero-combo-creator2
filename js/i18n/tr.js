@@ -701,7 +701,8 @@ const tr = {
   generatorGenerateBtn: 'En İyi Komboları Oluştur',
   generatorDownloadBtn: 'Sonuçları İndir',
   generatorRandomBtn: 'Şaşırt Beni (Rastgele)',
-  generatorSmartTop4: 'Kahramanları tekrarlamadan beş dizilim oluşturur ve en iyi dördünün toplam puanını en üst düzeye çıkarır.',
+  generatorSmartTop4:
+    'Kahramanları tekrarlamadan beş dizilim oluşturur ve en iyi dördünün toplam puanını en üst düzeye çıkarır.',
   generatorSmartBtn: 'Akıllı oluştur',
   generatorNoHeroesSelected: 'Kahraman seçilmedi.',
   generatorMinHeroesMessage: 'En az 12 kahraman seçin.',
@@ -2367,6 +2368,7 @@ const tr = {
   adminBohSignupSlotsLegacy: 'Klasik {slots}',
   adminBohSignupConsentColumn: 'Gelişim panosu',
   adminBohSignupSourceColumn: 'Kaynak',
+  adminBohSignupDeadMissing: 'Ölü asker değeri yok',
   adminBohSignupConsentYes: 'Herkese açık',
   adminBohSignupConsentNo: 'Gizli',
   adminBohSignupPreferredRole: 'Tercih edilen rol',

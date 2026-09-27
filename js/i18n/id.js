@@ -699,7 +699,8 @@ const id = {
   generatorGenerateBtn: 'Buat Kombo Terbaik',
   generatorDownloadBtn: 'Unduh Hasil',
   generatorRandomBtn: 'Kejutkan Saya (Acak)',
-  generatorSmartTop4: 'Susun lima kombinasi tanpa hero berulang dan maksimalkan total skor empat terbaik.',
+  generatorSmartTop4:
+    'Susun lima kombinasi tanpa hero berulang dan maksimalkan total skor empat terbaik.',
   generatorSmartBtn: 'Generate pintar',
   generatorNoHeroesSelected: 'Belum ada hero dipilih.',
   generatorMinHeroesMessage: 'Pilih minimal 12 hero.',
@@ -2267,6 +2268,7 @@ const id = {
   adminBohSignupSlotsLegacy: 'Klasik {slots}',
   adminBohSignupConsentColumn: 'Papan pertumbuhan',
   adminBohSignupSourceColumn: 'Sumber',
+  adminBohSignupDeadMissing: 'Tanpa nilai pasukan mati',
   adminBohSignupConsentYes: 'Papan publik',
   adminBohSignupConsentNo: 'Pribadi',
   adminBohSignupPreferredRole: 'Peran yang diinginkan',

@@ -707,7 +707,8 @@ const ru = {
   generatorGenerateBtn: 'Создать лучшие комбо',
   generatorDownloadBtn: 'Скачать результаты',
   generatorRandomBtn: 'Удиви меня (Случайно)',
-  generatorSmartTop4: 'Подбирает пять сочетаний без повторов героев и максимизирует сумму очков четырёх лучших.',
+  generatorSmartTop4:
+    'Подбирает пять сочетаний без повторов героев и максимизирует сумму очков четырёх лучших.',
   generatorSmartBtn: 'Умная генерация',
   generatorNoHeroesSelected: 'Герои не выбраны.',
   generatorMinHeroesMessage: 'Выберите минимум 12 героев.',
@@ -2391,6 +2392,7 @@ const ru = {
   adminBohSignupSlotsLegacy: 'Прежние {slots}',
   adminBohSignupConsentColumn: 'Доска роста',
   adminBohSignupSourceColumn: 'Источник',
+  adminBohSignupDeadMissing: 'Нет значений погибших войск',
   adminBohSignupConsentYes: 'Публично',
   adminBohSignupConsentNo: 'Скрыто',
   adminBohSignupPreferredRole: 'Предпочтительная роль',

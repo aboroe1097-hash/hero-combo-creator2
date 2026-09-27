@@ -926,3 +926,23 @@ test('the Function accepts both the 2026 shape and Competition #12 slots, and no
     assert.equal(response.payload?.error, 'invalid_request', JSON.stringify(commitment));
   }
 });
+
+test('the signup list flags rows whose dead-troop values were never entered', () => {
+  const html = renderBohSignupRows(
+    [
+      { submissionUid: 'u1', uid: 'u1', gameName: 'NoDead', revision: 1 },
+      {
+        submissionUid: 'u2',
+        uid: 'u2',
+        gameName: 'HasDead',
+        revision: 1,
+        stats: { deadTroopCounts: { FootmenLofty: 100 } },
+      },
+    ],
+    (key, _vars, fallback) => fallback || key
+  );
+  // The untouched editor saves an all-zero map and a hand-filed row saves
+  // none: both understate the player, so both are flagged.
+  assert.match(html, /NoDead<br><span class="dash-boh-dead-missing">No dead values<\/span>/);
+  assert.doesNotMatch(html, /HasDead<br><span class="dash-boh-dead-missing">/);
+});

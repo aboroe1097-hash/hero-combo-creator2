@@ -488,7 +488,9 @@ const LIMITS = {
     // measured 691.0 / 787.7 KiB after build, within these narrow ceilings.
     // 16.6.3: the two-player comparison panel adds admin-only rules;
     // measured 691.9 / 788.5 KiB. Raise mobile by the measured minimum.
-    'admin.html': { desktop: 692 * 1024, mobile: 789 * 1024 },
+    // 16.6.11: the "No dead values" admin chip adds two rules; measured
+    // 692.1 KiB desktop. Raise desktop by the measured minimum.
+    'admin.html': { desktop: 693 * 1024, mobile: 789 * 1024 },
     // Eden used to carry every admin dashboard style, because it imports
     // ocr-dashboard.css for weighted-contribution detail; 16.0.14 had lifted the
     // ceiling to 806/909 KiB for admin-only rules alone. 16.0.15 moves the

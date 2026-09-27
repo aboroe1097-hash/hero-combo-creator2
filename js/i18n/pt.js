@@ -811,7 +811,8 @@ const pt = {
   generatorGenerateBtn: 'Gerar Melhores Combos',
   generatorDownloadBtn: 'Baixar Resultados',
   generatorRandomBtn: 'Surpreenda-me (Aleatório)',
-  generatorSmartTop4: 'Monta cinco combinações sem heróis repetidos e maximiza a pontuação total das quatro melhores.',
+  generatorSmartTop4:
+    'Monta cinco combinações sem heróis repetidos e maximiza a pontuação total das quatro melhores.',
   generatorSmartBtn: 'Geração inteligente',
   generatorNoHeroesSelected: 'Nenhum herói selecionado.',
   generatorMinHeroesMessage: 'Selecione pelo menos 12 heróis.',
@@ -3535,6 +3536,7 @@ const pt = {
   adminBohSignupSlotsLegacy: 'Clássico {slots}',
   adminBohSignupConsentColumn: 'Painel de crescimento',
   adminBohSignupSourceColumn: 'Origem',
+  adminBohSignupDeadMissing: 'Sem valores de tropas mortas',
   adminBohSignupConsentYes: 'Painel público',
   adminBohSignupConsentNo: 'Privado',
   adminBohSignupPreferredRole: 'Papel preferido',

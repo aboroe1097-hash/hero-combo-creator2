@@ -2436,6 +2436,7 @@ const zh = {
   adminBohSignupSlotsLegacy: '旧版 {slots}',
   adminBohSignupConsentColumn: '成长榜',
   adminBohSignupSourceColumn: '来源',
+  adminBohSignupDeadMissing: '无阵亡部队数值',
   adminBohSignupConsentYes: '公开',
   adminBohSignupConsentNo: '不公开',
   adminBohSignupPreferredRole: '偏好角色',

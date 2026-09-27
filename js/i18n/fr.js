@@ -741,7 +741,8 @@ const fr = {
   generatorGenerateBtn: 'Générer Meilleurs Combos',
   generatorDownloadBtn: 'Télécharger Résultats',
   generatorRandomBtn: 'Surprends-moi (Aléatoire)',
-  generatorSmartTop4: 'Compose cinq formations sans héros en double et maximise le score cumulé des quatre meilleures.',
+  generatorSmartTop4:
+    'Compose cinq formations sans héros en double et maximise le score cumulé des quatre meilleures.',
   generatorSmartBtn: 'Génération intelligente',
   generatorNoHeroesSelected: 'Aucun héros sélectionné.',
   generatorMinHeroesMessage: 'Choisissez au moins 12 héros.',
@@ -3996,6 +3997,7 @@ const fr = {
   adminBohSignupSlotsLegacy: 'Classique {slots}',
   adminBohSignupConsentColumn: 'Tableau de progression',
   adminBohSignupSourceColumn: 'Source',
+  adminBohSignupDeadMissing: 'Aucune valeur de troupes mortes',
   adminBohSignupConsentYes: 'Tableau public',
   adminBohSignupConsentNo: 'Privé',
   adminBohSignupPreferredRole: 'Rôle préféré',
