@@ -12,6 +12,8 @@
 export const DEAD_TROOP_CLASSES = Object.freeze(['footmen', 'cavalry', 'archers']);
 export const DEAD_TROOP_VARIANTS = Object.freeze(['lofty', 't10', 't10e', 't9', 't9e']);
 export const DEAD_TROOP_UNITS = Object.freeze(['troops', 'thousands', 'millions']);
+/** The editor opens in thousands, matching the K counts on the game's screen. */
+export const DEFAULT_DEAD_TROOP_UNIT = 'thousands';
 
 const DEAD_TROOP_CLASS_NAMES = Object.freeze({
   footmen: 'Footmen',

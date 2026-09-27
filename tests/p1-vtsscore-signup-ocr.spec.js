@@ -154,26 +154,27 @@ test('the registration Power step reads a screenshot into the power fields', asy
     'earlier VtsScore'
   );
 
-  // The helper works before OCR as well as after it. Exact counts are the
-  // default, and each troop type has its own recognizable icon and five tiers.
+  // The helper works before OCR as well as after it. Thousands is the default
+  // unit, matching the K counts on the game's dead-troop screen, and each
+  // troop type has its own recognizable icon and five tiers.
   const helper = page.locator('#vtsScoreSignupDeadTroops');
   await expect(helper).toBeVisible();
   await page.locator('#vtsScoreSignupTotalCastlePower').fill('100000');
   await page.locator('#vtsScoreSignupTroopPower').fill('50000');
   await helper.locator('input[type="checkbox"]').check();
-  await expect(helper.locator('input[value="troops"]')).toBeChecked();
+  await expect(helper.locator('input[value="thousands"]')).toBeChecked();
   await expect(helper.locator('.vts-score-dead-troops__tab')).toHaveCount(3);
   await expect(helper.locator('.vts-score-dead-troops__tab svg')).toHaveCount(3);
   await expect(helper.locator('.vts-score-dead-troops__panel:visible input')).toHaveCount(5);
-  await helper.locator('#vtsSignupDeadTroops-footmen-lofty').fill('1000');
+  await expect(helper.locator('.vts-score-dead-troops__cell').first()).toContainText('×8.2');
+  await helper.locator('#vtsSignupDeadTroops-footmen-lofty').fill('1');
   await expect(helper.locator('.vts-score-dead-troops__total')).toHaveText('8,200');
   await expect(helper.locator('.vts-score-dead-troops__preview')).toContainText('58,200');
   await expect(helper.locator('.vts-score-dead-troops__preview')).toContainText('108,200');
-  await helper.locator('input[value="thousands"]').check();
-  await expect(helper.locator('#vtsSignupDeadTroops-footmen-lofty')).toHaveValue('1');
-  await expect(helper.locator('.vts-score-dead-troops__total')).toHaveText('8,200');
   await helper.locator('input[value="troops"]').check();
   await expect(helper.locator('#vtsSignupDeadTroops-footmen-lofty')).toHaveValue('1000');
+  await helper.locator('input[value="thousands"]').check();
+  await expect(helper.locator('#vtsSignupDeadTroops-footmen-lofty')).toHaveValue('1');
 
   // The removed questions are gone; ROC level stays.
   for (const id of [
@@ -242,7 +243,8 @@ test('the registration Power step reads a screenshot into the power fields', asy
   await expect(page.locator('#vtsScoreSignupTotalCastlePower')).toHaveValue('1112473195');
   const restoredHelper = page.locator('#vtsScoreSignupDeadTroops');
   await expect(restoredHelper.locator('input[type="checkbox"]')).toBeChecked();
-  await expect(restoredHelper.locator('#vtsSignupDeadTroops-footmen-lofty')).toHaveValue('1000');
+  await expect(restoredHelper.locator('input[value="thousands"]')).toBeChecked();
+  await expect(restoredHelper.locator('#vtsSignupDeadTroops-footmen-lofty')).toHaveValue('1');
   await page.locator('#vtsScoreSignupForm').evaluate((form) =>
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
   );
@@ -267,7 +269,7 @@ test('the registration Power step reads a screenshot into the power fields', asy
   const scoreHelper = page.locator('#vtsScoreDeadTroops');
   await expect(scoreHelper.locator('.vts-score-dead-troops__tab')).toHaveCount(3);
   await scoreHelper.locator('input[type="checkbox"]').check();
-  await scoreHelper.locator('#vtsDeadTroops-footmen-lofty').fill('1000');
+  await scoreHelper.locator('#vtsDeadTroops-footmen-lofty').fill('1');
   await page.locator('#vtsScoreSubmitButton').click();
   await expect(page.locator('#vtsScoreSuccess')).toBeVisible();
   const scorePayload = await page.evaluate(() => window.__scorePayload);

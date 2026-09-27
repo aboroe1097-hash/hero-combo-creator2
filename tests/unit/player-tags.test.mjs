@@ -53,8 +53,9 @@ test('special player tags identify R5 and R4 management names', () => {
     assert.equal(getSpecialPlayerTag(player)?.label, 'R4');
   }
 
-  assert.equal(getSpecialPlayerTag('Zubbs'), null);
-  assert.equal(getSpecialPlayerTag('Lady Zubbs'), null);
+  assert.equal(getSpecialPlayerTag('Zubbs')?.label, 'R4');
+  assert.equal(getSpecialPlayerTag('Lady Zubbs')?.label, 'R4');
+  assert.equal(getSpecialPlayerTag('MalakKiji')?.label, 'R4');
 });
 
 test('special player tags use canonical player keys for known variants', () => {

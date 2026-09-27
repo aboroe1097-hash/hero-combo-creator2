@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { readAllStarBohGrantDocument } from '../../js/all-star-boh-access.js';
+import { DEAD_TROOP_COUNT_KEYS } from '../../js/dead-troops.js';
 import { allHeroesData } from '../../js/heroes-data.js';
 import { techDatabase } from '../../js/tech-db.js';
 import { verifyBohStatsOcrMemberGrant } from '../../workers/qwen-cors-proxy.js';
@@ -1022,13 +1023,14 @@ test('Firestore submission schema is allowlisted and has no raw PIN or image fie
     /keys\(\)\.hasOnly\(\[[\s\S]*?\]\)/,
     'submission key allowlist'
   );
-  const submissionHasAll = rulesMatch(
-    validator,
-    /keys\(\)\.hasAll\(\[[\s\S]*?\]\)/,
-    'submission required keys'
-  );
   assert.match(submissionHasOnly, /'preferredTeammates'/);
-  assert.doesNotMatch(submissionHasAll, /'preferredTeammates'/);
+  // Required keys deliberately carry no hasAll list: every required field is
+  // read and checked below, and the per-request expression budget sits at its
+  // ceiling (see validAllStarBohDeadTroopCounts). A missing field still fails
+  // its own check, so the deny behavior is unchanged.
+  assert.doesNotMatch(validator, /keys\(\)\.hasAll\(/);
+  assert.match(validator, /data\.knownNames is list/);
+  assert.match(validator, /data\.locale is string/);
   const updateValidator = rulesMatch(
     rules,
     /function validAllStarBohSubmissionUpdate\(season, uid\) \{[\s\S]*?\n {4}\}/,
@@ -1099,9 +1101,18 @@ test('Firestore private signup tactical catalogs match canonical source data', (
     statsValidator,
     /!\('researchProgressPct' in stats\)[\s\S]*validAllStarBohResearchProgress\(stats\.researchProgressPct\)/
   );
-  assert.match(
+  const deadTroopValidator = rulesMatch(
     rules,
-    /function validAllStarBohDeadTroopCounts\(counts\) \{[\s\S]*?counts\.FootmenLofty is int[\s\S]*?counts\.ArchersT9Enhanced is int[\s\S]*?\n {4}\}/
+    /function validAllStarBohDeadTroopCounts\(counts\) \{[\s\S]*?\n {4}\}/,
+    'dead troop counts validator'
+  );
+  for (const key of DEAD_TROOP_COUNT_KEYS) {
+    assert.match(deadTroopValidator, new RegExp(`'${key}'`), `dead troop key ${key}`);
+  }
+  assert.match(deadTroopValidator, /counts\.size\(\) == 15/);
+  assert.match(
+    deadTroopValidator,
+    /counts\.values\(\)\.join\(','\)\.matches\('\^\(0\|\[1-9\]\[0-9\]\{0,11\}\|1000000000000\)/
   );
   // The second size cap lives in validAllStarBohSubmissionData, not in the
   // stats validator — grep the whole file so this cap can never drift alone.

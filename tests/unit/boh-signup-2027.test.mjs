@@ -16,6 +16,7 @@ import {
 import {
   BOH_SIGNUP_FIELD_PATHS,
   BOH_SIGNUP_REQUIRED_DOCUMENT_KEYS,
+  BOH_SIGNUP_STAT_REQUIRED_FIELDS,
   BohSignupDocumentError,
   buildBohSignupDocument,
   getBohSignupDocumentPath,
@@ -177,9 +178,7 @@ test('the built document matches the shape firestore.rules enforces', () => {
   const quotedList = (block) => [...block.matchAll(/'([A-Za-z0-9_]+)'/g)].map((match) => match[1]);
 
   const dataHasOnly = quotedList(validator.match(/data\.keys\(\)\.hasOnly\(\[[\s\S]*?\]\)/)[0]);
-  const dataHasAll = quotedList(validator.match(/data\.keys\(\)\.hasAll\(\[[\s\S]*?\]\)/)[0]);
   const statsHasOnly = quotedList(validator.match(/stats\.keys\(\)\.hasOnly\(\[[\s\S]*?\]\)/)[0]);
-  const statsHasAll = quotedList(validator.match(/stats\.keys\(\)\.hasAll\(\[[\s\S]*?\]\)/)[0]);
   const commitmentHasOnly = quotedList(
     validator.match(/commitment\.keys\(\)\.hasOnly\(\[[\s\S]*?\]\)/)[0]
   );
@@ -187,12 +186,19 @@ test('the built document matches the shape firestore.rules enforces', () => {
   const document = build({ values: signupValues() });
   const documentKeys = Object.keys(document);
   // Every key the builder emits is allowed, and every required key is emitted.
+  // Presence is enforced by the rules' per-field reads (the required-key lists
+  // were dropped to stay under the expression ceiling), so the required key
+  // set comes from the shared document contract both sides mirror.
   for (const key of documentKeys) assert.ok(dataHasOnly.includes(key), `${key} must be allowed`);
-  for (const key of dataHasAll) assert.ok(documentKeys.includes(key), `${key} must be present`);
+  for (const key of BOH_SIGNUP_REQUIRED_DOCUMENT_KEYS) {
+    assert.ok(documentKeys.includes(key), `${key} must be present`);
+  }
 
   const statsKeys = Object.keys(document.stats);
   for (const key of statsKeys) assert.ok(statsHasOnly.includes(key), `stats.${key} allowed`);
-  for (const key of statsHasAll) assert.ok(statsKeys.includes(key), `stats.${key} present`);
+  for (const key of BOH_SIGNUP_STAT_REQUIRED_FIELDS) {
+    assert.ok(statsKeys.includes(key), `stats.${key} present`);
+  }
 
   const commitmentKeys = Object.keys(document.commitment);
   for (const key of commitmentKeys) {
@@ -605,15 +611,17 @@ test('a slimmed registration builds a rule-valid document with neutral placehold
   assert.equal(document.commitment.vts1097Member, true);
   assert.equal(document.commitment.contactNumber, '');
 
-  // Same required-key shape the rules pin.
+  // Same allowlist shape the rules pin; stats presence is enforced by the
+  // rules' per-field reads now that the required-key lists are gone.
   const rules = readFileSync('firestore.rules', 'utf8');
   const validator = rules.match(/function validAllStarBohSubmissionData\([\s\S]*?\n {4}\}/)[0];
   const quoted = (block) => [...block.matchAll(/'([A-Za-z0-9_]+)'/g)].map((m) => m[1]);
-  const statsHasAll = quoted(validator.match(/stats\.keys\(\)\.hasAll\(\[[\s\S]*?\]\)/)[0]);
   const commitmentHasOnly = quoted(
     validator.match(/commitment\.keys\(\)\.hasOnly\(\[[\s\S]*?\]\)/)[0]
   );
-  for (const key of statsHasAll) assert.ok(key in document.stats, `stats.${key} present`);
+  for (const key of BOH_SIGNUP_STAT_REQUIRED_FIELDS) {
+    assert.ok(key in document.stats, `stats.${key} present`);
+  }
   for (const key of Object.keys(document.commitment)) {
     assert.ok(commitmentHasOnly.includes(key), `commitment.${key} allowed`);
   }
