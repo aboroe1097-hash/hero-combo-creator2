@@ -9,20 +9,17 @@
 //    obfuscated one. buildComplaintDocument() simply never adds them, and the
 //    rules reject the write if they appear, so the promise cannot be broken by
 //    a later UI change.
-// 2. Images go to Cloud Storage first, under the filing's own random id
-//    (complaints/{complaintId}/…), and only their paths are stored on the
-//    complaint. The path never carries the uploader's uid, so an anonymous
-//    filing with screenshots stays anonymous; the rules pin every stored path
-//    to the document's own id, so a filing cannot point at another's images.
-// 3. A per-session throttle document is written in the same batch; the rules
-//    refuse a second filing from one session within ten minutes.
+// 2. The browser writes nothing itself. The filing (text plus up to three
+//    re-encoded screenshots as data: URIs) goes to the fileComplaint callable
+//    (functions/src/file-complaint.js), which stores it with the Admin SDK and
+//    rate-limits without persisting anything per member. The rules refuse
+//    client creates on both complaints/ and the Storage bucket, so there is no
+//    second path that could leave a uid-linked trace.
 //
 // eden-x2.html loads this as its own module. The page is already signed in
-// anonymously through js/firebase-eden.js, so no new auth work is needed, and
-// the write reuses Firestore Lite — the same lightweight SDK the dashboard uses.
+// anonymously through js/firebase-eden.js, which is all the callable requires.
 
 export const EDEN_COMPLAINT_COLLECTION = 'complaints';
-export const EDEN_COMPLAINT_THROTTLE_COLLECTION = 'complaint_throttle';
 export const EDEN_COMPLAINT_STORAGE_ROOT = 'complaints';
 export const EDEN_COMPLAINT_CATEGORIES = Object.freeze([
   'bug',
@@ -292,21 +289,6 @@ async function addPickedFiles(files, refreshStatus) {
   return true;
 }
 
-async function uploadComplaintImages(app, complaintId) {
-  const { importFirebaseStorage } = await import('./firebase-sdk.js');
-  const { getStorage, ref, uploadBytes } = await importFirebaseStorage();
-  const storage = getStorage(app);
-  const paths = [];
-  for (const [index, entry] of pickedImages.entries()) {
-    const { owner, name } = complaintImageFileName(complaintId, index);
-    const path = buildComplaintImagePath(owner, name);
-    if (!isComplaintImageName(name)) throw new Error('invalid image name');
-    await uploadBytes(ref(storage, path), entry.blob, { contentType: 'image/jpeg' });
-    paths.push(path);
-  }
-  return paths;
-}
-
 async function imageToDataUri(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -325,8 +307,9 @@ async function submitComplaint({ category, description, anonymous, name }) {
   if (!configured || !app) throw new Error('firebase-unconfigured');
   await ensureAnonymousAuth();
   const { getFunctions, httpsCallable } = await importFirebaseFunctions();
-  const functions = getFunctions(app);
-  const fileComplaintFn = httpsCallable(functions, 'fileComplaint');
+  // us-central1 is where functions/index.js deploys fileComplaint.
+  const functions = getFunctions(app, 'us-central1');
+  const fileComplaintFn = httpsCallable(functions, 'fileComplaint', { timeout: 60_000 });
   const images = [];
   for (const entry of pickedImages) {
     images.push(await imageToDataUri(entry.blob));
@@ -343,13 +326,14 @@ async function submitComplaint({ category, description, anonymous, name }) {
 
 function isFirebaseUnavailableError(error) {
   const code = text(error?.code);
-  return (
-    code === 'permission-denied' ||
-    code === 'storage/unauthorized' ||
-    code === 'storage/unknown' ||
-    code === 'failed-precondition' ||
-    code === 'unavailable'
-  );
+  // Callable errors arrive prefixed ("functions/unavailable").
+  return [
+    'unavailable',
+    'unauthenticated',
+    'permission-denied',
+    'failed-precondition',
+    'deadline-exceeded',
+  ].includes(code.replace(/^functions\//, ''));
 }
 
 // A signed-in member usually files under their own name, so prefill the

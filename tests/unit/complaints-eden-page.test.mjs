@@ -15,6 +15,7 @@ import {
   resizeComplaintImage,
   validateComplaintDraft,
 } from '../../js/eden-complaints.js';
+import { COMPLAINT_CATEGORIES as SERVER_COMPLAINT_CATEGORIES } from '../../functions/src/file-complaint.js';
 import { EDEN_X1_SHELL_COPY, EDEN_X1_SHELL_LOCALES } from '../../js/i18n/eden-x1-shell.js';
 import en from '../../js/i18n/en.js';
 import { ADMIN_RUNTIME_EN } from '../../js/i18n/admin-runtime-copy.js';
@@ -93,15 +94,15 @@ test('a client-side draft is rejected before it can reach the rules', () => {
   assert.equal(validateComplaintDraft({ ...base, anonymous: false, name: 'Alpha' }), '');
 });
 
-test('the category list on the page is the enum the rules validate', () => {
+test('the category list on the page is the enum the fileComplaint callable validates', () => {
   const select = page.match(/<select id="edenX1ComplaintCategory"[\s\S]*?<\/select>/)?.[0];
   assert.ok(select, 'the category select exists');
   const values = [...select.matchAll(/<option value="([^"]+)"/g)].map((match) => match[1]);
   assert.deepEqual(values, [...EDEN_COMPLAINT_CATEGORIES]);
-  const rules = readFileSync('firestore.rules', 'utf8');
-  assert.ok(
-    rules.includes(`d.category in [${EDEN_COMPLAINT_CATEGORIES.map((v) => `'${v}'`).join(', ')}]`),
-    'the rules accept exactly the categories the form offers'
+  assert.deepEqual(
+    [...EDEN_COMPLAINT_CATEGORIES],
+    [...SERVER_COMPLAINT_CATEGORIES],
+    'the callable accepts exactly the categories the form offers'
   );
 });
 

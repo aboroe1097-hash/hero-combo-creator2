@@ -1,32 +1,37 @@
-// file-complaint.js — Cloud Function for anonymous complaint filing.
+// file-complaint.js — the only writer of Eden complaints.
 //
-// The complaint form on the Eden page promises structural anonymity: when the
-// anonymous box is checked, the Firestore document carries no identity field.
-// The original client-side implementation wrote the complaint and a rate-limit
-// stamp in the same batch; the stamp lived at `complaint_throttle/{uid}` with
-// the same serverTimestamp as the complaint, so anyone with Firebase console
-// access could match timestamps and de-anonymise the filer.
+// The complaint form promises structural anonymity: an anonymous filing must
+// leave nothing behind that ties it to the member who sent it. The first
+// implementation wrote the complaint and a `complaint_throttle/{uid}` stamp in
+// one client batch, both at request.time, so anyone with console access could
+// join the two on the timestamp. A hashed per-uid stamp does not fix that
+// either: whoever holds the hash key can hash every uid and join again.
 //
-// This function moves the entire filing server-side:
-//   1. The client sends complaint data (and optional base64 images) to the
-//      callable.
-//   2. The function verifies auth + App Check.
-//   3. Rate limiting uses an HMAC of the uid, stored at
-//      `complaint_rate_limits/{hash}`. The hash cannot be reversed to the uid,
-//      so the rate-limit collection reveals nothing about who filed.
-//   4. The complaint document is created without any identity field when
-//      anonymous is true.
-//   5. Images are uploaded to Cloud Storage under the complaint's own id.
+// So this callable persists NOTHING per member:
+//   * The per-member limit (one filing per ten minutes) lives in memory only,
+//     keyed by an HMAC under a random key generated at process start. The key
+//     never leaves the process, so even a memory dump yields no uid. The
+//     function runs as a single instance (maxInstances: 1 in index.js), so the
+//     limit holds across requests; a cold start forgets it, which only ever
+//     lets an honest member file again sooner.
+//   * The only stored counter is a GLOBAL per-day cap
+//     (`complaint_rate_limits/{YYYY-MM-DD}`), which bounds abuse and Storage
+//     cost without naming anyone.
+//   * An anonymous complaint's createdAt is the start of its UTC day, so its
+//     time cannot be matched against anything either. Named complaints keep
+//     the exact server time.
 //
-// The old `complaint_throttle` collection and its rules are kept for now so
-// existing deployments do not break; new filings use the hashed rate limit.
+// Images arrive as data: URIs, are checked by their bytes (not the declared
+// type), and are written by the Admin SDK under the complaint's own id. The
+// Firestore and Storage rules no longer let clients create either.
 
-import { createHmac } from 'node:crypto';
+import { createHmac, randomBytes } from 'node:crypto';
 
-export const COMPLAINT_RATE_LIMIT_COLLECTION = 'complaint_rate_limits';
 export const COMPLAINT_COLLECTION = 'complaints';
+export const COMPLAINT_RATE_LIMIT_COLLECTION = 'complaint_rate_limits';
 export const COMPLAINT_STORAGE_ROOT = 'complaints';
-export const COMPLAINT_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+export const COMPLAINT_MEMBER_WINDOW_MS = 10 * 60 * 1000;
+export const COMPLAINT_DAILY_CAP = 60;
 export const COMPLAINT_MAX_IMAGES = 3;
 export const COMPLAINT_MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 export const COMPLAINT_MIN_DESCRIPTION = 10;
@@ -41,8 +46,13 @@ export const COMPLAINT_CATEGORIES = Object.freeze([
   'other',
 ]);
 
-const IMAGE_NAME_PATTERN = /^[A-Za-z0-9_-]{1,150}\.(?:jpg|jpeg|png|webp)$/;
-const BASE64_DATA_URI = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const DATA_URI = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/;
+const EXTENSION_BY_TYPE = Object.freeze({
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+});
 
 export class FileComplaintError extends Error {
   constructor(code, message) {
@@ -52,141 +62,165 @@ export class FileComplaintError extends Error {
   }
 }
 
-function hashUid(uid, salt) {
-  return createHmac('sha256', salt).update(uid).digest('hex').slice(0, 40);
+export function complaintDayKey(nowMs) {
+  return new Date(Number(nowMs)).toISOString().slice(0, 10);
 }
 
-function decodeBase64Image(dataUri) {
-  const match = BASE64_DATA_URI.exec(String(dataUri || ''));
-  if (!match) return null;
-  const contentType = match[1];
-  const buffer = Buffer.from(match[2], 'base64');
-  if (buffer.length > COMPLAINT_MAX_IMAGE_BYTES) return null;
-  return { buffer, contentType };
+export function startOfUtcDayMs(nowMs) {
+  return Math.floor(Number(nowMs) / DAY_MS) * DAY_MS;
 }
 
-function complaintImageFileName(complaintId, index, nowMs) {
-  const owner = String(complaintId || '')
-    .replace(/[^A-Za-z0-9]/g, '')
-    .slice(0, 40);
-  const stamp = Math.max(0, Math.floor(Number(nowMs) || 0)).toString(36);
-  const noise = Math.random().toString(36).slice(2, 10);
-  const base = `${stamp}-${Math.max(0, Math.floor(Number(index) || 0))}-${noise}`.slice(0, 150);
-  return { owner, name: `${base}.jpg` };
-}
-
-function validateComplaintInput(data) {
-  const category = COMPLAINT_CATEGORIES.includes(data?.category) ? data.category : 'other';
-  const description = String(data?.description || '')
-    .trim()
-    .slice(0, COMPLAINT_MAX_DESCRIPTION);
-  if (description.length < COMPLAINT_MIN_DESCRIPTION) {
-    throw new FileComplaintError('invalid_description', 'Description is too short.');
+/** The type the bytes actually are, or '' when they are none of the three. */
+export function sniffComplaintImageType(buffer) {
+  if (!buffer || buffer.length < 12) return '';
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'image/jpeg';
+  const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  if (png.every((byte, index) => buffer[index] === byte)) return 'image/png';
+  if (buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP') {
+    return 'image/webp';
   }
-  const anonymous = data?.anonymous === true;
+  return '';
+}
+
+export function decodeComplaintImage(dataUri) {
+  const match = DATA_URI.exec(typeof dataUri === 'string' ? dataUri : '');
+  if (!match) return null;
+  const buffer = Buffer.from(match[2], 'base64');
+  if (!buffer.length || buffer.length > COMPLAINT_MAX_IMAGE_BYTES) return null;
+  const contentType = sniffComplaintImageType(buffer);
+  if (!contentType || contentType !== match[1]) return null;
+  return { buffer, contentType, extension: EXTENSION_BY_TYPE[contentType] };
+}
+
+export function validateComplaintInput(data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new FileComplaintError('invalid_request', 'Invalid complaint.');
+  }
+  const category = COMPLAINT_CATEGORIES.includes(data.category) ? data.category : 'other';
+  const description = typeof data.description === 'string' ? data.description.trim() : '';
+  if (
+    description.length < COMPLAINT_MIN_DESCRIPTION ||
+    description.length > COMPLAINT_MAX_DESCRIPTION
+  ) {
+    throw new FileComplaintError('invalid_description', 'Invalid description.');
+  }
+  const anonymous = data.anonymous === true;
   const name = anonymous
     ? ''
-    : String(data?.name || '')
-        .trim()
-        .slice(0, COMPLAINT_MAX_NAME);
+    : (typeof data.name === 'string' ? data.name : '').trim().slice(0, COMPLAINT_MAX_NAME);
   if (!anonymous && !name) {
-    throw new FileComplaintError('invalid_name', 'Name is required.');
+    throw new FileComplaintError('invalid_name', 'A name is required.');
   }
-  const rawImages = Array.isArray(data?.images) ? data.images : [];
-  if (rawImages.length > COMPLAINT_MAX_IMAGES) {
-    throw new FileComplaintError('too_many_images', 'Too many images.');
+  const rawImages = data.images === undefined ? [] : data.images;
+  if (!Array.isArray(rawImages) || rawImages.length > COMPLAINT_MAX_IMAGES) {
+    throw new FileComplaintError('invalid_image', 'Too many images.');
   }
-  const images = [];
-  for (const uri of rawImages) {
-    const decoded = decodeBase64Image(uri);
-    if (!decoded) {
-      throw new FileComplaintError('invalid_image', 'Invalid image data.');
-    }
-    images.push(decoded);
-  }
+  const images = rawImages.map((uri) => {
+    const decoded = decodeComplaintImage(uri);
+    if (!decoded) throw new FileComplaintError('invalid_image', 'Invalid image.');
+    return decoded;
+  });
   return { category, description, anonymous, name, images };
 }
 
-export async function fileComplaintHandler(data, context, deps) {
-  const uid = context?.auth?.uid;
-  if (!uid) {
-    throw new FileComplaintError('unauthenticated', 'Authentication required.');
-  }
-  if (deps.verifyAppCheck) {
-    try {
-      await deps.verifyAppCheck(data?.appCheckToken);
-    } catch {
-      throw new FileComplaintError('app_check_failed', 'App Check failed.');
-    }
-  }
-  const { category, description, anonymous, name, images } = validateComplaintInput(data);
-  const nowMs = Number(deps.now());
-  const hash = hashUid(uid, deps.rateLimitSalt);
-  const rateLimitRef = deps.db.doc(`${COMPLAINT_RATE_LIMIT_COLLECTION}/${hash}`);
-  const rateLimitSnap = await rateLimitRef.get();
-  const rateLimitData = rateLimitSnap.exists ? rateLimitSnap.data() : null;
-  const lastAtMs = rateLimitData?.lastAt?.toMillis?.() || 0;
-  if (lastAtMs && nowMs - lastAtMs < COMPLAINT_RATE_LIMIT_WINDOW_MS) {
-    const retryAfterSeconds = Math.ceil(
-      (COMPLAINT_RATE_LIMIT_WINDOW_MS - (nowMs - lastAtMs)) / 1000
-    );
-    throw new FileComplaintError(
-      'rate_limited',
-      `Please wait before filing again.`,
-    );
-  }
-  const complaintRef = deps.db.collection(COMPLAINT_COLLECTION).doc();
-  const complaintId = complaintRef.id;
-  const imagePaths = [];
-  if (images.length && deps.uploadImage) {
-    for (const [index, image] of images.entries()) {
-      const { owner, name: fileName } = complaintImageFileName(complaintId, index, nowMs);
-      const path = `${COMPLAINT_STORAGE_ROOT}/${owner}/${fileName}`;
-      await deps.uploadImage(path, image.buffer, image.contentType);
-      imagePaths.push(path);
-    }
-  }
-  const complaintDoc = {
-    category,
-    description,
-    images: imagePaths,
-    anonymous,
-    reviewed: false,
-    createdAt: deps.serverTimestamp(),
+/**
+ * In-memory, per-process limiter. Keys are HMACs under a key that is random per
+ * process and never stored, so the map cannot be turned back into uids.
+ */
+export function createMemberLimiter({ windowMs = COMPLAINT_MEMBER_WINDOW_MS, key } = {}) {
+  const secret = key || randomBytes(32);
+  const lastByMember = new Map();
+  const tag = (uid) => createHmac('sha256', secret).update(String(uid)).digest('base64url');
+  return {
+    check(uid, nowMs) {
+      const last = lastByMember.get(tag(uid));
+      return last === undefined || nowMs - last >= windowMs;
+    },
+    record(uid, nowMs) {
+      // Drop expired entries so the map stays bounded by the window's traffic.
+      for (const [member, at] of lastByMember) {
+        if (nowMs - at >= windowMs) lastByMember.delete(member);
+      }
+      lastByMember.set(tag(uid), nowMs);
+    },
   };
-  if (!anonymous) {
-    complaintDoc.submittedBy = uid;
-    complaintDoc.submittedByName = name;
-  }
-  await complaintRef.set(complaintDoc);
-  await rateLimitRef.set({ lastAt: deps.serverTimestamp() });
-  return { complaintId, anonymous, imageCount: imagePaths.length };
 }
 
-export function createFileComplaintCallable({
+async function claimDailySlot(deps, nowMs) {
+  const ref = deps.db.doc(`${COMPLAINT_RATE_LIMIT_COLLECTION}/${complaintDayKey(nowMs)}`);
+  await deps.db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    const count = snapshot.exists ? Number(snapshot.data()?.count) || 0 : 0;
+    if (count >= COMPLAINT_DAILY_CAP) {
+      throw new FileComplaintError('rate_limited', 'Too many complaints today.');
+    }
+    transaction.set(ref, { count: count + 1 });
+  });
+}
+
+/**
+ * @param {unknown} data   the callable payload
+ * @param {{uid?: string}|undefined} auth   request.auth from the callable
+ * @param {object} deps    db, uploadImage, limiter, now, serverTimestamp,
+ *                         timestampFromMillis, randomId
+ */
+export async function fileComplaintHandler(data, auth, deps) {
+  const uid = typeof auth?.uid === 'string' ? auth.uid : '';
+  if (!uid) throw new FileComplaintError('unauthenticated', 'Sign-in required.');
+  const input = validateComplaintInput(data);
+  const nowMs = Number(deps.now());
+  if (!deps.limiter.check(uid, nowMs)) {
+    throw new FileComplaintError('rate_limited', 'Please wait before filing again.');
+  }
+  await claimDailySlot(deps, nowMs);
+  deps.limiter.record(uid, nowMs);
+
+  const complaintRef = deps.db.collection(COMPLAINT_COLLECTION).doc();
+  const images = [];
+  for (const [index, image] of input.images.entries()) {
+    const path = `${COMPLAINT_STORAGE_ROOT}/${complaintRef.id}/${index}-${deps.randomId()}.${image.extension}`;
+    await deps.uploadImage(path, image.buffer, image.contentType);
+    images.push(path);
+  }
+
+  const complaint = {
+    category: input.category,
+    description: input.description,
+    images,
+    anonymous: input.anonymous,
+    reviewed: false,
+    createdAt: input.anonymous
+      ? deps.timestampFromMillis(startOfUtcDayMs(nowMs))
+      : deps.serverTimestamp(),
+  };
+  if (!input.anonymous) {
+    complaint.submittedBy = uid;
+    complaint.submittedByName = input.name;
+  }
+  await complaintRef.set(complaint);
+  // The id only; never echo identity or timing back.
+  return { complaintId: complaintRef.id };
+}
+
+export function createFileComplaintHandler({
   db,
-  auth,
-  appCheck,
   bucket,
   serverTimestamp,
+  timestampFromMillis,
   now = Date.now,
-  rateLimitSalt,
+  limiter = createMemberLimiter(),
+  randomId = () => randomBytes(6).toString('hex'),
 }) {
-  return async (data, context) => {
-    return fileComplaintHandler(data, context, {
+  return (data, auth) =>
+    fileComplaintHandler(data, auth, {
       db,
       now,
-      rateLimitSalt,
+      limiter,
+      randomId,
       serverTimestamp,
-      async verifyAppCheck(token) {
-        if (!appCheck) return;
-        await appCheck.verifyToken(token);
-      },
+      timestampFromMillis,
       async uploadImage(path, buffer, contentType) {
-        if (!bucket) return;
-        const file = bucket.file(path);
-        await file.save(buffer, { contentType, resumable: false });
+        await bucket.file(path).save(buffer, { contentType, resumable: false });
       },
     });
-  };
 }
