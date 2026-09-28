@@ -104,11 +104,14 @@ async function preparePage(page) {
   return failures;
 }
 
+const SIEGE_TEST_DATE = '2026-09-27';
+
 async function bootSiege(page, query = '') {
   // First visits get the training wave; the contract tests below are about
   // wave one, so they opt out unless a query asks for the tutorial itself.
   let url = `/eden-siege.html${query}`;
   if (!/[?&]tutorial=/u.test(url)) url += `${url.includes('?') ? '&' : '?'}tutorial=0`;
+  if (!/[?&]date=/u.test(url)) url += `${url.includes('?') ? '&' : '?'}date=${SIEGE_TEST_DATE}`;
   // domcontentloaded, not load: a stalled third-party stylesheet must not be
   // able to hang the run before the engine gets a chance to report in.
   await page.goto(url, { waitUntil: 'domcontentloaded' });
@@ -134,7 +137,7 @@ test.describe("Velo's Rampart", () => {
     const boot = await bootSiege(page);
     expect(['webgl', 'lite']).toContain(boot.mode);
     expect(boot.mapId).toBe('keep');
-    expect(boot.seed).toMatch(/^keep:\d{4}-\d{2}-\d{2}$/u);
+    expect(boot.seed).toBe(`keep:${SIEGE_TEST_DATE}`);
 
     const canvasBox = await page.locator('#siegeCanvas').boundingBox();
     expect(canvasBox.width).toBeGreaterThan(320);
@@ -396,8 +399,7 @@ test.describe("Velo's Rampart", () => {
     const failures = await preparePage(page);
     const boot = await bootSiege(page, '?mode=daily');
     expect(boot.seed).toMatch(/^daily:(keep|ship):\d{4}-\d{2}-\d{2}$/u);
-    const stamp = new Date().toISOString().slice(0, 10);
-    expect(boot.seed).toContain(stamp);
+    expect(boot.seed).toContain(SIEGE_TEST_DATE);
     await expect(page.locator('.siege-chip.is-active')).toHaveCount(1);
     await beginRun(page);
     const scene = await page.evaluate(() => ({

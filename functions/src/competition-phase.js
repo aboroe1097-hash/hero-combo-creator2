@@ -109,6 +109,10 @@ export async function syncCompetitionPhase(deps) {
   if (!config || !SEASON_PATTERN.test(activeSeason)) {
     return { status: 'skipped', reason: 'no_config', changes: {} };
   }
+  const pausedUntilMs = toMillis(config?.phaseSyncPausedUntil);
+  if (Number.isFinite(pausedUntilMs) && pausedUntilMs > deps.now()) {
+    return { status: 'skipped', reason: 'paused', changes: {} };
+  }
   const schedule = normalizeCompetitionSchedule(rawSchedule);
   if (!schedule) return { status: 'skipped', reason: 'no_schedule', changes: {} };
   if (schedule.seasonId !== activeSeason) {

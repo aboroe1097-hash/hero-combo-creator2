@@ -618,7 +618,11 @@ test('the season picker writes exactly the keys the rules validator allows', asy
     .match(/'([A-Za-z0-9]+)'/g)
     .map((key) => key.slice(1, -1))
     .sort();
-  assert.deepEqual(Object.keys(writes[1].payload).sort(), allowed);
+  // Every written key must be allowed by the rules; optional fields like
+  // phaseSyncPausedUntil need not be present in every write.
+  for (const key of Object.keys(writes[1].payload)) {
+    assert.ok(allowed.includes(key), `written key ${key} is not allowed by rules`);
+  }
   stored = null;
   writes.length = 1;
 

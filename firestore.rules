@@ -1091,9 +1091,12 @@ service cloud.firestore {
       // because the submission shape is pinned key for key below and this file
       // has no expression budget to spare; one version per season is also what
       // the comparison actually means.
+      // `phaseSyncPausedUntil` is an optional ISO timestamp; when set and in
+      // the future, the phase sync job skips updates so an admin can make
+      // manual changes without them being overwritten within 10 minutes.
       return request.resource.data.keys().hasOnly([
         'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId',
-        'acceptNewSignups'
+        'acceptNewSignups', 'phaseSyncPausedUntil'
       ])
       && request.resource.data.keys().hasAll([
         'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId'
@@ -1106,7 +1109,13 @@ service cloud.firestore {
       && request.resource.data.grantDurationMinutes <= 10080
       && request.resource.data.scoringProfileId is string
       && request.resource.data.scoringProfileId.matches('^[A-Za-z0-9._-]{1,80}$')
-      && request.resource.data.get('acceptNewSignups', true) is bool;
+      && request.resource.data.get('acceptNewSignups', true) is bool
+      && (!('phaseSyncPausedUntil' in request.resource.data)
+        || (request.resource.data.phaseSyncPausedUntil is string
+          && request.resource.data.phaseSyncPausedUntil.size() <= 40
+          && request.resource.data.phaseSyncPausedUntil.matches(
+            '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$'
+          )));
     }
 
     function validBohMapperPublish(season) {
@@ -2740,6 +2749,14 @@ service cloud.firestore {
         && request.resource.data.lastAt == request.time
         && resource.data.lastAt < request.time - duration.value(10, 'm');
       allow delete: if false;
+    }
+
+    // Server-side rate limit for the fileComplaint callable. Keys are HMAC
+    // hashes of the uid, so the collection reveals nothing about who filed.
+    // The callable uses the Admin SDK and bypasses rules; this deny-all is
+    // defense in depth so no client path can ever read or write these docs.
+    match /complaint_rate_limits/{hash} {
+      allow read, write: if false;
     }
 
     match /eden_map/shared_intel {

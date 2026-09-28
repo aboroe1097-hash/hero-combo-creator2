@@ -105,6 +105,12 @@ async function boot() {
   const webgl = webglAvailable();
   const qualityOverride = params().get('quality');
   const quality = ['low', 'medium', 'high'].includes(qualityOverride) ? qualityOverride : null;
+  const seedDateOverride = (() => {
+    const raw = params().get('date');
+    if (!raw) return null;
+    const parsed = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(`${raw}T00:00:00Z`) : null;
+    return parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
+  })();
 
   statusTitle.textContent = copy.errors.loadingTitle;
   statusBody.textContent = copy.errors.loadingBody;
@@ -127,6 +133,7 @@ async function boot() {
       reducedMotion,
       allowWebgl: webgl,
       quality,
+      seedDate: seedDateOverride,
     });
     status.hidden = true;
 

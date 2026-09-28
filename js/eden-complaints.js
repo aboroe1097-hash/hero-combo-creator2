@@ -307,38 +307,38 @@ async function uploadComplaintImages(app, complaintId) {
   return paths;
 }
 
+async function imageToDataUri(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error || new Error('read failed'));
+    reader.readAsDataURL(blob);
+  });
+}
+
 async function submitComplaint({ category, description, anonymous, name }) {
-  const [{ importFirestoreLite }, { initFirebase, ensureAnonymousAuth }] = await Promise.all([
+  const [{ importFirebaseFunctions }, { initFirebase, ensureAnonymousAuth }] = await Promise.all([
     import('./firebase-sdk.js'),
     import('./firebase-eden.js'),
   ]);
   const { configured, app } = initFirebase();
   if (!configured || !app) throw new Error('firebase-unconfigured');
-  const user = await ensureAnonymousAuth();
-  const { getFirestore, collection, doc, writeBatch, serverTimestamp } =
-    await importFirestoreLite();
-  const db = getFirestore(app);
-  // The document id is minted first so the screenshots can live under it
-  // rather than under the uploader's uid.
-  const complaintRef = doc(collection(db, EDEN_COMPLAINT_COLLECTION));
-  const images = pickedImages.length ? await uploadComplaintImages(app, complaintRef.id) : [];
-  const document = buildComplaintDocument({
+  await ensureAnonymousAuth();
+  const { getFunctions, httpsCallable } = await importFirebaseFunctions();
+  const functions = getFunctions(app);
+  const fileComplaintFn = httpsCallable(functions, 'fileComplaint');
+  const images = [];
+  for (const entry of pickedImages) {
+    images.push(await imageToDataUri(entry.blob));
+  }
+  const result = await fileComplaintFn({
     category,
     description,
-    images,
     anonymous,
     name,
-    uid: user.uid,
+    images,
   });
-  const batch = writeBatch(db);
-  batch.set(complaintRef, { ...document, createdAt: serverTimestamp() });
-  // Rate limit: the rules accept a filing only alongside this stamp, and only
-  // when the session's previous stamp is at least ten minutes old.
-  batch.set(doc(db, EDEN_COMPLAINT_THROTTLE_COLLECTION, user.uid), {
-    lastAt: serverTimestamp(),
-  });
-  await batch.commit();
-  return document;
+  return result?.data || {};
 }
 
 function isFirebaseUnavailableError(error) {

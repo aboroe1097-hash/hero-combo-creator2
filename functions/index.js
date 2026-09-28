@@ -10,6 +10,7 @@ import { createUnlockAllStarBohHandler } from './src/all-star-boh-auth.js';
 import { createBohSignupAdminHandler } from './src/boh-signup-admin.js';
 import { createCompetitionPhaseSyncJob } from './src/competition-phase.js';
 import { createComplaintRetentionJob } from './src/complaint-retention.js';
+import { createFileComplaintCallable } from './src/file-complaint.js';
 import { createSetUserRoleHandler } from './src/user-roles.js';
 import { createVtsScoreHandler } from './src/vts-score.js';
 
@@ -17,6 +18,7 @@ const firebaseApp = getApps()[0] || initializeApp();
 const firestore = getFirestore(firebaseApp);
 const memberPin = defineSecret('BOH_MEMBER_PIN');
 const throttlePepper = defineSecret('BOH_THROTTLE_PEPPER');
+const complaintRateLimitSalt = defineSecret('COMPLAINT_RATE_LIMIT_SALT');
 
 const handler = createUnlockAllStarBohHandler({
   auth: getAuth(firebaseApp),
@@ -163,5 +165,42 @@ export const syncCompetitionPhase = onSchedule(
     // Logs nothing, like every entrypoint here (see the security tests); the
     // run's outcome is visible in the function's execution history.
     await syncCompetitionPhaseJob();
+  }
+);
+
+// Complaint filing: the callable moves the entire write server-side so the
+// rate-limit stamp cannot be correlated with the complaint document by
+// timestamp matching. See src/file-complaint.js for the full contract.
+const fileComplaintHandler = createFileComplaintCallable({
+  db: firestore,
+  auth: getAuth(firebaseApp),
+  appCheck: getAppCheck(firebaseApp),
+  bucket: getStorage(firebaseApp).bucket(),
+  serverTimestamp: () => FieldValue.serverTimestamp(),
+  rateLimitSalt: complaintRateLimitSalt.value(),
+});
+
+export const fileComplaint = onCall(
+  {
+    region: 'us-central1',
+    memory: '256MiB',
+    timeoutSeconds: 60,
+    maxInstances: 10,
+  },
+  async (request) => {
+    try {
+      return await fileComplaintHandler(request.data, {
+        auth: request.auth,
+      });
+    } catch (error) {
+      if (error?.name === 'FileComplaintError') {
+        throw new HttpsError(
+          error.code === 'rate_limited' ? 'resource-exhausted' : 'invalid-argument',
+          error.message,
+          error.code
+        );
+      }
+      throw error;
+    }
   }
 );

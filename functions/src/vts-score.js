@@ -440,6 +440,12 @@ async function listPlayers(dependencies, uid) {
  * spelling through the owner-confirmed aliases and deduped. Names only, no
  * values; the member uses it to pick the exact spelling their history was
  * recorded under.
+ *
+ * All names are included regardless of publicComparisonConsent because this
+ * endpoint is for spelling matching, not public display. The public board
+ * (buildGrowthBoardProjection) filters by consent before publishing any row.
+ * A member who opted out can still find their exact spelling here, but their
+ * data never appears on the public board without consent.
  */
 async function listKnownPlayerNames(dependencies, uid) {
   const seasonId = await getGrant(dependencies, uid);
@@ -473,13 +479,35 @@ async function listKnownPlayerNames(dependencies, uid) {
   };
 }
 
+const COMPETITION_GROWTH_CACHE_TTL_MS = 60_000;
+let competitionGrowthCache = null;
+
+function readCachedCompetitionGrowth(nowMs) {
+  if (
+    competitionGrowthCache &&
+    nowMs - competitionGrowthCache.cachedAtMs < COMPETITION_GROWTH_CACHE_TTL_MS
+  ) {
+    return competitionGrowthCache.value;
+  }
+  return null;
+}
+
+function writeCachedCompetitionGrowth(value, nowMs) {
+  competitionGrowthCache = { value, cachedAtMs: nowMs };
+}
+
 async function loadCompetitionGrowthBoard(dependencies) {
+  const nowMs = Number(dependencies.now());
+  const cached = readCachedCompetitionGrowth(nowMs);
+  if (cached) return cached;
   const head = await readCompetitionBoardHead(dependencies.db);
   // The board is not a results view: it builds from live uploads in every
   // phase and refreshes as members upload.
   const inputs = await readCompetitionBoardInputs(dependencies.db, head);
-  const { board } = buildCompetitionBoardFromInputs(inputs, { nowMs: dependencies.now() });
-  return { schemaVersion: 1, seasonId: head.seasonId, board };
+  const { board } = buildCompetitionBoardFromInputs(inputs, { nowMs });
+  const result = { schemaVersion: 1, seasonId: head.seasonId, board };
+  writeCachedCompetitionGrowth(result, nowMs);
+  return result;
 }
 
 async function getPreviousComparisonStatus(dependencies, uid, enteredName) {
