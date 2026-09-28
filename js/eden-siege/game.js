@@ -79,8 +79,9 @@ export async function startSiege({
   quality: qualityOverride = null,
   tutorial = false,
   links = {},
+  seedDate = null,
 }) {
-  const seed = seedFor(mode, mapId);
+  const seed = seedFor(mode, mapId, seedDate || new Date());
   const world = createWorld({ mapId, heroName, seed, mode, tutorial });
   // A pinned tier from ?quality= wins over detection: CI and low-end devices
   // need to be able to guarantee the cheap path, and the browser spec pins

@@ -10,6 +10,7 @@ import { createUnlockAllStarBohHandler } from './src/all-star-boh-auth.js';
 import { createBohSignupAdminHandler } from './src/boh-signup-admin.js';
 import { createCompetitionPhaseSyncJob } from './src/competition-phase.js';
 import { createComplaintRetentionJob } from './src/complaint-retention.js';
+import { createFileComplaintHandler } from './src/file-complaint.js';
 import { createSetUserRoleHandler } from './src/user-roles.js';
 import { createVtsScoreHandler } from './src/vts-score.js';
 
@@ -163,5 +164,54 @@ export const syncCompetitionPhase = onSchedule(
     // Logs nothing, like every entrypoint here (see the security tests); the
     // run's outcome is visible in the function's execution history.
     await syncCompetitionPhaseJob();
+  }
+);
+
+// Complaint filing: the only writer of complaints and their screenshots, so an
+// anonymous filing leaves no per-member trace (see src/file-complaint.js).
+// maxInstances: 1 is load-bearing: the per-member limit lives in the one
+// instance's memory rather than in any stored, uid-linkable document. The Eden
+// page does not initialise App Check, so the gate is Firebase Auth, the same
+// bar the retired client-write rules applied.
+const fileComplaintHandler = createFileComplaintHandler({
+  db: firestore,
+  bucket: getStorage(firebaseApp).bucket(),
+  serverTimestamp: () => FieldValue.serverTimestamp(),
+  timestampFromMillis: (value) => Timestamp.fromMillis(value),
+});
+
+const FILE_COMPLAINT_ERROR_CODES = Object.freeze({
+  unauthenticated: 'unauthenticated',
+  rate_limited: 'resource-exhausted',
+});
+
+// Memory sizing: a maximal filing holds ~8 MiB of base64 plus ~6 MiB of decoded
+// screenshots, so 512 MiB at concurrency 4 leaves ample headroom. The client
+// address is used only as an in-memory, HMAC-keyed limiter key; it is never
+// stored or logged.
+export const fileComplaint = onCall(
+  {
+    region: 'us-central1',
+    memory: '512MiB',
+    timeoutSeconds: 60,
+    maxInstances: 1,
+    concurrency: 4,
+  },
+  async (request) => {
+    try {
+      return await fileComplaintHandler(request.data, request.auth, {
+        clientIp: request.rawRequest?.ip,
+      });
+    } catch (error) {
+      if (error?.name === 'FileComplaintError') {
+        throw new HttpsError(
+          FILE_COMPLAINT_ERROR_CODES[error.code] || 'invalid-argument',
+          error.message,
+          { reason: error.code }
+        );
+      }
+      // Anything else is ours; never forward its message (it may carry paths).
+      throw new HttpsError('internal', 'The complaint could not be filed.');
+    }
   }
 );

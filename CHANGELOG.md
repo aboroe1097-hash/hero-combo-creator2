@@ -2,6 +2,13 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.6.12 - 2026-09-28
+
+- Anonymous complaints no longer leave any stored record that ties them to an account. Filings go through a new `fileComplaint` Cloud Function instead of being written by the browser: the old path had to stamp a per-account throttle record at the exact moment of the complaint, which let anyone with console access match the two. The function stores nothing per member (its per-member and per-network limits live in memory), keeps only a global daily cap, gives anonymous complaints a day-level timestamp, and hands everything back if a filing fails. Browsers can no longer create complaints or upload screenshots directly, which also closes unmetered Storage uploads, and screenshot types are checked from the file bytes. The daily retention job deletes the retired throttle records. Firebase's own metadata (document and file creation times, Auth activity) still carries exact times, so a project owner with console access could guess by timing when filings are rare. **Deploy the functions, Firestore rules and Storage rules together after this release.**
+- The public growth board is cached for a minute in the vtsScore function, and requests that arrive together share one rebuild, so repeated page loads no longer re-read every sign-up and past upload.
+- The Competition #12 phase sync can be paused: a future `phaseSyncPausedUntil` on the season config stops it from overwriting a manual open or close for that long, and saving the season form keeps the pause.
+- Velo's Rampart accepts `?date=YYYY-MM-DD` to replay a given day (its seed and, for the Daily Siege, its map), and the browser test pins its date, so CI no longer passes or fails depending on the day's seed.
+
 ## 16.6.11 - 2026-09-27
 
 - The admin signup table and the VTS Admin growth table flag rows whose dead-troop values were never entered ("No dead values"). An untouched member editor saves an all-zero map and a hand-filed row saves none at all; either way the player's comparison is missing a component worth hundreds of millions, so leadership can see who to chase before the standings matter.

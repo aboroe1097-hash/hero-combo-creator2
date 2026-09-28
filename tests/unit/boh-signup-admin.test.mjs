@@ -611,6 +611,14 @@ test('the season picker writes exactly the keys the rules validator allows', asy
     'scoringProfileId',
   ]);
   assert.equal(preserved.acceptNewSignups, false, 'the stored flag wins over a stale copy');
+
+  // A console-set pause of the phase sync survives a save of the season form.
+  stored = { activeSeason: SEASON, phaseSyncPausedUntil: '2026-10-01T12:00:00.000Z' };
+  const paused = await saveBohSignupSeasonConfig(
+    { activeSeason: SEASON, scoringProfileId: PROFILE, open: false, grantDurationMinutes: 720 },
+    context
+  );
+  assert.equal(paused.phaseSyncPausedUntil, '2026-10-01T12:00:00.000Z');
   const rules = readFileSync('firestore.rules', 'utf8');
   const validator = rules.match(/function validAllStarBohConfig\(\) \{[\s\S]*?\n {4}\}/)[0];
   const allowed = validator
@@ -618,7 +626,11 @@ test('the season picker writes exactly the keys the rules validator allows', asy
     .match(/'([A-Za-z0-9]+)'/g)
     .map((key) => key.slice(1, -1))
     .sort();
-  assert.deepEqual(Object.keys(writes[1].payload).sort(), allowed);
+  // Every written key must be allowed by the rules; optional fields like
+  // phaseSyncPausedUntil need not be present in every write.
+  for (const key of Object.keys(writes[1].payload)) {
+    assert.ok(allowed.includes(key), `written key ${key} is not allowed by rules`);
+  }
   stored = null;
   writes.length = 1;
 

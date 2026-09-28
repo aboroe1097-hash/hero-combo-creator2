@@ -40,7 +40,13 @@ export function deadTroopCountKey(className, variant) {
   return classPart && variantPart ? `${classPart}${variantPart}` : '';
 }
 
-/** Canonical, unit-independent count record used by persisted sign-ups. */
+/** Canonical, unit-independent count record used by persisted sign-ups.
+ *
+ * The server-side validator (functions/src/competition-board.js) requires all
+ * 15 keys to be present. The client is more lenient: missing keys default to 0
+ * so a partial entry does not block the form. Real sign-ups always carry all
+ * 15 keys, so this leniency is for UX robustness, not a data contract.
+ */
 export function normalizeDeadTroopCounts(source) {
   if (!source || typeof source !== 'object' || Array.isArray(source)) return null;
   if (Object.keys(source).some((key) => !DEAD_TROOP_COUNT_KEYS.includes(key))) return null;

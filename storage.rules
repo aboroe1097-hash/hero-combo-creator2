@@ -21,26 +21,15 @@ service firebase.storage {
       return signedIn() && request.auth.token.superadmin == true;
     }
 
-    // Path contract, shared with the Firestore validator (validComplaintImage):
-    // complaints/{complaintId}/{bounded-file-name}.{jpg|jpeg|png|webp}
+    // complaints/{complaintId}/{index}-{random}.{jpg|png|webp}
     //
-    // The first segment is the filing's own random Firestore id, never the
-    // uploader's uid, so a screenshot cannot de-anonymise an anonymous filing.
-    // Objects are create-only (no overwrite), and the Firestore rule pins every
-    // stored path to its document's id.
+    // Written only by the fileComplaint callable (Admin SDK), which checks each
+    // image's bytes, caps it at 2 MiB and rate-limits filings. A client create
+    // rule would let any anonymous visitor upload without that limit, so there
+    // is none. The first segment is the filing's own random id, never a uid.
     match /complaints/{complaintId}/{fileName} {
       allow read: if isSuperAdmin();
-      allow create: if signedIn()
-        && complaintId.matches('^[A-Za-z0-9]{20}$')
-        && resource == null
-        // 2 MiB is well above what the client sends (it re-encodes to at most
-        // 1280px JPEG) and far below anything that would make the inbox
-        // expensive to open.
-        && request.resource.size <= 2 * 1024 * 1024
-        && request.resource.contentType in ['image/jpeg', 'image/png', 'image/webp']
-        && fileName.size() <= 160
-        && fileName.matches('^[A-Za-z0-9_-]{1,150}\\.(jpg|jpeg|png|webp)$');
-      allow update: if false;
+      allow create, update: if false;
       // Superadmin purge, mirroring the Firestore delete.
       allow delete: if isSuperAdmin();
     }

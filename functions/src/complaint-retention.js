@@ -74,6 +74,14 @@ export async function purgeExpiredComplaintImages(deps) {
     removed += 1;
   }
   result.orphans = removed;
+
+  // Retired `complaint_throttle/{uid}` stamps (16.6.12): each held a uid and
+  // the exact time of that account's last filing, which is what let an
+  // anonymous complaint be joined back to its author. Nothing writes them any
+  // more; delete what is left, a bounded batch per run.
+  if (typeof deps.deleteRetiredThrottleDocs === 'function') {
+    result.retiredThrottle = await deps.deleteRetiredThrottleDocs(COMPLAINT_RETENTION_BATCH);
+  }
   return result;
 }
 
@@ -107,6 +115,14 @@ export function createComplaintRetentionJob({ db, bucket, serverTimestamp, now =
       },
       async deleteFile(path) {
         await bucket.file(path).delete({ ignoreNotFound: true });
+      },
+      async deleteRetiredThrottleDocs(limit) {
+        const snapshot = await db.collection('complaint_throttle').limit(limit).get();
+        if (snapshot.empty) return 0;
+        const batch = db.batch();
+        snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+        await batch.commit();
+        return snapshot.size;
       },
     });
 }
