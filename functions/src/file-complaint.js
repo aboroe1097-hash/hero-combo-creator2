@@ -1,25 +1,34 @@
 // file-complaint.js — the only writer of Eden complaints.
 //
-// The complaint form promises structural anonymity: an anonymous filing must
-// leave nothing behind that ties it to the member who sent it. The first
-// implementation wrote the complaint and a `complaint_throttle/{uid}` stamp in
-// one client batch, both at request.time, so anyone with console access could
-// join the two on the timestamp. A hashed per-uid stamp does not fix that
-// either: whoever holds the hash key can hash every uid and join again.
+// What anonymity means here, precisely: no stored record ties an anonymous
+// complaint to an account. The first implementation broke that — it wrote the
+// complaint and a `complaint_throttle/{uid}` stamp in one client batch, both at
+// request.time, so the two joined on the timestamp. A hashed per-uid stamp does
+// not fix it either: whoever holds the hash key can hash every uid and join.
+//
+// What it does NOT mean: invisibility to a project owner with console access.
+// Firestore's own document createTime, Storage object timeCreated, and Firebase
+// Auth account activity keep exact times this code cannot round, so in very
+// sparse traffic an owner could still guess by timing. The promise the form
+// makes is "leadership reading the inbox cannot see who filed", not more.
 //
 // So this callable persists NOTHING per member:
-//   * The per-member limit (one filing per ten minutes) lives in memory only,
-//     keyed by an HMAC under a random key generated at process start. The key
-//     never leaves the process, so even a memory dump yields no uid. The
-//     function runs as a single instance (maxInstances: 1 in index.js), so the
-//     limit holds across requests; a cold start forgets it, which only ever
-//     lets an honest member file again sooner.
+//   * Rate limits live in memory only: one filing per member per ten minutes,
+//     and a few per network per hour (anonymous Auth makes fresh uids free, so
+//     the uid limit alone cannot stop one person draining the daily cap).
+//     Both are keyed by an HMAC under a random key generated at process start
+//     that never leaves the process. The function runs as a single instance
+//     (maxInstances: 1 in index.js); a cold start forgets the limits, which
+//     only ever lets an honest member file again sooner. A slot is reserved
+//     synchronously before the first await, so concurrent requests cannot all
+//     pass the check.
 //   * The only stored counter is a GLOBAL per-day cap
 //     (`complaint_rate_limits/{YYYY-MM-DD}`), which bounds abuse and Storage
 //     cost without naming anyone.
-//   * An anonymous complaint's createdAt is the start of its UTC day, so its
-//     time cannot be matched against anything either. Named complaints keep
-//     the exact server time.
+//   * An anonymous complaint's createdAt is the start of its UTC day. Named
+//     complaints keep the exact server time.
+//   * A failed filing gives everything back: uploaded screenshots are deleted,
+//     the daily slot is refunded and the member may retry at once.
 //
 // Images arrive as data: URIs, are checked by their bytes (not the declared
 // type), and are written by the Admin SDK under the complaint's own id. The
@@ -31,6 +40,8 @@ export const COMPLAINT_COLLECTION = 'complaints';
 export const COMPLAINT_RATE_LIMIT_COLLECTION = 'complaint_rate_limits';
 export const COMPLAINT_STORAGE_ROOT = 'complaints';
 export const COMPLAINT_MEMBER_WINDOW_MS = 10 * 60 * 1000;
+export const COMPLAINT_NETWORK_WINDOW_MS = 60 * 60 * 1000;
+export const COMPLAINT_NETWORK_MAX = 6;
 export const COMPLAINT_DAILY_CAP = 60;
 export const COMPLAINT_MAX_IMAGES = 3;
 export const COMPLAINT_MAX_IMAGE_BYTES = 2 * 1024 * 1024;
@@ -124,30 +135,61 @@ export function validateComplaintInput(data) {
 }
 
 /**
- * In-memory, per-process limiter. Keys are HMACs under a key that is random per
- * process and never stored, so the map cannot be turned back into uids.
+ * In-memory sliding-window limiter: at most `max` reservations per key per
+ * `windowMs`. Keys are HMACs under a key that is random per process and never
+ * stored, so the map cannot be turned back into uids or addresses.
+ * `reserve()` is synchronous, so a burst of concurrent requests cannot all pass
+ * before the first one is counted; `release()` hands a reservation back.
  */
-export function createMemberLimiter({ windowMs = COMPLAINT_MEMBER_WINDOW_MS, key } = {}) {
+export function createWindowLimiter({ windowMs, max = 1, key } = {}) {
   const secret = key || randomBytes(32);
-  const lastByMember = new Map();
-  const tag = (uid) => createHmac('sha256', secret).update(String(uid)).digest('base64url');
+  const byKey = new Map();
+  const tag = (id) => createHmac('sha256', secret).update(String(id)).digest('base64url');
+  const live = (stamps, nowMs) => stamps.filter((at) => nowMs - at < windowMs);
   return {
-    check(uid, nowMs) {
-      const last = lastByMember.get(tag(uid));
-      return last === undefined || nowMs - last >= windowMs;
-    },
-    record(uid, nowMs) {
+    reserve(id, nowMs) {
       // Drop expired entries so the map stays bounded by the window's traffic.
-      for (const [member, at] of lastByMember) {
-        if (nowMs - at >= windowMs) lastByMember.delete(member);
+      for (const [entry, stamps] of byKey) {
+        const kept = live(stamps, nowMs);
+        if (kept.length) byKey.set(entry, kept);
+        else byKey.delete(entry);
       }
-      lastByMember.set(tag(uid), nowMs);
+      const key = tag(id);
+      const stamps = byKey.get(key) || [];
+      if (stamps.length >= max) return false;
+      byKey.set(key, [...stamps, nowMs]);
+      return true;
+    },
+    release(id, nowMs) {
+      const key = tag(id);
+      const stamps = byKey.get(key) || [];
+      const index = stamps.lastIndexOf(nowMs);
+      if (index === -1) return;
+      stamps.splice(index, 1);
+      if (stamps.length) byKey.set(key, stamps);
+      else byKey.delete(key);
     },
   };
 }
 
+export function createMemberLimiter(options = {}) {
+  return createWindowLimiter({ windowMs: COMPLAINT_MEMBER_WINDOW_MS, max: 1, ...options });
+}
+
+export function createNetworkLimiter(options = {}) {
+  return createWindowLimiter({
+    windowMs: COMPLAINT_NETWORK_WINDOW_MS,
+    max: COMPLAINT_NETWORK_MAX,
+    ...options,
+  });
+}
+
+function dailySlotRef(deps, nowMs) {
+  return deps.db.doc(`${COMPLAINT_RATE_LIMIT_COLLECTION}/${complaintDayKey(nowMs)}`);
+}
+
 async function claimDailySlot(deps, nowMs) {
-  const ref = deps.db.doc(`${COMPLAINT_RATE_LIMIT_COLLECTION}/${complaintDayKey(nowMs)}`);
+  const ref = dailySlotRef(deps, nowMs);
   await deps.db.runTransaction(async (transaction) => {
     const snapshot = await transaction.get(ref);
     const count = snapshot.exists ? Number(snapshot.data()?.count) || 0 : 0;
@@ -158,48 +200,78 @@ async function claimDailySlot(deps, nowMs) {
   });
 }
 
+async function refundDailySlot(deps, nowMs) {
+  const ref = dailySlotRef(deps, nowMs);
+  await deps.db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    const count = snapshot.exists ? Number(snapshot.data()?.count) || 0 : 0;
+    if (count > 0) transaction.set(ref, { count: count - 1 });
+  });
+}
+
 /**
  * @param {unknown} data   the callable payload
  * @param {{uid?: string}|undefined} auth   request.auth from the callable
- * @param {object} deps    db, uploadImage, limiter, now, serverTimestamp,
+ * @param {object} deps    db, uploadImage, deleteImage, memberLimiter,
+ *                         networkLimiter, now, serverTimestamp,
  *                         timestampFromMillis, randomId
+ * @param {{clientIp?: string}} [context]   used only as an in-memory limiter key
  */
-export async function fileComplaintHandler(data, auth, deps) {
+export async function fileComplaintHandler(data, auth, deps, context = {}) {
   const uid = typeof auth?.uid === 'string' ? auth.uid : '';
   if (!uid) throw new FileComplaintError('unauthenticated', 'Sign-in required.');
   const input = validateComplaintInput(data);
   const nowMs = Number(deps.now());
-  if (!deps.limiter.check(uid, nowMs)) {
+  const network =
+    typeof context.clientIp === 'string' && context.clientIp ? `ip:${context.clientIp}` : '';
+
+  // Reserve before the first await: see createWindowLimiter().
+  if (!deps.memberLimiter.reserve(uid, nowMs)) {
     throw new FileComplaintError('rate_limited', 'Please wait before filing again.');
   }
-  await claimDailySlot(deps, nowMs);
-  deps.limiter.record(uid, nowMs);
-
-  const complaintRef = deps.db.collection(COMPLAINT_COLLECTION).doc();
-  const images = [];
-  for (const [index, image] of input.images.entries()) {
-    const path = `${COMPLAINT_STORAGE_ROOT}/${complaintRef.id}/${index}-${deps.randomId()}.${image.extension}`;
-    await deps.uploadImage(path, image.buffer, image.contentType);
-    images.push(path);
+  if (network && !deps.networkLimiter.reserve(network, nowMs)) {
+    deps.memberLimiter.release(uid, nowMs);
+    throw new FileComplaintError('rate_limited', 'Please wait before filing again.');
   }
 
-  const complaint = {
-    category: input.category,
-    description: input.description,
-    images,
-    anonymous: input.anonymous,
-    reviewed: false,
-    createdAt: input.anonymous
-      ? deps.timestampFromMillis(startOfUtcDayMs(nowMs))
-      : deps.serverTimestamp(),
-  };
-  if (!input.anonymous) {
-    complaint.submittedBy = uid;
-    complaint.submittedByName = input.name;
+  let slotClaimed = false;
+  const uploaded = [];
+  try {
+    await claimDailySlot(deps, nowMs);
+    slotClaimed = true;
+
+    const complaintRef = deps.db.collection(COMPLAINT_COLLECTION).doc();
+    for (const [index, image] of input.images.entries()) {
+      const path = `${COMPLAINT_STORAGE_ROOT}/${complaintRef.id}/${index}-${deps.randomId()}.${image.extension}`;
+      await deps.uploadImage(path, image.buffer, image.contentType);
+      uploaded.push(path);
+    }
+
+    const complaint = {
+      category: input.category,
+      description: input.description,
+      images: uploaded,
+      anonymous: input.anonymous,
+      reviewed: false,
+      createdAt: input.anonymous
+        ? deps.timestampFromMillis(startOfUtcDayMs(nowMs))
+        : deps.serverTimestamp(),
+    };
+    if (!input.anonymous) {
+      complaint.submittedBy = uid;
+      complaint.submittedByName = input.name;
+    }
+    await complaintRef.set(complaint);
+    // The id only; never echo identity or timing back.
+    return { complaintId: complaintRef.id };
+  } catch (error) {
+    // Give everything back so a transient failure costs the member nothing.
+    deps.memberLimiter.release(uid, nowMs);
+    if (network) deps.networkLimiter.release(network, nowMs);
+    await Promise.allSettled(uploaded.map((path) => deps.deleteImage(path)));
+    if (slotClaimed) await refundDailySlot(deps, nowMs).catch(() => {});
+    throw error;
   }
-  await complaintRef.set(complaint);
-  // The id only; never echo identity or timing back.
-  return { complaintId: complaintRef.id };
 }
 
 export function createFileComplaintHandler({
@@ -208,19 +280,29 @@ export function createFileComplaintHandler({
   serverTimestamp,
   timestampFromMillis,
   now = Date.now,
-  limiter = createMemberLimiter(),
+  memberLimiter = createMemberLimiter(),
+  networkLimiter = createNetworkLimiter(),
   randomId = () => randomBytes(6).toString('hex'),
 }) {
-  return (data, auth) =>
-    fileComplaintHandler(data, auth, {
-      db,
-      now,
-      limiter,
-      randomId,
-      serverTimestamp,
-      timestampFromMillis,
-      async uploadImage(path, buffer, contentType) {
-        await bucket.file(path).save(buffer, { contentType, resumable: false });
+  return (data, auth, context) =>
+    fileComplaintHandler(
+      data,
+      auth,
+      {
+        db,
+        now,
+        memberLimiter,
+        networkLimiter,
+        randomId,
+        serverTimestamp,
+        timestampFromMillis,
+        async uploadImage(path, buffer, contentType) {
+          await bucket.file(path).save(buffer, { contentType, resumable: false });
+        },
+        async deleteImage(path) {
+          await bucket.file(path).delete({ ignoreNotFound: true });
+        },
       },
-    });
+      context
+    );
 }

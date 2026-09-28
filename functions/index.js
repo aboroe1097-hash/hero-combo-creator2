@@ -185,17 +185,23 @@ const FILE_COMPLAINT_ERROR_CODES = Object.freeze({
   rate_limited: 'resource-exhausted',
 });
 
+// Memory sizing: a maximal filing holds ~8 MiB of base64 plus ~6 MiB of decoded
+// screenshots, so 512 MiB at concurrency 4 leaves ample headroom. The client
+// address is used only as an in-memory, HMAC-keyed limiter key; it is never
+// stored or logged.
 export const fileComplaint = onCall(
   {
     region: 'us-central1',
-    memory: '256MiB',
+    memory: '512MiB',
     timeoutSeconds: 60,
     maxInstances: 1,
-    concurrency: 20,
+    concurrency: 4,
   },
   async (request) => {
     try {
-      return await fileComplaintHandler(request.data, request.auth);
+      return await fileComplaintHandler(request.data, request.auth, {
+        clientIp: request.rawRequest?.ip,
+      });
     } catch (error) {
       if (error?.name === 'FileComplaintError') {
         throw new HttpsError(

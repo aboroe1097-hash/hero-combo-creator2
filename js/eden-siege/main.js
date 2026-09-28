@@ -96,21 +96,23 @@ async function boot() {
   localizedDirection(lang);
   const copy = await loadCopy(lang, copyLocalesUrl);
   const mode = MODES.includes(params().get('mode')) ? params().get('mode') : 'campaign';
-  // The Daily Siege picks its own map so every player gets the same run.
-  const requestedMap = MAP_ORDER.includes(params().get('map')) ? params().get('map') : 'keep';
-  const mapId = mode === 'daily' ? dailySiegeFor().mapId : requestedMap;
-  const map = mapById(mapId);
-  const hero = heroForToday(mapId);
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const webgl = webglAvailable();
-  const qualityOverride = params().get('quality');
-  const quality = ['low', 'medium', 'high'].includes(qualityOverride) ? qualityOverride : null;
+  // ?date=YYYY-MM-DD replays that day: its seed and, in daily mode, its map.
   const seedDateOverride = (() => {
     const raw = params().get('date');
     if (!raw) return null;
     const parsed = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(`${raw}T00:00:00Z`) : null;
     return parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
   })();
+  // The Daily Siege picks its own map so every player gets the same run.
+  const requestedMap = MAP_ORDER.includes(params().get('map')) ? params().get('map') : 'keep';
+  const mapId =
+    mode === 'daily' ? dailySiegeFor(seedDateOverride || new Date()).mapId : requestedMap;
+  const map = mapById(mapId);
+  const hero = heroForToday(mapId);
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const webgl = webglAvailable();
+  const qualityOverride = params().get('quality');
+  const quality = ['low', 'medium', 'high'].includes(qualityOverride) ? qualityOverride : null;
 
   statusTitle.textContent = copy.errors.loadingTitle;
   statusBody.textContent = copy.errors.loadingBody;

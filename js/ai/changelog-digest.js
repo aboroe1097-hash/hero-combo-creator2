@@ -9,10 +9,10 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "version": "16.6.12",
     "date": "2026-09-28",
     "highlights": [
-      "Anonymous complaints are now anonymous end to end. Filings go through a new `fileComplaint` Cloud Function instead of being written by the browser: the old path had to stamp a per-account throttle record at the exact moment of the complaint, which let anyone with console access …",
-      "The public growth board is cached for a minute in the vtsScore function, so repeated page loads no longer re-read every sign-up and past upload.",
-      "The Competition #12 phase sync can be paused: a future `phaseSyncPausedUntil` on the season config stops it from overwriting a manual open or close for that long.",
-      "Velo's Rampart accepts `?date=YYYY-MM-DD` to replay a given day's seed, and the browser test pins its date, so CI no longer passes or fails depending on the day's seed."
+      "Anonymous complaints no longer leave any stored record that ties them to an account. Filings go through a new `fileComplaint` Cloud Function instead of being written by the browser: the old path had to stamp a per-account throttle record at the exact moment of the complaint, whi…",
+      "The public growth board is cached for a minute in the vtsScore function, and requests that arrive together share one rebuild, so repeated page loads no longer re-read every sign-up and past upload.",
+      "The Competition #12 phase sync can be paused: a future `phaseSyncPausedUntil` on the season config stops it from overwriting a manual open or close for that long, and saving the season form keeps the pause.",
+      "Velo's Rampart accepts `?date=YYYY-MM-DD` to replay a given day (its seed and, for the Daily Siege, its map), and the browser test pins its date, so CI no longer passes or fails depending on the day's seed."
     ]
   },
   {

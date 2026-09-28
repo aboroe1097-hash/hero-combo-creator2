@@ -400,6 +400,8 @@ test.describe("Velo's Rampart", () => {
     const boot = await bootSiege(page, '?mode=daily');
     expect(boot.seed).toMatch(/^daily:(keep|ship):\d{4}-\d{2}-\d{2}$/u);
     expect(boot.seed).toContain(SIEGE_TEST_DATE);
+    // The replayed day decides the map as well as the seed.
+    expect(boot.seed).toBe(`daily:${boot.mapId}:${SIEGE_TEST_DATE}`);
     await expect(page.locator('.siege-chip.is-active')).toHaveCount(1);
     await beginRun(page);
     const scene = await page.evaluate(() => ({

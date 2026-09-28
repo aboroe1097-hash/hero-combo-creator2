@@ -499,12 +499,17 @@ export async function saveBohSignupSeasonConfig(config, context) {
     grantDurationMinutes,
   };
   let acceptNewSignups = config.acceptNewSignups;
+  let phaseSyncPausedUntil = config.phaseSyncPausedUntil;
   if (typeof getDoc === 'function') {
     const stored = await getDoc(doc(db, BOH_SIGNUP_CONFIG_PATH));
     const data = stored?.exists?.() ? stored.data() : null;
     acceptNewSignups = data?.acceptNewSignups;
+    phaseSyncPausedUntil = data?.phaseSyncPausedUntil;
   }
   if (typeof acceptNewSignups === 'boolean') payload.acceptNewSignups = acceptNewSignups;
+  // A manual pause of the phase sync (set in the console) must survive a save of
+  // this form, or saving would silently hand control back to the schedule.
+  if (typeof phaseSyncPausedUntil === 'string') payload.phaseSyncPausedUntil = phaseSyncPausedUntil;
   await setDoc(doc(db, BOH_SIGNUP_CONFIG_PATH), payload);
   return payload;
 }

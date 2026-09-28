@@ -496,18 +496,32 @@ function writeCachedCompetitionGrowth(value, nowMs) {
   competitionGrowthCache = { value, cachedAtMs: nowMs };
 }
 
+// One rebuild at a time: requests that arrive while the cache is cold share the
+// in-flight build instead of each re-reading every sign-up and past upload. A
+// failed build is not cached, so the next request simply tries again.
+let competitionGrowthBuild = null;
+
 async function loadCompetitionGrowthBoard(dependencies) {
   const nowMs = Number(dependencies.now());
   const cached = readCachedCompetitionGrowth(nowMs);
   if (cached) return cached;
-  const head = await readCompetitionBoardHead(dependencies.db);
-  // The board is not a results view: it builds from live uploads in every
-  // phase and refreshes as members upload.
-  const inputs = await readCompetitionBoardInputs(dependencies.db, head);
-  const { board } = buildCompetitionBoardFromInputs(inputs, { nowMs });
-  const result = { schemaVersion: 1, seasonId: head.seasonId, board };
-  writeCachedCompetitionGrowth(result, nowMs);
-  return result;
+  if (competitionGrowthBuild) return competitionGrowthBuild;
+  competitionGrowthBuild = (async () => {
+    const head = await readCompetitionBoardHead(dependencies.db);
+    // The board is not a results view: it builds from live uploads in every
+    // phase and refreshes as members upload. A season rollover shows up within
+    // the cache's minute.
+    const inputs = await readCompetitionBoardInputs(dependencies.db, head);
+    const { board } = buildCompetitionBoardFromInputs(inputs, { nowMs });
+    const result = { schemaVersion: 1, seasonId: head.seasonId, board };
+    writeCachedCompetitionGrowth(result, nowMs);
+    return result;
+  })();
+  try {
+    return await competitionGrowthBuild;
+  } finally {
+    competitionGrowthBuild = null;
+  }
 }
 
 async function getPreviousComparisonStatus(dependencies, uid, enteredName) {

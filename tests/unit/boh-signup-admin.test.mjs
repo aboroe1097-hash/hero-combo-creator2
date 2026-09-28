@@ -611,6 +611,14 @@ test('the season picker writes exactly the keys the rules validator allows', asy
     'scoringProfileId',
   ]);
   assert.equal(preserved.acceptNewSignups, false, 'the stored flag wins over a stale copy');
+
+  // A console-set pause of the phase sync survives a save of the season form.
+  stored = { activeSeason: SEASON, phaseSyncPausedUntil: '2026-10-01T12:00:00.000Z' };
+  const paused = await saveBohSignupSeasonConfig(
+    { activeSeason: SEASON, scoringProfileId: PROFILE, open: false, grantDurationMinutes: 720 },
+    context
+  );
+  assert.equal(paused.phaseSyncPausedUntil, '2026-10-01T12:00:00.000Z');
   const rules = readFileSync('firestore.rules', 'utf8');
   const validator = rules.match(/function validAllStarBohConfig\(\) \{[\s\S]*?\n {4}\}/)[0];
   const allowed = validator
