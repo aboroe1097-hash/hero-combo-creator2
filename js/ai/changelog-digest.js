@@ -1,10 +1,17 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.12";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.13";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.6.13",
+    "date": "2026-09-30",
+    "highlights": [
+      "Fixed the admin dashboard crash when historical OCR leaderboard rows have blank or symbol-only player names. Unresolved rows retain their OCR totals without receiving conduct bonuses; valid player adjustments and strict adjustment-entry validation remain intact."
+    ]
+  },
   {
     "version": "16.6.12",
     "date": "2026-09-28",
@@ -78,17 +85,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Season registration saves again for members who record dead troops. The submission rules checked all fifteen counts with separate bound clauses, and that chain crossed Firestore's 1,000-expressions-per-request ceiling, so every create or edit carrying a dead-troop breakdown was …",
       "The dead-troops helper opens in thousands, matching the K counts on the game's dead-troop screen, and each tier row shows its power per troop (×8.2 Lofty, ×7.5 T10, ×7.0 T9). Saved sign-ups reopen in the same unit.",
       "Lady Zubbs and MalakKiji carry the R4 management tag wherever public player labels render, including Eden X2."
-    ]
-  },
-  {
-    "version": "16.6.3",
-    "date": "2026-09-27",
-    "highlights": [
-      "The Competition #12 growth board matches baselines by in-game name alone. Season-2026 uploads from before accounts existed now bind as each player's baseline instead of being skipped for a missing uid or dead-troop split, so the board shows real comparisons rather than \"not rank…",
-      "A legacy baseline (an upload or sign-up from before the dead-troop split) is the alive reading only, so those rows compare alive-to-alive: the re-upload's dead-troop component is removed from Troop Power and Total Power before growth is computed. A baseline that carries the spli…",
-      "Every board row opens a full comparison: summary cards for total change, growth without troops and the biggest driver, then a table of baseline, re-upload, change and change % for all nine power fields. A consenting row without a re-upload still shows the baseline it will be mea…",
-      "VTS Admin → VtsScore gains a two-player comparison that keys on the account, not the name: pick any two sign-ups and read every category side by side, with the higher current value marked.",
-      "VTS Admin → Signups can delete a sign-up and its final upload in one atomic write, for a bad or duplicate entry. The button asks for confirmation and names the player, and both deletes are **superadmin-only** in the rules. **Redeploy Firestore rules after this release.** A publi…"
     ]
   }
 ].map((release) =>
