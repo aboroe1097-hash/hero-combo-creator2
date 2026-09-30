@@ -176,6 +176,41 @@ test('R5 adjusted ranking uses adjusted total without mutating OCR total', () =>
   );
 });
 
+test('R5 leaderboard preserves unresolved OCR rows without aborting valid conduct credit', () => {
+  const rows = [
+    { name: 'Kika', total_demolition: 100 },
+    { name: '', total_demolition: 80 },
+    { name: '(Vts)', total_demolition: 70 },
+    { name: '⚔️', total_demolition: 60 },
+    { name: '★', playerKey: '★', total_demolition: 50 },
+    null,
+  ];
+  const original = structuredClone(rows);
+  const adjustments = [
+    { season: 'test-season', player: 'Kika', points: 2, category: 'banner_help' },
+  ];
+  const adjusted = applyR5AdjustmentsToPlayerTotals(rows, adjustments, 'test-season');
+  assert.equal(adjusted[0].bonusR5, 2);
+  assert.equal(adjusted[0].adjustedTotal, 102);
+  assert.deepEqual(
+    adjusted.slice(1).map((row) => row.bonusR5),
+    [0, 0, 0, 0, 0]
+  );
+  assert.deepEqual(
+    adjusted.slice(1).map((row) => row.adjustedTotal),
+    [80, 70, 60, 50, 0]
+  );
+  assert.equal(new Set(adjusted.map((row) => row.playerKey)).size, rows.length);
+  const ranking = buildAdjustedGiftRanking(rows, adjustments, 'test-season');
+  assert.equal(ranking.length, rows.length);
+  assert.deepEqual(
+    ranking.map((row) => row.adjustedRank),
+    [1, 2, 3, 4, 5, 6]
+  );
+  assert.deepEqual(rows, original);
+  assert.throws(() => normalizeR5Adjustment({ season: 'test-season', player: '⚔️' }));
+});
+
 test('R5 local adjustments persist when Firebase is unavailable', () => {
   localStorageData.delete(R5_ADJUSTMENTS_LOCAL_KEY);
 

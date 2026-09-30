@@ -282,11 +282,19 @@ function readOcrTotal(row) {
 export function applyR5AdjustmentsToPlayerTotals(playerRows = [], adjustments = [], season) {
   const bonusMap = aggregateR5Bonuses(adjustments, season);
 
-  return (Array.isArray(playerRows) ? playerRows : []).map((row) => {
-    const identity =
-      row?.playerKey && row?.name
-        ? { playerKey: compactPlayerIdentity(row.playerKey), playerName: row.name }
-        : resolveR5PlayerIdentity(row || {});
+  return (Array.isArray(playerRows) ? playerRows : []).map((row, index) => {
+    let identity;
+    try {
+      identity =
+        row?.playerKey && row?.name
+          ? { playerKey: compactPlayerIdentity(row.playerKey), playerName: row.name }
+          : resolveR5PlayerIdentity(row || {});
+    } catch {
+      // Historical OCR can contain blank or symbol-only names. Keep its totals
+      // visible without matching conduct credit or aborting the dashboard render.
+      identity = { playerKey: '' };
+    }
+    if (!identity.playerKey) identity = { playerKey: `unresolved:${index}` };
     const bonusR5 = bonusMap.get(identity.playerKey) || 0;
     const ocrTotal = readOcrTotal(row);
     return {

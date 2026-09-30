@@ -1,5 +1,9 @@
 # Changelog
 
+## 16.6.13 - 2026-09-30
+
+- Fixed the admin dashboard crash when historical OCR leaderboard rows have blank or symbol-only player names. Unresolved rows retain their OCR totals without receiving conduct bonuses; valid player adjustments and strict adjustment-entry validation remain intact.
+
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
 ## 16.6.12 - 2026-09-28
