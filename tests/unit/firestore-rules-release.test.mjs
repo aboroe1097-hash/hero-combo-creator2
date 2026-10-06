@@ -13,6 +13,7 @@ import {
   pointReleaseAt,
   rulesetSourceMatches,
   runRelease,
+  runUpload,
 } from '../../scripts/firestore-rules-release.mjs';
 
 const response = (status, json = null, text = '') => ({ status, json, text });
@@ -333,7 +334,7 @@ test('isEntryPoint ignores case on Windows, accepts no extension and rejects oth
   assert.equal(isEntryPoint(undefined, scriptUrl), false);
 });
 
-for (const args of [[], ['bogus'], ['probe', '--dry-run']]) {
+for (const args of [[], ['bogus'], ['probe', '--dry-run'], ['upload', '--dry-run']]) {
   test(`the CLI exits 2 with usage on stderr for [${args.join(' ')}]`, () => {
     const result = spawnSync(process.execPath, [scriptPath, ...args], {
       cwd: repoRoot,
@@ -344,3 +345,87 @@ for (const args of [[], ['bogus'], ['probe', '--dry-run']]) {
     assert.match(result.stderr, /Usage/);
   });
 }
+
+// An in-memory rulesets collection: POST adds the ruleset (even when it answers
+// with a timeout status), GET lists it, so the upload's read-back can find it.
+function fakeRulesets({ postStatuses }) {
+  const stored = new Map();
+  let posts = 0;
+  const { callApi, calls } = fakeApi({
+    'POST /rulesets': (_url, body) => {
+      const status = postStatuses[Math.min(posts, postStatuses.length - 1)];
+      posts += 1;
+      if (status === 400) {
+        return response(400, {
+          issues: [{ severity: 'ERROR', description: 'bad', sourcePosition: { line: 3 } }],
+        });
+      }
+      const name = `projects/demo/rulesets/up${posts}`;
+      stored.set(name, { source: body.source });
+      return status === 200 ? response(200, { name }) : response(status, null, 'unavailable');
+    },
+    'GET /rulesets': () =>
+      response(200, { rulesets: [...stored.keys()].reverse().map((name) => ({ name })) }),
+    'GET /up1': () => response(200, stored.get('projects/demo/rulesets/up1')),
+    'GET /up2': () => response(200, stored.get('projects/demo/rulesets/up2')),
+  });
+  return { callApi, calls, stored };
+}
+
+test('runUpload treats a 503 create as landed when the ruleset is in the list', async () => {
+  const lines = [];
+  const { callApi, calls } = fakeRulesets({ postStatuses: [503] });
+  const code = await runUpload({
+    localRules: 'current rules',
+    token: 'token',
+    project: 'demo',
+    callApi,
+    ...quiet,
+    logger: (line) => lines.push(line),
+  });
+  assert.equal(code, 0);
+  assert.equal(calls.filter((call) => call.method === 'POST').length, 1);
+  assert.match(
+    lines.join('\n'),
+    /UPLOADED: projects\/demo\/rulesets\/up1 \(the 503 was a gateway timeout/
+  );
+});
+
+test('runUpload sends nothing when the rules are already uploaded', async () => {
+  const { callApi, calls } = fakeApi({
+    'GET /rulesets': [response(200, { rulesets: [{ name: NEW }] })],
+    'GET /new': [response(200, rules('current rules'))],
+  });
+  const code = await runUpload({ localRules: 'current rules', token: 'token', callApi, ...quiet });
+  assert.equal(code, 0);
+  assert.equal(calls.filter((call) => call.method === 'POST').length, 0);
+});
+
+test('runUpload stops at once with 4 on a compile error', async () => {
+  const lines = [];
+  const { callApi, calls } = fakeRulesets({ postStatuses: [400] });
+  const code = await runUpload({
+    localRules: 'broken rules',
+    token: 'token',
+    project: 'demo',
+    callApi,
+    ...quiet,
+    logger: (line) => lines.push(line),
+  });
+  assert.equal(code, 4);
+  assert.equal(calls.filter((call) => call.method === 'POST').length, 1);
+  assert.match(lines.join('\n'), /3:\? bad/);
+});
+
+test('runUpload reports a 200 create directly', async () => {
+  const { callApi, calls } = fakeRulesets({ postStatuses: [200] });
+  const code = await runUpload({
+    localRules: 'current rules',
+    token: 'token',
+    project: 'demo',
+    callApi,
+    ...quiet,
+  });
+  assert.equal(code, 0);
+  assert.equal(calls.filter((call) => call.method === 'POST').length, 1);
+});

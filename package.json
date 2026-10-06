@@ -25,6 +25,7 @@
     "rules:check": "node scripts/check-firestore-rules-live.mjs",
     "rules:verify": "node scripts/check-firestore-rules-live.mjs --strict",
     "rules:status": "node scripts/firestore-rules-status.mjs",
+    "rules:upload": "node scripts/firestore-rules-release.mjs upload",
     "rules:release": "node scripts/firestore-rules-release.mjs release",
     "size:check": "node scripts/check-size.mjs",
     "towers:dev": "vite --open /specialization-towers.html",
