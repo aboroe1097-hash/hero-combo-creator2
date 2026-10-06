@@ -3083,6 +3083,19 @@ Object.assign(ru, {
 });
 
 Object.assign(ru, {
+  edenX1PosterDownload: 'Скачать постер',
+  edenX1PosterSubtitle: 'Награды, очки и уровни каждого победителя',
+  edenX1PosterTier: 'Уровень награды',
+  edenX1PosterScore: 'Очки',
+  edenX1PosterBreakdown: 'Детали',
+  edenX1PosterSupportScore: 'Взвешенные очки поддержки',
+  edenX1PosterVotes: 'Голоса',
+  edenX1PosterVoteRank: 'Место в голосовании #{rank}',
+  edenX1PosterContributionRank: 'Место по вкладу #{rank}',
+  edenX1PosterBonus: 'Бонус',
+  edenX1HallOfFameTitle: 'Зал славы',
+  edenX1HallOfFameCopy: 'Они отказались от премиальной награды, чтобы следующий игрок мог подняться. Спасибо.',
+  edenX1HallOfFameRank: 'Уступил место #{rank}',
   loyaltySummaryTitle: 'Текущая сводка',
   loyaltySummaryCurrent: 'Текущая лояльность',
   loyaltyPresetsLabel: 'Готовые настройки',

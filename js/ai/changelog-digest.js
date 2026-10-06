@@ -1,10 +1,18 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.13";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.14";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.6.14",
+    "date": "2026-10-06",
+    "highlights": [
+      "The Eden season page's Final Top 20 has a **Download poster** button that draws a designed share image: every winner with their reward group, reward tier (Guild Master or Core), headline score and a short breakdown (support work counts and bonus for Support Work, contribution ra…",
+      "A Hall of Fame closes the Final Top 20 card and the poster: the players who gave up their premium reward this season (published forfeit adjustments), so the slot passed to the next player. A rank is shown only for someone who stepped aside inside the contribution reward window."
+    ]
+  },
   {
     "version": "16.6.13",
     "date": "2026-09-30",
@@ -76,15 +84,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "The Growth Board compares every waypoint a player has: the earlier season's upload, today's sign-up record and the growth re-upload once its window opens. Each row shows baseline → sign-up, sign-up → re-upload and baseline → re-upload changes for all nine power fields, so a memb…",
       "\"I have dead troops to count\" starts checked on registration and score review, and the helper opens in thousands.",
       "VtsScore and the Growth Board speak all 13 site languages: Croatian, Indonesian, Italian, Korean, Russian, Turkish and Chinese join the existing six."
-    ]
-  },
-  {
-    "version": "16.6.4",
-    "date": "2026-09-27",
-    "highlights": [
-      "Season registration saves again for members who record dead troops. The submission rules checked all fifteen counts with separate bound clauses, and that chain crossed Firestore's 1,000-expressions-per-request ceiling, so every create or edit carrying a dead-troop breakdown was …",
-      "The dead-troops helper opens in thousands, matching the K counts on the game's dead-troop screen, and each tier row shows its power per troop (×8.2 Lofty, ×7.5 T10, ×7.0 T9). Saved sign-ups reopen in the same unit.",
-      "Lady Zubbs and MalakKiji carry the R4 management tag wherever public player labels render, including Eden X2."
     ]
   }
 ].map((release) =>
