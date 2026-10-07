@@ -2,7 +2,7 @@
 
 ## Runtime and exported services
 
-This package uses Node 22 and its own package-lock.json. The frontend uses Node 20; install dependencies in the package you are changing.
+This package uses Node 22 and its own package-lock.json. The frontend also uses Node 22 but has its own lockfile; install dependencies in the package you are changing.
 
 | Export | Protocol | Responsibility |
 |---|---|---|

@@ -13,7 +13,7 @@
 | Member unlock secrets | Firebase Functions secret bindings | See functions/README.md |
 | Worker bindings/origins | wrangler.jsonc and deployed service configuration | Review source/deployed drift explicitly |
 
-The frontend baseline is Node 20; Functions run on Node 22. Use the appropriate lockfile in each package. A frontend build does not install or deploy Functions.
+The frontend and Functions both run on Node 22, each with its own package. Use the appropriate lockfile in each package. A frontend build does not install or deploy Functions.
 
 ## Diagnose before changing configuration
 

@@ -4,7 +4,7 @@
 
 ## Establish context
 
-Read the [documentation index](docs/README.md), inspect the branch/status, and start from latest origin/gh-pages in an isolated branch/worktree. Preserve work owned by other sessions. Use Node 20 for the frontend, the lockfile via npm ci, and the separate Node 22 package for Functions.
+Read the [documentation index](docs/README.md), inspect the branch/status, and start from latest origin/gh-pages in an isolated branch/worktree. Preserve work owned by other sessions. Use Node 22 for the frontend (see .nvmrc), the lockfile via npm ci, and the separate Node 22 package for Functions.
 
 ## Delegation
 

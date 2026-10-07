@@ -62,7 +62,7 @@ $env:FUNCTIONS_DISCOVERY_TIMEOUT = "120"
 npx firebase deploy --only "functions:<name>,functions:<name>" --project abocombo
 ```
 
-- Functions run on **Node 22** (`nvm use 22` if you use nvm). The frontend uses Node 20.
+- Functions run on **Node 22** (`nvm use 22` if you use nvm). The frontend uses Node 22 too.
 - Deploying from a newer local Node works: on 2026-09-24 a deploy from Node 24 printed `EBADENGINE … required: { node: '22' }` and still deployed to the Node 22 runtime. The "outdated firebase-functions" and `npm audit` notices are follow-up work for their own PR, not something to fix in the release checkout.
 - `npm ci` in `functions/` is required on a fresh checkout. Without it, deploy fails with "User code failed to load … Timeout after 10000".
 - `FUNCTIONS_DISCOVERY_TIMEOUT=120` avoids the same timeout on a slow first load of the Admin SDK. Set it in the same PowerShell window as the deploy.

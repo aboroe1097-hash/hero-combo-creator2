@@ -111,7 +111,7 @@ export function createInput({ onPause, onRestart, assistAim = false } = {}) {
   window.addEventListener('pointermove', onPointerMove);
 
   function readGamepad() {
-    // Node 20 has no global navigator (the unit tests run there); a browser always does.
+    // Node (where the unit tests run) has no navigator.getGamepads; a browser does.
     if (typeof navigator === 'undefined' || !navigator.getGamepads) return null;
     const pads = navigator.getGamepads();
     for (const pad of pads) {
