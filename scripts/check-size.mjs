@@ -212,7 +212,10 @@ const LIMITS = {
   // growth tracker, the account and loose-name baseline joins, the sign-up
   // name suggestions and the "(you)" picker mark grow it to 11986.4 KiB; the
   // cap moves by the measured minimum.
-  totalJsBytes: 11987 * 1024,
+  // 16.6.14: the Eden Final Top 20 poster (a canvas renderer) and its Hall of
+  // Fame, with their copy in 12 languages, grow it to 12005.3 KiB; the cap
+  // moves by the measured minimum.
+  totalJsBytes: 12006 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and

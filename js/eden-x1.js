@@ -41,7 +41,8 @@ import {
   resolveCanonicalPlayerName,
   stripGuildTagsFromPlayerName,
 } from './ocr-name-normalizer.js';
-import { renderSpecialPlayerTag } from './player-tags.js';
+import { getSpecialPlayerTag, renderSpecialPlayerTag } from './player-tags.js';
+import { downloadTop20Poster } from './eden-top20-poster.js';
 import { localizeEdenX1Shell } from './i18n/eden-x1-shell.js';
 import { setActivePlayerRegistry } from './player-registry.js';
 import {
@@ -87,7 +88,7 @@ import {
   resolveEdenAccountPlayer,
 } from './eden-account-link.js';
 
-export const APP_VERSION = '16.6.13';
+export const APP_VERSION = '16.6.14';
 // Season-configured viewer: eden-x1.html keeps its archive defaults, while
 // eden-x2.html marks the body with data-eden-workspace="x2" and this renderer
 // switches to the published-projection read path, X2 vote collections, and
@@ -165,6 +166,8 @@ const EDEN_X1_IS_ARCHIVE = EDEN_X1_SEASON_STATE === 'archive';
 let currentLang = 'en';
 let currentRows = [];
 let currentForfeitedRewardIdentities = createRewardPriorityIdentitySet();
+// The published forfeit_premium adjustments themselves, for the Hall of Fame.
+let currentForfeitedRewardAdjustments = [];
 let currentRecordLabel = '';
 let currentSeason = '';
 let currentMemberOptions = [];
@@ -6587,6 +6590,7 @@ function getAnnouncementRows() {
         playerName: entry?.playerName || '',
         playerKey: entry?.playerKey || '',
         placeholder: !entry,
+        entry,
       });
     }
   };
@@ -6629,6 +6633,180 @@ function getAnnouncementRemainingRows() {
     }));
 }
 
+// Players who gave up the premium reward this season, so the slot passed to the
+// next eligible player. They come from the published forfeit_premium
+// adjustments and from rows already carrying that reward reason, one entry per
+// player family. A rank is shown only for a player who stepped aside inside
+// the contribution reward window, numbered as the Total Contribution table
+// numbers them; anyone else's stored final rank would clash with the #21-110
+// list on the same page.
+function getHallOfFameEntries() {
+  const familyOf = (key, name) =>
+    rewardPriorityFamilyKey(key, name) || compactPlayerIdentity(name || key);
+  const skippedRanks = new Map();
+  getContributionRewardRows()
+    .filter((row) => row.edenX1RewardSkipped)
+    .forEach((row) => skippedRanks.set(familyOf(row.playerKey, row.playerName), row.finalRank));
+  const sources = [
+    ...currentForfeitedRewardAdjustments.map((adjustment) => ({
+      playerKey: adjustment.playerKey,
+      playerName: adjustment.playerName,
+    })),
+    ...currentRows.filter((row) => row.rewardReason === 'forfeit_premium'),
+  ];
+  const entries = new Map();
+  for (const source of sources) {
+    const family = familyOf(source.playerKey, source.playerName);
+    if (!family || entries.has(family)) continue;
+    const familyRows = currentRows.filter(
+      (row) => familyOf(row.playerKey, row.playerName) === family
+    );
+    const row = familyRows.find((entry) => entry.isPrimaryAccount !== false) || familyRows[0];
+    const rank = Number(skippedRanks.get(family)) || 0;
+    entries.set(family, {
+      playerKey: row?.playerKey || source.playerKey || '',
+      playerName: row?.playerName || source.playerName || source.playerKey || '',
+      rank,
+    });
+  }
+  return [...entries.values()].sort(
+    (a, b) =>
+      (a.rank || 999999) - (b.rank || 999999) ||
+      String(a.playerName).localeCompare(String(b.playerName))
+  );
+}
+
+// Styled inline like the public player buttons: the Eden pages sit at their
+// initial-CSS budget, and the entries reuse the announcement chip, which
+// already handles the light theme.
+function renderHallOfFame() {
+  const entries = getHallOfFameEntries();
+  if (!entries.length) return '';
+  return `<section class="eden-x1-hall-of-fame" style="--eden-chip-rgb:245,196,81;margin-top:1rem;padding:1rem;border:1px solid rgb(245,196,81);border-radius:18px;text-align:center" aria-labelledby="edenX1HallOfFameTitle">
+    <h3 id="edenX1HallOfFameTitle">✦ ${esc(t('edenX1HallOfFameTitle'))} ✦</h3>
+    <p>${esc(t('edenX1HallOfFameCopy'))}</p>
+    <ul style="display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;padding:0;list-style:none">${entries
+      .map(
+        (entry) => `<li class="eden-x1-announcement-chip">
+          <strong>${renderTaggedPlayerName(entry)}</strong>
+          <small>${esc(entry.rank ? t('edenX1HallOfFameRank', { rank: entry.rank }) : t('edenX1RewardSkippedPremium'))}</small>
+        </li>`
+      )
+      .join('')}</ul>
+  </section>`;
+}
+
+function posterRowScore(row) {
+  const entry = row.entry || {};
+  const breakdownCounts = () =>
+    [
+      `${t('edenX1ThBanners')} ${formatScore(entry.banners)}`,
+      `${t('edenX1ThPathers')} ${formatScore(entry.pathers)}`,
+      `${t('edenX1ThShieldWalls')} ${formatScore(entry.shieldWalls)}`,
+    ].join(' · ');
+  if (row.placeholder) return { scoreValue: '', scoreLabel: '', breakdown: [] };
+  if (row.category === 'support') {
+    const bonus = conductBonusValue(entry);
+    return {
+      scoreValue: valueOf(entry.weightedScore) ? formatWeightedScore(entry.weightedScore) : '',
+      scoreLabel: t('edenX1PosterSupportScore'),
+      breakdown: [
+        breakdownCounts(),
+        bonus ? `${t('edenX1PosterBonus')} ${formatSignedNumber(bonus)}` : '',
+      ].filter(Boolean),
+    };
+  }
+  if (row.category === 'contribution') {
+    const defaultMode =
+      normalizeEdenX1ContributionRankingMode(entry.edenX1ContributionRankingMode) ===
+      EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT;
+    return {
+      scoreValue: formatWeightedScore(entry.weightedScore),
+      scoreLabel: t(defaultMode ? 'edenX1ContributionModeDefaultScore' : 'edenX1ThWeightedScore'),
+      breakdown: [
+        [
+          entry.finalRank ? t('edenX1PosterContributionRank', { rank: entry.finalRank }) : '',
+          `${t('edenX1ThContribution')} ${compactValue(entry.contributionScore)}`,
+        ]
+          .filter(Boolean)
+          .join(' · '),
+        breakdownCounts(),
+      ],
+    };
+  }
+  const votes = Math.max(0, Math.floor(Number(entry.votes) || 0));
+  return {
+    scoreValue: formatScore(votes),
+    scoreLabel: t('edenX1PosterVotes'),
+    breakdown: [
+      entry.voteRank ? t('edenX1PosterVoteRank', { rank: entry.voteRank }) : '',
+      valueOf(entry.weightedScore)
+        ? `${t('edenX1ThWeightedScore')} ${formatWeightedScore(entry.weightedScore)}`
+        : '',
+    ].filter(Boolean),
+  };
+}
+
+function buildTop20PosterModel() {
+  const rows = getAnnouncementRows();
+  const count = rows.length;
+  const categories = ['support', 'contribution', 'management', 'team'].map((key) => ({
+    key,
+    label: t(announcementCategoryMeta(key).labelKey),
+    count: rows.filter((row) => row.category === key && !row.placeholder).length,
+  }));
+  let dateLabel = '';
+  try {
+    dateLabel = new Intl.DateTimeFormat(resolveIntlLocale(currentLang), {
+      dateStyle: 'long',
+    }).format(new Date());
+  } catch {
+    dateLabel = new Date().toISOString().slice(0, 10);
+  }
+  const hallEntries = getHallOfFameEntries();
+  return {
+    kicker: `VTS 1097 · ${EDEN_WORKSPACE.seasonLabel}`,
+    title: t('edenX1RewardAnnouncementTitleCount', { count }),
+    subtitle: t('edenX1PosterSubtitle'),
+    dateLabel,
+    congrats: t('edenX1RewardAnnouncementCongratsCount', { count }),
+    footer: 'roc-vts.com',
+    columns: {
+      rank: t('edenX1ThNumber'),
+      player: t('adminContributionMember'),
+      group: t('edenX1RewardSlotGroup'),
+      reward: t('edenX1PosterTier'),
+      score: t('edenX1PosterScore'),
+      breakdown: t('edenX1PosterBreakdown'),
+    },
+    categories,
+    rows: rows.map((row) => ({
+      rank: row.rank,
+      name: row.placeholder ? t('edenX1Tba') : row.playerName,
+      tag: row.placeholder ? '' : getSpecialPlayerTag(row)?.label || '',
+      category: row.category,
+      categoryLabel: t(announcementCategoryMeta(row.category).labelKey),
+      reward: row.categoryReward || 'core',
+      rewardLabel: contributionRewardLabel(row.categoryReward || 'core'),
+      placeholder: row.placeholder,
+      ...posterRowScore(row),
+    })),
+    hallOfFame: hallEntries.length
+      ? {
+          title: t('edenX1HallOfFameTitle'),
+          copy: t('edenX1HallOfFameCopy'),
+          entries: hallEntries.map((entry) => ({
+            name: entry.playerName,
+            tag: getSpecialPlayerTag(entry)?.label || '',
+            detail: entry.rank
+              ? t('edenX1HallOfFameRank', { rank: entry.rank })
+              : t('edenX1RewardSkippedPremium'),
+          })),
+        }
+      : null,
+  };
+}
+
 function renderAnnouncementTable() {
   const rows = getAnnouncementRows();
   const rewardViewClass = rewardViewAccentClass('announcement');
@@ -6647,6 +6825,7 @@ function renderAnnouncementTable() {
         </h2>
         <div class="dash-weighted-table-controls">
           <span class="dash-weighted-contribution-meta">${esc(t('edenX1RewardAnnouncementCopy'))}</span>
+          <button class="dash-btn dash-btn-xs eden-x1-poster-btn" type="button" data-top20-poster data-html2canvas-ignore="true">${esc(t('edenX1PosterDownload'))}</button>
           <button class="dash-btn dash-btn-xs" type="button" data-announcement-download="top20" data-html2canvas-ignore="true">${esc(t('downloadCombosBtn'))}</button>
         </div>
       </div>
@@ -6688,6 +6867,7 @@ function renderAnnouncementTable() {
         </table>
       </div>
       <p class="eden-x1-announcement-footer"><strong>${esc(t('edenX1RewardAnnouncementCongrats'))}</strong> ${esc(t('edenX1RewardAnnouncementCopy'))}</p>
+      ${renderHallOfFame()}
     </div>
   </div>`;
 }
@@ -6757,6 +6937,18 @@ async function downloadAnnouncementImage(target, filename) {
 }
 
 function bindAnnouncementDownloads(host) {
+  host.querySelector('[data-top20-poster]')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      const season = String(EDEN_WORKSPACE.seasonLabel || 'eden')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-');
+      await downloadTop20Poster(buildTop20PosterModel(), `vts-${season}-top20-poster.png`);
+    } finally {
+      button.disabled = false;
+    }
+  });
   host.querySelectorAll('[data-announcement-download]').forEach((button) => {
     button.addEventListener('click', async () => {
       const kind = button.dataset.announcementDownload;
@@ -7761,6 +7953,9 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
     ? data.publicConductAdjustments
     : [];
   currentForfeitedRewardIdentities = getForfeitedRewardPriorityIdentities(r5Adjustments, season);
+  currentForfeitedRewardAdjustments = normalizeWeightedR5Adjustments(r5Adjustments, season).filter(
+    (adjustment) => adjustment?.category === 'forfeit_premium'
+  );
 
   // Scoring rules published with the season. A season published before they
   // were carried keeps the page's previous behaviour: default duty weights and

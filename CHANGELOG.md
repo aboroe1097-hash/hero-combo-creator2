@@ -1,10 +1,15 @@
 # Changelog
 
+This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
+
+## 16.6.14 - 2026-10-06
+
+- The Eden season page's Final Top 20 has a **Download poster** button that draws a designed share image: every winner with their reward group, reward tier (Guild Master or Core), headline score and a short breakdown (support work counts and bonus for Support Work, contribution rank and total for Total Contribution, votes and voting rank for the R4/Management and Team Players picks). It is drawn on a canvas in the page, so it does not depend on the screenshot library and reads the same in every theme.
+- A Hall of Fame closes the Final Top 20 card and the poster: the players who gave up their premium reward this season (published forfeit adjustments), so the slot passed to the next player. A rank is shown only for someone who stepped aside inside the contribution reward window.
+
 ## 16.6.13 - 2026-09-30
 
 - Fixed the admin dashboard crash when historical OCR leaderboard rows have blank or symbol-only player names. Unresolved rows retain their OCR totals without receiving conduct bonuses; valid player adjustments and strict adjustment-entry validation remain intact.
-
-This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
 ## 16.6.12 - 2026-09-28
 
@@ -288,7 +293,6 @@ This is the release history, newest first. Entries describe their release-time b
 - Eden X2 management rankings now read the current Google Sheet's `VoteResults` tab. Kiji, Loonly, Redbull, stylized ANGEL, and Victoria/Kika names resolve to their player families.
 - Superadmins can choose whether demolition points contribute to dashboard totals while keeping demolition activity visible.
 - Superadmins can delete an individual Eden X2 voting ballot from the admin results table. The ballot is removed from totals and a deletion is recorded in the immutable edit history.
-
 
 ## 16.0.16 - 2026-09-18
 
