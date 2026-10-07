@@ -18,75 +18,41 @@ GitHub Pages ships only the static site. `firestore.rules` and the Functions are
 ## Firestore rules
 
 ```powershell
-npx firebase deploy --only firestore:rules --project abocombo
-node scripts/firestore-rules-status.mjs
+npm run rules:upload
+npm run rules:release
+npm run rules:status
 ```
 
-The deploy is done only when `firestore-rules-status` prints `LIVE MATCHES THIS CHECKOUT`. The CLI's own success or failure message is not proof either way, as the incident below shows.
+The deploy is done only when `rules:status` prints `LIVE MATCHES THIS CHECKOUT`. Do not use `npx firebase deploy --only firestore:rules` for this file: it cannot ship it (see the 2026-10-06 incident below).
 
-### Rules paths that need a deploy before their feature works
-
-- `combos_plan/current` — the live Combos ranking (see [Combos Planner](combos-planner.md#publishing-live)). Until the rules that add it are live, **Publish live** in VTS Admin → Combos fails with `permission-denied` and every visitor keeps the shipped `js/combos-db.js`; nothing else breaks. After the deploy, a superadmin publish should show "Live: published … by you (N lineups)" in the tab. Check the rules behaviour locally with `npm run rules:emulator:combos` (Firestore emulator, needs Java).
-
-### If the deploy fails with 503 or 409
-
-Nothing in the rules file causes these errors, so do not edit or shrink it. A compile error comes back as a 400 that names a line, and a permission problem comes back as a 403; both stop the loop below. Otherwise it retries until the status script reports a match. The first attempt runs the full CLI deploy. Later attempts only re-point the release with `firestore-rules-release.mjs`, and upload again with the CLI only when no uploaded ruleset matches the checkout (exit code 3). Paste it into Windows PowerShell 5 as one block:
-
-```powershell
-function Test-RulesMatch {
-  $statusOutput = node scripts/firestore-rules-status.mjs 2>&1 | Out-String
-  $statusExitCode = $LASTEXITCODE
-  Write-Host $statusOutput
-  return ($statusExitCode -eq 0 -and $statusOutput.Contains('RESULT: LIVE MATCHES THIS CHECKOUT'))
-}
-
-# Runs the CLI deploy and returns $true when it failed for a reason retrying cannot fix.
-function Invoke-RulesDeploy {
-  $deployOutput = npx firebase deploy --only firestore:rules --project abocombo 2>&1 | Out-String
-  Write-Host $deployOutput
-  return ($deployOutput -match 'HTTP Error: 40[03]' -or $deployOutput -match 'Compilation errors')
-}
-
-$outcome = 'unconfirmed'
-for ($i = 1; $i -le 8; $i++) {
-  Write-Host "--- attempt $i"
-  if ($i -eq 1) {
-    if (Invoke-RulesDeploy) { $outcome = 'stopped'; break }
-  } else {
-    node scripts/firestore-rules-release.mjs release
-    $releaseExitCode = $LASTEXITCODE
-    if ($releaseExitCode -eq 4) { $outcome = 'stopped'; break }
-    if ($releaseExitCode -eq 3) {
-      if (Invoke-RulesDeploy) { $outcome = 'stopped'; break }
-    }
-  }
-  if (Test-RulesMatch) { $outcome = 'live'; break }
-  if ($i -lt 8) { Start-Sleep -Seconds (30 * $i) }
-}
-switch ($outcome) {
-  'live'    { Write-Host "Rules are live." }
-  'stopped' { Write-Host "Stopped: a 400/403, a compile error or a missing release. Read the output above; retrying will not help." }
-  default   { Write-Host "Could not confirm that the checkout's rules are live after all retries." }
-}
-```
-
-What the two scripts do:
-
-- `scripts/firestore-rules-status.mjs` (`npm run rules:status`): read-only. It reports which ruleset is live and diffs it against the checkout. It uses the same full-source match as the release script, and prints the live file count when the ruleset holds more than one file.
-- `scripts/firestore-rules-release.mjs release` (`npm run rules:release`) finds the already-uploaded ruleset whose full source matches `./firestore.rules`: exactly one file, with the same text after normalizing line endings. A multi-file ruleset never matches. When several uploaded rulesets are identical, it picks the newest by `createTime`. It points production at that ruleset, retrying through 503s, and confirms by reading the release back. Its GETs (live release, ruleset list, each ruleset) retry on 429, 500 and 503 with the same backoff. It never uploads or deletes anything.
-- `npm run rules:release -- --dry-run` (or `node scripts/firestore-rules-release.mjs release --dry-run`) prints the candidate ruleset, its `createTime` and the live ruleset, then stops without changing the release.
-- `scripts/firestore-rules-release.mjs probe` re-points the release at the ruleset that is already live, then reads the release back. The enforced rules stay unchanged; the PATCH does bump the release's `updateTime`. It reports success only when the PATCH is acknowledged and the GET confirms the same ruleset; a matching GET after a failed PATCH is not enough to prove the endpoint works. If repeated probes remain unconfirmed, inspect the API response and credentials before escalating.
-- `probe` and `release` need an existing `cloud.firestore` release. They cannot bootstrap a new project: its first rules deploy must use the Firebase CLI.
+- `rules:upload` (`firestore-rules-release.mjs upload`) uploads `./firestore.rules` as a new ruleset without releasing it. If a ruleset with exactly this source is already uploaded it sends nothing. The Rules API compiles a ruleset this size more slowly than its gateway waits, so the upload usually answers **503 after about six seconds and is created anyway**; the script then finds it in the rulesets list and prints `UPLOADED: … (the 503 was a gateway timeout; the upload landed)`. A 400 prints the compile errors with line numbers and stops.
+- `rules:release` (`firestore-rules-release.mjs release`) finds the newest uploaded ruleset whose full source matches `./firestore.rules` (one file, same text after normalizing line endings; a multi-file ruleset never matches), points production at it, retrying through 503s, and confirms by reading the release back. A 503 on the release PATCH has been seen to apply anyway, so only the read-back counts. Its GETs retry on 429, 500 and 503. It never uploads or deletes.
+- `npm run rules:release -- --dry-run` prints the candidate ruleset, its `createTime` and the live ruleset, then stops without changing the release.
+- `rules:status` (`firestore-rules-status.mjs`) is read-only. It reports which ruleset is live and diffs it against the checkout with the same full-source match, and prints the live file count when the ruleset holds more than one file.
+- `firestore-rules-release.mjs probe` re-points the release at the ruleset that is already live, then reads the release back. The enforced rules stay unchanged; the PATCH does bump the release's `updateTime`. It reports success only when the PATCH is acknowledged and the GET confirms the same ruleset.
+- `upload`, `probe` and `release` need an existing `cloud.firestore` release. They cannot bootstrap a new project: its first rules deploy must use the Firebase CLI.
 
 Exit codes of `firestore-rules-release.mjs`:
 
 | Code | Meaning |
 | --- | --- |
-| 0 | Done, already live, or a dry run. |
-| 1 | Unconfirmed after retries, or a transient error. Retry. |
-| 2 | Usage error: pass exactly one of `probe` or `release`; `--dry-run` works only with `release`. |
-| 3 | No uploaded ruleset matches `./firestore.rules`. Upload it with `npx firebase deploy --only firestore:rules --project abocombo`. |
-| 4 | Permanent API error (400, 403 or 404), including a missing release. Retrying will not help. |
+| 0 | Done, already uploaded, already live, or a dry run. |
+| 1 | Unconfirmed after retries, or a transient error. Run the same command again. |
+| 2 | Usage error: pass exactly one of `upload`, `probe` or `release`; `--dry-run` works only with `release`. |
+| 3 | `release` found no uploaded ruleset matching `./firestore.rules`. Run `npm run rules:upload` first. |
+| 4 | Permanent API error (400, 403 or 404): a compile error, a permission problem or a missing release. Retrying will not help. |
+
+### Rules paths that need a deploy before their feature works
+
+- `combos_plan/current` — the live Combos ranking (see [Combos Planner](combos-planner.md#publishing-live)). Until the rules that add it are live, **Publish live** in VTS Admin → Combos fails with `permission-denied` and every visitor keeps the shipped `js/combos-db.js`; nothing else breaks. After the deploy, a superadmin publish should show "Live: published … by you (N lineups)" in the tab. Check the rules behaviour locally with `npm run rules:emulator:combos` (Firestore emulator, needs Java).
+
+## Storage rules
+
+`storage.rules` is small and compiles quickly, so the CLI deploys it normally:
+
+```powershell
+npx firebase deploy --only storage --project abocombo
+```
 
 ## Functions
 
@@ -108,8 +74,20 @@ npx firebase deploy --only "functions:<name>,functions:<name>" --project abocomb
 - Say in the PR body which rules and which functions need a deploy, and give the owner the exact commands from this page.
 - If superadmin saves or loads fail after a release that changed `firestore.rules`, check the live rules first (`node scripts/firestore-rules-status.mjs`). In the 2026-09-24 incident, the diagnosis "the account lacks the superadmin claim" was wrong: the claim was fine and the rules were not live.
 - Never tell the owner a rules deploy is done because the CLI printed success. Wait for `LIVE MATCHES THIS CHECKOUT`.
+- A 503 from `rulesets.create` or the CLI's `:test` step means the compile outlasted the gateway, not that the rules are broken or that Google is down. Before blaming a release on it, compare compile time of a minimal ruleset with this file's.
 
 ## Incident log
+
+### 2026-09-28 to 2026-10-06: the 16.6.12 rules could not be uploaded (root cause of the 503s)
+
+- **Impact:** the 16.6.12 Firestore rules (complaints filed only through `fileComplaint`, retired throttle stamps, `phaseSyncPausedUntil` on the season config) were not live for over a week. Production stayed on the 2026-09-27 16:59 UTC ruleset, which still lets browsers create complaints directly. The Functions were deployed; `storage.rules` was also still on its 2026-09-23 version.
+- **Root cause:** the 503 is not an outage. It is the Rules API timing out while it compiles a ruleset of this size and complexity:
+  - A minimal Firestore ruleset and `storage.rules` compiled in 1–2 s with 200, at the same moment that `firestore.rules` returned 503 after a steady ~6 s, ten times in a row. An exact copy of the ruleset that was already live failed the same way.
+  - Padding the minimal ruleset with 150 KB of comments still compiled, so file size is not the trigger; rule complexity is. Stubbing any one third of the All-Star BoH published-overview/team/timeline/player validators let the full file compile, so no single rule is at fault: the whole ruleset sits at the edge of the compile budget, and attempts pass at random (1 in 10 for the 16.6.12 file).
+  - Every `rulesets.create` that answered 503 had in fact created the ruleset (21 of 21 probe uploads were in the rulesets list afterwards). The CLI never gets that far: its `:test` pre-check hits the same timeout and it stops before uploading. That is why repeated `firebase deploy` attempts failed while an API upload works.
+- **Fix:** `npm run rules:upload` uploads through the API, treats a 503 as "check the list" rather than failure, and `npm run rules:release` then switches production. The Firestore rules section above now uses only those commands.
+- **Headroom:** the file also carries 17 functions that nothing calls (the retired per-field submission validators `validAllStarBohStats`, `validAllStarBohCommitment`, `validAllStarBohOcr` and their helpers). Removing them cut the compile failure rate in a probe from 9 in 10 to about 1 in 2. Their removal needs the structural tests in `tests/unit/all-star-boh-security.test.mjs` that still assert their bodies to be retired at the same time, so it is follow-up work.
+- **Note on the 2026-09-23 entry below:** that "about a day" outage was the same compile-time ceiling, not a Google-side incident; it cleared when attempts happened to compile in time.
 
 ### 2026-09-23 to 2026-09-24: Firestore rules deploy returned 503 for about a day
 

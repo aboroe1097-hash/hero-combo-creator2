@@ -3,6 +3,7 @@
 // Points the live cloud.firestore release at the ruleset that was already
 // uploaded for this checkout's firestore.rules, retrying through 503s.
 //
+//   node scripts/firestore-rules-release.mjs upload             upload ./firestore.rules without releasing it
 //   node scripts/firestore-rules-release.mjs probe              re-point the release at the live ruleset
 //   node scripts/firestore-rules-release.mjs release            switch production to ./firestore.rules
 //   node scripts/firestore-rules-release.mjs release --dry-run  show what release would do, change nothing
@@ -87,7 +88,8 @@ async function call(method, url, token, body) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const USAGE = 'Usage: node scripts/firestore-rules-release.mjs probe | release [--dry-run]';
+const USAGE =
+  'Usage: node scripts/firestore-rules-release.mjs upload | probe | release [--dry-run]';
 const RETRYABLE_STATUSES = new Set([429, 500, 503]);
 const PERMANENT_STATUSES = new Set([400, 403, 404]);
 const PATCH_STOP_STATUSES = new Set([400, 403]);
@@ -331,9 +333,7 @@ export async function runRelease({
 
   const match = await findMatchingRuleset(localRules, token, { project, ...retry });
   if (!match) {
-    logger(
-      `No uploaded ruleset matches ./firestore.rules yet. Run \`npx firebase deploy --only firestore:rules --project ${project}\` first; the upload usually lands even when the command fails.`
-    );
+    logger('No uploaded ruleset matches ./firestore.rules yet. Run `npm run rules:upload` first.');
     return 3;
   }
   if (match.name === liveRuleset) {
@@ -351,6 +351,66 @@ export async function runRelease({
   const ok = await pointReleaseAt(match.name, token, retry);
   logger(ok ? 'DONE: new rules are live.' : 'FAILED: production is still on the old rules.');
   return ok ? 0 : 1;
+}
+
+// Uploads ./firestore.rules as a new ruleset without releasing it. The Rules
+// API compiles a ruleset of this size slower than its gateway waits, so
+// rulesets.create answers 503 after about six seconds while the ruleset is
+// created anyway (2026-10-06: every one of 21 probe uploads that got a 503 was
+// in the rulesets list afterwards). The CLI's `:test` pre-check fails the same
+// way and stops before it uploads, which is why `firebase deploy` cannot ship
+// these rules. A 503 is therefore checked against the rulesets list rather
+// than retried blindly, so one upload never becomes a dozen. A 400 carries the
+// compile errors and is final.
+export async function runUpload({
+  localRules,
+  token,
+  project = PROJECT,
+  callApi = call,
+  sleepFor = sleep,
+  retryDelays = RETRY_DELAYS_S,
+  logger = console.log,
+}) {
+  const retry = { callApi, sleepFor, retryDelays, logger };
+  const existing = await findMatchingRuleset(localRules, token, { project, ...retry });
+  if (existing) {
+    logger(`Already uploaded: ${existing.name} (created ${existing.createTime ?? 'unknown'})`);
+    return 0;
+  }
+  for (const delay of retryDelays) {
+    if (delay) {
+      logger(`  waiting ${delay}s...`);
+      await sleepFor(delay * 1000);
+    }
+    const res = await callApi('POST', `${API}/projects/${project}/rulesets`, token, {
+      source: { files: [{ name: 'firestore.rules', content: localRules }] },
+    });
+    logger(`  POST rulesets -> ${res.status} ${shortText(res.text)}`);
+    if (res.status === 200 && res.json?.name) {
+      logger(`UPLOADED: ${res.json.name}`);
+      return 0;
+    }
+    if (PERMANENT_STATUSES.has(res.status)) {
+      const issues = Array.isArray(res.json?.issues) ? res.json.issues : [];
+      for (const issue of issues) {
+        if (issue?.severity === 'WARNING') continue;
+        const at = issue?.sourcePosition;
+        logger(`  ${at?.line ?? '?'}:${at?.column ?? '?'} ${issue?.description ?? ''}`);
+      }
+      logger('FAILED: the Rules API rejected ./firestore.rules.');
+      return 4;
+    }
+    // A timed-out create usually landed. Look before sending another copy.
+    const landed = await findMatchingRuleset(localRules, token, { project, ...retry });
+    if (landed) {
+      logger(
+        `UPLOADED: ${landed.name} (the ${res.status} was a gateway timeout; the upload landed)`
+      );
+      return 0;
+    }
+  }
+  logger('FAILED: no uploaded ruleset matches ./firestore.rules after retries.');
+  return 1;
 }
 
 export async function runProbe({
@@ -380,9 +440,9 @@ export async function runProbe({
 }
 
 // Returns { mode, dryRun } or null for anything that is not exactly one mode
-// (probe or release), with --dry-run allowed only for release.
+// (upload, probe or release), with --dry-run allowed only for release.
 export function parseArgs(args) {
-  const modes = args.filter((arg) => arg === 'probe' || arg === 'release');
+  const modes = args.filter((arg) => ['upload', 'probe', 'release'].includes(arg));
   const flags = args.filter((arg) => arg === '--dry-run');
   if (modes.length !== 1 || modes.length + flags.length !== args.length) return null;
   if (flags.length > 1) return null;
@@ -405,6 +465,10 @@ async function main() {
     return;
   }
   const localRules = fs.readFileSync('firestore.rules', 'utf8');
+  if (options.mode === 'upload') {
+    process.exitCode = await runUpload({ localRules, token });
+    return;
+  }
   process.exitCode = await runRelease({ localRules, token, dryRun: options.dryRun });
 }
 
