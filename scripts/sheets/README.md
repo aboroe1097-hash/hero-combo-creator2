@@ -23,7 +23,7 @@ render into `dist/downloads/.staging`, validate, and only then move into place a
 
 Requires Chromium (`npx playwright install --with-deps chromium`, already part of the
 repository's checks). A missing browser fails with that instruction instead of a stack
-trace. Node 20 is what CI and the deploy use.
+trace. Node 22 is what CI and the deploy use.
 
 ## Flow
 

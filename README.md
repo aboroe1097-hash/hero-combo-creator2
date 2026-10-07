@@ -35,7 +35,7 @@ For changes to hero or research facts, include the source, capture date, season 
 
 ## Local setup
 
-Use the repository's **Node 20** baseline from [.nvmrc](.nvmrc) and **Python 3.11**, matching CI. Firebase Functions have a separate **Node 22** runtime and dependency tree; see [Functions](functions/README.md).
+Use the repository's **Node 22** baseline from [.nvmrc](.nvmrc) and **Python 3.11**, matching CI. Firebase Functions have a separate **Node 22** runtime and dependency tree; see [Functions](functions/README.md).
 
 From an existing clone:
 

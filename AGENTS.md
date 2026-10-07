@@ -90,4 +90,4 @@ Use [docs/README.md](docs/README.md) to distinguish current guides from historic
 
 For cleanup, enumerate exact paths and verify runtime/build/test consumers, including dynamic filenames and snapshot names. Report tracked-tree and deployment savings separately from local caches and Git history. Do not force-remove dirty worktrees.
 
-Keep setup, security, and release guidance aligned with executable scripts. The frontend baseline is Node 20; Functions use their own Node 22 package. Documentation/internal-only changes do not require an app-version bump unless requested.
+Keep setup, security, and release guidance aligned with executable scripts. The frontend baseline is Node 22 (Node 20 reached end-of-life in April 2026, and cssnano 9 needs Node 22); Functions use their own Node 22 package. Documentation/internal-only changes do not require an app-version bump unless requested.
