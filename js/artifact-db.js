@@ -76,7 +76,7 @@ export const ARTIFACT_RESOURCES = Object.freeze({
 
 export const ARTIFACT_PROGRESS_STORAGE_KEY = 'vts_artifact_progress_sword-of-judgment_v1';
 
-function formatArtifactDescription(description, parameters = '') {
+export function formatArtifactDescription(description, parameters = '') {
   const values = String(parameters).split(';');
   return String(description || '').replace(/\{(\d+)\}/g, (_, index) => values[Number(index)] ?? '?');
 }
@@ -94,6 +94,8 @@ function buildSwordOfJudgment() {
       maxLevel: raw.lmax,
       costs: Object.freeze([...raw.costs]),
       buff: formatArtifactDescription(raw.desc, parameters),
+      // The raw template, so a level's own values can be shown (buff is the max-level text).
+      descriptionTemplate: raw.desc,
       permanentAttribute: raw.maxLvlBonus || null,
       branch: raw.x < 280 ? 'a' : raw.x > 360 ? 'b' : 'root',
       tier,
