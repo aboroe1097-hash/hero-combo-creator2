@@ -160,9 +160,9 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   // the personal growth tracker, the account/loose-name joins and the sign-up
   // name suggestions grow the built JS to 11986.4 KiB; the cap moves by the
   // measured minimum. 12006 since 16.6.14: the Eden Final Top 20 poster and its
-  // Hall of Fame grow it to 12005.3 KiB. 12016 since 16.6.15: the admin
-  // growth-board switch and the re-upload name-search note grow it to 12015.8 KiB.
-  assert.match(sizeCheck, /totalJsBytes: 12016 \* 1024/);
+  // Hall of Fame grow it to 12005.3 KiB. 12017 since 16.6.15: the admin
+  // growth-board switch and the re-upload name-search note grow it to 12015.8-12016.1 KiB (CI measures 0.3 KiB more).
+  assert.match(sizeCheck, /totalJsBytes: 12017 \* 1024/);
   // 427 since 16.5.0 Phase 0: removing the unconsumed .u-* utilities from
   // atmosphere.css and four dead compatibility tokens from _tokens.css measured
   // 431,155 -> 428,135 bytes, so the ceiling drops by the verified reclaim.
