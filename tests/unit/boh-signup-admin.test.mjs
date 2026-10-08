@@ -16,7 +16,9 @@ import {
   buildBohSignupAdminRequest,
   deleteBohSignup,
   renderBohSignupRows,
+  isGrowthBoardVisible,
   saveBohSignupSeasonConfig,
+  saveGrowthBoardVisibility,
   toggleOrderedSlot,
 } from '../../js/boh-signup-admin.js';
 import { COMPETITION_BOH_SLOTS } from '../../js/competition-schedule.js';
@@ -619,6 +621,14 @@ test('the season picker writes exactly the keys the rules validator allows', asy
     context
   );
   assert.equal(paused.phaseSyncPausedUntil, '2026-10-01T12:00:00.000Z');
+
+  // The growth-board switch has its own control; a season save keeps it.
+  stored = { activeSeason: SEASON, growthBoardVisible: false };
+  const boardKept = await saveBohSignupSeasonConfig(
+    { activeSeason: SEASON, scoringProfileId: PROFILE, open: false, grantDurationMinutes: 720 },
+    context
+  );
+  assert.equal(boardKept.growthBoardVisible, false);
   const rules = readFileSync('firestore.rules', 'utf8');
   const validator = rules.match(/function validAllStarBohConfig\(\) \{[\s\S]*?\n {4}\}/)[0];
   const allowed = validator
@@ -628,7 +638,7 @@ test('the season picker writes exactly the keys the rules validator allows', asy
     .sort();
   // Every written key must be allowed by the rules; optional fields like
   // phaseSyncPausedUntil need not be present in every write.
-  for (const key of Object.keys(writes[1].payload)) {
+  for (const key of [...Object.keys(writes[1].payload), ...Object.keys(boardKept)]) {
     assert.ok(allowed.includes(key), `written key ${key} is not allowed by rules`);
   }
   stored = null;
@@ -957,4 +967,26 @@ test('the signup list flags rows whose dead-troop values were never entered', ()
   // none: both understate the player, so both are flagged.
   assert.match(html, /NoDead<br><span class="dash-boh-dead-missing">No dead values<\/span>/);
   assert.doesNotMatch(html, /HasDead<br><span class="dash-boh-dead-missing">/);
+});
+
+test('the growth-board switch merges one flag and defaults to shown', async () => {
+  const writes = [];
+  const context = {
+    db: { kind: 'test' },
+    firestore: {
+      doc: (_db, path) => ({ path }),
+      setDoc: async (ref, payload, options) => writes.push({ path: ref.path, payload, options }),
+    },
+  };
+  await saveGrowthBoardVisibility(false, context);
+  assert.deepEqual(writes, [
+    {
+      path: 'boh_allstar_config/current',
+      payload: { growthBoardVisible: false },
+      options: { merge: true },
+    },
+  ]);
+  assert.equal(isGrowthBoardVisible({}), true);
+  assert.equal(isGrowthBoardVisible({ growthBoardVisible: true }), true);
+  assert.equal(isGrowthBoardVisible({ growthBoardVisible: false }), false);
 });

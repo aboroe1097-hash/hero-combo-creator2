@@ -607,10 +607,6 @@ const ar = {
   arcadeSiegeDailyNote: 'حرب اليوم: {map} · {date} — الجولة نفسها للجميع.',
   arcadeSiegeMapKeep: 'سور القلعة',
   arcadeSiegeMapShip: 'سفينة النقل',
-  siegeCalloutTitle: 'صوّت لأفضل الأعضاء',
-  siegeCalloutBody: 'تصويت لاعبي الفريق والإدارة في Eden X2 مفتوح.',
-  siegeCalloutPlay: 'إلى Eden',
-  siegeCalloutDismiss: 'إغلاق',
   arcadeHeroRumbleTitle: 'معركة الأبطال',
   arcadeHeroRumbleDesc:
     'أيقونات الأبطال الحقيقية تتقاتل! التقط الأسلحة الزرقاء للهجوم وتفادَ الذهبية. البنفسجي = خارق!',
@@ -2269,6 +2265,10 @@ const ar = {
   adminBohSignupSeasonLabel: 'الموسم النشط',
   adminBohSignupProfileLabel: 'نسخة الاحتساب',
   adminBohSignupOpenLabel: 'التسجيل مفتوح',
+  adminBohSignupGrowthBoardLabel: 'إظهار لوحة النمو للأعضاء',
+  adminBohSignupGrowthBoardHelp: 'ألغِ التحديد لإخفاء لوحة نمو المسابقة بالكامل في صفحة VtsScore. تستمر الرفعات في الاحتساب، ويراها الأعضاء مجددًا فور إعادة التحديد.',
+  adminBohSignupGrowthBoardShown: 'لوحة النمو ظاهرة الآن للأعضاء.',
+  adminBohSignupGrowthBoardHidden: 'لوحة النمو مخفية الآن عن الأعضاء.',
   adminBohSignupGrantLabel: 'مدة جلسة رمز العضو (دقائق)',
   adminBohSignupSeasonSave: 'حفظ إعدادات الموسم',
   adminBohSignupSeasonHelp:

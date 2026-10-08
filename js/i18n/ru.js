@@ -614,10 +614,6 @@ const ru = {
   arcadeSiegeDailyNote: 'Война дня: {map} · {date} — одинаковая для всех.',
   arcadeSiegeMapKeep: 'Вал крепости',
   arcadeSiegeMapShip: 'Транспортный корабль',
-  siegeCalloutTitle: 'Голосуйте за лучших участников',
-  siegeCalloutBody: 'Голосования Team Players и управления Eden X2 открыты.',
-  siegeCalloutPlay: 'Перейти в Eden',
-  siegeCalloutDismiss: 'Скрыть',
   arcadeHeroRumbleTitle: 'Битва героев',
   arcadeHeroRumbleDesc:
     'Настоящие значки героев сражаются! Ловите синее оружие для атаки и уворачивайтесь от золотого. Фиолетовое = СУПЕР!',
@@ -2312,6 +2308,10 @@ const ru = {
   adminBohSignupSeasonLabel: 'Активный сезон',
   adminBohSignupProfileLabel: 'Версия расчёта',
   adminBohSignupOpenLabel: 'Регистрация открыта',
+  adminBohSignupGrowthBoardLabel: 'Показывать участникам таблицу роста',
+  adminBohSignupGrowthBoardHelp: 'Снимите флажок, чтобы скрыть всю таблицу роста соревнования на странице VtsScore. Загрузки продолжают учитываться; участники снова увидят её, как только вы поставите флажок.',
+  adminBohSignupGrowthBoardShown: 'Таблица роста теперь видна участникам.',
+  adminBohSignupGrowthBoardHidden: 'Таблица роста теперь скрыта от участников.',
   adminBohSignupGrantLabel: 'Сессия PIN участника (минуты)',
   adminBohSignupSeasonSave: 'Сохранить настройки сезона',
   adminBohSignupSeasonHelp:

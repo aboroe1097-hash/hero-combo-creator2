@@ -700,6 +700,10 @@ export async function bootVtsScore(options = {}) {
         : i18n.text('statusNoPlayers'),
       state.players.length ? 'success' : 'warning'
     );
+    // This browser's own signup is already known: start on it instead of
+    // asking the member to search for a spelling they may not remember.
+    const own = state.players.find((player) => player.self);
+    if (own && !state.selectedPlayer && !playerInput.value.trim()) choosePlayer(own);
   }
 
   /* ---------------------------------------------------------------- *
@@ -779,18 +783,26 @@ export async function bootVtsScore(options = {}) {
   // visitors reading the schedule. Called from the schedule render and again
   // from phase gating, because the registration phase returns before the
   // schedule render runs.
+  // The section is only revealed once the Function has answered, so a board
+  // an admin switched off never flashes on screen before it hides.
+  let growthBoard = null;
+  function growthBoardAllowed() {
+    return Boolean(state.grant) && getCompetitionPageState(state.phase).growthBoard;
+  }
+
   function updateGrowthBoardVisibility() {
-    const boardVisible = Boolean(state.grant) && getCompetitionPageState(state.phase).growthBoard;
-    setHidden(element('vtsScoreGrowthBoard'), !boardVisible);
-    if (boardVisible) void mountGrowthBoard();
+    const allowed = growthBoardAllowed();
+    const shown =
+      allowed && Boolean(growthBoard) && !growthBoard.loading && !growthBoard.adminHidden;
+    setHidden(element('vtsScoreGrowthBoard'), !shown);
+    if (allowed) void mountGrowthBoard();
   }
 
   // The public board is calculated from live opt-in data and refreshed while
   // results are visible; no admin publish action or cached Firestore document.
-  let growthBoard = null;
   async function mountGrowthBoard({ rerender = false } = {}) {
     const section = element('vtsScoreGrowthBoard');
-    if (!section || section.hidden) return;
+    if (!section || !growthBoardAllowed()) return;
     if (growthBoard?.loading) return;
     const currentTime = now();
     if (growthBoard && currentTime < growthBoard.nextRefreshAt) {
@@ -811,6 +823,18 @@ export async function bootVtsScore(options = {}) {
         state.client.getCompetitionGrowthBoard(),
         SCHEDULE_READ_TIMEOUT_MS
       );
+      // Leadership switched the board off in the admin Signups tab.
+      if (response.hidden) {
+        growthBoard = {
+          loading: false,
+          adminHidden: true,
+          projection: null,
+          nextRefreshAt: now() + 60_000,
+        };
+        section.querySelector('[data-growth-board-mount]')?.replaceChildren();
+        setHidden(section, true);
+        return;
+      }
       const projection = board.normalizeCompetitionBoard(response.board);
       growthBoard = {
         board,
@@ -825,6 +849,7 @@ export async function bootVtsScore(options = {}) {
         section.append(mount);
       }
       const pending = section.querySelector('[data-vts-i18n="growthBoardPending"]');
+      setHidden(section, !growthBoardAllowed());
       if (projection) {
         setHidden(pending, true);
         board.renderCompetitionBoard(mount, projection, { locale: i18n.language });
@@ -835,10 +860,11 @@ export async function bootVtsScore(options = {}) {
     } catch (error) {
       console.warn('VtsScore growth board unavailable', error);
       growthBoard = { loading: false, projection: null, nextRefreshAt: now() + 30_000 };
+      setHidden(section, !growthBoardAllowed());
     } finally {
       clearTimeout(state.growthBoardRefreshTimer);
       state.growthBoardRefreshTimer = setTimeout(() => {
-        if (document.visibilityState !== 'hidden' && !section.hidden) {
+        if (document.visibilityState !== 'hidden' && growthBoardAllowed()) {
           void mountGrowthBoard();
         }
       }, 60_000);

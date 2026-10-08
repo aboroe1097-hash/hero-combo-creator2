@@ -620,10 +620,6 @@ const es = {
   arcadeSiegeDailyNote: 'Guerra diaria de hoy: {map} · {date}: la misma partida para todos.',
   arcadeSiegeMapKeep: 'Muralla del Torreón',
   arcadeSiegeMapShip: 'Buque de transporte',
-  siegeCalloutTitle: 'Vota por los mejores miembros',
-  siegeCalloutBody: 'Las votaciones de Team Players y gestión de Eden X2 están abiertas.',
-  siegeCalloutPlay: 'Ir a Eden',
-  siegeCalloutDismiss: 'Cerrar',
   arcadeHeroRumbleTitle: 'Batalla de Héroes',
   arcadeHeroRumbleDesc:
     '¡Iconos de héroes reales en combate! Recoge armas azules para atacar y esquiva las doradas. Morado = ¡SUPER!',
@@ -3762,6 +3758,10 @@ const es = {
   adminBohSignupSeasonLabel: 'Temporada activa',
   adminBohSignupProfileLabel: 'Versión de cálculo',
   adminBohSignupOpenLabel: 'Inscripción abierta',
+  adminBohSignupGrowthBoardLabel: 'Mostrar el tablero de crecimiento a los miembros',
+  adminBohSignupGrowthBoardHelp: 'Desmarca para ocultar todo el tablero de crecimiento de la competición en la página de VtsScore. Las subidas siguen contando; los miembros lo vuelven a ver en cuanto lo marques.',
+  adminBohSignupGrowthBoardShown: 'El tablero de crecimiento ahora es visible para los miembros.',
+  adminBohSignupGrowthBoardHidden: 'El tablero de crecimiento ahora está oculto para los miembros.',
   adminBohSignupGrantLabel: 'Sesión de PIN de miembro (minutos)',
   adminBohSignupSeasonSave: 'Guardar ajustes de la temporada',
   adminBohSignupSeasonHelp:

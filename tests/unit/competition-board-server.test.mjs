@@ -311,6 +311,28 @@ test('the live board reads current and prior records without writing a projectio
   assert.equal(db.writes.length, 0);
 });
 
+test('an admin-hidden board serves no rows, only the hidden flag', async () => {
+  const db = competitionDb();
+  db.documents['boh_allstar_config/current'] = {
+    activeSeason: 'competition-12',
+    growthBoardVisible: false,
+  };
+  const response = recorder();
+  // Well past the previous test's cache minute, so this request rebuilds.
+  await createVtsScoreHandler({ db, now: () => SCHEDULE.reuploadClosesAt + 10 * 60_000 })(
+    handlerRequest(null, 'GET', { view: 'competition-growth' }),
+    response
+  );
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.body, {
+    schemaVersion: 1,
+    seasonId: 'competition-12',
+    hidden: true,
+    board: null,
+  });
+  assert.ok(!db.reads.includes('boh_allstar/competition-12/submissions'));
+});
+
 function handlerRequest(body, method = 'POST', query = {}) {
   return {
     method,

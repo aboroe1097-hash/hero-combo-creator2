@@ -365,6 +365,8 @@ export function createBohSignupAdminView(options = {}) {
     }
     const openInput = root.querySelector('#dashBohSignupOpenInput');
     if (openInput) openInput.checked = config.open === true;
+    const boardInput = root.querySelector('#dashBohSignupGrowthBoardInput');
+    if (boardInput) boardInput.checked = isGrowthBoardVisible(config);
     const grantInput = root.querySelector('#dashBohSignupGrantInput');
     if (grantInput && document.activeElement !== grantInput) {
       grantInput.value = String(config.grantDurationMinutes || 720);
@@ -500,16 +502,39 @@ export async function saveBohSignupSeasonConfig(config, context) {
   };
   let acceptNewSignups = config.acceptNewSignups;
   let phaseSyncPausedUntil = config.phaseSyncPausedUntil;
+  let growthBoardVisible = config.growthBoardVisible;
   if (typeof getDoc === 'function') {
     const stored = await getDoc(doc(db, BOH_SIGNUP_CONFIG_PATH));
     const data = stored?.exists?.() ? stored.data() : null;
     acceptNewSignups = data?.acceptNewSignups;
     phaseSyncPausedUntil = data?.phaseSyncPausedUntil;
+    growthBoardVisible = data?.growthBoardVisible;
   }
   if (typeof acceptNewSignups === 'boolean') payload.acceptNewSignups = acceptNewSignups;
+  // The growth-board switch has its own control; a season save keeps it.
+  if (typeof growthBoardVisible === 'boolean') payload.growthBoardVisible = growthBoardVisible;
   // A manual pause of the phase sync (set in the console) must survive a save of
   // this form, or saving would silently hand control back to the schedule.
   if (typeof phaseSyncPausedUntil === 'string') payload.phaseSyncPausedUntil = phaseSyncPausedUntil;
   await setDoc(doc(db, BOH_SIGNUP_CONFIG_PATH), payload);
   return payload;
+}
+
+/**
+ * Shows or hides the Competition growth board on the member page. Any admin
+ * may flip it (the rules only reserve the season and scoring version for
+ * superadmins); a merge write leaves every other season key untouched. The
+ * vtsScore Function reads the same flag and stops serving the board while it
+ * is false, so hiding it is not just cosmetic.
+ */
+export async function saveGrowthBoardVisibility(visible, context) {
+  const { firestore, db } = context;
+  const payload = { growthBoardVisible: visible === true };
+  await firestore.setDoc(firestore.doc(db, BOH_SIGNUP_CONFIG_PATH), payload, { merge: true });
+  return payload;
+}
+
+/** An absent flag reads as visible, so existing seasons keep their board. */
+export function isGrowthBoardVisible(config) {
+  return config?.growthBoardVisible !== false;
 }

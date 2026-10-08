@@ -2,45 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import {
-  CALLOUT_KEY,
-  CALLOUT_VERSION,
-  calloutDismissed,
-  dailySiegeFor,
-  dismissCallout,
-  formatDailyNote,
-} from '../../js/siege-daily.js';
+import { dailySiegeFor, formatDailyNote } from '../../js/siege-daily.js';
 import { translations } from '../../js/translations.js';
-
-function memoryStorage(seed = {}) {
-  const values = new Map(Object.entries(seed));
-  return {
-    getItem: (key) => (values.has(key) ? values.get(key) : null),
-    setItem: (key, value) => values.set(key, String(value)),
-  };
-}
-
-test('the homepage callout is dismissed once per version and survives broken storage', () => {
-  const storage = memoryStorage();
-  assert.equal(calloutDismissed(storage), false);
-  assert.equal(dismissCallout(storage), true);
-  assert.equal(calloutDismissed(storage), true);
-  assert.equal(storage.getItem(CALLOUT_KEY), CALLOUT_VERSION);
-
-  const older = memoryStorage({ [CALLOUT_KEY]: 'siege-older-version' });
-  assert.equal(calloutDismissed(older), false, 'a new callout version shows again');
-
-  const broken = {
-    getItem() {
-      throw new Error('blocked');
-    },
-    setItem() {
-      throw new Error('quota');
-    },
-  };
-  assert.equal(calloutDismissed(broken), false);
-  assert.equal(dismissCallout(broken), false);
-});
 
 test('the Arcade banner names today’s Daily War with every placeholder filled', () => {
   const today = dailySiegeFor(new Date('2026-09-23T08:00:00Z'));
@@ -52,9 +15,9 @@ test('the Arcade banner names today’s Daily War with every placeholder filled'
   }
 });
 
-test('the prompts stay out of the index markup and off the arcade card grid', () => {
+test('the banner stays out of the index markup and off the arcade card grid', () => {
   const index = readFileSync('index.html', 'utf8');
-  assert.doesNotMatch(index, /siege-callout|siege-feature/u, 'the callout is injected from JS');
+  assert.doesNotMatch(index, /siege-callout|siege-feature/u, 'the banner is injected from JS');
   const arcade = readFileSync('arcade.html', 'utf8');
   assert.equal((arcade.match(/class="arcade-card"/gu) || []).length, 5);
 
@@ -67,14 +30,13 @@ test('the prompts stay out of the index markup and off the arcade card grid', ()
     /from '\.\/eden-siege-/u,
     'host modules avoid the siege-only chunk prefix'
   );
+  // The Eden vote callout was retired: the hub no longer loads this module.
   const app = readFileSync('js/app.js', 'utf8');
-  assert.match(app, /import\('\.\/siege-promo\.js'\)/u, 'the hub loads the callout lazily');
+  assert.doesNotMatch(app, /siege-promo/u);
 });
 
-test('the Arcade Rampart card and homepage Eden vote callout keep their own destinations', () => {
+test('the Arcade Rampart banner links to the siege page', () => {
   const promo = readFileSync('js/siege-promo.js', 'utf8');
-  const arcade = promo.split('export function mountSiegeCallout')[0];
-  const homepage = promo.split('export function mountSiegeCallout')[1];
-  assert.match(arcade, /play\.href = SIEGE_URL/u);
-  assert.match(homepage, /play\.href = EDEN_URL/u);
+  assert.match(promo, /play\.href = SIEGE_URL/u);
+  assert.doesNotMatch(promo, /siege-callout|EDEN_URL/u);
 });

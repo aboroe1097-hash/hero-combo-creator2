@@ -1336,6 +1336,8 @@ const COMPETITION_COPY = Object.freeze({
       'Registration is closed. Only registered members can make changes until {date}.',
     phaseNoticeWaiting: 'Your registration is locked in. The growth re-upload opens on {date}.',
     phaseNoticeNotRegistered: 'You did not register for Competition #12.',
+    phaseNoticeReuploadPickName:
+      'No sign-up was saved in this browser. If you signed up on another phone or browser, search your name below and pick it from the list — capital letters and symbols do not matter.',
     phaseNoticeResultsPending: 'Re-uploads are closed. Winners are announced on {date}.',
     uploadKickerFinal: 'FINAL SCORE',
     uploadTitleFinal: 'Upload your final score',
@@ -1444,6 +1446,8 @@ const COMPETITION_COPY = Object.freeze({
     phaseNoticeFinalCheckClosed: 'التسجيل مغلق. يمكن للأعضاء المسجلين فقط التعديل حتى {date}.',
     phaseNoticeWaiting: 'تم تثبيت تسجيلك. يُفتح رفع قياس النمو في {date}.',
     phaseNoticeNotRegistered: 'لم تسجّل في المسابقة رقم 12.',
+    phaseNoticeReuploadPickName:
+      'لم يُحفظ تسجيل في هذا المتصفح. إذا سجّلت من هاتف أو متصفح آخر، فابحث عن اسمك بالأسفل واختره من القائمة — الأحرف الكبيرة والرموز لا تهم.',
     phaseNoticeResultsPending: 'أُغلق الرفع الثاني. يُعلن الفائزون في {date}.',
     uploadKickerFinal: 'النتيجة النهائية',
     uploadTitleFinal: 'ارفع نتيجتك النهائية',
@@ -1559,6 +1563,8 @@ const COMPETITION_COPY = Object.freeze({
     phaseNoticeWaiting:
       'Tu registro está confirmado. La nueva subida de crecimiento abre el {date}.',
     phaseNoticeNotRegistered: 'No te registraste en la Competición n.º 12.',
+    phaseNoticeReuploadPickName:
+      'No hay ninguna inscripción guardada en este navegador. Si te inscribiste desde otro teléfono o navegador, busca tu nombre abajo y elígelo de la lista; las mayúsculas y los símbolos no importan.',
     phaseNoticeResultsPending:
       'Las nuevas subidas están cerradas. Los ganadores se anuncian el {date}.',
     uploadKickerFinal: 'PUNTUACIÓN FINAL',
@@ -1676,6 +1682,8 @@ const COMPETITION_COPY = Object.freeze({
     phaseNoticeWaiting:
       'Sua inscrição está confirmada. O novo envio de crescimento abre em {date}.',
     phaseNoticeNotRegistered: 'Você não se inscreveu na Competição nº 12.',
+    phaseNoticeReuploadPickName:
+      'Nenhuma inscrição foi salva neste navegador. Se você se inscreveu em outro celular ou navegador, procure seu nome abaixo e escolha-o na lista — maiúsculas e símbolos não importam.',
     phaseNoticeResultsPending: 'Os novos envios estão fechados. Os vencedores saem em {date}.',
     uploadKickerFinal: 'PONTUAÇÃO FINAL',
     uploadTitleFinal: 'Envie sua pontuação final',
@@ -1796,6 +1804,8 @@ const COMPETITION_COPY = Object.freeze({
     phaseNoticeWaiting:
       'Votre inscription est validée. Le nouvel envoi de progression ouvre le {date}.',
     phaseNoticeNotRegistered: 'Vous ne vous êtes pas inscrit à la compétition no 12.',
+    phaseNoticeReuploadPickName:
+      'Aucune inscription n’est enregistrée dans ce navigateur. Si vous vous êtes inscrit sur un autre téléphone ou navigateur, cherchez votre nom ci-dessous et choisissez-le dans la liste — majuscules et symboles n’ont pas d’importance.',
     phaseNoticeResultsPending:
       'Les nouveaux envois sont fermés. Les gagnants seront annoncés le {date}.',
     uploadKickerFinal: 'SCORE FINAL',
@@ -1914,6 +1924,8 @@ const COMPETITION_COPY = Object.freeze({
       'Die Anmeldung ist geschlossen. Nur angemeldete Mitglieder können bis {date} ändern.',
     phaseNoticeWaiting: 'Deine Anmeldung steht. Der Wachstums-Upload öffnet am {date}.',
     phaseNoticeNotRegistered: 'Du hast dich nicht für Wettbewerb Nr. 12 angemeldet.',
+    phaseNoticeReuploadPickName:
+      'In diesem Browser ist keine Anmeldung gespeichert. Wenn du dich auf einem anderen Handy oder Browser angemeldet hast, suche unten deinen Namen und wähle ihn aus der Liste – Groß-/Kleinschreibung und Symbole spielen keine Rolle.',
     phaseNoticeResultsPending:
       'Die erneuten Uploads sind geschlossen. Die Gewinner werden am {date} bekannt gegeben.',
     uploadKickerFinal: 'ENDSTAND',
@@ -2031,6 +2043,8 @@ const COMPETITION_COPY = Object.freeze({
       'Prijava je zatvorena. Samo prijavljeni članovi mogu mijenjati do {date}.',
     phaseNoticeWaiting: 'Tvoja prijava je potvrđena. Ponovno učitavanje rasta otvara se {date}.',
     phaseNoticeNotRegistered: 'Nisi se prijavio za Natjecanje #12.',
+    phaseNoticeReuploadPickName:
+      'U ovom pregledniku nije spremljena prijava. Ako si se prijavio na drugom mobitelu ili pregledniku, potraži svoje ime ispod i odaberi ga s popisa — velika slova i simboli nisu važni.',
     phaseNoticeResultsPending: 'Ponovna učitavanja su zatvorena. Pobjednici se objavljuju {date}.',
     uploadKickerFinal: 'KONAČNI REZULTAT',
     uploadTitleFinal: 'Učitaj svoj konačni rezultat',
@@ -2147,6 +2161,8 @@ const COMPETITION_COPY = Object.freeze({
       'Pendaftaran ditutup. Hanya anggota terdaftar yang dapat membuat perubahan hingga {date}.',
     phaseNoticeWaiting: 'Pendaftaran kamu terkunci. Unggah ulang pertumbuhan dibuka pada {date}.',
     phaseNoticeNotRegistered: 'Kamu tidak mendaftar untuk Kompetisi #12.',
+    phaseNoticeReuploadPickName:
+      'Tidak ada pendaftaran yang tersimpan di browser ini. Jika kamu mendaftar dari ponsel atau browser lain, cari namamu di bawah dan pilih dari daftar — huruf besar dan simbol tidak berpengaruh.',
     phaseNoticeResultsPending: 'Unggah ulang ditutup. Pemenang diumumkan pada {date}.',
     uploadKickerFinal: 'SKOR AKHIR',
     uploadTitleFinal: 'Unggah skor akhir kamu',
@@ -2264,6 +2280,8 @@ const COMPETITION_COPY = Object.freeze({
     phaseNoticeWaiting:
       'La tua iscrizione è confermata. Il nuovo caricamento di crescita apre il {date}.',
     phaseNoticeNotRegistered: 'Non ti sei iscritto alla Competizione n. 12.',
+    phaseNoticeReuploadPickName:
+      'In questo browser non è salvata nessuna iscrizione. Se ti sei iscritto da un altro telefono o browser, cerca il tuo nome qui sotto e sceglilo dall’elenco: maiuscole e simboli non contano.',
     phaseNoticeResultsPending:
       'I nuovi caricamenti sono chiusi. I vincitori verranno annunciati il {date}.',
     uploadKickerFinal: 'PUNTEGGIO FINALE',
@@ -2375,6 +2393,8 @@ const COMPETITION_COPY = Object.freeze({
       '등록이 마감되었습니다. {date}까지 등록 회원만 변경할 수 있습니다.',
     phaseNoticeWaiting: '등록이 확정되었습니다. 성장 재업로드는 {date}에 열립니다.',
     phaseNoticeNotRegistered: '대회 #12에 등록하지 않았습니다.',
+    phaseNoticeReuploadPickName:
+      '이 브라우저에 저장된 등록이 없습니다. 다른 휴대폰이나 브라우저에서 등록했다면 아래에서 이름을 검색해 목록에서 선택하세요. 대소문자와 기호는 상관없습니다.',
     phaseNoticeResultsPending: '재업로드가 마감되었습니다. 우승자는 {date}에 발표됩니다.',
     uploadKickerFinal: '최종 점수',
     uploadTitleFinal: '최종 점수 업로드',
@@ -2491,6 +2511,8 @@ const COMPETITION_COPY = Object.freeze({
       'Регистрация закрыта. Только зарегистрированные участники могут вносить изменения до {date}.',
     phaseNoticeWaiting: 'Ваша регистрация подтверждена. Повторная загрузка роста откроется {date}.',
     phaseNoticeNotRegistered: 'Вы не регистрировались на Соревнование №12.',
+    phaseNoticeReuploadPickName:
+      'В этом браузере нет сохранённой регистрации. Если вы регистрировались с другого телефона или браузера, найдите своё имя ниже и выберите его из списка — регистр букв и символы не важны.',
     phaseNoticeResultsPending: 'Повторные загрузки закрыты. Победители будут объявлены {date}.',
     uploadKickerFinal: 'ИТОГОВЫЙ РЕЗУЛЬТАТ',
     uploadTitleFinal: 'Загрузите свой итоговый результат',
@@ -2605,6 +2627,8 @@ const COMPETITION_COPY = Object.freeze({
       'Kayıt kapalı. {date} tarihine kadar yalnızca kayıtlı üyeler değişiklik yapabilir.',
     phaseNoticeWaiting: 'Kaydınız kilitlendi. Büyüme yeniden yüklemesi {date} tarihinde açılıyor.',
     phaseNoticeNotRegistered: 'Yarışma #12’ye kaydolmadınız.',
+    phaseNoticeReuploadPickName:
+      'Bu tarayıcıda kayıtlı bir başvuru yok. Başka bir telefondan veya tarayıcıdan kaydolduysanız, adınızı aşağıda arayıp listeden seçin — büyük harfler ve semboller önemli değil.',
     phaseNoticeResultsPending:
       'Yeniden yüklemeler kapalı. Kazananlar {date} tarihinde açıklanacak.',
     uploadKickerFinal: 'FİNAL SKORU',
@@ -2713,6 +2737,8 @@ const COMPETITION_COPY = Object.freeze({
     phaseNoticeFinalCheckClosed: '报名已关闭。仅已报名成员可在 {date} 前进行修改。',
     phaseNoticeWaiting: '你的报名已锁定。成长重新上传于 {date} 开放。',
     phaseNoticeNotRegistered: '你没有报名参加第 12 届竞赛。',
+    phaseNoticeReuploadPickName:
+      '此浏览器中没有保存的报名。如果你是在其他手机或浏览器上报名的，请在下方搜索你的名字并从列表中选择——大小写和符号不影响匹配。',
     phaseNoticeResultsPending: '重新上传已关闭。获胜者于 {date} 公布。',
     uploadKickerFinal: '最终得分',
     uploadTitleFinal: '上传你的最终得分',

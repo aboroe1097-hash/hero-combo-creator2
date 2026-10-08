@@ -684,7 +684,7 @@ test('Firestore private and published paths enforce admin/member boundaries with
   // drop it and a later writer cannot smuggle an extra key in beside it.
   assert.match(
     configValidator,
-    /keys\(\)\.hasOnly\(\[\s*'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId',\s*'acceptNewSignups', 'phaseSyncPausedUntil'\s*\]\)/
+    /keys\(\)\.hasOnly\(\[\s*'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId',\s*'acceptNewSignups', 'phaseSyncPausedUntil', 'growthBoardVisible'\s*\]\)/
   );
   // Competition #12: `acceptNewSignups` is optional (absent means yes), set by
   // the syncCompetitionPhase Function, and must be a boolean when present.

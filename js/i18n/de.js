@@ -648,10 +648,6 @@ const de = {
   arcadeSiegeDailyNote: 'Heutiger Krieg: {map} · {date} — für alle derselbe Lauf.',
   arcadeSiegeMapKeep: 'Burgwall',
   arcadeSiegeMapShip: 'Transportschiff',
-  siegeCalloutTitle: 'Stimme für die besten Mitglieder',
-  siegeCalloutBody: 'Die Team-Players- und Management-Abstimmung für Eden X2 ist offen.',
-  siegeCalloutPlay: 'Zu Eden',
-  siegeCalloutDismiss: 'Schließen',
   arcadeHeroRumbleTitle: 'Heldenkampf',
   arcadeHeroRumbleDesc:
     'Echte Heldensymbole kämpfen! Fange blaue Waffen zum Angreifen und weiche goldenen aus. Lila = SUPER!',
@@ -3809,6 +3805,10 @@ const de = {
   adminBohSignupSeasonLabel: 'Aktive Saison',
   adminBohSignupProfileLabel: 'Bewertungsversion',
   adminBohSignupOpenLabel: 'Anmeldung offen',
+  adminBohSignupGrowthBoardLabel: 'Wachstumstabelle für Mitglieder anzeigen',
+  adminBohSignupGrowthBoardHelp: 'Abwählen, um die gesamte Wachstumstabelle des Wettbewerbs auf der VtsScore-Seite auszublenden. Uploads zählen weiter; Mitglieder sehen sie wieder, sobald du sie anwählst.',
+  adminBohSignupGrowthBoardShown: 'Die Wachstumstabelle ist jetzt für Mitglieder sichtbar.',
+  adminBohSignupGrowthBoardHidden: 'Die Wachstumstabelle ist jetzt für Mitglieder ausgeblendet.',
   adminBohSignupGrantLabel: 'Mitglieder-PIN-Sitzung (Minuten)',
   adminBohSignupSeasonSave: 'Saison-Einstellungen speichern',
   adminBohSignupSeasonHelp:

@@ -609,10 +609,6 @@ const tr = {
   arcadeSiegeDailyNote: 'Bugünün savaşı: {map} · {date} — herkes için aynı oyun.',
   arcadeSiegeMapKeep: 'Kale Suru',
   arcadeSiegeMapShip: 'Nakliye Gemisi',
-  siegeCalloutTitle: 'En iyi üyeler için oy verin',
-  siegeCalloutBody: 'Eden X2 Team Players ve yönetim oylaması açık.',
-  siegeCalloutPlay: 'Eden’a git',
-  siegeCalloutDismiss: 'Kapat',
   arcadeHeroRumbleTitle: 'Kahraman Kapışması',
   arcadeHeroRumbleDesc:
     'Gerçek kahraman simgeleri dövüşüyor! Saldırmak için mavi silahları yakala, altınlardan kaç. Mor = SÜPER!',
@@ -2290,6 +2286,10 @@ const tr = {
   adminBohSignupSeasonLabel: 'Etkin sezon',
   adminBohSignupProfileLabel: 'Puanlama sürümü',
   adminBohSignupOpenLabel: 'Kayıt açık',
+  adminBohSignupGrowthBoardLabel: 'Büyüme tablosunu üyelere göster',
+  adminBohSignupGrowthBoardHelp: 'VtsScore sayfasındaki tüm Yarışma büyüme tablosunu gizlemek için işareti kaldırın. Yüklemeler sayılmaya devam eder; işaretlediğiniz anda üyeler tabloyu yeniden görür.',
+  adminBohSignupGrowthBoardShown: 'Büyüme tablosu artık üyelere görünüyor.',
+  adminBohSignupGrowthBoardHidden: 'Büyüme tablosu artık üyelerden gizlendi.',
   adminBohSignupGrantLabel: 'Üye PIN oturumu (dakika)',
   adminBohSignupSeasonSave: 'Sezon ayarlarını kaydet',
   adminBohSignupSeasonHelp:

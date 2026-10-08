@@ -534,10 +534,6 @@ const kr = {
   arcadeSiegeDailyNote: '오늘의 전쟁: {map} · {date} — 모두에게 같은 판.',
   arcadeSiegeMapKeep: '성채 성벽',
   arcadeSiegeMapShip: '수송선',
-  siegeCalloutTitle: '최고의 멤버에게 투표하세요',
-  siegeCalloutBody: 'Eden X2 팀 플레이어와 관리진 투표가 열렸습니다.',
-  siegeCalloutPlay: 'Eden으로',
-  siegeCalloutDismiss: '닫기',
   arcadeHeroRumbleTitle: '영웅 난투',
   arcadeHeroRumbleDesc:
     '실제 영웅 아이콘이 싸웁니다! 파란 무기를 잡아 공격하고 금색 무기는 피하세요. 보라색 = 슈퍼!',
@@ -2230,6 +2226,10 @@ const kr = {
   adminBohSignupSeasonLabel: '활성 시즌',
   adminBohSignupProfileLabel: '점수 버전',
   adminBohSignupOpenLabel: '등록 열림',
+  adminBohSignupGrowthBoardLabel: '멤버에게 성장 보드 표시',
+  adminBohSignupGrowthBoardHelp: '체크를 해제하면 VtsScore 페이지의 대회 성장 보드 전체가 숨겨집니다. 업로드는 계속 집계되며, 다시 체크하면 멤버에게 바로 보입니다.',
+  adminBohSignupGrowthBoardShown: '이제 멤버에게 성장 보드가 표시됩니다.',
+  adminBohSignupGrowthBoardHidden: '이제 멤버에게 성장 보드가 숨겨졌습니다.',
   adminBohSignupGrantLabel: '멤버 PIN 세션(분)',
   adminBohSignupSeasonSave: '시즌 설정 저장',
   adminBohSignupSeasonHelp:

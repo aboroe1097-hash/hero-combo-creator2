@@ -1,10 +1,19 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.14";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.15";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.6.15",
+    "date": "2026-10-09",
+    "highlights": [
+      "Admins can hide the Competition growth board. The Signups tab has a **Show the growth board to members** switch (any admin); while it is off the vtsScore function serves no board at all, not even the roster, and the VtsScore page keeps the whole section hidden instead of flashin…",
+      "The growth re-upload no longer turns away members who signed up on another phone or browser. A sign-up belongs to the browser that filed it, so a member on a new device used to see \"You did not register\" with no way forward (registration was already closed). The re-upload form n…",
+      "The homepage \"Vote for the best members\" corner card is gone, along with its code, styles and copy. The Arcade's Velo's Rampart banner is unchanged."
+    ]
+  },
   {
     "version": "16.6.14",
     "date": "2026-10-06",
@@ -75,15 +84,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "highlights": [
       "Dead troops stay in the numbers. The Growth Board stripped the dead-troop component out of the sign-up and final upload whenever the baseline had no dead-troop split, hiding the power members had just entered. Troop Power and Total Power now show and compare the full saved total…",
       "Growth board wording and layout: the baseline column reads \"Last season data\" for earlier uploads, \"Final upload\" replaces \"Re-upload\", the sign-up is named as the baseline once that record is what a player is measured from, and the Growth columns no longer get cut off at the ri…"
-    ]
-  },
-  {
-    "version": "16.6.5",
-    "date": "2026-09-27",
-    "highlights": [
-      "The Growth Board compares every waypoint a player has: the earlier season's upload, today's sign-up record and the growth re-upload once its window opens. Each row shows baseline → sign-up, sign-up → re-upload and baseline → re-upload changes for all nine power fields, so a memb…",
-      "\"I have dead troops to count\" starts checked on registration and score review, and the helper opens in thousands.",
-      "VtsScore and the Growth Board speak all 13 site languages: Croatian, Indonesian, Italian, Korean, Russian, Turkish and Chinese join the existing six."
     ]
   }
 ].map((release) =>

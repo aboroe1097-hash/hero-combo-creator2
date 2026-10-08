@@ -648,10 +648,6 @@ const fr = {
   arcadeSiegeDailyNote: 'Guerre du jour : {map} · {date} — la même partie pour tout le monde.',
   arcadeSiegeMapKeep: 'Rempart du donjon',
   arcadeSiegeMapShip: 'Navire de transport',
-  siegeCalloutTitle: 'Votez pour les meilleurs membres',
-  siegeCalloutBody: 'Les votes Team Players et gestion d’Eden X2 sont ouverts.',
-  siegeCalloutPlay: 'Aller à Eden',
-  siegeCalloutDismiss: 'Fermer',
   arcadeHeroRumbleTitle: 'Mêlée des héros',
   arcadeHeroRumbleDesc:
     "De véritables icônes de héros s'affrontent ! Attrapez les armes bleues pour attaquer et évitez les dorées. Violet = SUPER !",
@@ -3929,6 +3925,10 @@ const fr = {
   adminBohSignupSeasonLabel: 'Saison active',
   adminBohSignupProfileLabel: 'Version de calcul',
   adminBohSignupOpenLabel: 'Inscription ouverte',
+  adminBohSignupGrowthBoardLabel: 'Afficher le tableau de progression aux membres',
+  adminBohSignupGrowthBoardHelp: 'Décochez pour masquer tout le tableau de progression de la compétition sur la page VtsScore. Les envois continuent de compter ; les membres le revoient dès que vous le cochez.',
+  adminBohSignupGrowthBoardShown: 'Le tableau de progression est maintenant visible par les membres.',
+  adminBohSignupGrowthBoardHidden: 'Le tableau de progression est maintenant masqué pour les membres.',
   adminBohSignupGrantLabel: 'Session PIN membre (minutes)',
   adminBohSignupSeasonSave: 'Enregistrer les réglages de saison',
   adminBohSignupSeasonHelp:

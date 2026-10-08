@@ -72,9 +72,13 @@ export function getCompetitionPageState(phase, { hasSignup = false } = {}) {
         true
       );
     case 'reupload':
+      // A signup belongs to the browser that filed it (anonymous sign-in), so a
+      // member on a new phone or a cleared browser has none here. The upload
+      // still opens: its name search covers every signed-up player, and the
+      // vtsScore Function checks the chosen signup, not this browser's.
       return hasSignup
         ? pageState('readonly', 'reupload', 'phaseNowReupload', true)
-        : pageState('hidden', 'none', 'phaseNoticeNotRegistered', true);
+        : pageState('hidden', 'reupload', 'phaseNoticeReuploadPickName', true);
     case 'resultsPending':
       return pageState(readonly, 'none', 'phaseNoticeResultsPending', true);
     case 'winners':

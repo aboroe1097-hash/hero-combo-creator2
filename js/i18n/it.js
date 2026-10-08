@@ -1021,10 +1021,6 @@ const it = {
   arcadeSiegeDailyNote: 'Guerra di oggi: {map} · {date} — la stessa partita per tutti.',
   arcadeSiegeMapKeep: 'Bastione della rocca',
   arcadeSiegeMapShip: 'Nave da trasporto',
-  siegeCalloutTitle: 'Vota i migliori membri',
-  siegeCalloutBody: 'Le votazioni Team Players e gestione di Eden X2 sono aperte.',
-  siegeCalloutPlay: 'Vai a Eden',
-  siegeCalloutDismiss: 'Chiudi',
   arcadeHeroRumbleTitle: 'Hero Rumble',
   arcadeHeroRumbleDesc:
     'Le vere icone degli eroi combattono! Raccogli le armi blu per attaccare ed evita quelle dorate. Viola = SUPER!',
@@ -2894,6 +2890,10 @@ const it = {
   adminBohSignupSeasonLabel: 'Stagione attiva',
   adminBohSignupProfileLabel: 'Versione di calcolo',
   adminBohSignupOpenLabel: 'Iscrizioni aperte',
+  adminBohSignupGrowthBoardLabel: 'Mostra la classifica di crescita ai membri',
+  adminBohSignupGrowthBoardHelp: 'Deseleziona per nascondere l’intera classifica di crescita della competizione nella pagina VtsScore. I caricamenti continuano a contare; i membri la rivedono appena la riselezioni.',
+  adminBohSignupGrowthBoardShown: 'La classifica di crescita ora è visibile ai membri.',
+  adminBohSignupGrowthBoardHidden: 'La classifica di crescita ora è nascosta ai membri.',
   adminBohSignupGrantLabel: 'Sessione PIN membro (minuti)',
   adminBohSignupSeasonSave: 'Salva impostazioni stagione',
   adminBohSignupSeasonHelp:
