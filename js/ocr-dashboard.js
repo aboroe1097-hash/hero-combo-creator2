@@ -171,6 +171,7 @@ import {
   deleteBohSignup,
   readBohSignupAdminError,
   saveBohSignupSeasonConfig,
+  saveGrowthBoardVisibility,
   syncBohSlotPicker,
   toggleOrderedSlot,
 } from './boh-signup-admin.js';
@@ -8600,6 +8601,35 @@ function bindBohSignupsControls() {
             : showCloudSyncFailure(err, 'Season settings save failed'),
           'error'
         );
+      }
+    });
+  }
+
+  const boardInput = $id('dashBohSignupGrowthBoardInput');
+  if (boardInput && !boardInput.dataset.bound) {
+    boardInput.dataset.bound = '1';
+    boardInput.addEventListener('change', async () => {
+      const visible = boardInput.checked;
+      boardInput.disabled = true;
+      try {
+        const saved = await saveGrowthBoardVisibility(
+          visible,
+          await window.getVtsAdminFirestoreContext()
+        );
+        const snapshot = state.bohSignupsSnapshot || {};
+        state.bohSignupsSnapshot = {
+          ...snapshot,
+          config: { ...(snapshot.config || {}), ...saved },
+        };
+        setBohSignupsStatus(
+          dashT(visible ? 'adminBohSignupGrowthBoardShown' : 'adminBohSignupGrowthBoardHidden'),
+          'success'
+        );
+      } catch (err) {
+        boardInput.checked = !visible;
+        setBohSignupsStatus(showCloudSyncFailure(err, 'Growth board switch failed'), 'error');
+      } finally {
+        boardInput.disabled = false;
       }
     });
   }

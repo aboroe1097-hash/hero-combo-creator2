@@ -2362,6 +2362,10 @@ const zh = {
   adminBohSignupSeasonLabel: '当前赛季',
   adminBohSignupProfileLabel: '计分版本',
   adminBohSignupOpenLabel: '登记开放',
+  adminBohSignupGrowthBoardLabel: '向成员显示成长榜',
+  adminBohSignupGrowthBoardHelp: '取消勾选即可在 VtsScore 页面隐藏整个竞赛成长榜。上传仍会计入；重新勾选后成员立即可见。',
+  adminBohSignupGrowthBoardShown: '成长榜现在对成员可见。',
+  adminBohSignupGrowthBoardHidden: '成长榜现在已对成员隐藏。',
   adminBohSignupGrantLabel: '成员 PIN 有效期（分钟）',
   adminBohSignupSeasonSave: '保存赛季设置',
   adminBohSignupSeasonHelp:

@@ -3929,6 +3929,10 @@ const fr = {
   adminBohSignupSeasonLabel: 'Saison active',
   adminBohSignupProfileLabel: 'Version de calcul',
   adminBohSignupOpenLabel: 'Inscription ouverte',
+  adminBohSignupGrowthBoardLabel: 'Afficher le tableau de progression aux membres',
+  adminBohSignupGrowthBoardHelp: 'Décochez pour masquer tout le tableau de progression de la compétition sur la page VtsScore. Les envois continuent de compter ; les membres le revoient dès que vous le cochez.',
+  adminBohSignupGrowthBoardShown: 'Le tableau de progression est maintenant visible par les membres.',
+  adminBohSignupGrowthBoardHidden: 'Le tableau de progression est maintenant masqué pour les membres.',
   adminBohSignupGrantLabel: 'Session PIN membre (minutes)',
   adminBohSignupSeasonSave: 'Enregistrer les réglages de saison',
   adminBohSignupSeasonHelp:

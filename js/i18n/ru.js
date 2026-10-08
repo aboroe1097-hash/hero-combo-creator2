@@ -2312,6 +2312,10 @@ const ru = {
   adminBohSignupSeasonLabel: 'Активный сезон',
   adminBohSignupProfileLabel: 'Версия расчёта',
   adminBohSignupOpenLabel: 'Регистрация открыта',
+  adminBohSignupGrowthBoardLabel: 'Показывать участникам таблицу роста',
+  adminBohSignupGrowthBoardHelp: 'Снимите флажок, чтобы скрыть всю таблицу роста соревнования на странице VtsScore. Загрузки продолжают учитываться; участники снова увидят её, как только вы поставите флажок.',
+  adminBohSignupGrowthBoardShown: 'Таблица роста теперь видна участникам.',
+  adminBohSignupGrowthBoardHidden: 'Таблица роста теперь скрыта от участников.',
   adminBohSignupGrantLabel: 'Сессия PIN участника (минуты)',
   adminBohSignupSeasonSave: 'Сохранить настройки сезона',
   adminBohSignupSeasonHelp:

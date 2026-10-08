@@ -2894,6 +2894,10 @@ const it = {
   adminBohSignupSeasonLabel: 'Stagione attiva',
   adminBohSignupProfileLabel: 'Versione di calcolo',
   adminBohSignupOpenLabel: 'Iscrizioni aperte',
+  adminBohSignupGrowthBoardLabel: 'Mostra la classifica di crescita ai membri',
+  adminBohSignupGrowthBoardHelp: 'Deseleziona per nascondere l’intera classifica di crescita della competizione nella pagina VtsScore. I caricamenti continuano a contare; i membri la rivedono appena la riselezioni.',
+  adminBohSignupGrowthBoardShown: 'La classifica di crescita ora è visibile ai membri.',
+  adminBohSignupGrowthBoardHidden: 'La classifica di crescita ora è nascosta ai membri.',
   adminBohSignupGrantLabel: 'Sessione PIN membro (minuti)',
   adminBohSignupSeasonSave: 'Salva impostazioni stagione',
   adminBohSignupSeasonHelp:

@@ -544,7 +544,7 @@ export function createAllStarBohAccessClient(options = {}) {
     ) {
       throw accessError('invalid_response', 'The competition growth board is invalid.');
     }
-    return Object.freeze({ seasonId, board: board || null });
+    return Object.freeze({ seasonId, hidden: response.hidden === true, board: board || null });
   }
 
   async function getPreviousComparisonStatus(gameName) {

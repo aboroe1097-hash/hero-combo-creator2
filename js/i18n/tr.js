@@ -2290,6 +2290,10 @@ const tr = {
   adminBohSignupSeasonLabel: 'Etkin sezon',
   adminBohSignupProfileLabel: 'Puanlama sürümü',
   adminBohSignupOpenLabel: 'Kayıt açık',
+  adminBohSignupGrowthBoardLabel: 'Büyüme tablosunu üyelere göster',
+  adminBohSignupGrowthBoardHelp: 'VtsScore sayfasındaki tüm Yarışma büyüme tablosunu gizlemek için işareti kaldırın. Yüklemeler sayılmaya devam eder; işaretlediğiniz anda üyeler tabloyu yeniden görür.',
+  adminBohSignupGrowthBoardShown: 'Büyüme tablosu artık üyelere görünüyor.',
+  adminBohSignupGrowthBoardHidden: 'Büyüme tablosu artık üyelerden gizlendi.',
   adminBohSignupGrantLabel: 'Üye PIN oturumu (dakika)',
   adminBohSignupSeasonSave: 'Sezon ayarlarını kaydet',
   adminBohSignupSeasonHelp:

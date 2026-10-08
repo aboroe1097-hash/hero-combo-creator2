@@ -3809,6 +3809,10 @@ const de = {
   adminBohSignupSeasonLabel: 'Aktive Saison',
   adminBohSignupProfileLabel: 'Bewertungsversion',
   adminBohSignupOpenLabel: 'Anmeldung offen',
+  adminBohSignupGrowthBoardLabel: 'Wachstumstabelle für Mitglieder anzeigen',
+  adminBohSignupGrowthBoardHelp: 'Abwählen, um die gesamte Wachstumstabelle des Wettbewerbs auf der VtsScore-Seite auszublenden. Uploads zählen weiter; Mitglieder sehen sie wieder, sobald du sie anwählst.',
+  adminBohSignupGrowthBoardShown: 'Die Wachstumstabelle ist jetzt für Mitglieder sichtbar.',
+  adminBohSignupGrowthBoardHidden: 'Die Wachstumstabelle ist jetzt für Mitglieder ausgeblendet.',
   adminBohSignupGrantLabel: 'Mitglieder-PIN-Sitzung (Minuten)',
   adminBohSignupSeasonSave: 'Saison-Einstellungen speichern',
   adminBohSignupSeasonHelp:

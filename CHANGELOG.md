@@ -2,6 +2,11 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.6.15 - 2026-10-09
+
+- Admins can hide the Competition growth board. The Signups tab has a **Show the growth board to members** switch (any admin); while it is off the vtsScore function serves no board at all, not even the roster, and the VtsScore page keeps the whole section hidden instead of flashing it first. Uploads keep counting, and the board comes back within a minute of switching it on. **Deploy the Firestore rules and the vtsScore function after this release.**
+- The growth re-upload no longer turns away members who signed up on another phone or browser. A sign-up belongs to the browser that filed it, so a member on a new device used to see "You did not register" with no way forward (registration was already closed). The re-upload form now opens for them with a note to search their name: the search ignores capitals and symbols, so typing "ANGEL" finds "Angel". A member whose sign-up is on this browser starts with their own name already chosen.
+
 ## 16.6.14 - 2026-10-06
 
 - The Eden season page's Final Top 20 has a **Download poster** button that draws a designed share image: every winner with their reward group, reward tier (Guild Master or Core), headline score and a short breakdown (support work counts and bonus for Support Work, contribution rank and total for Total Contribution, votes and voting rank for the R4/Management and Team Players picks). It is drawn on a canvas in the page, so it does not depend on the screenshot library and reads the same in every theme.

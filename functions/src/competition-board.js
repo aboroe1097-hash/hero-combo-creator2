@@ -734,13 +734,16 @@ export async function readCompetitionBoardHead(db) {
     db.doc(ALL_STAR_BOH_CONFIG_DOC_PATH).get(),
     db.doc(COMPETITION_SCHEDULE_DOC_PATH).get(),
   ]);
-  const seasonId = cleanText(snapshotData(configSnapshot)?.activeSeason);
+  const config = snapshotData(configSnapshot);
+  const seasonId = cleanText(config?.activeSeason);
   if (!SEASON_PATTERN.test(seasonId)) {
     throw new CompetitionBoardError(409, 'season_not_configured', 'No active season.');
   }
   const schedule = normalizeCompetitionSchedule(snapshotData(scheduleSnapshot));
   return {
     seasonId,
+    // The admin "Show the growth board" switch; an absent flag means shown.
+    boardVisible: config?.growthBoardVisible !== false,
     schedule: schedule && schedule.seasonId === seasonId ? schedule : null,
   };
 }

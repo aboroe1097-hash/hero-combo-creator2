@@ -74,10 +74,11 @@ test('phase → page state follows the Competition #12 windows', () => {
     'phaseNowReupload',
     true,
   ]);
+  // No signup from this browser: the upload still opens with the name search.
   assert.deepEqual(view('reupload', newcomer), [
     'hidden',
-    'none',
-    'phaseNoticeNotRegistered',
+    'reupload',
+    'phaseNoticeReuploadPickName',
     true,
   ]);
   assert.deepEqual(view('resultsPending', registered), [

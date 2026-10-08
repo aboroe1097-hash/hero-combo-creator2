@@ -508,6 +508,13 @@ async function loadCompetitionGrowthBoard(dependencies) {
   if (competitionGrowthBuild) return competitionGrowthBuild;
   competitionGrowthBuild = (async () => {
     const head = await readCompetitionBoardHead(dependencies.db);
+    // Hidden by an admin: serve nothing, not even the roster. Cached like a
+    // board, so flipping the switch takes effect within the cache's minute.
+    if (head.boardVisible === false) {
+      const hidden = { schemaVersion: 1, seasonId: head.seasonId, hidden: true, board: null };
+      writeCachedCompetitionGrowth(hidden, nowMs);
+      return hidden;
+    }
     // The board is not a results view: it builds from live uploads in every
     // phase and refreshes as members upload. A season rollover shows up within
     // the cache's minute.

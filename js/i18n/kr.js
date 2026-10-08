@@ -2230,6 +2230,10 @@ const kr = {
   adminBohSignupSeasonLabel: '활성 시즌',
   adminBohSignupProfileLabel: '점수 버전',
   adminBohSignupOpenLabel: '등록 열림',
+  adminBohSignupGrowthBoardLabel: '멤버에게 성장 보드 표시',
+  adminBohSignupGrowthBoardHelp: '체크를 해제하면 VtsScore 페이지의 대회 성장 보드 전체가 숨겨집니다. 업로드는 계속 집계되며, 다시 체크하면 멤버에게 바로 보입니다.',
+  adminBohSignupGrowthBoardShown: '이제 멤버에게 성장 보드가 표시됩니다.',
+  adminBohSignupGrowthBoardHidden: '이제 멤버에게 성장 보드가 숨겨졌습니다.',
   adminBohSignupGrantLabel: '멤버 PIN 세션(분)',
   adminBohSignupSeasonSave: '시즌 설정 저장',
   adminBohSignupSeasonHelp:

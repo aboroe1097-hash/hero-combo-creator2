@@ -2754,6 +2754,10 @@ const en = {
   adminBohSignupSeasonLabel: 'Active season',
   adminBohSignupProfileLabel: 'Scoring version',
   adminBohSignupOpenLabel: 'Registration open',
+  adminBohSignupGrowthBoardLabel: 'Show the growth board to members',
+  adminBohSignupGrowthBoardHelp: 'Untick to hide the whole Competition growth board on the VtsScore page. Uploads keep counting; members see it again as soon as you tick it.',
+  adminBohSignupGrowthBoardShown: 'Growth board is now visible to members.',
+  adminBohSignupGrowthBoardHidden: 'Growth board is now hidden from members.',
   adminBohSignupGrantLabel: 'Member PIN session (minutes)',
   adminBohSignupSeasonSave: 'Save season settings',
   adminBohSignupSeasonHelp:

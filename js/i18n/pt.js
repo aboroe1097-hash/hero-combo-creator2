@@ -3469,6 +3469,10 @@ const pt = {
   adminBohSignupSeasonLabel: 'Temporada ativa',
   adminBohSignupProfileLabel: 'Versão de cálculo',
   adminBohSignupOpenLabel: 'Inscrição aberta',
+  adminBohSignupGrowthBoardLabel: 'Mostrar o painel de crescimento aos membros',
+  adminBohSignupGrowthBoardHelp: 'Desmarque para ocultar todo o painel de crescimento da competição na página VtsScore. Os envios continuam contando; os membros voltam a vê-lo assim que você marcar.',
+  adminBohSignupGrowthBoardShown: 'O painel de crescimento agora está visível para os membros.',
+  adminBohSignupGrowthBoardHidden: 'O painel de crescimento agora está oculto para os membros.',
   adminBohSignupGrantLabel: 'Sessão do PIN de membro (minutos)',
   adminBohSignupSeasonSave: 'Salvar configurações da temporada',
   adminBohSignupSeasonHelp:

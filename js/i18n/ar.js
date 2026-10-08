@@ -2269,6 +2269,10 @@ const ar = {
   adminBohSignupSeasonLabel: 'الموسم النشط',
   adminBohSignupProfileLabel: 'نسخة الاحتساب',
   adminBohSignupOpenLabel: 'التسجيل مفتوح',
+  adminBohSignupGrowthBoardLabel: 'إظهار لوحة النمو للأعضاء',
+  adminBohSignupGrowthBoardHelp: 'ألغِ التحديد لإخفاء لوحة نمو المسابقة بالكامل في صفحة VtsScore. تستمر الرفعات في الاحتساب، ويراها الأعضاء مجددًا فور إعادة التحديد.',
+  adminBohSignupGrowthBoardShown: 'لوحة النمو ظاهرة الآن للأعضاء.',
+  adminBohSignupGrowthBoardHidden: 'لوحة النمو مخفية الآن عن الأعضاء.',
   adminBohSignupGrantLabel: 'مدة جلسة رمز العضو (دقائق)',
   adminBohSignupSeasonSave: 'حفظ إعدادات الموسم',
   adminBohSignupSeasonHelp:

@@ -2162,6 +2162,19 @@
                 version labels the formula their numbers are compared with.
               </p>
             </form>
+            <!-- Member-page growth board switch (any admin). Writes only
+                 growthBoardVisible on boh_allstar_config/current; the vtsScore
+                 Function stops serving the board while it is false. -->
+            <div class="dash-boh-signups-season dash-boh-signups-board">
+              <label class="dash-boh-signups-field dash-boh-signups-check">
+                <input id="dashBohSignupGrowthBoardInput" type="checkbox" checked />
+                <span data-i18n="adminBohSignupGrowthBoardLabel">Show the growth board to members</span>
+              </label>
+              <p class="dash-card-subtitle" data-i18n="adminBohSignupGrowthBoardHelp">
+                Untick to hide the whole Competition growth board on the VtsScore page. Uploads
+                keep counting; members see it again as soon as you tick it.
+              </p>
+            </div>
             <div
               id="dashBohSignupsStatus"
               class="dash-upload-status hidden"

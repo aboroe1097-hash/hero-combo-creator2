@@ -1094,9 +1094,11 @@ service cloud.firestore {
       // `phaseSyncPausedUntil` is an optional ISO timestamp; when set and in
       // the future, the phase sync job skips updates so an admin can make
       // manual changes without them being overwritten within 10 minutes.
+      // `growthBoardVisible` (optional, absent = shown) hides the member
+      // page's growth board; any admin may flip it.
       return request.resource.data.keys().hasOnly([
         'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId',
-        'acceptNewSignups', 'phaseSyncPausedUntil'
+        'acceptNewSignups', 'phaseSyncPausedUntil', 'growthBoardVisible'
       ])
       && request.resource.data.keys().hasAll([
         'activeSeason', 'open', 'grantDurationMinutes', 'scoringProfileId'
@@ -1110,6 +1112,7 @@ service cloud.firestore {
       && request.resource.data.scoringProfileId is string
       && request.resource.data.scoringProfileId.matches('^[A-Za-z0-9._-]{1,80}$')
       && request.resource.data.get('acceptNewSignups', true) is bool
+      && request.resource.data.get('growthBoardVisible', true) is bool
       && (!('phaseSyncPausedUntil' in request.resource.data)
         || (request.resource.data.phaseSyncPausedUntil is string
           && request.resource.data.phaseSyncPausedUntil.size() <= 40
