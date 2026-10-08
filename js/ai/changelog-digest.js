@@ -1,10 +1,18 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.15";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.16";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.6.16",
+    "date": "2026-10-09",
+    "highlights": [
+      "**Artifact planner redesigned.** On wide screens the Sword of Judgment lies on its side next to a pinned inspector, so the whole tree fits in one view instead of a tall column of art beside a narrow sidebar; phones keep the upright sword. Nodes are larger and show at a glance wh…",
+      "**DM Materials planner reorganized.** The plan settings, overall progress and save/export/share now sit on one bar at the top, followed by the route choice. Below them, the six-piece set and the recipe have the main column, and one sidebar holds the next step, resources and owne…"
+    ]
+  },
   {
     "version": "16.6.15",
     "date": "2026-10-09",
@@ -76,14 +84,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-09-27",
     "highlights": [
       "The VtsScore language picker offers all thirteen languages. Croatian, Indonesian, Italian, Korean, Russian, Turkish and Chinese were translated in 16.6.5 but never added to the page's selector, so members could not choose them. A unit test now keeps the picker and the translatio…"
-    ]
-  },
-  {
-    "version": "16.6.6",
-    "date": "2026-09-27",
-    "highlights": [
-      "Dead troops stay in the numbers. The Growth Board stripped the dead-troop component out of the sign-up and final upload whenever the baseline had no dead-troop split, hiding the power members had just entered. Troop Power and Total Power now show and compare the full saved total…",
-      "Growth board wording and layout: the baseline column reads \"Last season data\" for earlier uploads, \"Final upload\" replaces \"Re-upload\", the sign-up is named as the baseline once that record is what a player is measured from, and the Growth columns no longer get cut off at the ri…"
     ]
   }
 ].map((release) =>

@@ -218,7 +218,10 @@ const LIMITS = {
   // 16.6.15: the admin growth-board switch and the re-upload name-search note,
   // with their copy in 12 and 13 languages, grow it to 12015.8 KiB locally and 12016.1 KiB in CI; the cap
   // moves by the measured minimum.
-  totalJsBytes: 12017 * 1024,
+  // 16.6.16: the Artifact planner redesign (tree/list views, per-level
+  // effects) with 17 strings in 13 languages, and the DM Materials plan bar,
+  // grow it to 12022.7 KiB locally; the cap keeps CI's 0.3 KiB drift.
+  totalJsBytes: 12024 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
