@@ -403,48 +403,57 @@ function renderBuildGuidance(t) {
     </section>`;
 }
 
+// The plan bar: every setting that shapes the plan, its progress and the
+// save/share actions on one strip above the route choice, instead of a
+// narrow settings column and a separate summary column.
 function renderPlanPanel(result, t) {
   const planName = displayedPlanName();
+  const progress = Math.round(result.overallProgress * 100);
+  const progressValueText = `${formatNumber(progress)}%. ${interpolate(t.campaignPiecesComplete, {
+    completed: formatNumber(result.totalCompletedPieces),
+    total: formatNumber(result.totalTargetPieces),
+  })}`;
   return `
-    <aside class="dm-panel dm-plan-panel" aria-labelledby="dmPlanHeading">
-      <div class="dm-panel-heading">
-        <span class="dm-eyebrow">${escapeHtml(t.plan)}</span>
-        <h3 id="dmPlanHeading">${escapeHtml(planName)}</h3>
+    <section class="dm-panel dm-plan-panel dm-plan-bar" aria-labelledby="dmPlanHeading">
+      <div class="dm-plan-bar__fields">
+        <label class="dm-field dm-field--name">
+          <span id="dmPlanHeading">${escapeHtml(t.planName)}</span>
+          <input type="text" name="dm-plan-name" maxlength="80" value="${escapeHtml(planName)}" data-dm-plan-name>
+        </label>
+        <label class="dm-field">
+          <span>${escapeHtml(t.targetSets)}</span>
+          <select name="dm-target-sets" data-dm-target-sets>
+            ${[1, 2, 3, 4, 5].map((count) => `<option value="${count}"${plan.targetSets === count ? ' selected' : ''}>${escapeHtml(interpolate(t.targetSetsOption, { count }))}</option>`).join('')}
+          </select>
+        </label>
+        <label class="dm-field">
+          <span>${escapeHtml(t.preset)}</span>
+          <select name="dm-target-preset" data-dm-preset>
+            ${['full', 'attack', 'defense'].map((preset) => `<option value="${preset}"${plan.preset === preset ? ' selected' : ''}>${escapeHtml(t[preset])}</option>`).join('')}
+          </select>
+        </label>
+        <div class="dm-field">
+          <span>${escapeHtml(t.plan)}</span>
+          <div class="dm-set-picker" role="group" aria-label="${escapeHtml(t.targetSets)}">
+            ${result.setSummaries.map((set) => `<button type="button" data-dm-focus-set="${set.setId}" aria-pressed="${plan.focusedSet === set.setId}" class="${set.complete ? 'is-complete' : ''}">${escapeHtml(interpolate(t.campaignSet, { number: set.setId }))}</button>`).join('')}
+          </div>
+        </div>
       </div>
-      <label class="dm-field">
-        <span>${escapeHtml(t.planName)}</span>
-        <input type="text" name="dm-plan-name" maxlength="80" value="${escapeHtml(planName)}" data-dm-plan-name>
-      </label>
-      <label class="dm-field">
-        <span>${escapeHtml(t.targetSets)}</span>
-        <select name="dm-target-sets" data-dm-target-sets>
-          ${[1, 2, 3, 4, 5].map((count) => `<option value="${count}"${plan.targetSets === count ? ' selected' : ''}>${escapeHtml(interpolate(t.targetSetsOption, { count }))}</option>`).join('')}
-        </select>
-      </label>
-      <div class="dm-set-picker" role="group" aria-label="${escapeHtml(t.targetSets)}">
-        ${result.setSummaries.map((set) => `<button type="button" data-dm-focus-set="${set.setId}" aria-pressed="${plan.focusedSet === set.setId}" class="${set.complete ? 'is-complete' : ''}">${escapeHtml(interpolate(t.campaignSet, { number: set.setId }))}</button>`).join('')}
-      </div>
-      <label class="dm-field">
-        <span>${escapeHtml(t.preset)}</span>
-        <select name="dm-target-preset" data-dm-preset>
-          ${['full', 'attack', 'defense'].map((preset) => `<option value="${preset}"${plan.preset === preset ? ' selected' : ''}>${escapeHtml(t[preset])}</option>`).join('')}
-        </select>
-      </label>
-      <section class="dm-piece-inventory" aria-labelledby="dmPieceInventoryHeading">
+      <div class="dm-plan-bar__progress">
+        <span class="dm-progress-ring" style="--ring:${progress}" aria-hidden="true"><b>${formatNumber(progress)}%</b></span>
         <div>
-          <h4 id="dmPieceInventoryHeading">${escapeHtml(t.inventoryTitle)}</h4>
-          <p>${escapeHtml(t.inventoryHint)}</p>
+          <div class="dm-progress-copy"><span id="dmProgressLabel">${escapeHtml(t.overallProgress)}</span><strong>${formatNumber(result.totalCompletedPieces)} / ${formatNumber(result.totalTargetPieces)}</strong></div>
+          <div class="dm-progress-track" role="progressbar" aria-labelledby="dmProgressLabel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}" aria-valuetext="${escapeHtml(progressValueText)}"><span style="width:${progress}%"></span></div>
+          <small>${escapeHtml(routeLabel(plan.route, t))} · ${escapeHtml(t[plan.preset])}</small>
         </div>
-        <div class="dm-piece-inventory__grid">
-          ${DM_SLOT_IDS.map(
-            (slot) => `<label>
-            <span>${escapeHtml(slotLabel(slot, t))}</span>
-            <input type="number" min="0" max="99" inputmode="numeric" value="${plan.ownedPieces[slot]}" data-dm-owned-piece="${slot}" aria-label="${escapeHtml(interpolate(t.inventoryOwned, { piece: slotLabel(slot, t) }))}">
-          </label>`
-          ).join('')}
-        </div>
-      </section>
-    </aside>`;
+      </div>
+      <div class="dm-plan-actions">
+        <button type="button" class="dm-primary-button" data-dm-save>${escapeHtml(t.savePlan)}</button>
+        <button type="button" class="dm-secondary-button" data-dm-export>${escapeHtml(t.exportPlan)}</button>
+        <button type="button" class="dm-secondary-button" data-dm-share>${escapeHtml(t.sharePlan)}</button>
+        <button type="button" class="dm-danger-button" data-dm-clear>${escapeHtml(t.clearProgress)}</button>
+      </div>
+    </section>`;
 }
 
 function renderSlotCard(slot, t) {
@@ -715,28 +724,14 @@ function renderResourceRows(result, t, editable = false) {
     .join('');
 }
 
+// The sidebar beside the workbench: what to craft next, the resource gap,
+// the pieces already owned, and the equipment tips folded away at the end.
 function renderSummaryPanel(result, t) {
-  const progress = Math.round(result.overallProgress * 100);
-  const progressValueText = `${formatNumber(progress)}%. ${interpolate(t.campaignPiecesComplete, {
-    completed: formatNumber(result.totalCompletedPieces),
-    total: formatNumber(result.totalTargetPieces),
-  })}`;
   const nextText = result.nextSlot
     ? interpolate(t.normalGearHint, { tier: tierLabel(result.route.normalTier, t) })
     : t.allDone;
   return `
     <aside class="dm-summary-stack">
-      <section class="dm-panel dm-summary-panel" aria-labelledby="dmSummaryHeading">
-        <h3 id="dmSummaryHeading">${escapeHtml(t.summary)}</h3>
-        <dl>
-          <div><dt>${escapeHtml(t.preset)}</dt><dd>${escapeHtml(t[plan.preset])}</dd></div>
-          <div><dt>${escapeHtml(t.route)}</dt><dd>${escapeHtml(routeLabel(plan.route, t))}</dd></div>
-          <div><dt>${escapeHtml(t.targetSets)}</dt><dd>${formatNumber(result.targetSetCount)}</dd></div>
-          <div><dt>${escapeHtml(t.completed)}</dt><dd>${formatNumber(result.totalCompletedPieces)} / ${formatNumber(result.totalTargetPieces)}</dd></div>
-        </dl>
-        <div class="dm-progress-copy"><span id="dmProgressLabel">${escapeHtml(t.overallProgress)}</span><strong>${formatNumber(progress)}%</strong></div>
-        <div class="dm-progress-track" role="progressbar" aria-labelledby="dmProgressLabel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}" aria-valuetext="${escapeHtml(progressValueText)}"><span style="width:${progress}%"></span></div>
-      </section>
       <section class="dm-panel dm-next-panel">
         <span class="dm-eyebrow">${escapeHtml(t.nextAction)}</span>
         <strong>${escapeHtml(nextText)}</strong>
@@ -751,12 +746,24 @@ function renderSummaryPanel(result, t) {
         ${renderResourceRows(result, t, plan.breakdownOpen)}
         <button type="button" class="dm-secondary-button" data-dm-toggle-breakdown aria-expanded="${plan.breakdownOpen}">${escapeHtml(t.details)}</button>
       </section>
-      <section class="dm-plan-actions">
-        <button type="button" class="dm-primary-button" data-dm-save>${escapeHtml(t.savePlan)}</button>
-        <button type="button" class="dm-secondary-button" data-dm-export>${escapeHtml(t.exportPlan)}</button>
-        <button type="button" class="dm-secondary-button" data-dm-share>${escapeHtml(t.sharePlan)}</button>
-        <button type="button" class="dm-danger-button" data-dm-clear>${escapeHtml(t.clearProgress)}</button>
+      <section class="dm-panel dm-piece-inventory" aria-labelledby="dmPieceInventoryHeading">
+        <div>
+          <h4 id="dmPieceInventoryHeading">${escapeHtml(t.inventoryTitle)}</h4>
+          <p>${escapeHtml(t.inventoryHint)}</p>
+        </div>
+        <div class="dm-piece-inventory__grid">
+          ${DM_SLOT_IDS.map(
+            (slot) => `<label>
+            <span>${escapeHtml(slotLabel(slot, t))}</span>
+            <input type="number" min="0" max="99" inputmode="numeric" value="${plan.ownedPieces[slot]}" data-dm-owned-piece="${slot}" aria-label="${escapeHtml(interpolate(t.inventoryOwned, { piece: slotLabel(slot, t) }))}">
+          </label>`
+          ).join('')}
+        </div>
       </section>
+      <details class="dm-panel dm-guide-details">
+        <summary>${escapeHtml(t.guidanceTitle)}</summary>
+        ${renderBuildGuidance(t)}
+      </details>
     </aside>`;
 }
 
@@ -972,20 +979,19 @@ function render() {
   const result = calculateMaterialPlan(plan);
   plan = result.plan;
   rootEl.innerHTML = `
-    <div class="dm-command-center">
+    <div class="dm-command-center dm-v2">
       <header class="dm-command-header">
         <div><span class="dm-eyebrow">VTS 1097 · DM</span><h2>${escapeHtml(t.title)}</h2><p>${escapeHtml(t.subtitle)}</p></div>
+        <nav class="dm-tool-tabs" aria-label="${escapeHtml(t.title)}">
+          <button type="button" class="dm-tool-tab${activeDmTool === 'build' ? ' is-active' : ''}" data-dm-tool="build" aria-pressed="${activeDmTool === 'build'}">${escapeHtml(t.title)}</button>
+          <button type="button" class="dm-tool-tab${activeDmTool === 'enhance' ? ' is-active' : ''}" data-dm-tool="enhance" aria-pressed="${activeDmTool === 'enhance'}">${escapeHtml(enhanceText('dmEnhanceTitle', 'Enhance Equipment'))}</button>
+        </nav>
       </header>
-      <nav class="dm-tool-tabs" aria-label="${escapeHtml(t.title)}">
-        <button type="button" class="dm-tool-tab${activeDmTool === 'build' ? ' is-active' : ''}" data-dm-tool="build" aria-pressed="${activeDmTool === 'build'}">${escapeHtml(t.title)}</button>
-        <button type="button" class="dm-tool-tab${activeDmTool === 'enhance' ? ' is-active' : ''}" data-dm-tool="enhance" aria-pressed="${activeDmTool === 'enhance'}">${escapeHtml(enhanceText('dmEnhanceTitle', 'Enhance Equipment'))}</button>
-      </nav>
       ${
         activeDmTool === 'build'
-          ? `${renderBuildGuidance(t)}
+          ? `${renderPlanPanel(result, t)}
       ${renderRouteChooser(result, t)}
       <div class="dm-command-layout">
-        ${renderPlanPanel(result, t)}
         <main class="dm-workbench">
           ${renderSetPanel(result, t)}
           ${renderRecipePanel(result, t)}
