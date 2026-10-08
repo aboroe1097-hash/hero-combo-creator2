@@ -632,10 +632,6 @@ const pt = {
   arcadeSiegeDailyNote: 'Guerra diária de hoje: {map} · {date} — a mesma partida para todos.',
   arcadeSiegeMapKeep: 'Muralha da Fortaleza',
   arcadeSiegeMapShip: 'Navio de transporte',
-  siegeCalloutTitle: 'Vote nos melhores membros',
-  siegeCalloutBody: 'As votações de Team Players e gestão da Eden X2 estão abertas.',
-  siegeCalloutPlay: 'Ir para Eden',
-  siegeCalloutDismiss: 'Fechar',
   arcadeHeroRumbleTitle: 'Confronto de Heróis',
   arcadeHeroRumbleDesc:
     'Ícones de heróis reais lutam! Pegue armas azuis para atacar e desvie das douradas. Roxo = SUPER!',

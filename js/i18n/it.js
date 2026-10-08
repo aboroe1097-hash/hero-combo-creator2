@@ -1021,10 +1021,6 @@ const it = {
   arcadeSiegeDailyNote: 'Guerra di oggi: {map} · {date} — la stessa partita per tutti.',
   arcadeSiegeMapKeep: 'Bastione della rocca',
   arcadeSiegeMapShip: 'Nave da trasporto',
-  siegeCalloutTitle: 'Vota i migliori membri',
-  siegeCalloutBody: 'Le votazioni Team Players e gestione di Eden X2 sono aperte.',
-  siegeCalloutPlay: 'Vai a Eden',
-  siegeCalloutDismiss: 'Chiudi',
   arcadeHeroRumbleTitle: 'Hero Rumble',
   arcadeHeroRumbleDesc:
     'Le vere icone degli eroi combattono! Raccogli le armi blu per attaccare ed evita quelle dorate. Viola = SUPER!',

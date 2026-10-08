@@ -607,10 +607,6 @@ const id = {
   arcadeSiegeDailyNote: 'Perang hari ini: {map} · {date} — permainan yang sama untuk semua.',
   arcadeSiegeMapKeep: 'Benteng Keep',
   arcadeSiegeMapShip: 'Kapal Angkut',
-  siegeCalloutTitle: 'Pilih anggota terbaik',
-  siegeCalloutBody: 'Pemungutan suara Team Players dan manajemen Eden X2 dibuka.',
-  siegeCalloutPlay: 'Ke Eden',
-  siegeCalloutDismiss: 'Tutup',
   arcadeHeroRumbleTitle: 'Pertarungan Hero',
   arcadeHeroRumbleDesc:
     'Ikon hero asli bertarung! Tangkap senjata biru untuk menyerang, hindari yang emas. Ungu = SUPER!',

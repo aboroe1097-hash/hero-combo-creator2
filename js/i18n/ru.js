@@ -614,10 +614,6 @@ const ru = {
   arcadeSiegeDailyNote: 'Война дня: {map} · {date} — одинаковая для всех.',
   arcadeSiegeMapKeep: 'Вал крепости',
   arcadeSiegeMapShip: 'Транспортный корабль',
-  siegeCalloutTitle: 'Голосуйте за лучших участников',
-  siegeCalloutBody: 'Голосования Team Players и управления Eden X2 открыты.',
-  siegeCalloutPlay: 'Перейти в Eden',
-  siegeCalloutDismiss: 'Скрыть',
   arcadeHeroRumbleTitle: 'Битва героев',
   arcadeHeroRumbleDesc:
     'Настоящие значки героев сражаются! Ловите синее оружие для атаки и уворачивайтесь от золотого. Фиолетовое = СУПЕР!',

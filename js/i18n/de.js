@@ -648,10 +648,6 @@ const de = {
   arcadeSiegeDailyNote: 'Heutiger Krieg: {map} · {date} — für alle derselbe Lauf.',
   arcadeSiegeMapKeep: 'Burgwall',
   arcadeSiegeMapShip: 'Transportschiff',
-  siegeCalloutTitle: 'Stimme für die besten Mitglieder',
-  siegeCalloutBody: 'Die Team-Players- und Management-Abstimmung für Eden X2 ist offen.',
-  siegeCalloutPlay: 'Zu Eden',
-  siegeCalloutDismiss: 'Schließen',
   arcadeHeroRumbleTitle: 'Heldenkampf',
   arcadeHeroRumbleDesc:
     'Echte Heldensymbole kämpfen! Fange blaue Waffen zum Angreifen und weiche goldenen aus. Lila = SUPER!',

@@ -620,10 +620,6 @@ const es = {
   arcadeSiegeDailyNote: 'Guerra diaria de hoy: {map} · {date}: la misma partida para todos.',
   arcadeSiegeMapKeep: 'Muralla del Torreón',
   arcadeSiegeMapShip: 'Buque de transporte',
-  siegeCalloutTitle: 'Vota por los mejores miembros',
-  siegeCalloutBody: 'Las votaciones de Team Players y gestión de Eden X2 están abiertas.',
-  siegeCalloutPlay: 'Ir a Eden',
-  siegeCalloutDismiss: 'Cerrar',
   arcadeHeroRumbleTitle: 'Batalla de Héroes',
   arcadeHeroRumbleDesc:
     '¡Iconos de héroes reales en combate! Recoge armas azules para atacar y esquiva las doradas. Morado = ¡SUPER!',

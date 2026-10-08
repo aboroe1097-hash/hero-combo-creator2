@@ -534,10 +534,6 @@ const kr = {
   arcadeSiegeDailyNote: '오늘의 전쟁: {map} · {date} — 모두에게 같은 판.',
   arcadeSiegeMapKeep: '성채 성벽',
   arcadeSiegeMapShip: '수송선',
-  siegeCalloutTitle: '최고의 멤버에게 투표하세요',
-  siegeCalloutBody: 'Eden X2 팀 플레이어와 관리진 투표가 열렸습니다.',
-  siegeCalloutPlay: 'Eden으로',
-  siegeCalloutDismiss: '닫기',
   arcadeHeroRumbleTitle: '영웅 난투',
   arcadeHeroRumbleDesc:
     '실제 영웅 아이콘이 싸웁니다! 파란 무기를 잡아 공격하고 금색 무기는 피하세요. 보라색 = 슈퍼!',

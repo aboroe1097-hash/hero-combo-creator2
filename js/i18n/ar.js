@@ -607,10 +607,6 @@ const ar = {
   arcadeSiegeDailyNote: 'حرب اليوم: {map} · {date} — الجولة نفسها للجميع.',
   arcadeSiegeMapKeep: 'سور القلعة',
   arcadeSiegeMapShip: 'سفينة النقل',
-  siegeCalloutTitle: 'صوّت لأفضل الأعضاء',
-  siegeCalloutBody: 'تصويت لاعبي الفريق والإدارة في Eden X2 مفتوح.',
-  siegeCalloutPlay: 'إلى Eden',
-  siegeCalloutDismiss: 'إغلاق',
   arcadeHeroRumbleTitle: 'معركة الأبطال',
   arcadeHeroRumbleDesc:
     'أيقونات الأبطال الحقيقية تتقاتل! التقط الأسلحة الزرقاء للهجوم وتفادَ الذهبية. البنفسجي = خارق!',

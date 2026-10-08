@@ -648,10 +648,6 @@ const fr = {
   arcadeSiegeDailyNote: 'Guerre du jour : {map} · {date} — la même partie pour tout le monde.',
   arcadeSiegeMapKeep: 'Rempart du donjon',
   arcadeSiegeMapShip: 'Navire de transport',
-  siegeCalloutTitle: 'Votez pour les meilleurs membres',
-  siegeCalloutBody: 'Les votes Team Players et gestion d’Eden X2 sont ouverts.',
-  siegeCalloutPlay: 'Aller à Eden',
-  siegeCalloutDismiss: 'Fermer',
   arcadeHeroRumbleTitle: 'Mêlée des héros',
   arcadeHeroRumbleDesc:
     "De véritables icônes de héros s'affrontent ! Attrapez les armes bleues pour attaquer et évitez les dorées. Violet = SUPER !",

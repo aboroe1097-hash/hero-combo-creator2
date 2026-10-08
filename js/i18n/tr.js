@@ -609,10 +609,6 @@ const tr = {
   arcadeSiegeDailyNote: 'Bugünün savaşı: {map} · {date} — herkes için aynı oyun.',
   arcadeSiegeMapKeep: 'Kale Suru',
   arcadeSiegeMapShip: 'Nakliye Gemisi',
-  siegeCalloutTitle: 'En iyi üyeler için oy verin',
-  siegeCalloutBody: 'Eden X2 Team Players ve yönetim oylaması açık.',
-  siegeCalloutPlay: 'Eden’a git',
-  siegeCalloutDismiss: 'Kapat',
   arcadeHeroRumbleTitle: 'Kahraman Kapışması',
   arcadeHeroRumbleDesc:
     'Gerçek kahraman simgeleri dövüşüyor! Saldırmak için mavi silahları yakala, altınlardan kaç. Mor = SÜPER!',

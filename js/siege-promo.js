@@ -1,19 +1,14 @@
-// Prompts for the rest of the site: the featured Arcade banner for Velo's
-// Rampart, and a one-time homepage callout that sends members to the Eden
-// page to vote for the best members.
+// The featured Arcade banner for Velo's Rampart.
 //
-// Neither prompt may cost the host page anything it did not ask for: this
+// The banner may not cost the host page anything it did not ask for: this
 // module never imports the game (anything under js/eden-siege/ is bundled into
 // the lazy siege engine chunk), only the tiny daily-seed helper, and the hub
 // loads it lazily once the page is idle.
 
 import '../css/siege-promo.css';
-import { calloutDismissed, dailySiegeFor, dismissCallout, formatDailyNote } from './siege-daily.js';
-
-export { CALLOUT_KEY, CALLOUT_VERSION, calloutDismissed, dismissCallout } from './siege-daily.js';
+import { dailySiegeFor, formatDailyNote } from './siege-daily.js';
 
 const SIEGE_URL = '/eden-siege.html';
-const EDEN_URL = '/eden-x2.html';
 
 function dailyNote(copy, date = new Date()) {
   const today = dailySiegeFor(date);
@@ -89,51 +84,4 @@ export function mountSiegeFeature(container, { getCopy }) {
   render();
   window.addEventListener('edenLanguageUpdate', render);
   return { root, render };
-}
-
-/**
- * The homepage callout: a small dismissible card in the corner, injected once
- * the hub is idle. It never covers content it cannot be dismissed from, it
- * only animates when motion is welcome, and it stays gone per version.
- */
-export function mountSiegeCallout({ getCopy, storage } = {}) {
-  if (calloutDismissed(storage) || document.querySelector('.siege-callout')) return null;
-  const copy = getCopy() || {};
-  const root = element('aside', 'siege-callout');
-  root.setAttribute('aria-label', copy.siegeCalloutTitle || 'Vote for the best members');
-
-  const text = element('div', 'siege-callout-copy');
-  const title = element(
-    'strong',
-    'siege-callout-title',
-    copy.siegeCalloutTitle || 'Vote for the best members'
-  );
-  const body = element('span', 'siege-callout-body', copy.siegeCalloutBody || '');
-  text.append(title, body);
-
-  const play = element('a', 'siege-callout-play', copy.siegeCalloutPlay || 'Go to Eden');
-  play.href = EDEN_URL;
-  play.addEventListener('click', () => dismissCallout(storage));
-
-  const close = element('button', 'siege-callout-close');
-  close.type = 'button';
-  close.setAttribute('aria-label', copy.siegeCalloutDismiss || 'Dismiss');
-  close.textContent = '×';
-  close.addEventListener('click', () => {
-    dismissCallout(storage);
-    root.remove();
-  });
-
-  root.append(text, play, close);
-  document.body.appendChild(root);
-
-  window.addEventListener('edenLanguageUpdate', () => {
-    const next = getCopy() || {};
-    title.textContent = next.siegeCalloutTitle || title.textContent;
-    body.textContent = next.siegeCalloutBody || body.textContent;
-    play.textContent = next.siegeCalloutPlay || play.textContent;
-    close.setAttribute('aria-label', next.siegeCalloutDismiss || 'Dismiss');
-    root.setAttribute('aria-label', next.siegeCalloutTitle || 'Vote for the best members');
-  });
-  return root;
 }

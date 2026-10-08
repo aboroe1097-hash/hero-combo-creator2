@@ -927,10 +927,6 @@ const en = {
   arcadeSiegeDailyNote: "Today's Daily War: {map} · {date} — the same run for everyone.",
   arcadeSiegeMapKeep: 'Keep Rampart',
   arcadeSiegeMapShip: 'Transport Ship',
-  siegeCalloutTitle: 'Vote for the best members',
-  siegeCalloutBody: 'The Eden X2 Team Players and management votes are open.',
-  siegeCalloutPlay: 'Go to Eden',
-  siegeCalloutDismiss: 'Dismiss',
   arcadeHeroRumbleTitle: 'Hero Rumble',
   arcadeHeroRumbleDesc:
     'Real hero icons fight! Catch blue weapons to attack, dodge gold ones. Purple = SUPER!',
