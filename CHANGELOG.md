@@ -6,6 +6,7 @@ This is the release history, newest first. Entries describe their release-time b
 
 - Admins can hide the Competition growth board. The Signups tab has a **Show the growth board to members** switch (any admin); while it is off the vtsScore function serves no board at all, not even the roster, and the VtsScore page keeps the whole section hidden instead of flashing it first. Uploads keep counting, and the board comes back within a minute of switching it on. **Deploy the Firestore rules and the vtsScore function after this release.**
 - The growth re-upload no longer turns away members who signed up on another phone or browser. A sign-up belongs to the browser that filed it, so a member on a new device used to see "You did not register" with no way forward (registration was already closed). The re-upload form now opens for them with a note to search their name: the search ignores capitals and symbols, so typing "ANGEL" finds "Angel". A member whose sign-up is on this browser starts with their own name already chosen.
+- The homepage "Vote for the best members" corner card is gone, along with its code, styles and copy. The Arcade's Velo's Rampart banner is unchanged.
 
 ## 16.6.14 - 2026-10-06
 

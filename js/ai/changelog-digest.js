@@ -10,7 +10,8 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-10-09",
     "highlights": [
       "Admins can hide the Competition growth board. The Signups tab has a **Show the growth board to members** switch (any admin); while it is off the vtsScore function serves no board at all, not even the roster, and the VtsScore page keeps the whole section hidden instead of flashin…",
-      "The growth re-upload no longer turns away members who signed up on another phone or browser. A sign-up belongs to the browser that filed it, so a member on a new device used to see \"You did not register\" with no way forward (registration was already closed). The re-upload form n…"
+      "The growth re-upload no longer turns away members who signed up on another phone or browser. A sign-up belongs to the browser that filed it, so a member on a new device used to see \"You did not register\" with no way forward (registration was already closed). The re-upload form n…",
+      "The homepage \"Vote for the best members\" corner card is gone, along with its code, styles and copy. The Arcade's Velo's Rampart banner is unchanged."
     ]
   },
   {
