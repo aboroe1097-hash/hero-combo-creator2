@@ -1,149 +1,174 @@
+<p align="center">
+  <img src="images/logo-120.webp" width="96" height="96" alt="VTS 1097 crest" />
+</p>
+
 # RoC VTS Toolkit - VTS 1097 (v16.6.16)
 
-A community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Build hero combinations, inspect skills and research, plan progression and Eden activity, and manage alliance records through dedicated member and administrator tools.
+**The community toolkit for _Rise of Castles: Ice & Fire_, built by and for State 1097.**
+Find your best hero combos, plan research and specialization, prepare for Eden, and run alliance records, all in one place. It works on phones and is available in 13 languages.
 
-**[Open the toolkit](https://roc-vts.com)** · **[Documentation](docs/README.md)** · **[Contributing](CONTRIBUTING.md)** · **[Release history](CHANGELOG.md)** · **[Report a security issue](SECURITY.md)**
+<p align="center">
+  <a href="https://roc-vts.com"><b>Open the toolkit →</b></a>
+  &nbsp;·&nbsp; <a href="CHANGELOG.md">What's new</a>
+  &nbsp;·&nbsp; <a href="docs/README.md">Documentation</a>
+  &nbsp;·&nbsp; <a href="CONTRIBUTING.md">Contributing</a>
+  &nbsp;·&nbsp; <a href="SECURITY.md">Security</a>
+</p>
 
-## Start with your task
+![Hero Atlas: hero rankings with a hero's ratings, synergies and verified skills](docs/media/readme/hero-atlas.webp)
 
-| I want to…                        | Open                             | What to expect                                                                  |
-| --------------------------------- | -------------------------------- | ------------------------------------------------------------------------------- |
-| Find combinations from my heroes  | Heroes & Combos → Generator      | Filter seasons, select heroes, generate ranked combinations, and share results  |
-| Assemble a particular lineup      | Heroes & Combos → Manual Builder | Choose three heroes and inspect the combination's rating and counters           |
-| Compare heroes, skills, and skins | Hero Atlas / Hero Tables         | Season filters, hero details, table views, and source-qualified information     |
-| Plan specialization and research  | Research & Towers                | Towers progress, hero paths, tech levels, and research cost planning            |
-| Plan Dragon Master equipment      | DM Materials                     | Crafting routes, material balances, enhancement milestones, and plan sharing    |
-| Prepare for Eden                  | VTS Eden                         | Royal Bounty, map planning, loyalty, playbook guidance, and previous seasons    |
-| Explore battle outcomes           | Battle Simulator                 | Deterministic beta simulations with explicit stats, equipment, and evidence     |
-| Play community mini-games         | Arcade                           | Separate game lobby; game code opens on demand                                  |
-| Submit an event score             | VtsScore                         | Gated event intake; access and submission eligibility are server-checked        |
-| Manage alliance activity          | VTS Admin                        | Account-based access to OCR, roster, contribution, match-result, and role tools |
+## Heroes and combos
 
-On small screens, use **More** for secondary tools. The command palette provides another navigation path with Ctrl/Cmd+K. Account-dependent operations require the appropriate signed-in identity and permissions; opening a page alone does not grant access.
+<table>
+  <tr>
+    <td colspan="2">
+      <img src="docs/media/readme/hero-picker.webp" alt="Hero picker grid with selected heroes highlighted" />
+      <h4>Your roster, one tap per hero</h4>
+      Every hero from S0 to X12, with skin art and season tags. Pick the ones you own and let the generator do the rest, or use <b>Manual Builder</b> to check one specific lineup's rating and counters.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/media/readme/combo-results.webp" alt="Combo Generator results: five ranked three-hero combos with scores and known counters" />
+      <h4>Combo Generator</h4>
+      The best three-hero lineups from your roster, ranked and scored, with known counters flagged. Season, free/paid and troop filters narrow the pool. Results can be shared or downloaded as an image.
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/media/readme/skin-atlas.webp" alt="Skin Atlas comparing Mythic, Legendary and Everlasting skin tiers" />
+      <h4>Hero Atlas and Skin Atlas</h4>
+      Search and sort all heroes, open one for skills, synergies and top combos, and compare skin tiers, star-up costs and where to get them.
+    </td>
+  </tr>
+</table>
 
-## Current scope and data limits
+## Research and specialization
 
-- X10 and X12 are represented in the hero catalog. The supported research ladder is separate from hero availability; X10 is not a research season.
-- Season **Select all** fills the visible strip and restores that strip's defaults on the next press.
-- The current Artifact interface covers **Sword of Judgment**. Retained Redemption Grail source data is not a promise that its former interface is available.
-- X12 Charge has editable data without an invented tree topology. Unverified or conflicting research evidence remains qualified in the interface.
-- Strife recommendations intentionally cover S0–S4 and X1–X2. A hero's presence in the Atlas does not imply coverage in every recommendation tool.
-- Battle Simulator results are model output, not guaranteed in-game outcomes. Check stat sources and the evidence behind a comparison.
-- The former All-Star BoH signup hub, team mapper, and command center are retired. Some server access, OCR, schedule, and legacy-data contracts remain in use by VtsScore; do not remove that backend merely because the old UI is gone.
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/media/readme/towers.webp" alt="Specialization Towers planner with columns of nodes and a node detail panel" />
+      <h4>Specialization Towers</h4>
+      Rebuild each troop's specialization path node by node, track medals and milestones, and see the bonuses you've unlocked. Progress exports and imports.
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/media/readme/research.webp" alt="Tech Research Calculator with season filters and tree cards" />
+      <h4>Tech Research Calculator</h4>
+      Plan research trees season by season, with total costs and remaining War Badges and Courage Medals. Also in this hub: the <b>Sword of Judgment</b> artifact tree and building upgrades.
+    </td>
+  </tr>
+</table>
 
-For changes to hero or research facts, include the source, capture date, season scope, and verification status. Unknown costs, unlock rules, or skill values must not be guessed. See the [source package](docs/sources/x10-x12/README.md) and [data contribution guidance](CONTRIBUTING.md#data-and-evidence).
+## Battles, Eden and the Arcade
 
-## Local setup
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/media/readme/battle-sim.webp" alt="Battle Simulator output showing the winner, rounds and survival rates" />
+      <h4>Battle Simulator <sup>beta</sup></h4>
+      Set up two three-row formations and run one exact battle or a seeded batch. Every result shows which stats it used, and missing values are named rather than guessed.
+      <br /><br />
+      <img src="docs/media/readme/eden-loyalty.webp" alt="Eden Loyalty Upgrade Calculator" />
+      <h4>VTS Eden hub</h4>
+      Loyalty upgrades, Royal Bounty, the Eden map, the playbook, and contribution rankings for the current and previous seasons.
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/media/readme/arcade.webp" alt="Arcade lobby with Velo's Rampart and five mini-games" />
+      <h4>Arcade</h4>
+      <b>Velo's Rampart</b>, a real-time tower-defense game with a Daily War, plus five quick mini-games with a shared leaderboard.
+    </td>
+  </tr>
+</table>
 
-Use the repository's **Node 22** baseline from [.nvmrc](.nvmrc) and **Python 3.11**, matching CI. Firebase Functions have a separate **Node 22** runtime and dependency tree; see [Functions](functions/README.md).
+## Made for phones
 
-From an existing clone:
+<table>
+  <tr>
+    <td width="33%"><img src="docs/media/readme/phone-hero.webp" alt="Hero detail on a phone" /></td>
+    <td width="33%"><img src="docs/media/readme/phone-towers.webp" alt="Specialization Towers on a phone" /></td>
+    <td valign="top">
+      Every tool is designed for phones as well as desktop. Secondary tools live under <b>More</b>, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd> opens the command palette on desktop.
+      <br /><br />
+      Light and dark themes · 13 languages (English, Arabic, Spanish, Portuguese, French, German, Croatian, Indonesian, Italian, Korean, Russian, Turkish, Chinese) · <b>Velo</b>, the built-in assistant
+    </td>
+  </tr>
+</table>
+
+## Everything else in the toolkit
+
+| Tool                   | What it's for                                                                            |
+| ---------------------- | ---------------------------------------------------------------------------------------- |
+| **DM Materials**       | Dragon Master set planning: crafting routes, material totals and enhancement milestones  |
+| **Class Development**  | Class leveling paths with skill priorities at each checkpoint                            |
+| **Strife over Dragon** | Hero recommendations for Strife (S0–S4, X1–X2)                                           |
+| **PDFs**               | 14 printable references: heroes, combos, skins, research, towers, Eden and Dragon Master |
+| **VtsScore**           | Competition sign-ups, growth uploads and the growth board, unlocked with the member PIN  |
+| **VTS Admin**          | Leadership tools: OCR leaderboards, roster, contributions, match results and roles       |
+
+Member and admin tools need the right sign-in; opening a page doesn't grant access.
+
+### About the data
+
+- Hero, skill and research facts carry their source and verification status. Unknown values are left blank, never guessed. To correct something, see [data and evidence](CONTRIBUTING.md#data-and-evidence) and the [source package](docs/sources/x10-x12/README.md).
+- Battle Simulator results are model output, not a guarantee of in-game outcomes.
+- The artifact view currently covers **Sword of Judgment** only.
+
+---
+
+## For contributors
+
+**gh-pages is production, and every change goes through a pull request.** [AGENTS.md](AGENTS.md) is the authoritative workflow and release policy.
+
+### Quick start
+
+Requires **Node 22** ([.nvmrc](.nvmrc)) and Python 3.11, the same as CI.
 
 ```powershell
 git fetch origin
-git switch -c codex/my-change origin/gh-pages
-npm ci
-npm run dev
-```
-
-If that checkout contains unfinished work, create an isolated worktree instead of switching or resetting it:
-
-```powershell
-git fetch origin
-git worktree add -b codex/my-change ../hero-combo-my-change origin/gh-pages
+git worktree add -b my-change ../hero-combo-my-change origin/gh-pages
 cd ../hero-combo-my-change
 npm ci
 npm run dev
 ```
 
-Vite prints the local URL. Use its server rather than opening index.html through file://. npm ci installs the exact lockfile versions; an existing node_modules directory from another branch can produce misleading chunk graphs and size failures.
+Use the URL Vite prints; don't open `index.html` from disk. Always `npm ci`, because a `node_modules` folder left over from another branch causes misleading size failures. Public pages run without credentials. For cloud features, copy [.env.example](.env.example) to `.env.local` and run `npm run dev -- --host 127.0.0.1 --port 5174`. Never commit credentials, PINs or debug tokens.
 
-### Firebase and protected local flows
+### Everyday commands
 
-Public/static development can start without production credentials. Cloud-dependent operations need valid configuration; copied placeholder values do not enable them.
+| Command              | Does                                                                          |
+| -------------------- | ----------------------------------------------------------------------------- |
+| `npm run dev`        | Development server                                                            |
+| `npm run check:fast` | Version, lint, formatting, unit tests and translations: the usual pre-PR gate |
+| `npm run test:unit`  | Node unit suite only                                                          |
+| `npm run build`      | Production build (also refreshes generated stamps and payloads)               |
+| `npm run size:check` | Asset budgets against a fresh build                                           |
+| `npm run check`      | Full gate including rules, build, size and browser smoke tests                |
 
-```powershell
-Copy-Item .env.example .env.local
-# Edit .env.local with the appropriate public web configuration.
-npm run dev -- --host 127.0.0.1 --port 5174
-```
+Browser tests need Chromium once: `npx playwright install chromium`.
 
-Port 5174 is the project's documented local origin for protected-flow testing. Firebase Auth authorized domains, App Check registration, and the Worker origin allowlist are separate controls. Restart Vite after changing environment values. Never put service-account credentials, provider API secrets, private PINs, or App Check debug tokens in a tracked file.
+### Where things live
 
-The supported variable names and placeholders live in [.env.example](.env.example). See [operations and troubleshooting](docs/operations.md) for boundaries and failure diagnosis.
+| Path                     | Contents                                                       |
+| ------------------------ | -------------------------------------------------------------- |
+| `*.html`, `tabs/`        | Page entry points and lazily fetched tab templates             |
+| `js/`, `css/`            | Feature code, models, catalogs, translations and styles        |
+| `database/`              | Canonical source tables and evidence used by the data builders |
+| `functions/`, `workers/` | Firebase Functions and the OCR/AI proxy (deployed separately)  |
+| `scripts/`, `tests/`     | Build and validation tooling, unit and browser tests           |
+| `docs/`                  | Guides, source evidence and historical plans                   |
 
-## Development commands
+[Architecture](docs/architecture.md) covers feature ownership, data paths and caching. [Operations](docs/operations.md) covers troubleshooting.
 
-| Command               | Purpose                                                                        |
-| --------------------- | ------------------------------------------------------------------------------ |
-| npm run dev           | Start the development server                                                   |
-| npm run version:check | Validate release surfaces and version cadence                                  |
-| npm run test:unit     | Run the complete Node unit suite                                               |
-| npm run check:fast    | Version, lint, formatting, unit tests, and translation checks                  |
-| npm run build         | Validate/build data, refresh generated metadata, bundle, and post-process dist |
-| npm run size:check    | Check a fresh build's asset budgets and installed toolchain versions           |
-| npm run smoke         | Development-server browser smoke coverage                                      |
-| npm run smoke:prod    | Built-artifact browser smoke coverage                                          |
-| npm run check         | Full local gate, including rules check, build, size, and browser checks        |
-| npm run verify:deploy | CI/deploy wrapper with required build configuration and auth injection         |
-| npm run towers:test   | Focused Towers model and browser tests                                         |
-| npm run velo:lab      | Start the isolated local Velo/Ollama workshop                                  |
+### Releasing
 
-Install Chromium once for browser checks with npx playwright install chromium. On Linux, CI uses npx playwright install --with-deps chromium. Some screenshot baselines are Windows-specific and explicitly skipped in CI; a passing CI run does not claim those snapshots were compared.
+- User-visible changes bump the version and add a [CHANGELOG](CHANGELOG.md) entry. Patch releases run to .20 before the next minor.
+- Small fixes need focused tests plus `check:fast`. Security, auth, Firebase rules and major upgrades need the full `npm run check`.
+- Firebase rules, Functions and Workers deploy separately from the site; see the [deploy runbook](docs/firebase-deploy-runbook.md). Merging a PR does not deploy them.
+- The owner merges. See the [release guide](docs/version-control-workflow.md).
 
-For a quick Towers loop, use npm run towers:dev, npm run towers:test:unit, and npm run towers:test:ui. For another tool, select its existing unit/browser tests. The [contribution guide](CONTRIBUTING.md#choose-the-right-checks) explains when focused checks are sufficient and when the full gate is required.
+README screenshots are captured from the live site with demo-safe public pages and stored in `docs/media/readme/`.
 
-## Project map
+## Support
 
-| Location                  | Responsibility                                                                 |
-| ------------------------- | ------------------------------------------------------------------------------ |
-| Root HTML pages and tabs/ | Application entry points and fetched templates                                 |
-| js/                       | Feature controllers, state, domain models, catalogs, storage, and translations |
-| css/                      | Shared theme tokens, components, responsive styles, and feature styles         |
-| assets/ and images/       | Runtime media plus explicitly retained source originals                        |
-| database/                 | Canonical source tables, manifests, and evidence used by data builders         |
-| scripts/                  | Build, validation, release, data import, and administrative helpers            |
-| tests/                    | Unit contracts, browser scenarios, fixtures, and active visual baselines       |
-| workers/                  | OCR/AI proxy and associated server components                                  |
-| functions/                | Separately deployed Firebase Functions and their package lock                  |
-| docs/                     | Current guides, source evidence, and clearly marked historical plans           |
-| dist/                     | Generated deployment artifact; not tracked source                              |
+Report bugs with the page, release, language, theme, device and steps to reproduce. Data corrections need a source. See [CONTRIBUTING.md](CONTRIBUTING.md). Report security or private-data issues privately via [SECURITY.md](SECURITY.md), never in a public issue.
 
-See [architecture](docs/architecture.md) for feature ownership, data paths, and cache behavior. The documentation index lists every maintained guide and retained historical Markdown document.
-
-## Architecture in practice
-
-The frontend is a Vite-built collection of native JavaScript modules and HTML entry pages. Large tools and locale packs use dynamic imports. Firebase SDK modules are imported from the installed firebase package through js/firebase-sdk.js and bundled into same-origin hashed assets; they are not loaded through the old gstatic module scheme.
-
-The build copies selected static directories and files through scripts/post-build.mjs. Its sourceOnlyDeployPaths list keeps selected original images in Git without shipping them. Do not assume every file under assets/ is deployed, or that an image without a literal filename reference is unused: several features construct paths from IDs, levels, or coordinates.
-
-The service worker builds its cache manifest from the finished artifact. Offline precaching can fetch optional public JS/CSS after registration even though their UI is lazy-loaded. Changing this behavior needs offline and previous-version recovery tests.
-
-## Release and deployment
-
-**gh-pages is production source. All changes go through a pull request.** GitHub Actions validates and deploys dist/, not the raw checkout. [AGENTS.md](AGENTS.md) is the authoritative workflow policy; the [release guide](docs/version-control-workflow.md) explains the sequence.
-
-- Small reversible changes use focused tests and check:fast when practical, plus relevant build/version/size checks.
-- Major upgrades, broad application overhauls, security/auth changes, Firebase rules/schema changes, and major dependency upgrades require npm run check.
-- Firebase Hosting preview is an optional high-risk gate, not a requirement for every UI fix. Its public preview uses the real backend; see the [preview guide](docs/firebase-preview-workflow.md).
-- Workers, Firebase Functions, rules, and indexes deploy separately when their code or contracts change. Merging a frontend PR does not deploy them.
-- User-visible changes update release metadata and CHANGELOG.md. Documentation and internal cleanup do not need an app-version bump unless requested. Patch releases run through .20 before the next minor.
-- Leave normal merging to the owner. An explicit fast-merge request can use protected auto-merge; never push directly to production.
-
-## Screenshots
-
-These illustrations show the toolkit's main workflows; they are documentation media, not a promise of pixel-perfect parity with every release.
-
-![Combo Generator and Hero Atlas](docs/media/toolkit-core-tools.webp)
-
-![Specialization Towers desktop and mobile examples](docs/media/specialization-towers-responsive.webp)
-
-Use sanitized demo data for screenshots. Keep curated documentation images in docs/media/ and regression baselines beside their tests. Root-level scratch captures, rendered PDF pages, local videos, caches, and worktrees belong outside tracked source. See [repository maintenance](docs/repository-maintenance.md).
-
-## Community contributions and support
-
-Bug reports should identify the page, release, language, theme, viewport, reproduction steps, and expected result. Data corrections need source evidence; suggestions should describe the player task and a concrete success condition. [CONTRIBUTING.md](CONTRIBUTING.md) includes both workflows.
-
-Report credential, access-control, and private-data issues through [SECURITY.md](SECURITY.md), not a public issue. Operational alliance messages follow the [R5 communications guide](docs/r5-communications-guide.md) and [append-only message ledger](docs/r5-message-log.md). Keep private orders and player records out of reusable Velo knowledge.
-
-For licensing, see [LICENSE](LICENSE). Source-specific credits and verification limits remain attached to the relevant data/evidence documents.
+Licensed under the terms in [LICENSE](LICENSE). This is a free fan-made tool, not affiliated with Camel Games or Rise of Castles.

@@ -1820,10 +1820,14 @@ test.describe('app smoke tabs', () => {
             wrapClientWidth: wrap.clientWidth,
           };
         });
+        // The drawer's stylesheet arrives with its lazy chunk; until it applies,
+        // the injected button measures at its unstyled ~21px. Asserting inside
+        // the retry waits for the styles instead of accepting the first read.
+        const tapAt = `at ${viewport.width}px`;
+        expect(metrics.copyHeight, `copy button height ${tapAt}`).toBeGreaterThanOrEqual(44);
+        expect(metrics.chipHeight, `source chip height ${tapAt}`).toBeGreaterThanOrEqual(44);
       }).toPass({ timeout: 10000 });
       const at = `at ${viewport.width}px`;
-      expect(metrics.copyHeight, `copy button height ${at}`).toBeGreaterThanOrEqual(44);
-      expect(metrics.chipHeight, `source chip height ${at}`).toBeGreaterThanOrEqual(44);
       expect(metrics.pageScrollWidth, `page horizontal overflow ${at}`).toBeLessThanOrEqual(
         metrics.innerWidth + 1
       );
