@@ -2758,3 +2758,361 @@
   background: var(--surface);
   border-color: var(--border);
 }
+
+/* ── 2026-10 layout (.dm-v2) ──────────────────────────────────────────
+   Plan bar on top, the route choice, then the workbench beside one sticky
+   sidebar. Scoped to .dm-v2 so it outranks the older three-column rules at
+   every breakpoint without rewriting them. */
+.dm-v2 .dm-command-header {
+  align-items: center;
+}
+
+.dm-v2 .dm-command-header .dm-tool-tabs {
+  flex: 0 0 auto;
+  grid-template-columns: repeat(2, auto);
+  margin: 0;
+}
+
+.dm-v2 .dm-tool-tab {
+  padding-inline: 1rem;
+  font-size: 0.8rem;
+}
+
+.dm-v2 .dm-plan-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-column: auto;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.72rem;
+  padding: 0.85rem 1rem;
+}
+
+.dm-v2 .dm-plan-bar__fields {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.2fr) minmax(120px, 0.7fr) minmax(130px, 0.8fr) minmax(
+      250px,
+      1.6fr
+    );
+  align-items: end;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.dm-v2 .dm-field > span {
+  font-size: 0.7rem;
+}
+
+.dm-v2 .dm-field input,
+.dm-v2 .dm-field select {
+  min-height: 40px;
+  font-size: 0.86rem;
+}
+
+.dm-v2 .dm-set-picker {
+  min-height: 40px;
+}
+
+.dm-v2 .dm-set-picker button {
+  min-height: 40px;
+  font-size: 0.72rem;
+}
+
+.dm-v2 .dm-plan-bar__progress {
+  display: flex;
+  padding-block: 0;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 220px;
+  padding-inline: 1rem;
+  border-inline: 1px solid var(--dm-border);
+}
+
+.dm-v2 .dm-plan-bar__progress > div {
+  display: grid;
+  flex: 1;
+  gap: 0.3rem;
+}
+
+.dm-v2 .dm-plan-bar__progress small {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.dm-v2 .dm-progress-copy {
+  margin: 0;
+  font-size: 0.74rem;
+}
+
+.dm-v2 .dm-progress-copy strong {
+  font-size: 0.9rem;
+}
+
+.dm-progress-ring {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background:
+    radial-gradient(closest-side, var(--dm-bg) 76%, transparent 78%),
+    conic-gradient(var(--dm-gold) calc(var(--ring) * 1%), var(--dm-surface-raised) 0);
+}
+
+.dm-progress-ring b {
+  color: var(--dm-gold);
+  font-size: 0.78rem;
+}
+
+.dm-v2 .dm-plan-bar .dm-plan-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(110px, 1fr));
+  grid-column: auto;
+  gap: 0.4rem;
+}
+
+.dm-v2 .dm-plan-bar .dm-plan-actions button {
+  min-height: 36px;
+  font-size: 0.74rem;
+}
+
+.dm-v2 .dm-route-chooser {
+  margin-bottom: 0.72rem;
+}
+
+.dm-v2 .dm-command-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: 0.85rem;
+}
+
+.dm-v2 .dm-workbench {
+  grid-column: auto;
+  min-width: 0;
+}
+
+.dm-v2 .dm-summary-stack {
+  position: sticky;
+  top: 12px;
+  display: grid;
+  grid-column: auto;
+  grid-template-columns: 1fr;
+  gap: 0.72rem;
+}
+
+.dm-v2 .dm-next-panel > strong {
+  font-size: 0.86rem;
+}
+
+.dm-v2 .dm-next-panel button {
+  min-height: 40px;
+  font-size: 0.8rem;
+}
+
+.dm-v2 .dm-resource-panel h3,
+.dm-v2 .dm-piece-inventory h4 {
+  font-size: 0.95rem;
+}
+
+.dm-v2 .dm-text-button {
+  font-size: 0.72rem;
+}
+
+.dm-v2 .dm-resource-row {
+  font-size: 0.78rem;
+}
+
+.dm-v2 .dm-piece-inventory {
+  padding: 0.85rem;
+}
+
+.dm-v2 .dm-piece-inventory p {
+  font-size: 0.72rem;
+}
+
+.dm-v2 .dm-section-heading-row h3 {
+  font-size: 1.05rem;
+}
+
+.dm-v2 .dm-section-heading-row p {
+  font-size: 0.78rem;
+}
+
+.dm-v2 .dm-view-switch button {
+  font-size: 0.74rem;
+}
+
+.dm-v2 .dm-eyebrow {
+  font-size: 0.68rem;
+}
+
+.dm-v2 .dm-route-chooser {
+  grid-template-columns: 1fr;
+  gap: 0.55rem;
+}
+
+.dm-v2 .dm-route-chooser__heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0;
+  border: 0;
+}
+
+.dm-v2 .dm-route-chooser__heading h3 {
+  font-size: 0.95rem;
+}
+
+.dm-v2 .dm-route-card__title {
+  font-size: 0.9rem;
+}
+
+.dm-v2 .dm-route-path__step,
+.dm-v2 .dm-route-stat span,
+.dm-v2 .dm-route-card > small {
+  font-size: 0.7rem;
+}
+
+.dm-v2 .dm-route-stat b {
+  font-size: 0.82rem;
+}
+
+.dm-v2 .dm-slot-grid--set {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  justify-content: stretch;
+}
+
+.dm-v2 .dm-slot-card__name,
+.dm-v2 .dm-slot-card__tier {
+  font-size: 0.72rem;
+}
+
+/* The equipment tips: folded into the sidebar, one column when open. */
+.dm-guide-details {
+  padding: 0;
+}
+
+.dm-guide-details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0.6rem 0.85rem;
+  color: var(--text-primary);
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+
+.dm-guide-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.dm-guide-details > summary::after {
+  color: var(--text-muted);
+  content: '+';
+  font-size: 1.1rem;
+}
+
+.dm-guide-details[open] > summary::after {
+  content: '−';
+}
+
+.dm-v2 .dm-guide-details .dm-equipment-guidance {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0 0.85rem 0.85rem;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.dm-v2 .dm-guide-details .dm-equipment-guidance > header h3 {
+  display: none;
+}
+
+.dm-v2 .dm-guide-details .dm-equipment-orders,
+.dm-v2 .dm-guide-details .dm-equipment-rules {
+  grid-column: auto;
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 1280px) {
+  .dm-v2 .dm-plan-bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .dm-v2 .dm-plan-bar__fields {
+    grid-column: 1 / -1;
+  }
+
+  .dm-v2 .dm-plan-bar__progress {
+    padding-inline: 0;
+    border: 0;
+  }
+
+  .dm-v2 .dm-plan-bar .dm-plan-actions {
+    grid-template-columns: repeat(4, auto);
+  }
+}
+
+@media (max-width: 1000px) {
+  .dm-v2 .dm-command-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .dm-v2 .dm-summary-stack {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dm-v2 .dm-summary-stack > .dm-guide-details {
+    grid-column: 1 / -1;
+  }
+
+  .dm-v2 .dm-plan-bar__fields {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dm-v2 .dm-plan-bar__fields > :last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 680px) {
+  .dm-v2 .dm-command-header {
+    display: grid;
+  }
+
+  .dm-v2 .dm-command-header .dm-tool-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dm-v2 .dm-plan-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .dm-v2 .dm-plan-bar__fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dm-v2 .dm-plan-bar__fields > .dm-field--name {
+    grid-column: 1 / -1;
+  }
+
+  .dm-v2 .dm-plan-bar .dm-plan-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dm-v2 .dm-summary-stack {
+    grid-template-columns: 1fr;
+  }
+
+  .dm-v2 .dm-slot-grid--set {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

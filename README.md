@@ -2,7 +2,7 @@
   <img src="images/logo-120.webp" width="96" height="96" alt="VTS 1097 crest" />
 </p>
 
-# RoC VTS Toolkit - VTS 1097 (v16.6.15)
+# RoC VTS Toolkit - VTS 1097 (v16.6.16)
 
 **The community toolkit for _Rise of Castles: Ice & Fire_, built by and for State 1097.**
 Find your best hero combos, plan research and specialization, prepare for Eden, and run alliance records, all in one place. It works on phones and is available in 13 languages.

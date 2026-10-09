@@ -2,6 +2,11 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.6.16 - 2026-10-09
+
+- **Artifact planner redesigned.** On wide screens the Sword of Judgment lies on its side next to a pinned inspector, so the whole tree fits in one view instead of a tall column of art beside a narrow sidebar; phones keep the upright sword. Nodes are larger and show at a glance whether they are available, in progress, maxed or locked; paths between funded nodes light up, and the recommended next node is highlighted. The inspector shows what a node does at your current level and at the next one, links its prerequisites, and gives the cost of the next level and to max. A new **List** view lists every node by tier with a quick +/− and its cost to max. Permanent bonuses are always visible instead of hidden in a collapsed panel.
+- **DM Materials planner reorganized.** The plan settings, overall progress and save/export/share now sit on one bar at the top, followed by the route choice. Below them, the six-piece set and the recipe have the main column, and one sidebar holds the next step, resources and owned pieces. The equipment tips moved into a folded section at the end of the sidebar, and the small text is larger. The planning itself is unchanged.
+
 ## 16.6.15 - 2026-10-09
 
 - Admins can hide the Competition growth board. The Signups tab has a **Show the growth board to members** switch (any admin); while it is off the vtsScore function serves no board at all, not even the roster, and the VtsScore page keeps the whole section hidden instead of flashing it first. Uploads keep counting, and the board comes back within a minute of switching it on. **Deploy the Firestore rules and the vtsScore function after this release.**
