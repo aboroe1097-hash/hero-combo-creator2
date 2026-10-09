@@ -439,7 +439,7 @@ function renderPlanPanel(result, t) {
           </div>
         </div>
       </div>
-      <div class="dm-plan-bar__progress">
+      <div class="dm-plan-bar__progress dm-summary-panel">
         <span class="dm-progress-ring" style="--ring:${progress}" aria-hidden="true"><b>${formatNumber(progress)}%</b></span>
         <div>
           <div class="dm-progress-copy"><span id="dmProgressLabel">${escapeHtml(t.overallProgress)}</span><strong>${formatNumber(result.totalCompletedPieces)} / ${formatNumber(result.totalTargetPieces)}</strong></div>
