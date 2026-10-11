@@ -2462,7 +2462,7 @@ const en = {
   'ai.action.openHeroAtlas': 'Open Hero Atlas',
   'ai.action.openResearch': 'Open Research',
   'ai.action.openMaterials': 'Open Materials',
-  'ai.action.openEden': 'Open Eden X1',
+  'ai.action.openEden': 'Open Eden',
   'ai.action.useInGenerator': 'Use in Generator',
   'ai.action.reviewSelection': 'Review selection',
   'ai.action.applySelection': 'Apply selection',

@@ -393,6 +393,34 @@ export function createBohSignupAdminView(options = {}) {
     const list = root.querySelector('#dashBohSignupsList');
     if (list) {
       list.innerHTML = renderBohSignupRows(state.signups, t, { superadmin: state.superadmin });
+      let toolbar = root.querySelector('[data-boh-signup-exports]');
+      if (!toolbar) {
+        toolbar = document.createElement('section');
+        toolbar.dataset.bohSignupExports = 'true';
+        toolbar.innerHTML =
+          '<p>Private leadership exports include every signup and stored field, final uploads and team results. Keep downloaded files private.</p><button type="button" class="dash-btn" data-signup-export="json">Export all signups JSON</button> <button type="button" class="dash-btn" data-signup-export="csv">Export all signups CSV</button><p role="status" data-signup-export-status></p>';
+        list.before(toolbar);
+        toolbar.querySelectorAll('[data-signup-export]').forEach((button) =>
+          button.addEventListener('click', async () => {
+            button.disabled = true;
+            const status = toolbar.querySelector('[data-signup-export-status]');
+            status.textContent = 'Reading complete cloud records…';
+            try {
+              const [{ loadVtsScoreSnapshot }, { downloadVtsScoreAudit }] = await Promise.all([
+                import('./vts-score-store.js'),
+                import('./vts-score-audit.js'),
+              ]);
+              const data = await loadVtsScoreSnapshot(state.season);
+              const audit = downloadVtsScoreAudit(data, button.dataset.signupExport);
+              status.textContent = `Downloaded ${audit.counts.signups} signups and ${audit.counts.issues} cross-check items.`;
+            } catch (error) {
+              status.textContent = `Export failed: ${error.message}`;
+            } finally {
+              button.disabled = false;
+            }
+          })
+        );
+      }
     }
   }
 

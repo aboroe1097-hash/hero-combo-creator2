@@ -7954,3 +7954,40 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-btn-primary.dash-btn-busy
     letter-spacing: 0.02em;
   }
 }
+#ocrDashboardRoot [data-vts-cutoff-form] {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+#ocrDashboardRoot [data-vts-cutoff-form] label {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+#ocrDashboardRoot [data-vts-cutoff-form] input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+#ocrDashboardRoot [data-vts-cutoff-form] > p,
+#ocrDashboardRoot [data-vts-cutoff-form] > button {
+  grid-column: 1 / -1;
+}
+#ocrDashboardRoot .vts-admin-chip-row > label {
+  display: grid;
+  flex: 1 1 200px;
+  min-width: 0;
+  max-width: 100%;
+}
+#ocrDashboardRoot .vts-admin-chip-row select {
+  min-width: 0;
+  max-width: 100%;
+}
+#ocrDashboardRoot .vts-admin-card li {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 620px) {
+  #ocrDashboardRoot [data-vts-cutoff-form] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

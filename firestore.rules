@@ -23,6 +23,30 @@ service cloud.firestore {
       return signedIn() && request.auth.token.superadmin == true;
     }
 
+    // Team/public emergency pause. Superadmins retain recovery access.
+    function operationalWritesAllowed(feature) {
+      let path = /databases/$(database)/documents/vts_admin/operations_config;
+      return isSuperAdmin() || !exists(path)
+        || (get(path).data.expiresAtMs > 0
+          && get(path).data.expiresAtMs <= request.time.toMillis())
+        || (!get(path).data.readOnly
+          && !(feature in get(path).data.disabledFeatures));
+    }
+
+    function validEdenWorkspaceId(id) {
+      return id is string && id.matches('^eden-x[1-9][0-9]{0,3}$');
+    }
+
+    // New workspaces must be created by a superadmin before operational writes.
+    // getAfter also permits their initialization in the same atomic batch.
+    function edenWorkspaceWritable(id) {
+      let path = /databases/$(database)/documents/vts_admin/eden_workspaces/records/$(id);
+      return validEdenWorkspaceId(id)
+        && (!exists(path) || get(path).data.lifecycle != 'archived')
+        && ((!exists(path) && id in ['eden-x1', 'eden-x2'])
+          || getAfter(path).data.lifecycle in ['draft', 'active']);
+    }
+
     // Admin writes (dashboard/roster/conduct, eden_x1 vote moderation) require
     // the `admin` custom claim (set on the admin UID via
     // `node scripts/firebase-set-admin-claim.mjs <uid-or-email>`), NOT a mere
@@ -497,7 +521,8 @@ service cloud.firestore {
 
     function validConductAdjustment() {
       return request.resource.data.keys().hasOnly([
-        'id', 'season', 'playerKey', 'playerName', 'points', 'category', 'note', 'createdAt', 'createdBy'
+        'id', 'season', 'playerKey', 'playerName', 'points', 'category', 'note', 'createdAt', 'createdBy',
+        'restoredAt', 'restoredBy'
       ])
       && request.resource.data.id is string
       && request.resource.data.id.size() > 0
@@ -524,7 +549,12 @@ service cloud.firestore {
       && request.resource.data.createdAt is timestamp
       && request.resource.data.createdBy is string
       && request.resource.data.createdBy.size() > 0
-      && request.resource.data.createdBy.size() <= 128;
+      && request.resource.data.createdBy.size() <= 128
+      && ((!('restoredAt' in request.resource.data) && !('restoredBy' in request.resource.data))
+        || (request.resource.data.restoredAt is timestamp
+          && request.resource.data.restoredBy is string
+          && request.resource.data.restoredBy.size() > 0
+          && request.resource.data.restoredBy.size() <= 128));
     }
 
     // Admin-suggested bonus team effort points awaiting superadmin review.
@@ -816,7 +846,7 @@ service cloud.firestore {
     function validEdenX1VoteSettings() {
       return request.resource.data.keys().hasOnly([
         'season', 'votingOpen', 'allowEditing', 'showPublicResults',
-        'showMemberResults', 'showManagementResults',
+        'showMemberResults', 'showManagementResults', 'showMemberVoteCounts', 'showManagementVoteCounts',
         'showVoterNames', 'contributionRankingMode', 'closesAt', 'candidateRedirects',
         'updatedAt', 'updatedBy'
       ])
@@ -830,6 +860,8 @@ service cloud.firestore {
       // before the split still validates.
       && (!('showMemberResults' in request.resource.data) || request.resource.data.showMemberResults is bool)
       && (!('showManagementResults' in request.resource.data) || request.resource.data.showManagementResults is bool)
+      && (!('showMemberVoteCounts' in request.resource.data) || request.resource.data.showMemberVoteCounts is bool)
+      && (!('showManagementVoteCounts' in request.resource.data) || request.resource.data.showManagementVoteCounts is bool)
       && request.resource.data.showVoterNames is bool
       && (
         !('contributionRankingMode' in request.resource.data)
@@ -878,14 +910,14 @@ service cloud.firestore {
     // Eden X2 published projection: the ONLY Eden X2 document a non-admin can
     // read. It carries just the allowlisted public season fields; the working
     // eden_x2_* records stay admin-only.
-    function validEdenX2PublicProjection() {
+    function validEdenPublicProjection(workspaceId) {
       return request.resource.data.keys().hasOnly([
         'schemaVersion', 'workspace', 'season', 'published', 'revision', 'publishedAtMs',
         'updatedBy', 'dashboard', 'rosterSnapshots', 'voteSettings', 'publicVoteResults',
-        'scoring', 'rewardSettings'
+        'scoring', 'rewardSettings', 'managementVotes'
       ])
       && request.resource.data.schemaVersion == 1
-      && request.resource.data.workspace == 'eden-x2'
+      && request.resource.data.workspace == workspaceId
       && request.resource.data.season is string
       && request.resource.data.season.size() > 0
       && request.resource.data.season.size() <= 40
@@ -895,10 +927,22 @@ service cloud.firestore {
       && request.resource.data.publishedAtMs is number
       && request.resource.data.updatedBy is string
       && request.resource.data.dashboard is map
+      && request.resource.data.dashboard.keys().hasOnly([
+        'updatedAtMs', 'syncRevision', 'last_updated', 'date', 'total_attacks',
+        'attacks', 'players_summary', 'contributionRecords', 'dutyRecords',
+        'exGuildContributions', 'playerRegistry', 'r5Season', 'publicConductAdjustments'
+      ])
       && request.resource.data.rosterSnapshots is list
       && request.resource.data.rosterSnapshots.size() <= 50
       && request.resource.data.voteSettings is map
+      && request.resource.data.voteSettings.keys().hasOnly([
+        'season', 'votingOpen', 'allowEditing', 'showPublicResults', 'showMemberResults',
+        'showManagementResults', 'showMemberVoteCounts', 'showManagementVoteCounts',
+        'showVoterNames', 'contributionRankingMode', 'closesAt', 'updatedAt'
+      ])
       && request.resource.data.publicVoteResults is map
+      && (!('managementVotes' in request.resource.data)
+        || (request.resource.data.managementVotes is list && request.resource.data.managementVotes.size() <= 1000))
       // Duty weights and the demolition switch, so public scores match admin.
       && (!('scoring' in request.resource.data) || request.resource.data.scoring is map)
       // The reward distribution, so the public page shows the published quotas.
@@ -906,12 +950,17 @@ service cloud.firestore {
         || validRewardSettingsShape(request.resource.data.rewardSettings));
     }
 
+    function edenProjectionRevisionMatches() {
+      return (resource == null && request.resource.data.revision == 1)
+        || (resource != null && request.resource.data.revision == resource.data.revision + 1);
+    }
+
     function validEdenWorkspaceRecord(workspaceId) {
       return request.resource.data.keys().hasOnly([
         'id', 'lifecycle', 'active', 'createdAtMs', 'archivedAtMs', 'publication', 'updatedAt', 'updatedBy'
       ])
       && request.resource.data.id == workspaceId
-      && (workspaceId == 'eden-x1' || workspaceId == 'eden-x2')
+      && validEdenWorkspaceId(workspaceId)
       && (
         request.resource.data.lifecycle == 'archived'
         || request.resource.data.lifecycle == 'draft'
@@ -920,7 +969,7 @@ service cloud.firestore {
       && request.resource.data.active is bool
       && request.resource.data.createdAtMs is number
       && (!('archivedAtMs' in request.resource.data) || request.resource.data.archivedAtMs is number)
-      && (!('publication' in request.resource.data) || request.resource.data.publication is map)
+      && (!('publication' in request.resource.data) || request.resource.data.publication == null || request.resource.data.publication is map)
       && (!('updatedBy' in request.resource.data) || request.resource.data.updatedBy is string);
     }
 
@@ -942,8 +991,7 @@ service cloud.firestore {
         && entry.workspaceId is string
         && (
           entry.workspaceId == ''
-          || entry.workspaceId == 'eden-x1'
-          || entry.workspaceId == 'eden-x2'
+          || validEdenWorkspaceId(entry.workspaceId)
         )
         && entry.startedAtMs is number
         && entry.startedAtMs >= 0
@@ -974,6 +1022,12 @@ service cloud.firestore {
         && validEdenSeasonEntryAt(d.seasons, 7)
         && d.updatedAt == request.time
         && d.updatedBy == request.auth.uid;
+    }
+
+    function keepsConductRestoreAudit() {
+      return (!('restoredBy' in resource.data) && !('restoredBy' in request.resource.data))
+        || (request.resource.data.restoredBy == resource.data.restoredBy
+          && request.resource.data.restoredAt == resource.data.restoredAt);
     }
 
     function hasStableConductMetadata() {
@@ -2584,11 +2638,11 @@ service cloud.firestore {
 
     match /comments/{commentId} {
       allow read: if canReadComment();
-      allow create: if signedIn() && validComment();
-      allow delete: if signedIn()
+      allow create: if operationalWritesAllowed('comments') && (signedIn() && validComment());
+      allow delete: if operationalWritesAllowed('comments') && (signedIn()
         && resource.data.authorId == request.auth.uid
-        && resource.data.approved == false;
-      allow update: if isAdmin();
+        && resource.data.approved == false);
+      allow update: if operationalWritesAllowed('comments') && (isAdmin());
     }
 
 
@@ -2637,9 +2691,9 @@ service cloud.firestore {
 
       match /bestCombos/{comboId} {
         allow read: if isOwner(uid);
-        allow create: if isOwner(uid) && validBestCombo();
+        allow create: if operationalWritesAllowed('combos') && (isOwner(uid) && validBestCombo());
         allow update: if false;
-        allow delete: if isOwner(uid);
+        allow delete: if operationalWritesAllowed('combos') && (isOwner(uid));
       }
     }
 
@@ -2723,7 +2777,7 @@ service cloud.firestore {
     match /boh_allstar_competition/current {
       allow get: if signedIn();
       allow list: if false;
-      allow create, update: if isSuperAdmin() && validAllStarBohCompetitionSchedule();
+      allow create, update: if operationalWritesAllowed('competition') && (isSuperAdmin() && validAllStarBohCompetitionSchedule());
       allow delete: if false;
     }
 
@@ -2734,7 +2788,7 @@ service cloud.firestore {
     match /combos_plan/current {
       allow get: if true;
       allow list: if false;
-      allow create, update: if isSuperAdmin() && validCombosPlan();
+      allow create, update: if operationalWritesAllowed('combos') && (isSuperAdmin() && validCombosPlan());
       allow delete: if false;
     }
 
@@ -2766,52 +2820,52 @@ service cloud.firestore {
       match /mapper/current {
         allow get: if hasActiveAllStarBohGrant(season);
         allow list: if false;
-        allow create, update: if isAdmin() && validBohMapperPublish(season);
-        allow delete: if isAdmin();
+        allow create, update: if operationalWritesAllowed('competition') && (isAdmin() && validBohMapperPublish(season));
+        allow delete: if operationalWritesAllowed('competition') && (isAdmin());
       }
 
       match /submissions/{uid} {
         allow get: if isAdmin() || (isOwner(uid) && hasActiveAllStarBohGrant(season));
         allow list: if isAdmin();
-        allow create: if isOwner(uid)
+        allow create: if operationalWritesAllowed('competition') && (isOwner(uid)
           && hasActiveAllStarBohGrant(season)
           && isAllStarBohRegistrationOpen(season)
           && allStarBohAcceptsNewSignups()
-          && validAllStarBohSubmissionCreate(season, uid);
-        allow update: if isOwner(uid)
+          && validAllStarBohSubmissionCreate(season, uid));
+        allow update: if operationalWritesAllowed('competition') && (isOwner(uid)
           && hasActiveAllStarBohGrant(season)
           && isAllStarBohRegistrationOpen(season)
-          && validAllStarBohSubmissionUpdate(season, uid);
+          && validAllStarBohSubmissionUpdate(season, uid));
         // Removing a registration is a prize-relevant act: superadmin only,
         // like publishing the board or setting the active season.
-        allow delete: if isSuperAdmin();
+        allow delete: if operationalWritesAllowed('competition') && (isSuperAdmin());
       }
 
       match /reviews/{uid} {
         allow read, create, update: if isAdmin();
-        allow delete: if isAdmin();
+        allow delete: if operationalWritesAllowed('competition') && (isAdmin());
       }
 
       match /feedback/{uid} {
         allow get: if isAdmin() || (isOwner(uid) && hasActiveAllStarBohGrant(season));
         allow list: if false;
-        allow create: if isAdmin() && validAllStarBohFeedbackCreate(season, uid);
-        allow update: if isAdmin() && validAllStarBohFeedbackUpdate(season, uid);
-        allow delete: if isAdmin();
+        allow create: if operationalWritesAllowed('competition') && (isAdmin() && validAllStarBohFeedbackCreate(season, uid));
+        allow update: if operationalWritesAllowed('competition') && (isAdmin() && validAllStarBohFeedbackUpdate(season, uid));
+        allow delete: if operationalWritesAllowed('competition') && (isAdmin());
       }
 
       match /epicPreferences/{uid} {
         allow get: if isAdmin()
           || (isOwner(uid) && hasActiveAllStarBohGrant(season));
         allow list: if isAdmin();
-        allow create: if isOwner(uid)
+        allow create: if operationalWritesAllowed('competition') && (isOwner(uid)
           && hasActiveAllStarBohGrant(season)
           && isAllStarBohRegistrationOpen(season)
-          && validAllStarBohEpicPreferencesCreate(season, uid);
-        allow update: if isOwner(uid)
+          && validAllStarBohEpicPreferencesCreate(season, uid));
+        allow update: if operationalWritesAllowed('competition') && (isOwner(uid)
           && hasActiveAllStarBohGrant(season)
           && isAllStarBohRegistrationOpen(season)
-          && validAllStarBohEpicPreferencesUpdate(season, uid);
+          && validAllStarBohEpicPreferencesUpdate(season, uid));
         allow delete: if false;
       }
 
@@ -2822,8 +2876,8 @@ service cloud.firestore {
         // Deleting a final upload is paired with deleting its sign-up and is
         // prize-relevant, so it follows the sign-up delete: superadmin only.
         allow read: if isAdmin();
-        allow create, update: if isAdmin();
-        allow delete: if isSuperAdmin();
+        allow create, update: if operationalWritesAllowed('competition') && (isAdmin());
+        allow delete: if operationalWritesAllowed('competition') && (isSuperAdmin());
       }
 
       match /drafts/{draftId} {
@@ -2837,8 +2891,8 @@ service cloud.firestore {
       match /schedules/current {
         allow get: if isAdmin() || hasActiveAllStarBohGrant(season);
         allow list: if false;
-        allow create: if isAdmin() && validAllStarBohScheduleCreate(season);
-        allow update: if isAdmin() && validAllStarBohScheduleUpdate(season);
+        allow create: if operationalWritesAllowed('competition') && (isAdmin() && validAllStarBohScheduleCreate(season));
+        allow update: if operationalWritesAllowed('competition') && (isAdmin() && validAllStarBohScheduleUpdate(season));
         allow delete: if false;
       }
 
@@ -2852,22 +2906,22 @@ service cloud.firestore {
             || safeAllStarBohPublishedOverviewRead(season)
           );
         allow list: if false;
-        allow create: if isAdmin()
-          && validAllStarBohPublishedOverviewCreate(season);
-        allow update: if isAdmin()
-          && validAllStarBohPublishedOverviewUpdate(season);
-        allow delete: if isAdmin();
+        allow create: if operationalWritesAllowed('competition') && (isAdmin()
+          && validAllStarBohPublishedOverviewCreate(season));
+        allow update: if operationalWritesAllowed('competition') && (isAdmin()
+          && validAllStarBohPublishedOverviewUpdate(season));
+        allow delete: if operationalWritesAllowed('competition') && (isAdmin());
       }
 
       match /publishedTeams/{teamId} {
         allow get: if hasActiveAllStarBohGrant(season)
           && (isAdmin() || safeAllStarBohPublishedTeamRead(season, teamId));
         allow list: if false;
-        allow create: if isAdmin()
-          && validAllStarBohPublishedTeamCreate(season, teamId);
-        allow update: if isAdmin()
-          && validAllStarBohPublishedTeamUpdate(season, teamId);
-        allow delete: if isAdmin();
+        allow create: if operationalWritesAllowed('competition') && (isAdmin()
+          && validAllStarBohPublishedTeamCreate(season, teamId));
+        allow update: if operationalWritesAllowed('competition') && (isAdmin()
+          && validAllStarBohPublishedTeamUpdate(season, teamId));
+        allow delete: if operationalWritesAllowed('competition') && (isAdmin());
       }
 
       match /publishedPlayers/{uid} {
@@ -2883,20 +2937,24 @@ service cloud.firestore {
             )
           );
         allow list: if false;
-        allow create: if isAdmin()
-          && validAllStarBohPublishedPlayerCreate(season, uid);
-        allow update: if isAdmin()
-          && validAllStarBohPublishedPlayerUpdate(season, uid);
-        allow delete: if isAdmin();
+        allow create: if operationalWritesAllowed('competition') && (isAdmin()
+          && validAllStarBohPublishedPlayerCreate(season, uid));
+        allow update: if operationalWritesAllowed('competition') && (isAdmin()
+          && validAllStarBohPublishedPlayerUpdate(season, uid));
+        allow delete: if operationalWritesAllowed('competition') && (isAdmin());
       }
     }
 
     match /vts_admin/dashboard_data {
       allow read: if signedIn();
-      allow create: if isAdmin()
+      allow create: if edenWorkspaceWritable('eden-x1')
+        && operationalWritesAllowed('uploads')
+        && (isAdmin()
         && validDashboardData()
-        && request.resource.data.syncRevision == 1;
-      allow update: if isAdmin()
+        && request.resource.data.syncRevision == 1);
+      allow update: if edenWorkspaceWritable('eden-x1')
+        && operationalWritesAllowed('uploads')
+        && (isAdmin()
         && validDashboardData()
         && (
           (!('syncRevision' in resource.data)
@@ -2905,13 +2963,15 @@ service cloud.firestore {
             && request.resource.data.syncRevision == resource.data.syncRevision + 1)
         )
         && (!('updatedAtMs' in resource.data)
-          || request.resource.data.updatedAtMs >= resource.data.updatedAtMs);
+          || request.resource.data.updatedAtMs >= resource.data.updatedAtMs));
       allow delete: if false;
     }
 
     match /vts_admin/roster_data {
       allow read: if signedIn();
-      allow create, update: if isAdmin() && validRosterData();
+      allow create, update: if edenWorkspaceWritable('eden-x1')
+        && operationalWritesAllowed('uploads')
+        && (isAdmin() && validRosterData());
       allow delete: if false;
     }
 
@@ -2949,54 +3009,79 @@ service cloud.firestore {
 
     match /vts_admin/conduct_suggestions/records/{suggestionId} {
       allow read: if isAdmin();
-      allow create: if isAdmin()
+      allow create: if edenWorkspaceWritable('eden-x1')
+        && operationalWritesAllowed('')
+        && (isAdmin()
         && validConductSuggestion()
         && request.resource.data.id == suggestionId
         && request.resource.data.status == 'pending'
         && request.resource.data.suggestedBy == request.auth.uid
         && request.resource.data.reviewedBy == ''
-        && request.resource.data.adjustmentId == '';
-      allow update: if isSuperAdmin()
+        && request.resource.data.adjustmentId == '');
+      allow update: if edenWorkspaceWritable('eden-x1')
+        && operationalWritesAllowed('')
+        && (isSuperAdmin()
         && validConductSuggestion()
         && keepsConductSuggestionBody()
         && request.resource.data.status != 'pending'
-        && request.resource.data.reviewedBy == request.auth.uid;
-      allow delete: if isSuperAdmin()
+        && request.resource.data.reviewedBy == request.auth.uid);
+      allow delete: if edenWorkspaceWritable('eden-x1')
+        && operationalWritesAllowed('')
+        && (isSuperAdmin()
         || (isAdmin()
           && resource.data.suggestedBy == request.auth.uid
-          && resource.data.status == 'pending');
+          && resource.data.status == 'pending'));
     }
 
     match /vts_admin/conduct_adjustments/records/{adjustmentId} {
       allow read: if signedIn();
-      allow create: if isAdmin()
+      allow create: if edenWorkspaceWritable('eden-x1')
+        && operationalWritesAllowed('')
+        && (isAdmin()
         && validConductAdjustment()
         && request.resource.data.id == adjustmentId
-        && request.resource.data.createdBy == request.auth.uid;
-      allow update: if isAdmin()
+        && ((request.resource.data.createdBy == request.auth.uid
+            && !('restoredBy' in request.resource.data))
+          || (isSuperAdmin() && request.resource.data.restoredBy == request.auth.uid
+            && request.resource.data.restoredAt == request.time)));
+      allow update: if edenWorkspaceWritable('eden-x1')
+        && operationalWritesAllowed('')
+        && (isAdmin()
         && validConductAdjustment()
         && request.resource.data.id == adjustmentId
-        && (keepsConductMetadata() || repairsHistoricalConductMetadata());
-      allow delete: if isAdmin();
+        && keepsConductRestoreAudit()
+        && (keepsConductMetadata() || repairsHistoricalConductMetadata()));
+      allow delete: if edenWorkspaceWritable('eden-x1')
+        && operationalWritesAllowed('')
+        && (isAdmin());
     }
 
     match /vts_admin/eden_x1_votes/records/{voteId} {
       allow get: if isAdmin() || canGetOwnEdenX1Vote(voteId);
-      allow list, delete: if isAdmin();
-      allow create: if signedIn()
+      allow list: if isAdmin();
+      allow delete: if edenWorkspaceWritable('eden-x1')
+        && operationalWritesAllowed('votes')
+        && (isAdmin());
+      allow create: if edenWorkspaceWritable('eden-x1')
+        && operationalWritesAllowed('votes')
+        && (signedIn()
         && validEdenX1Vote()
-        && validEdenX1VotePath(voteId);
-      allow update: if signedIn()
+        && validEdenX1VotePath(voteId));
+      allow update: if edenWorkspaceWritable('eden-x1')
+        && operationalWritesAllowed('votes')
+        && (signedIn()
         && validEdenX1Vote()
         && validEdenX1VotePath(voteId)
-        && (isAdmin() || resource.data.voterAuthUid == request.auth.uid);
+        && (isAdmin() || resource.data.voterAuthUid == request.auth.uid));
     }
 
     match /vts_admin/eden_x1_vote_history/records/{historyId} {
       allow read: if isAdmin();
-      allow create: if signedIn()
+      allow create: if edenWorkspaceWritable('eden-x1')
+        && operationalWritesAllowed('votes')
+        && (signedIn()
         && validEdenX1VoteHistory()
-        && validEdenX1VoteHistoryPath(historyId);
+        && validEdenX1VoteHistoryPath(historyId));
       allow update, delete: if false;
     }
 
@@ -3040,13 +3125,17 @@ service cloud.firestore {
     }
     match /vts_admin/eden_x1_vote_settings {
       allow read: if signedIn();
-      allow create, update: if isAdmin() && validEdenX1VoteSettings();
+      allow create, update: if edenWorkspaceWritable('eden-x1')
+        && operationalWritesAllowed('votes')
+        && (isAdmin() && validEdenX1VoteSettings());
       allow delete: if false;
     }
 
     match /vts_admin/eden_x1_duty_point_weights {
       allow read: if isAdmin();
-      allow create, update: if isSuperAdmin() && validDutyPointWeights();
+      allow create, update: if edenWorkspaceWritable('eden-x1')
+        && operationalWritesAllowed('')
+        && (isSuperAdmin() && validDutyPointWeights());
       allow delete: if false;
     }
 
@@ -3087,13 +3176,17 @@ service cloud.firestore {
 
     match /vts_admin/eden_x1_reward_settings {
       allow read: if isAdmin();
-      allow create, update: if isSuperAdmin() && validRewardSettings();
+      allow create, update: if edenWorkspaceWritable('eden-x1')
+        && operationalWritesAllowed('')
+        && (isSuperAdmin() && validRewardSettings());
       allow delete: if false;
     }
 
     match /vts_admin/eden_x1_public_vote_results {
       allow read: if signedIn();
-      allow create, update: if isAdmin() && validEdenX1PublicVoteResults();
+      allow create, update: if edenWorkspaceWritable('eden-x1')
+        && operationalWritesAllowed('')
+        && (isAdmin() && validEdenX1PublicVoteResults());
       allow delete: if false;
     }
 
@@ -3104,10 +3197,14 @@ service cloud.firestore {
 
     match /vts_admin/eden_x2_dashboard_data {
       allow read: if isAdmin();
-      allow create: if isAdmin()
+      allow create: if edenWorkspaceWritable('eden-x2')
+        && operationalWritesAllowed('uploads')
+        && (isAdmin()
         && validDashboardData()
-        && request.resource.data.syncRevision == 1;
-      allow update: if isAdmin()
+        && request.resource.data.syncRevision == 1);
+      allow update: if edenWorkspaceWritable('eden-x2')
+        && operationalWritesAllowed('uploads')
+        && (isAdmin()
         && validDashboardData()
         && (
           (!('syncRevision' in resource.data)
@@ -3116,116 +3213,411 @@ service cloud.firestore {
             && request.resource.data.syncRevision == resource.data.syncRevision + 1)
         )
         && (!('updatedAtMs' in resource.data)
-          || request.resource.data.updatedAtMs >= resource.data.updatedAtMs);
+          || request.resource.data.updatedAtMs >= resource.data.updatedAtMs));
       allow delete: if false;
     }
 
     match /vts_admin/eden_x2_roster_data {
       allow read: if isAdmin();
-      allow create, update: if isAdmin() && validRosterData();
+      allow create, update: if edenWorkspaceWritable('eden-x2')
+        && operationalWritesAllowed('uploads')
+        && (isAdmin() && validRosterData());
       allow delete: if false;
     }
 
     match /vts_admin/eden_x2_conduct_suggestions/records/{suggestionId} {
       allow read: if isAdmin();
-      allow create: if isAdmin()
+      allow create: if edenWorkspaceWritable('eden-x2')
+        && operationalWritesAllowed('')
+        && (isAdmin()
         && validConductSuggestion()
         && request.resource.data.id == suggestionId
         && request.resource.data.status == 'pending'
         && request.resource.data.suggestedBy == request.auth.uid
         && request.resource.data.reviewedBy == ''
-        && request.resource.data.adjustmentId == '';
-      allow update: if isSuperAdmin()
+        && request.resource.data.adjustmentId == '');
+      allow update: if edenWorkspaceWritable('eden-x2')
+        && operationalWritesAllowed('')
+        && (isSuperAdmin()
         && validConductSuggestion()
         && keepsConductSuggestionBody()
         && request.resource.data.status != 'pending'
-        && request.resource.data.reviewedBy == request.auth.uid;
-      allow delete: if isSuperAdmin()
+        && request.resource.data.reviewedBy == request.auth.uid);
+      allow delete: if edenWorkspaceWritable('eden-x2')
+        && operationalWritesAllowed('')
+        && (isSuperAdmin()
         || (isAdmin()
           && resource.data.suggestedBy == request.auth.uid
-          && resource.data.status == 'pending');
+          && resource.data.status == 'pending'));
     }
 
     match /vts_admin/eden_x2_conduct_adjustments/records/{adjustmentId} {
       allow read: if isAdmin();
-      allow create: if isSuperAdmin()
+      allow create: if edenWorkspaceWritable('eden-x2')
+        && operationalWritesAllowed('')
+        && (isSuperAdmin()
         && validConductAdjustment()
         && request.resource.data.id == adjustmentId
-        && request.resource.data.createdBy == request.auth.uid;
-      allow update: if isSuperAdmin()
+        && ((request.resource.data.createdBy == request.auth.uid
+            && !('restoredBy' in request.resource.data))
+          || (isSuperAdmin() && request.resource.data.restoredBy == request.auth.uid
+            && request.resource.data.restoredAt == request.time)));
+      allow update: if edenWorkspaceWritable('eden-x2')
+        && operationalWritesAllowed('')
+        && (isSuperAdmin()
         && validConductAdjustment()
         && request.resource.data.id == adjustmentId
-        && (keepsConductMetadata() || repairsHistoricalConductMetadata());
-      allow delete: if isSuperAdmin();
+        && keepsConductRestoreAudit()
+        && (keepsConductMetadata() || repairsHistoricalConductMetadata()));
+      allow delete: if edenWorkspaceWritable('eden-x2')
+        && operationalWritesAllowed('')
+        && (isSuperAdmin());
     }
 
     match /vts_admin/eden_x2_votes/records/{voteId} {
       allow get: if isAdmin() || canGetOwnEdenX1Vote(voteId);
       allow list: if isAdmin();
-      allow delete: if isSuperAdmin();
-      allow create: if signedIn()
+      allow delete: if edenWorkspaceWritable('eden-x2')
+        && operationalWritesAllowed('votes')
+        && (isSuperAdmin());
+      allow create: if edenWorkspaceWritable('eden-x2')
+        && operationalWritesAllowed('votes')
+        && (signedIn()
         && validEdenX1Vote()
-        && validEdenX1VotePath(voteId);
-      allow update: if signedIn()
+        && validEdenX1VotePath(voteId));
+      allow update: if edenWorkspaceWritable('eden-x2')
+        && operationalWritesAllowed('votes')
+        && (signedIn()
         && validEdenX1Vote()
         && validEdenX1VotePath(voteId)
-        && (isAdmin() || resource.data.voterAuthUid == request.auth.uid);
+        && (isAdmin() || resource.data.voterAuthUid == request.auth.uid));
     }
 
     match /vts_admin/eden_x2_vote_history/records/{historyId} {
       allow read: if isAdmin();
-      allow create: if signedIn()
+      allow create: if edenWorkspaceWritable('eden-x2')
+        && operationalWritesAllowed('votes')
+        && (signedIn()
         && validEdenX1VoteHistory()
-        && validEdenX1VoteHistoryPath(historyId);
+        && validEdenX1VoteHistoryPath(historyId));
       allow update, delete: if false;
     }
 
     match /vts_admin/eden_x2_vote_settings {
       allow read: if isAdmin();
-      allow create, update: if isSuperAdmin() && validEdenX1VoteSettings();
+      allow create, update: if edenWorkspaceWritable('eden-x2')
+        && operationalWritesAllowed('votes')
+        && (isSuperAdmin() && validEdenX1VoteSettings());
       allow delete: if false;
     }
 
     match /vts_admin/eden_x2_duty_point_weights {
       allow read: if isAdmin();
-      allow create, update: if isSuperAdmin() && validDutyPointWeights();
+      allow create, update: if edenWorkspaceWritable('eden-x2')
+        && operationalWritesAllowed('')
+        && (isSuperAdmin() && validDutyPointWeights());
       allow delete: if false;
     }
 
     match /vts_admin/eden_x2_reward_settings {
       allow read: if isAdmin();
-      allow create, update: if isSuperAdmin() && validRewardSettings();
+      allow create, update: if edenWorkspaceWritable('eden-x2')
+        && operationalWritesAllowed('')
+        && (isSuperAdmin() && validRewardSettings());
       allow delete: if false;
     }
 
     match /vts_admin/eden_x2_public_vote_results {
       allow read: if signedIn();
-      allow create, update: if isAdmin() && validEdenX1PublicVoteResults();
+      allow create, update: if edenWorkspaceWritable('eden-x2')
+        && operationalWritesAllowed('')
+        && (isAdmin() && validEdenX1PublicVoteResults());
       allow delete: if false;
     }
 
     match /vts_admin/eden_x2_public_projection {
       allow read: if signedIn();
-      allow create, update: if isAdmin() && validEdenX2PublicProjection();
+      allow create, update: if edenWorkspaceWritable('eden-x2')
+        && operationalWritesAllowed('')
+        && (isSuperAdmin() && validEdenPublicProjection('eden-x2') && edenProjectionRevisionMatches());
       allow delete: if false;
+    }
+
+    function validEdenManagementVotes() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['season', 'rows', 'updatedAt', 'updatedBy'])
+        && d.season is string && d.season.size() > 0 && d.season.size() <= 40
+        && d.rows is list && d.rows.size() <= 1000
+        && d.updatedAt == request.time && d.updatedBy == request.auth.uid;
+    }
+
+    match /vts_admin/eden_x1_management_votes {
+      allow read: if isAdmin();
+      allow create, update: if isSuperAdmin() && edenWorkspaceWritable('eden-x1')
+        && validEdenManagementVotes();
+      allow delete: if false;
+    }
+
+    match /vts_admin/eden_x2_management_votes {
+      allow read: if isAdmin();
+      allow create, update: if isSuperAdmin() && edenWorkspaceWritable('eden-x2')
+        && validEdenManagementVotes();
+      allow delete: if false;
+    }
+
+    // Future Eden seasons share the same constrained contract. Nothing outside
+    // these explicit documents/collections inherits a permission.
+    function writableDynamicEden(workspaceId, feature) {
+      return !(workspaceId in ['eden-x1', 'eden-x2'])
+        && edenWorkspaceWritable(workspaceId) && operationalWritesAllowed(feature);
+    }
+
+    function dynamicEdenVotingOpen(workspaceId) {
+      let settings = get(/databases/$(database)/documents/eden_seasons/$(workspaceId)/data/vote_settings).data;
+      let projection = get(/databases/$(database)/documents/eden_seasons/$(workspaceId)/data/public_projection).data;
+      return settings.votingOpen == true
+        && settings.season == request.resource.data.season
+        && projection.published == true
+        && projection.season == settings.season;
+    }
+
+    match /eden_seasons/{workspaceId}/data/dashboard {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && writableDynamicEden(workspaceId, 'uploads')
+        && validDashboardData() && request.resource.data.syncRevision == 1;
+      allow update: if isAdmin() && writableDynamicEden(workspaceId, 'uploads')
+        && validDashboardData()
+        && request.resource.data.syncRevision == resource.data.syncRevision + 1
+        && request.resource.data.updatedAtMs >= resource.data.updatedAtMs;
+      allow delete: if false;
+    }
+
+    match /eden_seasons/{workspaceId}/data/roster {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && writableDynamicEden(workspaceId, 'uploads')
+        && validRosterData();
+      allow delete: if false;
+    }
+
+    match /eden_seasons/{workspaceId}/data/vote_settings {
+      allow read: if isAdmin();
+      allow create, update: if isSuperAdmin() && writableDynamicEden(workspaceId, 'votes')
+        && validEdenX1VoteSettings();
+      allow delete: if false;
+    }
+
+    match /eden_seasons/{workspaceId}/data/duty_point_weights {
+      allow read: if isAdmin();
+      allow create, update: if isSuperAdmin() && writableDynamicEden(workspaceId, '')
+        && validDutyPointWeights();
+      allow delete: if false;
+    }
+
+    match /eden_seasons/{workspaceId}/data/reward_settings {
+      allow read: if isAdmin();
+      allow create, update: if isSuperAdmin() && writableDynamicEden(workspaceId, '')
+        && validRewardSettings();
+      allow delete: if false;
+    }
+
+    match /eden_seasons/{workspaceId}/data/management_votes {
+      allow read: if isAdmin();
+      allow create, update: if isSuperAdmin() && writableDynamicEden(workspaceId, 'votes')
+        && validEdenManagementVotes();
+      allow delete: if false;
+    }
+
+    match /eden_seasons/{workspaceId}/data/public_vote_results {
+      allow read: if signedIn();
+      allow create, update: if isAdmin() && writableDynamicEden(workspaceId, 'votes')
+        && validEdenX1PublicVoteResults();
+      allow delete: if false;
+    }
+
+    match /eden_seasons/{workspaceId}/data/public_projection {
+      allow read: if signedIn();
+      allow create, update: if isSuperAdmin() && writableDynamicEden(workspaceId, '')
+        && validEdenPublicProjection(workspaceId) && edenProjectionRevisionMatches();
+      allow delete: if false;
+    }
+
+    match /eden_seasons/{workspaceId}/votes/{voteId} {
+      allow get: if isAdmin() || canGetOwnEdenX1Vote(voteId);
+      allow list: if isAdmin();
+      allow delete: if isSuperAdmin() && writableDynamicEden(workspaceId, 'votes');
+      allow create: if signedIn() && writableDynamicEden(workspaceId, 'votes')
+        && dynamicEdenVotingOpen(workspaceId)
+        && validEdenX1Vote() && validEdenX1VotePath(voteId);
+      allow update: if signedIn() && writableDynamicEden(workspaceId, 'votes')
+        && dynamicEdenVotingOpen(workspaceId)
+        && get(/databases/$(database)/documents/eden_seasons/$(workspaceId)/data/vote_settings).data.allowEditing == true
+        && validEdenX1Vote() && validEdenX1VotePath(voteId)
+        && (isAdmin() || resource.data.voterAuthUid == request.auth.uid);
+    }
+
+    match /eden_seasons/{workspaceId}/vote_history/{historyId} {
+      allow read: if isAdmin();
+      allow create: if signedIn() && writableDynamicEden(workspaceId, 'votes')
+        && (isSuperAdmin() || dynamicEdenVotingOpen(workspaceId))
+        && validEdenX1VoteHistory() && validEdenX1VoteHistoryPath(historyId);
+      allow update, delete: if false;
+    }
+
+    match /eden_seasons/{workspaceId}/conduct_adjustments/{adjustmentId} {
+      allow read: if isAdmin();
+      allow create: if isSuperAdmin() && writableDynamicEden(workspaceId, '')
+        && validConductAdjustment() && request.resource.data.id == adjustmentId
+        && ((request.resource.data.createdBy == request.auth.uid
+            && !('restoredBy' in request.resource.data))
+          || (isSuperAdmin() && request.resource.data.restoredBy == request.auth.uid
+            && request.resource.data.restoredAt == request.time));
+      allow update: if isSuperAdmin() && writableDynamicEden(workspaceId, '')
+        && validConductAdjustment() && request.resource.data.id == adjustmentId
+        && keepsConductRestoreAudit()
+        && (keepsConductMetadata() || repairsHistoricalConductMetadata());
+      allow delete: if isSuperAdmin() && writableDynamicEden(workspaceId, '');
+    }
+
+    match /eden_seasons/{workspaceId}/conduct_suggestions/{suggestionId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && writableDynamicEden(workspaceId, '')
+        && validConductSuggestion() && request.resource.data.id == suggestionId
+        && request.resource.data.status == 'pending'
+        && request.resource.data.suggestedBy == request.auth.uid
+        && request.resource.data.reviewedBy == '' && request.resource.data.adjustmentId == '';
+      allow update: if isSuperAdmin() && writableDynamicEden(workspaceId, '')
+        && validConductSuggestion() && keepsConductSuggestionBody()
+        && request.resource.data.status != 'pending'
+        && request.resource.data.reviewedBy == request.auth.uid;
+      allow delete: if writableDynamicEden(workspaceId, '')
+        && (isSuperAdmin() || (isAdmin()
+          && resource.data.suggestedBy == request.auth.uid && resource.data.status == 'pending'));
+    }
+
+    // Each publish records its complete public payload. Rollback publishes a
+    // new revision from one of these immutable snapshots, never edits history.
+    match /eden_seasons/{workspaceId}/publications/{revisionId} {
+      allow read: if isAdmin();
+      allow create: if isSuperAdmin() && edenWorkspaceWritable(workspaceId)
+        && validEdenPublicProjection(workspaceId)
+        && revisionId == string(request.resource.data.revision)
+        && ((workspaceId == 'eden-x2'
+          && getAfter(/databases/$(database)/documents/vts_admin/eden_x2_public_projection).data == request.resource.data)
+          || (!(workspaceId in ['eden-x1', 'eden-x2'])
+            && getAfter(/databases/$(database)/documents/eden_seasons/$(workspaceId)/data/public_projection).data == request.resource.data));
+      allow update, delete: if false;
     }
 
     match /vts_admin/eden_workspaces/records/{workspaceId} {
       allow read: if signedIn();
-      // Publishing and unpublishing move a workspace between active and draft.
-      // Archiving it is what ends a season, and that is a superadmin act; so is
-      // touching an ended season's record at all, un-archiving included.
-      allow create, update: if isAdmin()
-        && validEdenWorkspaceRecord(workspaceId)
-        && ((request.resource.data.lifecycle != 'archived'
-          && (resource == null || resource.data.lifecycle != 'archived'))
-          || isSuperAdmin());
+      allow create: if isSuperAdmin() && validEdenWorkspaceRecord(workspaceId)
+        && (request.resource.data.lifecycle in ['draft', 'active']
+          || (workspaceId in ['eden-x1', 'eden-x2'] && request.resource.data.lifecycle == 'archived'));
+      allow update: if isSuperAdmin() && validEdenWorkspaceRecord(workspaceId)
+        && resource.data.lifecycle != 'archived'
+        && (request.resource.data.lifecycle != 'archived' || isSuperAdmin());
       allow delete: if false;
     }
 
     match /vts_admin/season_registry {
-      allow read: if isAdmin();
+      allow get: if true;
+      allow list: if false;
       allow create, update: if isSuperAdmin() && validEdenSeasonRegistry();
+      allow delete: if false;
+    }
+
+    match /vts_admin/public_season {
+      allow get: if true;
+      allow list, delete: if false;
+      allow create, update: if isSuperAdmin()
+        && request.resource.data.keys().hasOnly(['workspaceId', 'seasonId', 'label', 'updatedAt', 'updatedBy'])
+        && validEdenWorkspaceId(request.resource.data.workspaceId)
+        && request.resource.data.seasonId is string
+        && request.resource.data.seasonId.matches('^[a-z0-9][a-z0-9_-]{2,39}$')
+        && request.resource.data.label is string
+        && request.resource.data.label.size() > 0 && request.resource.data.label.size() <= 60
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedBy == request.auth.uid;
+    }
+
+    // Standing Alliance assignments shared by ordinary Admins across seasons.
+    function validThroneTextMap(values, maxLength) {
+      return values is map && values.keys().hasOnly(['emperor', 'queen', 'prime-minister', 'barrister', 'finance-minister', 'legion-master', 'royal-guard', 'minister-of-science', 'minister-of-construction'])
+        && values.get('emperor', '') is string && values.get('emperor', '').size() <= maxLength
+        && values.get('queen', '') is string && values.get('queen', '').size() <= maxLength
+        && values.get('prime-minister', '') is string && values.get('prime-minister', '').size() <= maxLength
+        && values.get('barrister', '') is string && values.get('barrister', '').size() <= maxLength
+        && values.get('finance-minister', '') is string && values.get('finance-minister', '').size() <= maxLength
+        && values.get('legion-master', '') is string && values.get('legion-master', '').size() <= maxLength
+        && values.get('royal-guard', '') is string && values.get('royal-guard', '').size() <= maxLength
+        && values.get('minister-of-science', '') is string && values.get('minister-of-science', '').size() <= maxLength
+        && values.get('minister-of-construction', '') is string && values.get('minister-of-construction', '').size() <= maxLength;
+    }
+
+    function validThroneWeek(weekKey) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['weekKey', 'assignments', 'reasons', 'updatedAtMs', 'updatedBy', 'syncRevision', 'updatedAt'])
+        && d.weekKey == weekKey && weekKey.matches('^[0-9]{4}-W(0[1-9]|[1-4][0-9]|5[0-3])$')
+        && validThroneTextMap(d.assignments, 40) && validThroneTextMap(d.reasons, 120)
+        && d.updatedAtMs is int && d.updatedAtMs > 0
+        && d.updatedBy == request.auth.uid && d.updatedAt == request.time
+        && d.syncRevision is int;
+    }
+
+    match /vts_admin/throne_buffs/records/{weekKey} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && operationalWritesAllowed('') && validThroneWeek(weekKey)
+        && request.resource.data.syncRevision == 1;
+      allow update: if isAdmin() && operationalWritesAllowed('') && validThroneWeek(weekKey)
+        && request.resource.data.syncRevision == resource.data.syncRevision + 1
+        && request.resource.data.updatedAtMs >= resource.data.updatedAtMs;
+      allow delete: if false;
+    }
+    function validOperationsConfig() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['schemaVersion', 'notice', 'readOnly', 'disabledFeatures',
+          'expiresAtMs', 'revision', 'updatedAtMs', 'updatedBy'])
+        && d.schemaVersion == 1
+        && d.notice is string && d.notice.size() <= 2000
+        && d.readOnly is bool
+        && d.disabledFeatures is list && d.disabledFeatures.size() <= 8
+        && d.disabledFeatures.hasOnly(['uploads', 'votes', 'comments', 'ai', 'competition', 'combos'])
+        && d.expiresAtMs is int && d.expiresAtMs >= 0
+        && d.revision is int && d.revision > 0
+        && d.updatedAtMs is int && d.updatedAtMs >= 0
+        && d.updatedBy == request.auth.uid;
+    }
+
+    match /vts_admin/operations_config {
+      allow get: if true;
+      allow list: if false;
+      allow create: if isSuperAdmin() && validOperationsConfig()
+        && request.resource.data.revision == 1;
+      allow update: if isSuperAdmin() && validOperationsConfig()
+        && request.resource.data.revision == resource.data.revision + 1;
+      allow delete: if false;
+    }
+
+    match /vts_admin/vts_score_settings {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['dragonTierCutoff', 'growthWarningAbsolute', 'growthWarningPercent', 'revision', 'updatedBy', 'updatedAtMs'])
+        && request.resource.data.dragonTierCutoff is int
+        && request.resource.data.dragonTierCutoff >= 0
+        && request.resource.data.dragonTierCutoff <= 1000000000000
+        && (!('growthWarningAbsolute' in request.resource.data)
+          || (request.resource.data.growthWarningAbsolute is int
+            && request.resource.data.growthWarningAbsolute >= 0
+            && request.resource.data.growthWarningAbsolute <= 1000000000000))
+        && (!('growthWarningPercent' in request.resource.data)
+          || (request.resource.data.growthWarningPercent is int
+            && request.resource.data.growthWarningPercent >= 0
+            && request.resource.data.growthWarningPercent <= 1000000000))
+        && request.resource.data.updatedAtMs is int && request.resource.data.updatedAtMs >= 0
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.revision is int
+        && ((resource == null && request.resource.data.revision == 1)
+          || (resource != null && request.resource.data.revision == resource.data.revision + 1));
       allow delete: if false;
     }
 
@@ -3254,13 +3646,13 @@ service cloud.firestore {
       // Any signed-in (incl. anonymous) visitor can read the leaderboard.
       allow read: if signedIn();
       // Owner creates their own row; the doc id + uid field are pinned to their auth uid.
-      allow create: if signedIn() && validArcadeScore(scoreId);
+      allow create: if operationalWritesAllowed('') && (signedIn() && validArcadeScore(scoreId));
       // Owner updates their own row, and only to a higher-or-equal best (monotonic).
-      allow update: if signedIn()
+      allow update: if operationalWritesAllowed('') && (signedIn()
         && validArcadeScore(scoreId)
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.playerId == resource.data.playerId
-        && request.resource.data.score >= resource.data.score;
+        && request.resource.data.score >= resource.data.score);
       allow delete: if false;
     }
 

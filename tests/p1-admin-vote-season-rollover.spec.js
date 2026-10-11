@@ -87,6 +87,8 @@ test('admin explicitly activates a stale vote season with safe defaults', async 
     // every one of them, and the legacy aggregate is still written.
     showMemberResults: false,
     showManagementResults: false,
+    showMemberVoteCounts: true,
+    showManagementVoteCounts: true,
     showPublicResults: false,
     showVoterNames: false,
     contributionRankingMode: 'default',

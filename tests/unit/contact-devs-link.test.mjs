@@ -17,7 +17,7 @@ test('no page links Contact Devs to a mailto address', () => {
     links.forEach((link) => {
       found += 1;
       assert.doesNotMatch(link, /mailto:/, `${page}: ${link}`);
-      assert.match(link, /href="eden-x2\.html#edenX1Complaints"/, `${page}: ${link}`);
+      assert.match(link, /href="eden\/#edenX1Complaints"/, `${page}: ${link}`);
     });
   });
   assert.ok(found >= 6, `expected the footer link on at least 6 pages, found ${found}`);
@@ -26,7 +26,7 @@ test('no page links Contact Devs to a mailto address', () => {
 test('the tool-shell footer contact opens the complaint form too', () => {
   const shell = readFileSync(join(repoRoot, 'js/tool-shell.js'), 'utf8');
   assert.doesNotMatch(shell, /contact\.href\s*=\s*'mailto:/);
-  assert.match(shell, /contact\.href = 'eden-x2\.html#edenX1Complaints'/);
+  assert.match(shell, /contact\.href = 'eden\/#edenX1Complaints'/);
 });
 
 test('the complaint section answers the link hash', async () => {

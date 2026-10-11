@@ -1,3 +1,5 @@
+import { assertClientOperationAvailable } from '../operations-config.js';
+
 export class AiTransportError extends Error {
   constructor(code, message, details = {}) {
     super(message || code);
@@ -100,6 +102,7 @@ export async function streamAssistantRequest({
   fetchImpl = globalThis.fetch,
 }) {
   if (!endpoint) throw new AiTransportError('provider_outage', 'AI endpoint is not configured.');
+  assertClientOperationAvailable('ai');
   if (typeof fetchImpl !== 'function')
     throw new AiTransportError('provider_outage', 'Network is unavailable.');
   let credentials;

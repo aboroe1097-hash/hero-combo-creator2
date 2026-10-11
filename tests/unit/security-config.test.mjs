@@ -568,7 +568,7 @@ test('shared admin dashboard reads stay available while writes require the admin
   );
   assert.match(
     rules,
-    /match \/vts_admin\/roster_data\s*\{[\s\S]*allow read: if signedIn\(\);[\s\S]*allow create, update: if isAdmin\(\) && validRosterData\(\);/
+    /match \/vts_admin\/roster_data\s*\{[\s\S]*allow read: if signedIn\(\);[\s\S]*allow create, update: if edenWorkspaceWritable\('eden-x1'\)\s*&& operationalWritesAllowed\('uploads'\)\s*&& \(isAdmin\(\) && validRosterData\(\)\);/
   );
   assert.doesNotMatch(rules, /allow create, update: if signedIn\(\) && validDashboardData\(\);/);
   assert.doesNotMatch(rules, /allow create, update: if signedIn\(\) && validRosterData\(\);/);
@@ -741,13 +741,23 @@ test('Eden X1 votes are member-keyed with admin list and owner get', () => {
   assert.match(rules, /function canGetOwnEdenX1Vote\(voteId\)/);
   assert.match(rules, /match \/vts_admin\/eden_x1_votes\/records\/\{voteId\}/);
   assert.match(rules, /allow get: if isAdmin\(\) \|\| canGetOwnEdenX1Vote\(voteId\);/);
-  assert.match(rules, /allow list, delete: if isAdmin\(\);/);
-  assert.match(rules, /resource\.data\.id == voteId/);
-  assert.match(rules, /allow create: if signedIn\(\)[\s\S]*validEdenX1Vote\(\)/);
-  assert.match(rules, /allow create: if signedIn\(\)[\s\S]*validEdenX1VotePath\(voteId\)/);
+  assert.match(rules, /allow list: if isAdmin\(\);/);
   assert.match(
     rules,
-    /allow update: if signedIn\(\)[\s\S]*validEdenX1VotePath\(voteId\)[\s\S]*\(isAdmin\(\) \|\| resource\.data\.voterAuthUid == request\.auth\.uid\)/
+    /allow delete: if edenWorkspaceWritable\('eden-x1'\)\s*&& operationalWritesAllowed\('votes'\)\s*&& \(isAdmin\(\)\);/
+  );
+  assert.match(rules, /resource\.data\.id == voteId/);
+  assert.match(
+    rules,
+    /allow create: if edenWorkspaceWritable\('eden-x1'\)[\s\S]*operationalWritesAllowed\('votes'\)[\s\S]*signedIn\(\)[\s\S]*validEdenX1Vote\(\)/
+  );
+  assert.match(
+    rules,
+    /allow create: if edenWorkspaceWritable\('eden-x1'\)[\s\S]*operationalWritesAllowed\('votes'\)[\s\S]*signedIn\(\)[\s\S]*validEdenX1VotePath\(voteId\)/
+  );
+  assert.match(
+    rules,
+    /allow update: if edenWorkspaceWritable\('eden-x1'\)[\s\S]*operationalWritesAllowed\('votes'\)[\s\S]*signedIn\(\)[\s\S]*validEdenX1VotePath\(voteId\)[\s\S]*\(isAdmin\(\) \|\| resource\.data\.voterAuthUid == request\.auth\.uid\)/
   );
   assert.match(
     rules,
@@ -803,12 +813,15 @@ test('Eden X1 votes are member-keyed with admin list and owner get', () => {
   assert.match(rules, /allow read: if isAdmin\(\);/);
   assert.match(
     rules,
-    /allow create: if signedIn\(\)[\s\S]*validEdenX1VoteHistory\(\)[\s\S]*validEdenX1VoteHistoryPath\(historyId\)/
+    /allow create: if edenWorkspaceWritable\('eden-x1'\)[\s\S]*operationalWritesAllowed\('votes'\)[\s\S]*signedIn\(\)[\s\S]*validEdenX1VoteHistory\(\)[\s\S]*validEdenX1VoteHistoryPath\(historyId\)/
   );
   assert.match(rules, /allow update, delete: if false;/);
   assert.match(rules, /match \/vts_admin\/eden_x1_vote_settings/);
   assert.match(rules, /allow read: if signedIn\(\);/);
-  assert.match(rules, /allow create, update: if isAdmin\(\) && validEdenX1VoteSettings\(\);/);
+  assert.match(
+    rules,
+    /allow create, update: if edenWorkspaceWritable\('eden-x1'\)\s*&& operationalWritesAllowed\('votes'\)\s*&& \(isAdmin\(\) && validEdenX1VoteSettings\(\)\);/
+  );
   assert.match(eden, /EDEN_X1_VOTES_COLLECTION_PATH = 'vts_admin\/eden_x1_votes\/records'/);
   assert.match(
     eden,
@@ -835,7 +848,7 @@ test('Eden X2 ballot deletion requires a superadmin and leaves immutable history
   const template = readFileSync('tabs/admin.html', 'utf8');
   assert.match(
     rules,
-    /match \/vts_admin\/eden_x2_votes\/records\/\{voteId\} \{[\s\S]*?allow delete: if isSuperAdmin\(\);/
+    /match \/vts_admin\/eden_x2_votes\/records\/\{voteId\} \{[\s\S]*?allow delete: if edenWorkspaceWritable\('eden-x2'\)\s*&& operationalWritesAllowed\('votes'\)\s*&& \(isSuperAdmin\(\)\);/
   );
   assert.match(rules, /request\.resource\.data\.action in \['created', 'updated', 'deleted'\]/);
   assert.match(rules, /request\.resource\.data\.action != 'deleted'[\s\S]*isSuperAdmin\(\)/);

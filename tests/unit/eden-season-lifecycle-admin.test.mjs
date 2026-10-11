@@ -256,18 +256,26 @@ test('firestore.rules pins the season registry and the superadmin archive gate',
     rules,
     /\(entry\.state == 'ended' \|\| entry\.state == 'active' \|\| entry\.state == 'draft'\)/
   );
-  assert.match(rules, /entry\.workspaceId == 'eden-x1'/);
-  assert.match(rules, /entry\.workspaceId == 'eden-x2'/);
+  assert.match(rules, /validEdenWorkspaceId\(entry\.workspaceId\)/);
   assert.match(rules, /&& d\.updatedAt == request\.time\s*&& d\.updatedBy == request\.auth\.uid;/);
-  assert.match(
-    rules,
-    /match \/vts_admin\/season_registry \{\s*allow read: if isAdmin\(\);\s*allow create, update: if isSuperAdmin\(\) && validEdenSeasonRegistry\(\);\s*allow delete: if false;/
+  const registryRules = rules.slice(
+    rules.indexOf('match /vts_admin/season_registry'),
+    rules.indexOf('match /vts_admin/public_season')
   );
-  // Ending a season archives a workspace, so the terminal lifecycle is a
-  // superadmin write while publish/unpublish stays an admin write.
+  assert.match(registryRules, /allow get: if true;/);
   assert.match(
-    rules,
-    /match \/vts_admin\/eden_workspaces\/records\/\{workspaceId\} \{[\s\S]*?allow create, update: if isAdmin\(\)\s*&& validEdenWorkspaceRecord\(workspaceId\)\s*&& \(\(request\.resource\.data\.lifecycle != 'archived'\s*&& \(resource == null \|\| resource\.data\.lifecycle != 'archived'\)\)\s*\|\| isSuperAdmin\(\)\);/
+    registryRules,
+    /allow create, update: if isSuperAdmin\(\) && validEdenSeasonRegistry\(\);/
+  );
+  const workspaceRules = rules.slice(
+    rules.indexOf('match /vts_admin/eden_workspaces/records'),
+    rules.indexOf('match /vts_admin/season_registry')
+  );
+  assert.match(workspaceRules, /allow create: if isSuperAdmin\(\)/);
+  assert.match(workspaceRules, /resource\.data\.lifecycle != 'archived'/);
+  assert.match(
+    workspaceRules,
+    /request\.resource\.data\.lifecycle != 'archived' \|\| isSuperAdmin\(\)/
   );
   // Rules cannot iterate a list, so the validator checks one position per
   // season under a size guard; that count has to match the client's cap.

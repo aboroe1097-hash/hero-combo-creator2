@@ -147,3 +147,68 @@ test('account links stay one level deep and never link a name to itself', async 
   // Links round-trip through the registry that is saved with dashboard data.
   assert.deepEqual(normalizePlayerRegistry({ accountLinks: links }).accountLinks, links);
 });
+
+test('dynamic seasons use valid isolated Firestore paths and public routes', async () => {
+  const {
+    normalizeEdenWorkspaceId,
+    getEdenWorkspace,
+    edenWorkspaceFirestorePaths,
+    edenWorkspacePublicUrl,
+    parseEdenWorkspaceRecord,
+  } = await import('../../js/eden-workspaces.js');
+  assert.equal(normalizeEdenWorkspaceId(' Eden-X8 '), 'eden-x8');
+  for (const invalid of ['eden-x0', 'eden-x01', 'eden-x10000', 'eden-x8/other', '../eden-x8']) {
+    assert.equal(normalizeEdenWorkspaceId(invalid), '');
+  }
+  const workspace = getEdenWorkspace('eden-x8');
+  assert.equal(workspace.label, 'Eden X8');
+  assert.equal(workspace.defaultSeason, 'season-x8');
+  assert.equal(
+    parseEdenWorkspaceRecord({ id: 'eden-x8', lifecycle: 'archived' }).lifecycle,
+    'archived'
+  );
+  const collections = new Set([
+    'votes',
+    'voteHistory',
+    'conductAdjustments',
+    'conductSuggestions',
+    'publications',
+  ]);
+  for (const [key, path] of Object.entries(edenWorkspaceFirestorePaths('eden-x8'))) {
+    assert.ok(path.startsWith('eden_seasons/eden-x8/'), key);
+    assert.equal(path.split('/').length % 2, collections.has(key) ? 1 : 0, `${key} path parity`);
+  }
+  assert.equal(
+    edenWorkspaceFirestorePaths('eden-x2').dashboardData,
+    'vts_admin/eden_x2_dashboard_data'
+  );
+  assert.equal(
+    edenWorkspacePublicUrl('eden-x8', { embed: true }),
+    'eden-season.html?workspace=eden-x8&embed=1'
+  );
+  assert.equal(edenWorkspacePublicUrl('eden-x1'), 'eden-x1.html');
+  assert.equal(edenWorkspacePublicUrl('eden-x2'), 'eden-x2.html');
+});
+
+test('X8 projection keeps working data private and sanitizes management vote rows', () => {
+  const projection = buildEdenPublicProjection({
+    workspace: 'eden-x8',
+    dashboardData: {
+      r5Season: 'season-x8',
+      attacks: [],
+      privateNotes: 'private',
+      bannerRecords: ['raw'],
+    },
+    managementVotes: [
+      { playerName: ' A ', votes: 2 },
+      { playerName: 'bad', votes: Infinity },
+      { playerName: 'negative', votes: -1 },
+      { playerName: '', votes: 1 },
+    ],
+  });
+  assert.equal(projection.workspace, 'eden-x8');
+  assert.equal(projection.season, 'season-x8');
+  assert.equal('privateNotes' in projection.dashboard, false);
+  assert.equal('bannerRecords' in projection.dashboard, false);
+  assert.deepEqual(projection.managementVotes, [{ playerName: 'A', rank: 1, votes: 2 }]);
+});

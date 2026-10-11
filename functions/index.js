@@ -11,8 +11,9 @@ import { createBohSignupAdminHandler } from './src/boh-signup-admin.js';
 import { createCompetitionPhaseSyncJob } from './src/competition-phase.js';
 import { createComplaintRetentionJob } from './src/complaint-retention.js';
 import { createFileComplaintHandler } from './src/file-complaint.js';
-import { createSetUserRoleHandler } from './src/user-roles.js';
+import { createSetUserRoleHandler, createListUserRolesHandler } from './src/user-roles.js';
 import { createVtsScoreHandler } from './src/vts-score.js';
+import { assertOperationAvailable, withOperationGate } from './src/operations-gate.js';
 
 const firebaseApp = getApps()[0] || initializeApp();
 const firestore = getFirestore(firebaseApp);
@@ -60,7 +61,11 @@ export const vtsScore = onRequest(
     concurrency: 20,
     cors: false,
   },
-  vtsScoreHandler
+  withOperationGate(vtsScoreHandler, {
+    db: firestore,
+    auth: getAuth(firebaseApp),
+    feature: 'competition',
+  })
 );
 
 const setUserRoleHandler = createSetUserRoleHandler({
@@ -89,7 +94,11 @@ export const bohSignupAdmin = onRequest(
     concurrency: 20,
     cors: false,
   },
-  bohSignupAdminHandler
+  withOperationGate(bohSignupAdminHandler, {
+    db: firestore,
+    auth: getAuth(firebaseApp),
+    feature: 'competition',
+  })
 );
 
 // onCall rather than onRequest: the callable protocol verifies the caller's ID
@@ -101,7 +110,8 @@ export const setUserRole = onCall(
     region: 'us-central1',
     memory: '256MiB',
     timeoutSeconds: 30,
-    maxInstances: 5,
+    maxInstances: 1,
+    concurrency: 1,
   },
   async (request) => {
     try {
@@ -199,10 +209,21 @@ export const fileComplaint = onCall(
   },
   async (request) => {
     try {
+      if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Sign-in required.');
+      try {
+        await assertOperationAvailable({
+          db: firestore,
+          feature: 'comments',
+          claims: request.auth.token,
+        });
+      } catch {
+        throw new HttpsError('unavailable', 'Complaint filing is temporarily paused.');
+      }
       return await fileComplaintHandler(request.data, request.auth, {
         clientIp: request.rawRequest?.ip,
       });
     } catch (error) {
+      if (error instanceof HttpsError) throw error;
       if (error?.name === 'FileComplaintError') {
         throw new HttpsError(
           FILE_COMPLAINT_ERROR_CODES[error.code] || 'invalid-argument',
@@ -212,6 +233,22 @@ export const fileComplaint = onCall(
       }
       // Anything else is ours; never forward its message (it may carry paths).
       throw new HttpsError('internal', 'The complaint could not be filed.');
+    }
+  }
+);
+
+const listUserRolesHandler = createListUserRolesHandler({
+  auth: getAuth(firebaseApp),
+  db: firestore,
+});
+export const listUserRoles = onCall(
+  { region: 'us-central1', memory: '256MiB', timeoutSeconds: 30, maxInstances: 5 },
+  async (request) => {
+    try {
+      return await listUserRolesHandler(request);
+    } catch (error) {
+      if (error?.name === 'RoleError') throw new HttpsError(error.code, error.message);
+      throw new HttpsError('internal', 'Account roles could not be loaded.');
     }
   }
 );

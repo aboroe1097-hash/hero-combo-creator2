@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { TOOLKIT_MAP } from '../../js/ai/toolkit-map.js';
-import { VELO_ACTION_ROUTES } from '../../js/ai/ui-actions.js';
+import { VELO_ACTION_ROUTES, deriveDeterministicActions } from '../../js/ai/ui-actions.js';
 
 const read = (path) => readFileSync(path, 'utf8');
 const indexHtml = read('index.html');
@@ -67,13 +67,23 @@ function assertHashResolves(hash, label) {
 }
 
 function assertHrefResolves(href, label) {
-  const [page, fragment] = String(href).split('#');
+  const [route, fragment] = String(href).split('#');
+  const page = route.endsWith('/') ? `${route}index.html` : route;
   assert.ok(existsSync(page), `${label}: ${page} is a deployed page`);
   if (page === 'index.html' && fragment) {
     assertHashResolves(fragment, label);
     return;
   }
   if (fragment) {
+    if (route === 'eden/') {
+      assert.match(read(page), /eden-current-season-redirect\.js/);
+      assert.match(
+        read('eden-season.html'),
+        new RegExp(`id="${fragment}"`),
+        `${label}: current season #${fragment} exists`
+      );
+      return;
+    }
     assert.match(read(page), new RegExp(`id="${fragment}"`), `${label}: #${fragment} exists`);
   }
 }
@@ -103,7 +113,8 @@ test('the toolkit map covers every part of the site Velo must know about', () =>
     'edenOperations',
     'hubPdfs',
     'complaints',
-    'edenX2Season',
+    'edenSeason',
+    'edenVoting',
   ]) {
     assert.ok(ids.includes(id), `toolkit map has ${id}`);
   }
@@ -120,9 +131,35 @@ test('the toolkit map covers every part of the site Velo must know about', () =>
   assert.match(byId.buildings.summary, /Google Sheet/u);
   assert.match(byId.hubPdfs.summary, /dark or light theme/u);
   assert.match(byId.hubPdfs.summary, /PDF and PNG downloads/u);
-  assert.equal(byId.complaints.href, 'eden-x2.html#edenX1Complaints');
+  assert.equal(byId.complaints.href, 'eden/#edenX1Complaints');
   assert.match(byId.complaints.summary, /Contact Devs/u);
-  assert.equal(byId.edenX2Season.href, 'eden-x2.html');
+  assert.equal(byId.edenSeason.href, 'eden/');
+  assert.equal(byId.edenVoting.href, 'vote/');
+  assert.match(read('vote/index.html'), /data-eden-current-redirect="vote"/);
+});
+
+test('current season and voting answers offer stable routes across season rollovers', () => {
+  for (const [id, href] of [
+    ['edenSeason', 'eden/'],
+    ['edenVoting', 'vote/'],
+  ]) {
+    const actions = deriveDeterministicActions([
+      { ok: true, name: 'get_toolkit_map', data: { query: 'current season', tools: [{ id }] } },
+    ]);
+    assert.deepEqual(
+      actions.map((action) => action.href),
+      [href]
+    );
+  }
+  const edenActions = deriveDeterministicActions([
+    {
+      ok: true,
+      name: 'get_eden_context',
+      meta: { sourceId: 'eden-public', tool: 'get_eden_context' },
+    },
+  ]);
+  assert.equal(edenActions[0].href, 'eden/');
+  assert.equal(edenActions[0].label, 'Open Eden');
 });
 
 test('every toolkit route points at a real page, tab, hub sub-tab or section', () => {
@@ -140,9 +177,9 @@ test('every toolkit route points at a real page, tab, hub sub-tab or section', (
 
 test('the complaint form link is the one every footer uses', () => {
   for (const page of ['index.html', 'arcade.html', 'admin.html', 'eden-x1.html', 'eden-x2.html']) {
-    assert.match(read(page), /href="eden-x2\.html#edenX1Complaints"/u, `${page} footer`);
+    assert.match(read(page), /href="eden\/#edenX1Complaints"/u, `${page} footer`);
   }
-  assert.match(read('js/tool-shell.js'), /eden-x2\.html#edenX1Complaints/u);
+  assert.match(read('js/tool-shell.js'), /eden\/#edenX1Complaints/u);
 });
 
 test('Velo answer buttons use routes that exist', () => {

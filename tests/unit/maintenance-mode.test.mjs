@@ -1,8 +1,40 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import vm from 'node:vm';
 
 const read = (path) => readFileSync(path, 'utf8');
+
+test('Admin recovery stays accessible during static maintenance when storage is blocked', () => {
+  let redirected = false;
+  const window = {
+    location: {
+      pathname: '/admin.html',
+      search: '',
+      replace() {
+        redirected = true;
+      },
+    },
+  };
+  vm.runInNewContext(
+    read('js/maintenance-config.js').replace(
+      'window.VTS_MAINTENANCE_MODE = false',
+      'window.VTS_MAINTENANCE_MODE = true'
+    ),
+    {
+      window,
+      URLSearchParams,
+      document: {},
+      localStorage: {
+        getItem() {
+          throw new Error('blocked');
+        },
+      },
+    }
+  );
+  assert.equal(window.VTS_MAINTENANCE_ACTIVE, false);
+  assert.equal(redirected, false);
+});
 
 test('maintenance mode is disabled while retaining the shared entry script', () => {
   const config = read('js/maintenance-config.js');

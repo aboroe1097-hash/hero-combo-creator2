@@ -16,18 +16,22 @@
 
 import { translations } from './translations.js';
 import { currentLanguage } from './state.js';
-import { edenWorkspaceFirestorePath, isPublishedEdenProjection } from './eden-workspaces.js';
-import { mountHubPdfPanel } from './hub-pdf-tab.js';
 import {
-  normalizeUnknownEdenHubSubtab,
-  resolveEdenHubInitialRoute,
-} from './eden-hub-routing.js';
+  edenWorkspaceFirestorePath,
+  edenWorkspacePublicUrl,
+  normalizeEdenWorkspaceId,
+} from './eden-workspaces.js';
+import { SEASON_REGISTRY_PATH, normalizeSeasonRegistry } from './eden-seasons.js';
+import { isPublishedWorkspaceProjection, resolvePublicEdenCatalog } from './eden-public-season.js';
+import { mountHubPdfPanel } from './hub-pdf-tab.js';
+import { normalizeUnknownEdenHubSubtab, resolveEdenHubInitialRoute } from './eden-hub-routing.js';
 
-const LOYALTY_SRC = 'tabs/loyalty.html?v=20261008_231006';
-const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20261008_231006';
-const PLAYBOOK_SRC = 'tabs/eden-playbook.html?v=20261008_231006';
-const PREVIOUS_SRC = 'eden-x1.html?embed=1';
-const SEASON_SRC = 'eden-x2.html?embed=1';
+const LOYALTY_SRC = 'tabs/loyalty.html?v=20261011_091402';
+const BOUNTY_SRC = 'tabs/bounty-guide.html?v=20261011_091402';
+const PLAYBOOK_SRC = 'tabs/eden-playbook.html?v=20261011_091402';
+let currentPublicSeason = null;
+let publicArchives = [{ workspaceId: 'eden-x1', label: 'Eden X1' }];
+let seasonDiscoveryPromise = null;
 // How long the hub waits for the season publication check before landing on
 // Royal Bounty instead. Long enough for a normal round trip, short enough that
 // a dead backend is not a blank hub.
@@ -111,7 +115,7 @@ function refreshMapViewport() {
   requestAnimationFrame(() => {
     // Use the same module identity as the planner boot. A different query
     // string creates a second module instance with no canvas state to refresh.
-    import('./eden-map.js?v=20261008_231006')
+    import('./eden-map.js?v=20261011_091402')
       .then((module) => module.refreshEdenMapViewport?.())
       .catch(() => {
         /* Eden map boot reports its own load errors. */
@@ -163,7 +167,7 @@ async function loadLoyalty(root, panel) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
     localizeFragment(panel);
-    const module = await import('./loyalty-spa.js?v=20261008_231006');
+    const module = await import('./loyalty-spa.js?v=20261011_091402');
     module.initLoyaltyCalculator?.();
     loyaltyLoaded = true;
   } catch (error) {
@@ -210,26 +214,74 @@ function loadFramedSeason(panel, src, title) {
 }
 
 function loadPrevious(panel) {
-  loadFramedSeason(panel, PREVIOUS_SRC, 'Previous Seasons');
+  const choices = publicArchives;
+  if (!choices.length) {
+    panel.textContent = 'No published previous seasons.';
+    return;
+  }
+  if (!panel.querySelector('[data-eden-archive-picker]')) {
+    const select = document.createElement('select');
+    select.dataset.edenArchivePicker = '1';
+    select.setAttribute('aria-label', 'Previous seasons');
+    for (const entry of choices) {
+      const option = document.createElement('option');
+      option.value = entry.workspaceId;
+      option.textContent = entry.label;
+      select.appendChild(option);
+    }
+    const frameHost = document.createElement('div');
+    select.addEventListener('change', () => {
+      frameHost.replaceChildren();
+      delete frameHost.dataset.edenHubLoaded;
+      const selected = choices.find((entry) => entry.workspaceId === select.value);
+      if (selected)
+        loadFramedSeason(
+          frameHost,
+          edenWorkspacePublicUrl(selected.workspaceId, { embed: true }),
+          selected.label
+        );
+    });
+    panel.replaceChildren(select, frameHost);
+    const selected = choices[choices.length - 1];
+    select.value = selected.workspaceId;
+    loadFramedSeason(
+      frameHost,
+      edenWorkspacePublicUrl(selected.workspaceId, { embed: true }),
+      selected.label
+    );
+  }
 }
 
 function loadSeason(panel, options = {}) {
-  const t = catalogFor(currentLanguage);
-  loadFramedSeason(
-    panel,
-    options.vote ? `${SEASON_SRC}#vote` : SEASON_SRC,
-    t.subTabSeason || 'Current Season'
-  );
+  if (!currentPublicSeason) return;
+  const src = edenWorkspacePublicUrl(currentPublicSeason.workspaceId, { embed: true });
+  loadFramedSeason(panel, options.vote ? `${src}#vote` : src, currentPublicSeason.label);
 }
 
-// The current season is hidden until an admin publishes it. This reads the one
-// document the public is allowed to see and fails closed: any error, missing
-// document or unpublished revision leaves the sub-tab hidden, so a draft season
-// is never reachable from the hub.
-async function revealPublishedSeason(root) {
-  const button = root.querySelector('[data-eden-subtab="season"]');
-  if (!button) return false;
-  if (!button.hidden) return true;
+function updateSeasonButtons(root) {
+  const t = catalogFor(currentLanguage);
+  const current = root.querySelector('[data-eden-subtab="season"]');
+  const previous = root.querySelector('[data-eden-subtab="previous"]');
+  const seasonPrefix = String(t.subTabSeason || 'Current Season').split(' · ')[0];
+  const previousPrefix = String(t.subTabPrevious || 'Previous Seasons').split(' · ')[0];
+  if (current) {
+    current.hidden = !currentPublicSeason;
+    current.textContent = currentPublicSeason
+      ? `${seasonPrefix} · ${currentPublicSeason.label}`
+      : seasonPrefix;
+    current.removeAttribute('data-eden-i18n');
+  }
+  if (previous) {
+    previous.hidden = publicArchives.length === 0;
+    previous.textContent =
+      publicArchives.length === 1
+        ? `${previousPrefix} · ${publicArchives[0].label}`
+        : previousPrefix;
+    previous.removeAttribute('data-eden-i18n');
+  }
+}
+
+async function discoverPublishedSeasons(root) {
   try {
     const [{ initFirebase, ensureAnonymousAuth }, { importFirestoreLite }] = await Promise.all([
       import('./firebase-eden.js'),
@@ -239,16 +291,57 @@ async function revealPublishedSeason(root) {
     if (!configured || !app) return false;
     await ensureAnonymousAuth();
     const { getFirestore, doc, getDoc } = await importFirestoreLite();
-    const snap = await getDoc(
-      doc(getFirestore(app), edenWorkspaceFirestorePath('eden-x2', 'publicProjection'))
+    const db = getFirestore(app);
+    const [pointerSnap, registrySnap] = await Promise.all([
+      getDoc(doc(db, 'vts_admin/public_season')),
+      getDoc(doc(db, SEASON_REGISTRY_PATH)),
+    ]);
+    const registry = normalizeSeasonRegistry(registrySnap.exists() ? registrySnap.data() : {});
+    // Only an absent pointer enables the shipped X2 compatibility path.
+    const pointer = pointerSnap.exists()
+      ? pointerSnap.data()
+      : { workspaceId: 'eden-x2', label: 'Eden X2' };
+    const ids = new Set(
+      registry.seasons.filter((entry) => entry.state !== 'draft').map((entry) => entry.workspaceId)
     );
-    if (!snap.exists() || !isPublishedEdenProjection(snap.data())) return false;
-    button.hidden = false;
-    return true;
+    if (normalizeEdenWorkspaceId(pointer.workspaceId)) ids.add(pointer.workspaceId);
+    const checks = await Promise.all(
+      [...ids].filter(Boolean).map(async (id) => {
+        if (id === 'eden-x1') return id;
+        const projection = await getDoc(
+          doc(db, edenWorkspaceFirestorePath(id, 'publicProjection'))
+        );
+        return projection.exists() && isPublishedWorkspaceProjection(projection.data(), id)
+          ? id
+          : '';
+      })
+    );
+    const catalog = resolvePublicEdenCatalog(registry, pointer, checks);
+    currentPublicSeason = catalog.current;
+    publicArchives = catalog.archives;
+    // X1 predates the registry and remains a public historical hub.
+    if (
+      pointer.workspaceId !== 'eden-x1' &&
+      !publicArchives.some((entry) => entry.workspaceId === 'eden-x1')
+    )
+      publicArchives.unshift({ workspaceId: 'eden-x1', label: 'Eden X1' });
+    updateSeasonButtons(root);
+    const previousPanel = root.querySelector('[data-eden-subtab-panel="previous"]');
+    if (previousPanel?.querySelector('iframe')) {
+      previousPanel.replaceChildren();
+      delete previousPanel.dataset.edenHubLoaded;
+      loadPrevious(previousPanel);
+    }
+    return Boolean(currentPublicSeason);
   } catch (error) {
-    console.warn('[eden-hub] Current season availability unknown', error);
+    console.warn('[eden-hub] Published seasons unavailable', error);
+    return false;
   }
-  return false;
+}
+
+async function revealPublishedSeason(root) {
+  if (!seasonDiscoveryPromise) seasonDiscoveryPromise = discoverPublishedSeasons(root);
+  return seasonDiscoveryPromise;
 }
 
 async function loadBounty(panel) {
@@ -258,7 +351,7 @@ async function loadBounty(panel) {
     const response = await fetch(BOUNTY_SRC);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     panel.innerHTML = await response.text();
-    const module = await import('./bounty-guide.js?v=20261008_231006');
+    const module = await import('./bounty-guide.js?v=20261011_091402');
     const mount = panel.querySelector('#bountyGuideRoot');
     if (mount) module.renderBountyGuide(mount);
     bountyLoaded = true;
@@ -386,6 +479,7 @@ export function bootEdenHub() {
   // shell-side pre-boot click catcher checks this marker so it never stashes
   // a stale intent after the hub has already consumed the boot intent.
   root.dataset.edenHubBooted = '1';
+  window.addEventListener('vts:language-change', () => updateSeasonButtons(root));
 
   function loadPanelFor(name, panel, options = {}) {
     if (name === 'loyalty') loadLoyalty(root, panel);

@@ -384,6 +384,19 @@ export function currentAuthUid() {
   return auth?.currentUser?.uid || '';
 }
 
+export async function callListUserRoles({ pageToken, pageSize = 100 } = {}) {
+  const { getFunctions, httpsCallable } = await importFirebaseFunctions();
+  if (!app) throw new Error('Firebase not initialized');
+  const result = await httpsCallable(
+    getFunctions(app, 'us-central1'),
+    'listUserRoles'
+  )({
+    pageSize,
+    ...(pageToken ? { pageToken } : {}),
+  });
+  return result.data;
+}
+
 /**
  * Bridge to the setUserRole callable. Kept here rather than in the controller
  * so that module stays free of Firebase and testable, and so the callable's

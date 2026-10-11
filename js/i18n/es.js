@@ -2088,7 +2088,7 @@ const es = {
   'ai.action.openHeroAtlas': 'Abrir Atlas de héroes',
   'ai.action.openResearch': 'Abrir Investigación',
   'ai.action.openMaterials': 'Abrir Materiales',
-  'ai.action.openEden': 'Abrir Eden X1',
+  'ai.action.openEden': 'Abrir Eden',
   'ai.action.useInGenerator': 'Usar en el Generador',
   'ai.action.reviewSelection': 'Revisar selección',
   'ai.action.applySelection': 'Aplicar selección',

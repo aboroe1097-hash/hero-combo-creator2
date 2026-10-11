@@ -27,6 +27,7 @@ import {
 } from './ai/quota.js';
 import { buildInitialProviderSteps, readBoundedJson, validateTurnPayload } from './ai/schema.js';
 import { proxyManagementVotes } from './ai/management-votes.js';
+import { workerOperationPaused } from './operations-gate.js';
 
 const JSON_HEADERS = Object.freeze({
   'Cache-Control': 'no-store',
@@ -216,6 +217,13 @@ async function handleTurn(request, env, origin) {
   }
 
   const auth = await authenticateFirebaseRequest(request, env);
+  if (await workerOperationPaused(env, ['ai'], { claims: auth.claims })) {
+    throw new AiRequestError(
+      503,
+      SAFE_ERROR_CODES.disabled,
+      'The AI assistant is temporarily paused.'
+    );
+  }
   const rawPayload = await readBoundedJson(request);
   const requestBytes = utf8ByteLength(JSON.stringify(rawPayload));
   const payload = validateTurnPayload(rawPayload);

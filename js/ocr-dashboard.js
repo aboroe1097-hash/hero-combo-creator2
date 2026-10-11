@@ -82,9 +82,9 @@ import {
   ACTIVE_EDEN_WORKSPACE,
   ACTIVE_EDEN_WORKSPACE_ID,
   EDEN_WORKSPACE_COLLECTION_PATH,
-  buildEdenPublicProjection,
   buildEmptyEdenWorkspaceDashboard,
   edenWorkspaceFirestorePath,
+  edenWorkspacePublicUrl,
   edenWorkspaceMutationError,
   edenWorkspaceStorageKey,
   isEdenWorkspaceMutable,
@@ -112,11 +112,17 @@ import {
   planEdenSnapshotRecallWrites,
   renameEdenSeason,
   reviveEdenSnapshotTimestamps,
-  seasonWorkspaceCandidates,
   adoptEdenSeason,
   adoptableEdenWorkspace,
-  startNextEdenSeason as startNextEdenSeasonTransition,
 } from './eden-seasons.js';
+import {
+  createSeasonDraft,
+  publishSeason,
+  readSeasonPreview,
+  parseManagementVotesCsv,
+} from './admin-season-release.js';
+import { BACKUP_COVERAGE, snapshotValuesEqual } from './admin-backup.js';
+import '../css/admin-command-center.css';
 const ACTIVE_EDEN_WORKSPACE_DEFAULT_SEASON = ACTIVE_EDEN_WORKSPACE.defaultSeason;
 
 // The archived Eden X1 workspace refuses every mutation: writes log a warning,
@@ -391,8 +397,6 @@ import {
   ALLIANCE_KEY,
   ALLIANCE_COUNT,
   LOG_KEY,
-  CLEAR_HASH,
-  DELETE_HASHES,
   DURABILITY_TABLE,
   state,
   $id,
@@ -407,7 +411,6 @@ import {
   findBestMatch,
   resolvePlayerNameForAttack,
   validateTotalDemolition,
-  sha256,
   checkOcrService,
   qwenVisionRequest,
   describeOcrRequestError,
@@ -851,9 +854,77 @@ function renderDashboardSubtab(name = activeDashboardSubtabName()) {
   if (name === 'userRoles') void ensureUserRolesMounted();
   if (name === 'complaints') void ensureComplaintsMounted();
   if (name === 'seasonLifecycle') void refreshEdenSeasonLifecyclePanel();
+  if (name === 'operations') void ensureOperationsMounted();
   if (name === 'edenVotes') renderEdenX1VoteAdmin();
   if (name === 'conduct') renderConductAdjustments();
   if (name === 'conductSuggest') renderConductSuggestPanel();
+}
+
+let operationsController = null;
+async function ensureOperationsMounted() {
+  const mount = $id('dashOperationsRoot');
+  if (!mount) return;
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) throw new Error(dashT('adminCloudLocalCache'));
+    const { renderAdminOperations } = await import('./admin-operations.js');
+    operationsController?.destroy();
+    operationsController = renderAdminOperations(mount, {
+      db,
+      firestore: await loadFirestoreApi(),
+      isSuperAdmin: dashSuperAdmin === true,
+      uid: state.adminUser?.uid || '',
+    });
+  } catch (err) {
+    mount.textContent = err.message;
+  }
+}
+
+function bindAdminCommandCenter() {
+  const role = $id('dashOperatorRole');
+  if (role) role.textContent = dashSuperAdmin === true ? 'Super Admin' : 'Admin';
+  const root = $id('ocrDashboardRoot');
+  if (!root || root.dataset.commandBound) return;
+  root.dataset.commandBound = '1';
+  root.addEventListener('click', async (event) => {
+    const action = event.target.closest('[data-admin-action]')?.dataset.adminAction;
+    if (!action) return;
+    if (action === 'uploads') switchDashSubtab('uploadStructures');
+    if (action === 'season' || action === 'recovery') switchDashSubtab('seasonLifecycle');
+    if (action === 'operations') switchDashSubtab('operations');
+    if (action === 'preview') {
+      // Open from the click itself so the browser does not block the new tab
+      // after asynchronous cloud reads. The content remains same-origin.
+      const target = window.open('about:blank', '_blank');
+      try {
+        if (!target) throw new Error('Allow this site to open the preview tab.');
+        if (ACTIVE_EDEN_WORKSPACE.legacy) {
+          target.location.replace(
+            new URL(edenWorkspacePublicUrl(ACTIVE_EDEN_WORKSPACE_ID), window.location.href).href
+          );
+          return;
+        }
+        const db = await ensureCloudSyncReady();
+        if (!db) throw new Error(dashT('adminCloudLocalCache'));
+        const projection = await readSeasonPreview({
+          db,
+          firestore: await loadFirestoreApi(),
+          uid: state.adminUser.uid,
+          workspaceId: ACTIVE_EDEN_WORKSPACE_ID,
+        });
+        target.sessionStorage.setItem(
+          `vts_eden_admin_preview__${ACTIVE_EDEN_WORKSPACE_ID}`,
+          JSON.stringify(projection)
+        );
+        const url = new URL(edenWorkspacePublicUrl(ACTIVE_EDEN_WORKSPACE_ID), window.location.href);
+        url.searchParams.set('preview', '1');
+        target.location.replace(url.href);
+      } catch (err) {
+        target?.close();
+        window.showToast?.(err.message, 'error', 9000);
+      }
+    }
+  });
 }
 
 let userRolesModulePromise = null;
@@ -885,12 +956,13 @@ async function refreshSuperAdminSurfaces() {
 function applySuperAdminSurfaces(superadmin) {
   const changed = dashSuperAdmin !== superadmin;
   dashSuperAdmin = superadmin;
+  const roleBadge = document.getElementById('dashOperatorRole');
+  if (roleBadge) roleBadge.textContent = superadmin ? 'Super Admin' : 'Admin';
   document.querySelectorAll('[data-requires-superadmin]').forEach((element) => {
     element.hidden = !superadmin;
   });
-  // Every superadmin-only tab reflects the claim, and the whole Alliance
-  // Management nav hides when the claim is absent so a plain admin is not
-  // shown a row of buttons that all refuse them.
+  // Restricted tabs reflect the claim; shared alliance tools stay available
+  // to ordinary Admins, including throne assignments.
   SUPERADMIN_DASH_SUBTABS.forEach((name) => {
     document.querySelectorAll(`[data-subtab="${name}"]`).forEach((btn) => {
       btn.disabled = !superadmin;
@@ -898,7 +970,7 @@ function applySuperAdminSurfaces(superadmin) {
     });
   });
   document.querySelectorAll('[data-subtab-scope="global"]').forEach((nav) => {
-    nav.hidden = !superadmin;
+    nav.hidden = !superadmin && !nav.querySelector('[data-subtab="throneBuffs"]');
   });
   // A rendered signups list carries its own superadmin-only Delete buttons, so
   // it re-renders when the claim lands or changes.
@@ -916,17 +988,17 @@ function applySuperAdminSurfaces(superadmin) {
  * escalation path. The claim is the only source of truth.
  */
 async function loadRoleCandidates() {
-  const { collection, getDocs } = await loadFirestoreApi();
-  const db = await ensureCloudSyncReady();
-  const snap = await getDocs(collection(db, 'users'));
-  return snap.docs
-    .map((entry) => ({
-      uid: entry.id,
-      displayName: String(entry.data()?.displayName || '').slice(0, 80),
-      admin: entry.data()?.admin === true,
-      superadmin: entry.data()?.superadmin === true,
-    }))
-    .sort((a, b) => a.displayName.localeCompare(b.displayName) || a.uid.localeCompare(b.uid));
+  const { callListUserRoles } = await import('./firebase.js');
+  const members = [];
+  let pageToken;
+  do {
+    const page = await callListUserRoles({ pageToken });
+    members.push(...page.members);
+    pageToken = page.nextPageToken || undefined;
+  } while (pageToken);
+  return members.sort(
+    (a, b) => a.displayName.localeCompare(b.displayName) || a.uid.localeCompare(b.uid)
+  );
 }
 
 async function ensureUserRolesMounted() {
@@ -1191,19 +1263,40 @@ async function ensureThroneBuffsMounted() {
     // The Throne Buffs UI reads its strings through the dashboard's own
     // translator, so publish it once for the module's embedded t() helper.
     window.dashT = dashT;
+    const db = await ensureCloudSyncReady();
+    if (!db) throw new Error('Cloud access is required to share throne assignments.');
+    const firestore = await loadFirestoreApi();
+    const { loadThroneHistory, saveThroneWeek } = await import('./throne-buffs-cloud.js');
+    const cloudHistory = await loadThroneHistory({ db, firestore });
+    const revisions = new Map(cloudHistory.map((record) => [record.weekKey, record.syncRevision]));
+    const history = [
+      ...cloudHistory,
+      ...loadThroneBuffsHistory().filter((record) => !revisions.has(record.weekKey)),
+    ];
     module.renderThroneBuffs(mount, {
-      history: loadThroneBuffsHistory(),
+      history,
       rosterMembers: Array.isArray(state.rosterNames)
         ? state.rosterNames.map((name) => ({ name }))
         : [],
-      onSave: saveThroneBuffsHistory,
+      onSave: async (record) => {
+        const saved = await saveThroneWeek({
+          db,
+          firestore,
+          uid: state.adminUser.uid,
+          record,
+          expectedRevision: revisions.get(record.weekKey) || 0,
+        });
+        revisions.set(record.weekKey, saved.syncRevision);
+        saveThroneBuffsHistory(saved);
+        return saved;
+      },
     });
   } catch (error) {
     console.error('THRONE BUFFS LOAD ERROR:', error);
     const mount = $id('dashThroneRoot');
     if (mount) {
       mount.innerHTML = `<div class="dash-empty" role="alert">${esc(
-        dashT('adminThroneEmptyHistory')
+        `Throne assignments could not load. ${error?.message || 'Check the connection and reopen this panel.'}`
       )}</div>`;
     }
   }
@@ -1367,6 +1460,8 @@ function normalizeEdenX1VoteSettings(settings = {}) {
     allowEditing: settings.allowEditing !== false,
     showMemberResults,
     showManagementResults,
+    showMemberVoteCounts: settings.showMemberVoteCounts !== false,
+    showManagementVoteCounts: settings.showManagementVoteCounts !== false,
     showPublicResults: showMemberResults && showManagementResults,
     showVoterNames: settings.showVoterNames === true,
     contributionRankingMode: normalizeEdenX1ContributionRankingMode(
@@ -1463,6 +1558,8 @@ function renderEdenX1VoteSettings() {
   setChecked('dashEdenVoteEditingToggle', settings.allowEditing);
   setChecked('dashEdenVotePublicResultsToggle', settings.showMemberResults);
   setChecked('dashEdenVoteManagementResultsToggle', settings.showManagementResults);
+  setChecked('dashEdenVoteMemberCountsToggle', settings.showMemberVoteCounts);
+  setChecked('dashEdenVoteManagementCountsToggle', settings.showManagementVoteCounts);
   setChecked('dashEdenVoteShowNamesToggle', settings.showVoterNames);
   setChecked(
     'dashEdenContributionModeExtended',
@@ -1641,8 +1738,10 @@ function buildEdenX1PublicVoteResults(
           playerName: row.candidateName,
           playerKey: row.playerKey,
           familyKey: row.familyKey,
-          votes: row.count,
-          voters: row.voters.size,
+          rank: totalRows.findIndex((candidate) => candidate.count === row.count) + 1,
+          ...(normalizedSettings.showMemberVoteCounts
+            ? { votes: row.count, voters: row.voters.size }
+            : {}),
         }))
       : [],
   };
@@ -2469,6 +2568,8 @@ function bindEdenX1VoteAdminControls() {
     // independently, because the sheet is not season-scoped.
     ['dashEdenVotePublicResultsToggle', 'showMemberResults'],
     ['dashEdenVoteManagementResultsToggle', 'showManagementResults'],
+    ['dashEdenVoteMemberCountsToggle', 'showMemberVoteCounts'],
+    ['dashEdenVoteManagementCountsToggle', 'showManagementVoteCounts'],
     ['dashEdenVoteShowNamesToggle', 'showVoterNames'],
   ].forEach(([id, key]) => {
     $id(id)?.addEventListener('change', (event) => {
@@ -4226,7 +4327,6 @@ const SUPERADMIN_DASH_SUBTABS = new Set([
   'edenVotes',
   'conduct',
   'allianceView',
-  'throneBuffs',
   'vtsScore',
   'userRoles',
   // Complaints are member-filed and may name another member or an officer, so
@@ -4362,7 +4462,26 @@ function edenWorkspaceLifecycleI18nKey(lifecycle) {
 
 function refreshEdenWorkspaceStrip() {
   const select = $id('dashWorkspaceSelect');
-  if (select) select.value = ACTIVE_EDEN_WORKSPACE_ID;
+  if (select) {
+    const registered = edenSeasonRegistryView?.registry?.seasons || [];
+    const workspaces = listEdenWorkspaces([
+      ACTIVE_EDEN_WORKSPACE_ID,
+      ...registered.map((entry) => entry.workspaceId),
+    ]);
+    select.innerHTML = workspaces
+      .map(
+        (workspace) =>
+          `<option value="${esc(workspace.id)}">${esc(registered.find((entry) => entry.workspaceId === workspace.id)?.label || workspace.label)}</option>`
+      )
+      .join('');
+    select.value = ACTIVE_EDEN_WORKSPACE_ID;
+  }
+  document.querySelectorAll('[data-selected-season]').forEach((element) => {
+    element.textContent =
+      edenSeasonRegistryView?.registry?.seasons.find(
+        (entry) => entry.workspaceId === ACTIVE_EDEN_WORKSPACE_ID
+      )?.label || ACTIVE_EDEN_WORKSPACE.label;
+  });
   const ws = currentEdenWorkspaceView();
   const lifecycleBadge = $id('dashWorkspaceLifecycle');
   if (lifecycleBadge) {
@@ -4386,7 +4505,8 @@ function refreshEdenWorkspaceStrip() {
     }
   }
   if (publishBtn) {
-    publishBtn.hidden = ws.legacy;
+    publishBtn.hidden = ws.legacy || dashSuperAdmin !== true;
+    publishBtn.disabled = ws.lifecycle === 'archived';
     publishBtn.setAttribute(
       'aria-label',
       ws.publication
@@ -4394,7 +4514,10 @@ function refreshEdenWorkspaceStrip() {
         : dashT('adminWorkspacePublishBtn')
     );
   }
-  if (unpublishBtn) unpublishBtn.hidden = ws.legacy || !ws.publication;
+  if (unpublishBtn) {
+    unpublishBtn.hidden = ws.legacy || !ws.publication || dashSuperAdmin !== true;
+    unpublishBtn.disabled = ws.lifecycle === 'archived';
+  }
 }
 
 async function loadEdenWorkspaceCloudRecord() {
@@ -4415,164 +4538,65 @@ async function loadEdenWorkspaceCloudRecord() {
   refreshEdenWorkspaceStrip();
 }
 
-async function readEdenWorkspaceRosterSnapshots(db) {
+async function publishActiveEdenWorkspace({ unpublish = false, restoreRevision = null } = {}) {
+  if (ACTIVE_EDEN_WORKSPACE.legacy || blockEdenArchiveWrite('publish season')) return false;
+  if (!(await refreshSuperAdminSurfaces())) return false;
   try {
-    const { doc, getDoc } = await loadFirestoreApi();
-    const snap = await getDoc(
-      doc(db, edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'rosterData'))
-    );
-    const data = snap.exists() ? snap.data() : null;
-    return Array.isArray(data?.snapshots) ? data.snapshots : [];
-  } catch {
-    return [];
-  }
-}
-
-async function publishActiveEdenWorkspace({ unpublish = false } = {}) {
-  if (ACTIVE_EDEN_WORKSPACE.legacy) return false;
-  if (state.adminIsAdmin !== true) {
-    showCloudSyncFailure(new Error(dashT('adminCloudAdminRequired')), 'Publish blocked');
-    return false;
-  }
-  const ws = currentEdenWorkspaceView();
-  const confirmKey = unpublish ? 'adminWorkspaceUnpublishConfirm' : 'adminWorkspacePublishConfirm';
-  if (!window.confirm(dashT(confirmKey, { workspace: ws.label }))) return false;
-  try {
+    const ws = currentEdenWorkspaceView();
+    const view = await loadEdenSeasonRegistry();
+    const previous = activeEdenSeason(view.registry);
+    const activates = !unpublish && previous?.workspaceId && previous.workspaceId !== ws.id;
+    const message = activates
+      ? `Publish ${ws.label} and archive ${previous.label}? A backup of the previous season will be downloaded first.`
+      : restoreRevision !== null
+        ? `Restore public revision ${restoreRevision} as a new publication? Working uploads are unchanged.`
+        : dashT(unpublish ? 'adminWorkspaceUnpublishConfirm' : 'adminWorkspacePublishConfirm', {
+            workspace: ws.label,
+          });
+    if (!window.confirm(message)) return false;
+    if (activates && !(await exportActiveEdenWorkspaceSnapshot(previous.workspaceId))) return false;
     const db = await ensureCloudSyncReady();
     if (!db) throw new Error(dashT('adminCloudLocalCache'));
-    const { doc, getDoc, setDoc, serverTimestamp } = await loadFirestoreApi();
-    const projectionRef = doc(
+    const { revision } = await publishSeason({
       db,
-      edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'publicProjection')
-    );
-    const previousSnap = await getDoc(projectionRef);
-    const previous = previousSnap.exists() ? previousSnap.data() : null;
-    const previousRevision = Number(previous?.revision) || 0;
-    let rosterSnapshots = [];
-    let publicVoteResults = {};
-    if (!unpublish) {
-      rosterSnapshots = await readEdenWorkspaceRosterSnapshots(db);
-      const settings = normalizeEdenX1VoteSettings(state.edenX1VoteSettings || {});
-      if (settings.showMemberResults && typeof buildEdenX1PublicVoteResults === 'function') {
-        publicVoteResults = buildEdenX1PublicVoteResults(settings);
-      }
-    }
-    const projection = buildEdenPublicProjection({
-      workspace: ACTIVE_EDEN_WORKSPACE_ID,
-      revision: unpublish ? Math.max(1, previousRevision) : previousRevision + 1,
-      published: !unpublish,
-      updatedBy: state.adminUser?.uid || '',
-      dashboardData: unpublish
-        ? buildEmptyEdenWorkspaceDashboard(ACTIVE_EDEN_WORKSPACE.defaultSeason)
-        : sanitizeDashboardDataForPersistence(
-            state.dashData || buildEmptyEdenWorkspaceDashboard(ACTIVE_EDEN_WORKSPACE.defaultSeason)
-          ),
-      voteSettings: unpublish ? {} : normalizeEdenX1VoteSettings(state.edenX1VoteSettings || {}),
-      publicVoteResults,
-      rosterSnapshots,
-      scoring: unpublish
-        ? null
-        : {
-            dutyPointWeights: normalizeDutyPointWeights(state.dutyPointWeights),
-            includeDemolitionPoints: state.includeDemolitionPoints !== false,
-            contributionWeight: normalizeContributionWeight(state.contributionWeight),
-            formPointWeight: normalizeFormPointWeight(state.formPointWeight),
-          },
-      // The reward distribution travels with the season so the public page shows
-      // the slots and the guild-master holder the admin configured.
-      rewardSettings: unpublish ? null : normalizeRewardSettings(state.rewardSettings),
+      firestore: await loadFirestoreApi(),
+      uid: state.adminUser.uid,
+      workspaceId: ws.id,
+      unpublish,
+      restoreRevision,
+      expectedActiveWorkspace: previous?.workspaceId || '',
     });
-    await setDoc(projectionRef, sanitizeForFirestore(projection));
-    await setDoc(doc(db, EDEN_WORKSPACE_COLLECTION_PATH, ACTIVE_EDEN_WORKSPACE_ID), {
-      id: ACTIVE_EDEN_WORKSPACE_ID,
-      lifecycle: unpublish ? 'draft' : 'active',
-      active: !unpublish,
-      createdAtMs: ws.createdAtMs || Date.now(),
-      publication: unpublish
-        ? null
-        : {
-            revision: projection.revision,
-            publishedAtMs: projection.publishedAtMs,
-            updatedBy: projection.updatedBy,
-          },
-      updatedAt: serverTimestamp(),
-      updatedBy: state.adminUser?.uid || '',
-    });
-    edenWorkspaceCloudRecord = null;
     await loadEdenWorkspaceCloudRecord();
+    await refreshEdenSeasonLifecyclePanel();
     logDashboardEvent(
       unpublish ? 'adminLogWorkspaceUnpublished' : 'adminLogWorkspacePublished',
       'success',
-      { workspace: ws.label, revision: String(projection.revision) },
+      { workspace: ws.label, revision: String(revision) },
       { source: 'workspace' }
     );
-    if (typeof window.showToast === 'function') {
-      window.showToast(
-        unpublish
-          ? dashT('adminWorkspaceUnpublishedToast')
-          : dashT('adminWorkspacePublishedToast', { n: projection.revision }),
-        'success',
-        6000
-      );
-    }
+    window.showToast?.(
+      unpublish
+        ? dashT('adminWorkspaceUnpublishedToast')
+        : dashT('adminWorkspacePublishedToast', { n: revision }),
+      'success',
+      7000
+    );
     return true;
   } catch (err) {
-    showCloudSyncFailure(err, 'Workspace publish failed');
-    if (typeof window.showToast === 'function') {
-      window.showToast(
-        dashT('adminWorkspacePublishFailedToast', { error: err?.message || err }),
-        'error',
-        9000
-      );
-    }
+    showCloudSyncFailure(err, 'Season publication failed');
+    window.showToast?.(err.message, 'error', 9000);
     return false;
   }
 }
 
-async function exportActiveEdenWorkspaceSnapshot() {
-  const ws = currentEdenWorkspaceView();
+async function exportActiveEdenWorkspaceSnapshot(workspaceId = ACTIVE_EDEN_WORKSPACE_ID) {
+  const ws = getEdenWorkspace(workspaceId);
   try {
     const db = await ensureCloudSyncReady();
-    const { doc, getDoc, collection, getDocs } = await loadFirestoreApi();
-    const paths = edenWorkspaceFirestorePathsForExport();
-    const readDoc = async (path) => {
-      if (!path) return null;
-      const snap = await getDoc(doc(db, path));
-      return snap.exists() ? snap.data() : null;
-    };
-    const readCollection = async (path) => {
-      if (!path) return [];
-      const snap = await getDocs(collection(db, path));
-      return snap.docs.map((entry) => ({ id: entry.id, data: entry.data() }));
-    };
-    const snapshot = {
-      schema: 'vts-eden-workspace-snapshot-v1',
-      workspace: ws.id,
-      label: ws.label,
-      exportedAt: new Date().toISOString(),
-      docs: {
-        dashboardData: await readDoc(paths.dashboardData),
-        rosterData: await readDoc(paths.rosterData),
-        voteSettings: await readDoc(paths.voteSettings),
-        publicVoteResults: await readDoc(paths.publicVoteResults),
-        publicProjection: await readDoc(paths.publicProjection),
-        votes: await readCollection(paths.votes),
-        voteHistory: await readCollection(paths.voteHistory),
-        conductAdjustments: await readCollection(paths.conductAdjustments),
-      },
-    };
-    const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `vts-${ws.id}-snapshot-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 4000);
-    if (typeof window.showToast === 'function') {
-      window.showToast(dashT('adminWorkspaceSnapshotToast'), 'success', 5000);
-    }
+    if (!db) throw new Error(dashT('adminCloudLocalCache'));
+    const snapshot = await readEdenWorkspaceSnapshot(db, workspaceId);
+    downloadAdminJson(snapshot, `vts-${ws.id}-snapshot`);
+    window.showToast?.(dashT('adminWorkspaceSnapshotToast'), 'success', 5000);
     logDashboardEvent(
       'adminLogWorkspaceSnapshot',
       'success',
@@ -4581,30 +4605,61 @@ async function exportActiveEdenWorkspaceSnapshot() {
     );
     return true;
   } catch (err) {
-    console.error('Workspace snapshot export failed:', err);
     showCloudSyncFailure(err, 'Workspace snapshot failed');
-    if (typeof window.showToast === 'function') {
-      window.showToast(
-        dashT('adminWorkspacePublishFailedToast', { error: err?.message || err }),
-        'error',
-        9000
-      );
-    }
     return false;
   }
 }
 
-function edenWorkspaceFirestorePathsForExport() {
+function downloadAdminJson(value, name) {
+  const url = URL.createObjectURL(
+    new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' })
+  );
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${name}-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+async function readEdenWorkspaceSnapshot(db, workspaceId) {
+  const { doc, getDoc, collection, getDocs } = await loadFirestoreApi();
+  const docs = {};
+  // Fail closed: never label a partially read cloud export a complete snapshot.
+  for (const key of EDEN_SNAPSHOT_DOC_KEYS) {
+    const path = edenWorkspaceFirestorePath(workspaceId, key);
+    if (!path) continue;
+    const snap = await getDoc(doc(db, path));
+    docs[key] = snap.exists() ? snap.data() : null;
+  }
+  for (const key of EDEN_SNAPSHOT_COLLECTION_KEYS) {
+    const path =
+      key === 'publications'
+        ? `eden_seasons/${workspaceId}/publications`
+        : edenWorkspaceFirestorePath(workspaceId, key);
+    if (!path) continue;
+    const snap = await getDocs(collection(db, path));
+    docs[key] = snap.docs.map((entry) => ({ id: entry.id, data: entry.data() }));
+  }
   return {
-    dashboardData: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'dashboardData'),
-    rosterData: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'rosterData'),
-    voteSettings: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'voteSettings'),
-    publicVoteResults: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'publicVoteResults'),
-    publicProjection: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'publicProjection'),
-    votes: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'votes'),
-    voteHistory: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'voteHistory'),
-    conductAdjustments: edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'conductAdjustments'),
+    schema: 'vts-eden-workspace-snapshot-v1',
+    workspace: workspaceId,
+    label: getEdenWorkspace(workspaceId).label,
+    exportedAt: new Date().toISOString(),
+    docs,
   };
+}
+
+function edenWorkspaceFirestorePathsForExport() {
+  return Object.fromEntries(
+    [...EDEN_SNAPSHOT_DOC_KEYS, ...EDEN_SNAPSHOT_COLLECTION_KEYS].map((key) => [
+      key,
+      key === 'publications'
+        ? `eden_seasons/${ACTIVE_EDEN_WORKSPACE_ID}/publications`
+        : edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, key),
+    ])
+  );
 }
 
 // --- Season lifecycle panel (superadmin) ---
@@ -4621,6 +4676,7 @@ let edenSeasonRegistryView = null;
 // instead of showing "Loading" forever.
 let edenSeasonRegistryError = '';
 let edenRecallDraft = null;
+let edenRecallLocalBackup = null;
 // Which season the rename input is editing. Empty means "the running season".
 let edenSeasonRenameTargetId = '';
 
@@ -4647,10 +4703,10 @@ function edenSeasonStartedWindow(season) {
 // hold. A workspace can only host a new season when it is still published-from
 // capable, unarchived and empty of another season's data, so the reads below
 // are what makes the "start the next season" button honest.
-async function readEdenWorkspaceViews(db) {
+async function readEdenWorkspaceViews(db, registry) {
   const { doc, getDoc } = await loadFirestoreApi();
   const views = [];
-  for (const workspace of listEdenWorkspaces()) {
+  for (const workspace of listEdenWorkspaces(registry.seasons.map((entry) => entry.workspaceId))) {
     const view = { ...workspace, holdsSeasonId: '' };
     if (!workspace.legacy) {
       const recordSnap = await getDoc(doc(db, EDEN_WORKSPACE_COLLECTION_PATH, workspace.id));
@@ -4677,7 +4733,7 @@ async function loadEdenSeasonRegistry() {
   const { doc, getDoc } = await loadFirestoreApi();
   const snap = await getDoc(doc(db, SEASON_REGISTRY_PATH));
   const registry = normalizeSeasonRegistry(snap.exists() ? snap.data() : null);
-  const workspaces = await readEdenWorkspaceViews(db);
+  const workspaces = await readEdenWorkspaceViews(db, registry);
   return { registry, workspaces };
 }
 
@@ -4864,70 +4920,46 @@ async function adoptCurrentEdenSeason() {
 }
 
 async function startNextEdenSeason() {
-  // Opening a season writes the global registry only; the workspace it binds is
-  // the candidate the rules below accept, and every record write in here still
-  // goes through the archive guard.
-  const view = edenSeasonRegistryView;
-  if (!view) return false;
-  const { candidates, blocked } = seasonWorkspaceCandidates({
-    registry: view.registry,
-    workspaces: view.workspaces,
-  });
-  const proposedId = nextEdenSeasonId(view.registry, { nowMs: Date.now() });
-  if (!candidates.length) {
-    // The button is disabled in this state and the strip says why; refuse again
-    // here so no other caller can start a season with nowhere to live.
-    window.showToast?.(dashT('adminSeasonNoFreeWorkspace'), 'error', 9000);
+  if (!(await refreshSuperAdminSurfaces())) return false;
+  const view = edenSeasonRegistryView || (await loadEdenSeasonRegistry());
+  const proposed = nextEdenSeasonId(view.registry);
+  const number = Number($id('dashNewSeasonNumber')?.value || proposed.replace('season-x', ''));
+  if (!Number.isInteger(number) || number < 3 || number > 9999) {
+    window.showToast?.('Choose a valid season number.', 'error', 6000);
     return false;
   }
-  const target = candidates[0];
+  const workspaceId = `eden-x${number}`;
+  const label = $id('dashNewSeasonLabel')?.value.trim() || `Eden X${number}`;
   if (
     !window.confirm(
-      dashT('adminSeasonStartConfirm', {
-        season: defaultEdenSeasonLabel(proposedId),
-        workspace: target.label,
-      })
+      `Prepare ${label}? The current season stays online until you publish this draft.`
     )
-  ) {
+  )
     return false;
-  }
+  const button = $id('dashSeasonStartBtn');
+  if (button) button.disabled = true;
   try {
-    const result = startNextEdenSeasonTransition(view.registry, {
-      nowMs: Date.now(),
-      seasonId: proposedId,
-      label: defaultEdenSeasonLabel(proposedId),
-      workspaceId: target.id,
-      workspaces: view.workspaces,
+    const db = await ensureCloudSyncReady();
+    if (!db) throw new Error(dashT('adminCloudLocalCache'));
+    await createSeasonDraft({
+      db,
+      firestore: await loadFirestoreApi(),
+      uid: state.adminUser.uid,
+      workspaceId,
+      label,
+      sourceWorkspaceId: ACTIVE_EDEN_WORKSPACE_ID,
+      copyRoster: $id('dashNewSeasonCopyRoster')?.checked === true,
+      copySettings: $id('dashNewSeasonCopySettings')?.checked === true,
     });
-    if (!result.ok) {
-      window.showToast?.(seasonTransitionMessage(result), 'error', 9000);
-      return false;
-    }
-    await saveEdenSeasonRegistry(result.registry);
-    logDashboardEvent(
-      'adminLogSeasonStarted',
-      'success',
-      { season: result.season.label, workspace: target.label },
-      { source: 'workspace' }
-    );
-    window.showToast?.(
-      dashT('adminSeasonStartDone', { season: result.season.label, workspace: target.label }),
-      'success',
-      7000
-    );
-    await refreshEdenSeasonLifecyclePanel();
+    setActiveAdminWorkspaceId(workspaceId);
+    window.location.assign('admin.html');
     return true;
   } catch (err) {
-    showCloudSyncFailure(err, 'Season start failed');
-    window.showToast?.(
-      dashT('adminSeasonActionFailed', { error: err?.message || err }),
-      'error',
-      9000
-    );
+    window.showToast?.(err.message, 'error', 9000);
+    if (button) button.disabled = false;
     return false;
   }
 }
-
 async function renameEdenSeasonLabel(seasonId, label) {
   const view = edenSeasonRegistryView;
   if (!view) return false;
@@ -5002,25 +5034,38 @@ async function readEdenWorkspaceLiveRecords() {
 
 async function dryRunEdenSnapshotRecall(file) {
   if (!file) return null;
-  const parsed = parseEdenSnapshotJson(await file.text());
+  const { fullBackupToSnapshot } = await import('./admin-backup.js');
+  let parsed;
+  let original;
+  try {
+    original = JSON.parse(await file.text());
+    parsed = parseEdenSnapshotJson(
+      JSON.stringify(fullBackupToSnapshot(original, ACTIVE_EDEN_WORKSPACE_ID))
+    );
+  } catch (err) {
+    window.showToast?.(err.message, 'error', 9000);
+    return null;
+  }
   if (!parsed.ok) {
     edenRecallDraft = null;
     window.showToast?.(dashT(snapshotRecallReasonKey(parsed.reason)), 'error', 9000);
     renderEdenSeasonLifecyclePanel();
     return null;
   }
+  edenRecallLocalBackup = original.schema === 'vts-admin-full-export-v1' ? original : null;
   try {
     const ws = currentEdenWorkspaceView();
     const guardErr = edenWorkspaceMutationError(ACTIVE_EDEN_WORKSPACE_ID, ws);
+    const live = await readEdenWorkspaceLiveRecords();
     const plan = buildEdenSnapshotRecallPlan({
       snapshot: parsed.snapshot,
-      live: await readEdenWorkspaceLiveRecords(),
+      live,
       workspaceId: ACTIVE_EDEN_WORKSPACE_ID,
       workspaceLabel: ws.label,
       writable: !guardErr,
     });
     edenRecallDraft = plan.ok
-      ? { snapshot: parsed.snapshot, plan, fileName: String(file.name || '') }
+      ? { snapshot: parsed.snapshot, live, plan, fileName: String(file.name || '') }
       : null;
     if (!plan.ok) {
       window.showToast?.(dashT(snapshotRecallReasonKey(plan.reason)), 'error', 9000);
@@ -5062,6 +5107,8 @@ function snapshotRecallReasonKey(reason) {
 }
 
 function snapshotRecallWarningText(code) {
+  if (code === 'public-projection-republish')
+    return 'The public page stays unchanged. Preview and publish the restored working data separately.';
   const keys = {
     'vote-history-append-only': 'adminSeasonRecallVoteHistoryWarning',
     'conduct-create-needs-author': 'adminSeasonRecallConductWarning',
@@ -5071,10 +5118,13 @@ function snapshotRecallWarningText(code) {
 }
 
 async function applyEdenSnapshotRecall() {
+  if (!(await refreshSuperAdminSurfaces())) return false;
   if (blockEdenArchiveWrite('recall snapshot')) return false;
   const draft = edenRecallDraft;
   if (!draft?.plan?.ok) return false;
-  const writes = planEdenSnapshotRecallWrites(draft.plan, draft.snapshot);
+  const writes = planEdenSnapshotRecallWrites(draft.plan, draft.snapshot).filter(
+    (write) => write.key !== 'publicProjection'
+  );
   if (!writes.length) {
     window.showToast?.(dashT('adminSeasonRecallNothing'), 'info', 6000);
     return false;
@@ -5093,9 +5143,10 @@ async function applyEdenSnapshotRecall() {
   try {
     const db = await ensureCloudSyncReady();
     if (!db) throw new Error(dashT('adminCloudLocalCache'));
-    const { doc, setDoc, serverTimestamp, Timestamp } = await loadFirestoreApi();
+    const { doc, runTransaction, serverTimestamp, Timestamp } = await loadFirestoreApi();
     const paths = edenWorkspaceFirestorePathsForExport();
-    const live = await readEdenWorkspaceLiveRecords();
+    const live = draft.live;
+    if (!live) throw new Error('Check the backup again before restoring.');
     let written = 0;
     let refused = 0;
     let firstError = '';
@@ -5119,6 +5170,13 @@ async function applyEdenSnapshotRecall() {
       if (edenSnapshotRecallKeyNeedsAuthorStamp(write.key)) {
         payload = { ...payload, updatedBy: state.adminUser?.uid || '' };
       }
+      const expected =
+        write.kind === 'doc'
+          ? live.docs[write.key]
+          : live.collections[write.key]?.find((entry) => entry.id === write.id)?.data;
+      if (write.key === 'conductAdjustments' && !expected) {
+        payload = { ...payload, restoredBy: state.adminUser.uid, restoredAt: serverTimestamp() };
+      }
       try {
         const ref = write.kind === 'doc' ? doc(db, path) : doc(db, path, write.id);
         // The payload goes to Firestore as-is: sanitizeForFirestore() would walk
@@ -5126,7 +5184,13 @@ async function applyEdenSnapshotRecall() {
         // which the conduct and vote validators refuse (`createdAt is
         // timestamp`). The snapshot is already JSON-clean, so there is nothing
         // the sanitizer would legitimately strip.
-        await setDoc(ref, payload);
+        await runTransaction(db, async (tx) => {
+          const current = await tx.get(ref);
+          if (!snapshotValuesEqual(current.exists() ? current.data() : null, expected || null)) {
+            throw new Error('This record changed during restore. Review a fresh dry run.');
+          }
+          tx.set(ref, payload);
+        });
         written += 1;
       } catch (err) {
         refused += 1;
@@ -5146,9 +5210,22 @@ async function applyEdenSnapshotRecall() {
       refused ? 'warn' : 'success',
       9000
     );
-    edenRecallDraft = null;
+    if (!refused && edenRecallLocalBackup) {
+      if (Array.isArray(edenRecallLocalBackup.roster?.names)) {
+        localStorage.setItem(ROSTER_KEY, edenRecallLocalBackup.roster.names.join('\n'));
+        loadRoster();
+      }
+      if (Array.isArray(edenRecallLocalBackup.alliances)) {
+        localStorage.setItem(ALLIANCE_KEY, JSON.stringify(edenRecallLocalBackup.alliances));
+        loadAllianceList();
+      }
+    }
+    if (!refused) {
+      edenRecallDraft = null;
+      edenRecallLocalBackup = null;
+    }
     await refreshEdenSeasonLifecyclePanel();
-    return true;
+    return refused === 0;
   } catch (err) {
     showCloudSyncFailure(err, 'Snapshot recall failed');
     window.showToast?.(
@@ -5224,7 +5301,7 @@ function renderEdenSeasonLifecyclePanel() {
   // The rename row can point at any season in the timeline; the save button
   // follows the last one picked and falls back to the running season.
   const renameTarget = findEdenSeason(registry, edenSeasonRenameTargetId) || season;
-  const { candidates } = seasonWorkspaceCandidates({ registry, workspaces });
+
   // The registry starts empty while a workspace already runs a season; adopting
   // it is the first step, or there is nothing to end and nowhere to start.
   const adoptable = adoptableEdenWorkspace({ registry, workspaces });
@@ -5267,6 +5344,30 @@ function renderEdenSeasonLifecyclePanel() {
       )}</button>`
     : `<p class="dash-empty">${esc(dashT('adminSeasonRecallHint'))}</p>`;
   root.innerHTML = `
+    <section class="dash-season-start-card">
+      <div><p class="dash-command-eyebrow">SUPER ADMIN · NEW SEASON</p><h2>Start your next Eden season</h2>
+      <p>Prepare the dashboard, uploads and public hub together. Your current season stays online until you publish.</p></div>
+      <div class="dash-season-start-fields">
+        <label>Season number <input id="dashNewSeasonNumber" class="dash-input" type="number" min="3" max="9999" value="${esc(nextEdenSeasonId(registry).replace('season-x', ''))}" /></label>
+        <label>Display name <input id="dashNewSeasonLabel" class="dash-input" maxlength="60" placeholder="Eden ${esc(nextEdenSeasonId(registry).replace('season-', '').toUpperCase())}" /></label>
+        <label><input id="dashNewSeasonCopyRoster" type="checkbox" /> Copy roster baseline</label>
+        <label><input id="dashNewSeasonCopySettings" type="checkbox" /> Copy scoring and reward settings</label>
+      </div>
+      <button class="dash-btn dash-btn-primary" id="dashSeasonStartBtn" type="button">Start ${esc(nextEdenSeasonId(registry).replace('season-', '').toUpperCase())} season</button>
+    </section>
+    <section class="dash-card dash-card-align-start">
+      <h2>Season management vote results</h2>
+      <p>Import a CSV with Name,Votes columns for this season. Preview it before saving; publish separately to update the public hub.</p>
+      <label>Results CSV <input id="dashManagementVotesFile" class="dash-input" type="file" accept=".csv,text/csv" /></label>
+      <output id="dashManagementVotesPreview" aria-live="polite"></output>
+      <button class="dash-btn" id="dashManagementVotesSaveBtn" type="button" disabled>Save reviewed results</button>
+    </section>
+    <section class="dash-card dash-card-align-start">
+      <h2>Recover a publication</h2><p>Restore a previous public revision without changing working uploads.</p>
+      <label>Publication revision <input id="dashPublicationRevision" class="dash-input" type="number" min="1" step="1" /></label>
+      <button class="dash-btn" id="dashPublicationRollbackBtn" type="button" ${readOnly ? 'disabled' : ''}>Restore public revision</button>
+      <p id="dashPublicationHistoryStatus" aria-live="polite">Loading saved revisions…</p>
+    </section>
     <div class="dash-card dash-card-align-start">
       <div class="dash-card-hdr">
         <div class="dash-card-hdr-wrap">
@@ -5296,14 +5397,7 @@ function renderEdenSeasonLifecyclePanel() {
         <button class="dash-btn" type="button" id="dashSeasonEndBtn" ${
           season && !readOnly ? '' : 'disabled'
         }>${esc(dashT('adminSeasonEndBtn'))}</button>
-        <button class="dash-btn" type="button" id="dashSeasonStartBtn" ${
-          candidates.length && !readOnly ? '' : 'disabled'
-        }>${esc(dashT('adminSeasonStartBtn'))}</button>
-        <span class="dash-workspace-label">${esc(
-          candidates.length
-            ? dashT('adminSeasonStartTarget', { workspace: candidates[0].label })
-            : dashT('adminSeasonNoFreeWorkspace')
-        )}</span>
+
       </div>
       ${readOnly ? `<p class="dash-empty">${esc(dashT('adminSeasonReadOnlyNotice'))}</p>` : ''}
       <div class="dash-workspace-strip">
@@ -5360,9 +5454,104 @@ function renderEdenSeasonLifecyclePanel() {
     </div>
   `;
   bindEdenSeasonLifecycleControls(root);
+  void loadPublicationHistory();
+}
+
+async function loadPublicationHistory() {
+  const status = $id('dashPublicationHistoryStatus');
+  if (!status || ACTIVE_EDEN_WORKSPACE.legacy) return;
+  try {
+    const db = await ensureCloudSyncReady();
+    const { collection, getDocs, query, orderBy, limit } = await loadFirestoreApi();
+    const snap = await getDocs(
+      query(
+        collection(db, `eden_seasons/${ACTIVE_EDEN_WORKSPACE_ID}/publications`),
+        orderBy('revision', 'desc'),
+        limit(20)
+      )
+    );
+    status.textContent = snap.empty
+      ? 'No saved publication revisions yet.'
+      : `Available revisions: ${snap.docs.map((entry) => entry.data().revision).join(', ')}`;
+  } catch (err) {
+    status.textContent = `Publication history unavailable: ${err.message}`;
+  }
 }
 
 function bindEdenSeasonLifecycleControls(root) {
+  let reviewedManagementVotes = null;
+  const managementFile = $id('dashManagementVotesFile');
+  if (managementFile)
+    managementFile.onchange = async () => {
+      const save = $id('dashManagementVotesSaveBtn');
+      const preview = $id('dashManagementVotesPreview');
+      reviewedManagementVotes = null;
+      save.disabled = true;
+      try {
+        const file = managementFile.files?.[0];
+        if (!file) return;
+        if (file.size > 250_000) throw new Error('Use a CSV smaller than 250 KB.');
+        reviewedManagementVotes = parseManagementVotesCsv(await file.text());
+        preview.textContent = `${reviewedManagementVotes.length} players reviewed: ${reviewedManagementVotes
+          .slice(0, 5)
+          .map((row) => `${row.playerName} (${row.votes})`)
+          .join(', ')}${reviewedManagementVotes.length > 5 ? '…' : ''}`;
+        save.disabled = blockEdenArchiveWrite('prepare management results');
+      } catch (err) {
+        preview.textContent = err.message;
+      }
+    };
+  const managementSave = $id('dashManagementVotesSaveBtn');
+  if (managementSave)
+    managementSave.onclick = async () => {
+      if (
+        !reviewedManagementVotes ||
+        !(await refreshSuperAdminSurfaces()) ||
+        blockEdenArchiveWrite('save management results')
+      )
+        return;
+      if (
+        !window.confirm(`Save reviewed management results for ${currentEdenWorkspaceView().label}?`)
+      )
+        return;
+      managementSave.disabled = true;
+      try {
+        const db = await ensureCloudSyncReady();
+        const { doc, setDoc, serverTimestamp } = await loadFirestoreApi();
+        await setDoc(
+          doc(db, edenWorkspaceFirestorePath(ACTIVE_EDEN_WORKSPACE_ID, 'managementVotes')),
+          {
+            season: state.r5Season || ACTIVE_EDEN_WORKSPACE.defaultSeason,
+            rows: reviewedManagementVotes,
+            updatedAt: serverTimestamp(),
+            updatedBy: state.adminUser.uid,
+          }
+        );
+        $id('dashManagementVotesPreview').textContent = 'Saved. Preview and publish when ready.';
+      } catch (err) {
+        managementSave.disabled = false;
+        window.showToast?.(err.message, 'error', 8000);
+      }
+    };
+  const rollback = $id('dashPublicationRollbackBtn');
+  if (rollback)
+    rollback.onclick = () => {
+      const revision = Number($id('dashPublicationRevision')?.value);
+      if (!Number.isInteger(revision) || revision < 1) {
+        window.showToast?.('Choose a saved publication revision.', 'error', 5000);
+        return;
+      }
+      void publishActiveEdenWorkspace({ restoreRevision: revision });
+    };
+  const numberInput = $id('dashNewSeasonNumber');
+  if (numberInput)
+    numberInput.oninput = () => {
+      const number = Number(numberInput.value);
+      if (Number.isInteger(number) && number >= 3 && number <= 9999) {
+        $id('dashSeasonStartBtn').textContent = `Start X${number} season`;
+        $id('dashNewSeasonLabel').placeholder = `Eden X${number}`;
+      }
+    };
   const adoptBtn = $id('dashSeasonAdoptBtn');
   if (adoptBtn) adoptBtn.onclick = () => void adoptCurrentEdenSeason();
   const endBtn = $id('dashSeasonEndBtn');
@@ -6159,7 +6348,7 @@ function dashT(key, vars = {}) {
   Object.entries(vars).forEach(([name, value]) => {
     text = text.replaceAll(`{${name}}`, String(value));
   });
-  return text;
+  return text.replace(/Eden[ -]?X\d+/g, ACTIVE_EDEN_WORKSPACE.label);
 }
 
 function logDashboardEvent(key, type = 'info', params = {}, options = {}) {
@@ -6502,6 +6691,7 @@ async function openAdminDashboardAfterAuth(options = {}) {
   const preferCloudFirst = options.preferCloudFirst === true && state.adminIsAdmin === true;
   const hasLocalCache = hydrateDashboardStateFromLocalStorage();
   try {
+    await refreshSuperAdminSurfaces();
     if (hasLocalCache) {
       showApp();
       setCloudSyncStatus('syncing');
@@ -8927,6 +9117,9 @@ function buildAdminFullBackup() {
   return {
     ...dashboard,
     schema: 'vts-admin-full-export-v1',
+    workspace: ACTIVE_EDEN_WORKSPACE_ID,
+    label: currentEdenWorkspaceView().label,
+    coverage: BACKUP_COVERAGE,
     exportedAt: new Date().toISOString(),
     counts: buildAdminDatasetCounts(),
     dashboard,
@@ -9099,11 +9292,18 @@ function buildAdminAllDataRows() {
   });
 }
 
-function exportData() {
-  downloadJson(
-    buildAdminFullBackup(),
-    `vts_admin_full_backup_${exportTimestampForFilename()}.json`
-  );
+async function exportData() {
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) throw new Error(dashT('adminCloudLocalCache'));
+    const cloudSnapshot = await readEdenWorkspaceSnapshot(db, ACTIVE_EDEN_WORKSPACE_ID);
+    downloadJson(
+      { ...buildAdminFullBackup(), cloudSnapshot },
+      `vts_admin_workspace_backup_${exportTimestampForFilename()}.json`
+    );
+  } catch (err) {
+    showCloudSyncFailure(err, 'Backup could not read all cloud datasets');
+  }
 }
 
 function exportAdminDebugJson() {
@@ -9533,9 +9733,21 @@ function exportDutyDebugCsv() {
 }
 function importData(file) {
   const r = new FileReader();
-  r.onload = (e) => {
+  r.onload = async (e) => {
     try {
       const imp = JSON.parse(e.target.result);
+      if (
+        imp.schema === 'vts-admin-full-export-v1' ||
+        imp.schema === 'vts-eden-workspace-snapshot-v1'
+      ) {
+        if (!(await refreshSuperAdminSurfaces()))
+          throw new Error('Super Admin access is required to restore a workspace.');
+        switchDashSubtab('seasonLifecycle');
+        await refreshEdenSeasonLifecyclePanel();
+        await dryRunEdenSnapshotRecall(file);
+        return;
+      }
+      if (blockEdenArchiveWrite('import attacks')) return;
       if (!imp.attacks) throw 'Invalid';
       const m = {};
       (state.dashData?.attacks || []).forEach((a) => (m[a.id] = a));
@@ -9550,7 +9762,7 @@ function importData(file) {
       render();
       logDashboardEvent('adminLogImportSuccessful', 'success', {}, { source: 'import' });
     } catch (err) {
-      alert(dashT('adminImportFailed'));
+      alert(err?.message || dashT('adminImportFailed'));
     }
   };
   r.readAsText(file);
@@ -10197,15 +10409,11 @@ export async function bootOcrDashboard() {
   } catch (e) {}
 
   $id('dashClearDataBtn').onclick = async () => {
-    if (!CLEAR_HASH) {
-      alert(dashT('adminOverrideUnavailable'));
-      return;
-    }
-    const code = prompt(dashT('adminOverrideCodePrompt'));
-    if (!code) return;
-    const h = await sha256(code);
-    if (h === CLEAR_HASH) clearData();
-    else alert(dashT('adminOverrideInvalidCode'));
+    if (!(await refreshSuperAdminSurfaces())) return;
+    if (blockEdenArchiveWrite('clear season data')) return;
+    if (!window.confirm('Clear the working data for this season? Download a backup first.')) return;
+    if (!(await exportActiveEdenWorkspaceSnapshot())) return;
+    clearData();
   };
 
   $id('dashModalClose').onclick = closeModal;
@@ -10289,17 +10497,22 @@ export async function bootOcrDashboard() {
   // Bind every control before auth/cache restoration can reveal the app. Hidden
   // feature tabs render on first activation through renderDashboardSubtab().
   await initializeAdminSession();
+  if (state.adminIsAdmin === true) {
+    void loadEdenSeasonRegistry()
+      .then((view) => {
+        edenSeasonRegistryView = view;
+        refreshEdenWorkspaceStrip();
+      })
+      .catch(() => {});
+  }
+  bindAdminCommandCenter();
+  if (state.adminIsAdmin === true) await refreshSuperAdminSurfaces();
   void updateApiStatus();
 }
 
 window.deleteAttack = async function (attId) {
-  const pwd = prompt(dashT('adminDeleteAttackPasswordPrompt'));
-  if (pwd === null) return;
-  const hash = await sha256(pwd);
-  if (!DELETE_HASHES.size || !DELETE_HASHES.has(hash)) {
-    alert(dashT('adminIncorrectPassword'));
-    return;
-  }
+  if (state.adminIsAdmin !== true || blockEdenArchiveWrite('delete attack')) return;
+  if (!window.confirm('Delete this attack?')) return;
   if (!attId || !state._booted || !state.dashData) return;
   const removed = state.dashData.attacks.find((attack) => attack.id === attId);
   if (!removed) return;

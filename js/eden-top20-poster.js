@@ -34,8 +34,8 @@ const GOLD_LIGHT = '#fde68a';
 const INK = '#f8fafc';
 const MUTED = '#94a3b8';
 const PAD = 72;
-const ROW_H = 74;
-const ROW_GAP = 8;
+const ROW_H = 100;
+const ROW_GAP = 10;
 
 // Column x offsets and widths inside the content box.
 const COLS = Object.freeze({
@@ -115,7 +115,7 @@ function pill(ctx, x, y, text, { rgb, filled = false, size = 17, padX = 14, h = 
 function hallOfFameLayout(ctx, hall, contentW) {
   if (!hall?.entries?.length) return { height: 0, rows: [] };
   ctx.font = font(800, 22);
-  const chipH = 64;
+  const chipH = 84;
   const gap = 14;
   const rows = [[]];
   let lineW = 0;
@@ -133,16 +133,62 @@ function hallOfFameLayout(ctx, hall, contentW) {
     rows[rows.length - 1].push({ entry, w });
     lineW += (lineW ? gap : 0) + w;
   }
-  const height = 132 + rows.length * chipH + (rows.length - 1) * gap + 30;
-  return { height, rows, chipH, gap };
+  ctx.font = font(500, 20);
+  const copyLines = wrapText(ctx, hall.copy, contentW - 56, 3);
+  const headerH = 104 + Math.max(1, copyLines.length) * 28 + 20;
+  const height = headerH + rows.length * chipH + (rows.length - 1) * gap + 30;
+  return { height, rows, chipH, gap, copyLines, headerH };
 }
 
-// Height needed for a model, so the caller can size the canvas first.
-export function measurePoster(ctx, model) {
+// One measured layout drives both canvas sizing and drawing. Long localized
+// titles, category labels and Hall of Fame entries cannot collide with the table.
+export function measurePosterLayout(ctx, model) {
   const contentW = POSTER_WIDTH - PAD * 2;
-  const rowsH = model.rows.length * (ROW_H + ROW_GAP);
+  ctx.font = font(900, 72);
+  const titleLines = wrapText(ctx, model.title, contentW, 2);
+  ctx.font = font(500, 23);
+  const subtitleLines = wrapText(ctx, model.subtitle, contentW - 80, 2);
+  const titleY = PAD + 188;
+  const subtitleY = titleY + Math.max(0, titleLines.length - 1) * 80 + 48;
+  const chipsY = subtitleY + Math.max(1, subtitleLines.length) * 32 + 18;
+  const chipRows = [[]];
+  let used = 0;
+  ctx.font = font(800, 18);
+  for (const entry of (model.categories || []).filter((entry) => entry.count > 0)) {
+    const label = fitText(ctx, `${entry.label} · ${entry.count}`, contentW - 40);
+    const width = ctx.measureText(label).width + 32;
+    if (used && used + 14 + width > contentW) {
+      chipRows.push([]);
+      used = 0;
+    }
+    chipRows.at(-1).push({ ...entry, label, width });
+    used += (used ? 14 : 0) + width;
+  }
+  const tableHeadY = chipsY + chipRows.length * 50 + 40;
+  const rowsY = tableHeadY + 46;
+  const rowsBottom =
+    rowsY + model.rows.length * (ROW_H + ROW_GAP) - (model.rows.length ? ROW_GAP : 0);
+  const hallY = rowsBottom + 36;
   const hall = hallOfFameLayout(ctx, model.hallOfFame, contentW - 64);
-  return PAD + 300 + 56 + rowsH + 24 + (hall.height ? hall.height + 32 : 0) + 120 + PAD;
+  const footerY = hallY + (hall.height ? hall.height + 28 : 0);
+  return {
+    titleLines,
+    subtitleLines,
+    titleY,
+    subtitleY,
+    chipsY,
+    chipRows,
+    tableHeadY,
+    rowsY,
+    rowsBottom,
+    hallY,
+    footerY,
+    height: footerY + 110 + PAD,
+  };
+}
+
+export function measurePoster(ctx, model) {
+  return measurePosterLayout(ctx, model).height;
 }
 
 function drawBackground(ctx, w, h) {
@@ -233,56 +279,50 @@ function drawTrophy(ctx, cx, cy, scale = 1) {
   ctx.restore();
 }
 
-function drawHeader(ctx, model, w) {
+function drawHeader(ctx, model, w, layout) {
   const centerX = w / 2;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
-
-  drawTrophy(ctx, centerX, PAD + 50, 1);
-
+  drawTrophy(ctx, centerX, PAD + 50, 0.9);
   ctx.font = font(800, 20);
   ctx.fillStyle = 'rgb(103, 232, 249)';
-  const kicker = String(model.kicker || '').toUpperCase();
-  ctx.letterSpacing = '6px';
-  ctx.fillText(kicker, centerX, PAD + 136);
-  ctx.letterSpacing = '0px';
-
-  const titleGrad = ctx.createLinearGradient(0, PAD + 150, 0, PAD + 220);
+  ctx.fillText(
+    fitText(ctx, String(model.kicker || '').toUpperCase(), w - PAD * 2),
+    centerX,
+    PAD + 130
+  );
+  const titleGrad = ctx.createLinearGradient(0, layout.titleY - 70, 0, layout.titleY + 20);
   titleGrad.addColorStop(0, '#fff7d6');
-  titleGrad.addColorStop(0.55, GOLD);
-  titleGrad.addColorStop(1, '#d97706');
-  ctx.font = font(900, 84);
+  titleGrad.addColorStop(1, GOLD);
+  ctx.font = font(900, 72);
   ctx.fillStyle = titleGrad;
-  ctx.shadowColor = 'rgba(245, 196, 81, 0.35)';
-  ctx.shadowBlur = 28;
-  ctx.fillText(fitText(ctx, model.title, w - PAD * 2), centerX, PAD + 222);
-  ctx.shadowBlur = 0;
-
+  layout.titleLines.forEach((line, index) =>
+    ctx.fillText(line, centerX, layout.titleY + index * 80)
+  );
   ctx.font = font(500, 23);
   ctx.fillStyle = '#cbd5e1';
-  ctx.fillText(fitText(ctx, model.subtitle, w - PAD * 2), centerX, PAD + 262);
-
-  // Category tally, centred under the subtitle.
-  const chips = model.categories.filter((entry) => entry.count > 0);
-  ctx.font = font(800, 17);
-  const widths = chips.map(
-    (entry) => ctx.measureText(`${entry.label} · ${entry.count}`).width + 28
+  layout.subtitleLines.forEach((line, index) =>
+    ctx.fillText(line, centerX, layout.subtitleY + index * 32)
   );
-  const total = widths.reduce((sum, value) => sum + value, 0) + (chips.length - 1) * 12;
-  let x = centerX - total / 2;
-  ctx.textAlign = 'left';
-  chips.forEach((entry, index) => {
-    pill(ctx, x, PAD + 286, `${entry.label} · ${entry.count}`, {
-      rgb: POSTER_CATEGORY_RGB[entry.key] || '148, 163, 184',
+  layout.chipRows.forEach((row, rowIndex) => {
+    const total = row.reduce((sum, chip) => sum + chip.width, 0) + Math.max(0, row.length - 1) * 14;
+    let x = centerX - total / 2;
+    ctx.textAlign = 'left';
+    row.forEach((entry) => {
+      pill(ctx, x, layout.chipsY + rowIndex * 50, entry.label, {
+        rgb: POSTER_CATEGORY_RGB[entry.key] || '148, 163, 184',
+        size: 18,
+        padX: 16,
+        h: 38,
+      });
+      x += entry.width + 14;
     });
-    x += widths[index] + 12;
   });
-
   if (model.dateLabel) {
     ctx.textAlign = 'right';
     ctx.font = font(600, 17);
     ctx.fillStyle = MUTED;
-    ctx.fillText(model.dateLabel, w - PAD, PAD + 20);
+    ctx.fillText(fitText(ctx, model.dateLabel, 380), w - PAD, PAD + 16);
   }
   ctx.textAlign = 'left';
 }
@@ -291,10 +331,13 @@ function drawTableHead(ctx, model, left, y) {
   ctx.font = font(800, 15);
   ctx.fillStyle = MUTED;
   ctx.textBaseline = 'middle';
-  ctx.letterSpacing = '2px';
+  ctx.letterSpacing = '0px';
   for (const [key, col] of Object.entries(COLS)) {
     const label = String(model.columns?.[key] || '').toUpperCase();
-    ctx.fillText(fitText(ctx, label, col.w - 18), left + col.x + 18, y);
+    const lines = wrapText(ctx, label, col.w - 36, 2);
+    lines.forEach((line, index) =>
+      ctx.fillText(line, left + col.x + 18, y - (lines.length > 1 ? 10 : 0) + index * 20)
+    );
   }
   ctx.letterSpacing = '0px';
   ctx.strokeStyle = 'rgba(245, 196, 81, 0.35)';
@@ -342,39 +385,45 @@ function drawRow(ctx, row, left, y, width) {
   ctx.fillText(String(row.rank), cx, midY + 1);
   ctx.textAlign = 'left';
 
-  // Player name and rank tag.
+  // Names may wrap, while rank tags keep their own reserved space.
   const nameX = left + COLS.player.x + 18;
   ctx.font = font(800, 25);
   ctx.fillStyle = row.placeholder ? MUTED : INK;
-  const tagW = row.tag ? 50 : 0;
-  const name = fitText(ctx, row.name, COLS.player.w - tagW - 12);
-  ctx.fillText(name, nameX, midY + 1);
+  const tagW = row.tag ? 62 : 0;
+  const nameLines = wrapText(ctx, row.name, COLS.player.w - tagW - 36, 2);
+  nameLines.forEach((line, index) =>
+    ctx.fillText(line, nameX, midY - (nameLines.length > 1 ? 14 : 0) + index * 29)
+  );
   if (row.tag) {
-    const nameW = ctx.measureText(name).width;
-    const tagRgb = row.tag === 'R5' ? '244, 114, 182' : '250, 204, 21';
-    pill(ctx, nameX + nameW + 12, midY - 13, row.tag, { rgb: tagRgb, size: 13, padX: 9, h: 26 });
+    pill(ctx, left + COLS.player.x + COLS.player.w - 56, midY - 13, row.tag, {
+      rgb: row.tag === 'R5' ? '244, 114, 182' : '250, 204, 21',
+      size: 13,
+      padX: 9,
+      h: 26,
+    });
   }
 
-  ctx.font = font(800, 15);
-  pill(
-    ctx,
-    left + COLS.group.x + 18,
-    midY - 16,
-    fitText(ctx, row.categoryLabel, COLS.group.w - 50),
-    {
-      rgb,
-      size: 15,
-    }
+  ctx.font = font(800, 18);
+  ctx.fillStyle = `rgb(${rgb})`;
+  const groupLines = wrapText(ctx, row.categoryLabel, COLS.group.w - 36, 2);
+  groupLines.forEach((line, index) =>
+    ctx.fillText(
+      line,
+      left + COLS.group.x + 18,
+      midY - (groupLines.length > 1 ? 13 : 0) + index * 26
+    )
   );
 
   const gm = row.reward === 'guild_master';
-  ctx.font = font(800, 15);
-  pill(
-    ctx,
-    left + COLS.reward.x + 18,
-    midY - 16,
-    fitText(ctx, `${gm ? '♛ ' : '★ '}${row.rewardLabel}`, COLS.reward.w - 46),
-    { rgb: gm ? '245, 196, 81' : '244, 114, 182', filled: gm, size: 15 }
+  const rewardX = left + COLS.reward.x + 18;
+  roundRect(ctx, rewardX, midY - 31, COLS.reward.w - 36, 62, 14);
+  ctx.fillStyle = gm ? 'rgba(245, 196, 81, 0.16)' : 'rgba(244, 114, 182, 0.1)';
+  ctx.fill();
+  ctx.fillStyle = gm ? GOLD_LIGHT : '#f9a8d4';
+  ctx.font = font(800, 17);
+  const rewardLines = wrapText(ctx, row.rewardLabel, COLS.reward.w - 60, 2);
+  rewardLines.forEach((line, index) =>
+    ctx.fillText(line, rewardX + 12, midY - (rewardLines.length > 1 ? 12 : 0) + index * 25)
   );
 
   // Score: the headline number with its unit underneath.
@@ -388,16 +437,18 @@ function drawRow(ctx, row, left, y, width) {
   ctx.fillText(fitText(ctx, row.scoreLabel || '', COLS.score.w - 24), scoreX, midY + 24);
 
   // Breakdown: up to two short lines.
-  ctx.font = font(600, 14);
+  ctx.font = font(600, 16);
   ctx.fillStyle = '#cbd5e1';
-  const lines = (Array.isArray(row.breakdown) ? row.breakdown : []).slice(0, 2);
-  const lineY = lines.length > 1 ? midY - 10 : midY;
+  const lines = (Array.isArray(row.breakdown) ? row.breakdown : [])
+    .flatMap((line) => wrapText(ctx, line, COLS.breakdown.w - 30, 2))
+    .slice(0, 3);
+  const lineY = midY - (lines.length - 1) * 12;
   ctx.textBaseline = 'middle';
   lines.forEach((line, index) => {
     ctx.fillText(
-      fitText(ctx, line, COLS.breakdown.w - 10),
+      fitText(ctx, line, COLS.breakdown.w - 30),
       left + COLS.breakdown.x + 6,
-      lineY + index * 22
+      lineY + index * 24
     );
   });
 }
@@ -455,12 +506,12 @@ function drawHallOfFame(ctx, model, left, y, width) {
   drawLaurel(ctx, centerX - titleW / 2 - 50, y + 54, 1);
   drawLaurel(ctx, centerX + titleW / 2 + 50, y + 54, -1);
 
-  ctx.font = font(500, 19);
+  ctx.font = font(500, 20);
   ctx.fillStyle = '#e2e8f0';
-  wrapText(ctx, hall.copy, width - 120, 1).forEach((line) => ctx.fillText(line, centerX, y + 104));
+  layout.copyLines.forEach((line, index) => ctx.fillText(line, centerX, y + 104 + index * 28));
   ctx.textAlign = 'left';
 
-  let rowY = y + 132;
+  let rowY = y + layout.headerH;
   for (const rowChips of layout.rows) {
     const rowW =
       rowChips.reduce((sum, chip) => sum + chip.w, 0) + (rowChips.length - 1) * layout.gap;
@@ -480,7 +531,7 @@ function drawHallOfFame(ctx, model, left, y, width) {
       ctx.font = font(800, 22);
       ctx.fillStyle = INK;
       const textX = x + 52;
-      const nameY = entry.detail ? rowY + 24 : rowY + layout.chipH / 2 + 1;
+      const nameY = entry.detail ? rowY + 30 : rowY + layout.chipH / 2 + 1;
       const tagSpace = entry.tag ? 46 : 0;
       const name = fitText(ctx, entry.name, w - 52 - 18 - tagSpace);
       ctx.fillText(name, textX, nameY);
@@ -497,7 +548,7 @@ function drawHallOfFame(ctx, model, left, y, width) {
       if (entry.detail) {
         ctx.font = font(600, 15);
         ctx.fillStyle = 'rgba(253, 230, 138, 0.85)';
-        ctx.fillText(fitText(ctx, entry.detail, w - 52 - 18), textX, rowY + 46);
+        ctx.fillText(fitText(ctx, entry.detail, w - 52 - 18), textX, rowY + 59);
       }
       x += w + layout.gap;
     }
@@ -525,28 +576,26 @@ function drawFooter(ctx, model, w, y) {
 // Draws the poster onto `canvas` (resizing it) and returns the canvas.
 export function drawTop20Poster(canvas, model, { scale = 1 } = {}) {
   const ctx = canvas.getContext('2d');
-  const height = Math.ceil(measurePoster(ctx, model));
+  const layout = measurePosterLayout(ctx, model);
+  const height = Math.ceil(layout.height);
   canvas.width = Math.round(POSTER_WIDTH * scale);
   canvas.height = Math.round(height * scale);
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
   ctx.textAlign = 'left';
 
   drawBackground(ctx, POSTER_WIDTH, height);
-  drawHeader(ctx, model, POSTER_WIDTH);
+  drawHeader(ctx, model, POSTER_WIDTH, layout);
 
   const left = PAD;
   const width = POSTER_WIDTH - PAD * 2;
-  let y = PAD + 300 + 28;
-  drawTableHead(ctx, model, left, y);
-  y += 40;
+  drawTableHead(ctx, model, left, layout.tableHeadY);
+  let y = layout.rowsY;
   for (const row of model.rows) {
     drawRow(ctx, row, left, y, width);
     y += ROW_H + ROW_GAP;
   }
-  y += 24;
-  const hallH = drawHallOfFame(ctx, model, left, y, width);
-  if (hallH) y += hallH + 32;
-  drawFooter(ctx, model, POSTER_WIDTH, y);
+  drawHallOfFame(ctx, model, left, layout.hallY, width);
+  drawFooter(ctx, model, POSTER_WIDTH, layout.footerY);
   return canvas;
 }
 

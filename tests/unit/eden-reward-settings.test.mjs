@@ -110,7 +110,10 @@ test('the reward distribution is a superadmin document published with the season
   assert.match(rules, /function validRewardSettings\(\)/);
   assert.match(rules, /match \/vts_admin\/eden_x1_reward_settings \{/);
   assert.match(rules, /match \/vts_admin\/eden_x2_reward_settings \{/);
-  assert.match(rules, /allow create, update: if isSuperAdmin\(\) && validRewardSettings\(\);/);
+  assert.match(
+    rules,
+    /allow create, update: if edenWorkspaceWritable\([\s\S]*?operationalWritesAllowed\(''\)[\s\S]*?\(isSuperAdmin\(\) && validRewardSettings\(\)\);/
+  );
   assert.match(rules, /d\.quotas\.support >= 0 && d\.quotas\.support <= 50/);
   assert.match(rules, /d\.guildMasterSource in \['r5', 'support_top1'\]/);
 
@@ -129,8 +132,8 @@ test('the reward distribution is a superadmin document published with the season
 
   const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
   assert.match(
-    dashboard,
-    /rewardSettings: unpublish \? null : normalizeRewardSettings\(state\.rewardSettings\)/
+    readFileSync('js/admin-season-release.js', 'utf8'),
+    /rewardSettings: records\.rewardSettings/
   );
   assert.match(dashboard, /blockEdenArchiveWrite\('save reward settings'\)/);
 

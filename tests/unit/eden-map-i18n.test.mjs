@@ -248,7 +248,7 @@ test('the Eden hub lands on the season being played', () => {
   assert.match(hub, /rememberSubTabClick\(name\);/);
   assert.match(
     hub,
-    /import \{\s*normalizeUnknownEdenHubSubtab,\s*resolveEdenHubInitialRoute,\s*\} from '\.\/eden-hub-routing\.js'/
+    /import \{\s*normalizeUnknownEdenHubSubtab,\s*resolveEdenHubInitialRoute,?\s*\} from '\.\/eden-hub-routing\.js'/
   );
   // An unknown ?subtab= is cleared from the address bar on boot and on hashchange.
   assert.equal((hub.match(/clearUnknownSubtabHash\(\);/g) || []).length, 2);
@@ -261,4 +261,9 @@ test('the Eden hub lands on the season being played', () => {
   assert.match(hub, /if \(useCurrentSeasonDefault\) \{[\s\S]*?openIntent\('season'\);/);
   // A shared link carries no history state, so it still opens what it names.
   assert.match(hub, /window\.history\.state\?\.\[SUBTAB_CLICK_STATE_KEY\]/);
+  // Publication switches to a registered workspace, rather than pinning X2.
+  assert.match(hub, /getDoc\(doc\(db, 'vts_admin\/public_season'\)\)/);
+  assert.match(hub, /getDoc\(doc\(db, SEASON_REGISTRY_PATH\)\)/);
+  assert.match(hub, /resolvePublicEdenCatalog\(registry, pointer, checks\)/);
+  assert.match(hub, /edenWorkspacePublicUrl\(currentPublicSeason\.workspaceId/);
 });

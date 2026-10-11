@@ -183,6 +183,12 @@ export function normalizeR5Adjustment(input, options = {}) {
       .slice(0, 500),
     createdAt: input?.createdAt || null,
     createdBy: input?.createdBy ? requireString(input.createdBy, 'R5 adjustment creator', 128) : '',
+    ...(input?.restoredBy && input?.restoredAt
+      ? {
+          restoredBy: requireString(input.restoredBy, 'R5 adjustment restorer', 128),
+          restoredAt: input.restoredAt,
+        }
+      : {}),
   };
 }
 

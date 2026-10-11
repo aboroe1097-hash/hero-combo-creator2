@@ -13,6 +13,7 @@
 import { normalizeRewardSettings } from './eden-reward-settings.js';
 
 export const EDEN_WORKSPACE_IDS = Object.freeze(['eden-x1', 'eden-x2']);
+export const EDEN_WORKSPACE_ID_PATTERN = /^eden-x[1-9]\d{0,3}$/;
 export const EDEN_WORKSPACE_COLLECTION_PATH = 'vts_admin/eden_workspaces/records';
 export const EDEN_ADMIN_WORKSPACE_STORAGE_KEY = 'vts_admin_eden_workspace';
 export const EDEN_WORKSPACE_LIFECYCLES = Object.freeze(['archived', 'draft', 'active']);
@@ -65,6 +66,8 @@ const EDEN_WORKSPACE_FIRESTORE_PATHS = Object.freeze({
     dutyPointWeights: 'vts_admin/eden_x1_duty_point_weights',
     // Reward distribution rules, per workspace for the same reason.
     rewardSettings: 'vts_admin/eden_x1_reward_settings',
+    managementVotes: 'vts_admin/eden_x1_management_votes',
+    publications: null,
     publicVoteResults: 'vts_admin/eden_x1_public_vote_results',
     publicProjection: null,
   }),
@@ -81,6 +84,8 @@ const EDEN_WORKSPACE_FIRESTORE_PATHS = Object.freeze({
     dutyPointWeights: 'vts_admin/eden_x2_duty_point_weights',
     // Reward distribution rules, per workspace for the same reason.
     rewardSettings: 'vts_admin/eden_x2_reward_settings',
+    managementVotes: 'vts_admin/eden_x2_management_votes',
+    publications: 'eden_seasons/eden-x2/publications',
     publicVoteResults: 'vts_admin/eden_x2_public_vote_results',
     publicProjection: 'vts_admin/eden_x2_public_projection',
   }),
@@ -90,12 +95,25 @@ export function normalizeEdenWorkspaceId(value) {
   const normalized = String(value || '')
     .trim()
     .toLowerCase();
-  return EDEN_WORKSPACE_IDS.includes(normalized) ? normalized : '';
+  return EDEN_WORKSPACE_ID_PATTERN.test(normalized) ? normalized : '';
 }
 
 export function getEdenWorkspace(workspaceId) {
   const id = normalizeEdenWorkspaceId(workspaceId) || 'eden-x2';
-  return EDEN_WORKSPACE_DEFAULTS[id];
+  if (EDEN_WORKSPACE_DEFAULTS[id]) return EDEN_WORKSPACE_DEFAULTS[id];
+  const number = id.slice('eden-x'.length);
+  return Object.freeze({
+    id,
+    label: `Eden X${number}`,
+    seasonLabel: `Eden X${number}`,
+    lifecycle: 'draft',
+    active: false,
+    defaultSeason: `season-x${number}`,
+    createdAtMs: 0,
+    archivedAtMs: 0,
+    publication: null,
+    legacy: false,
+  });
 }
 
 // The hub labels its season sub-tabs from the registry rather than repeating
@@ -110,13 +128,42 @@ export function getPreviousEdenSeasonLabel() {
   return past[past.length - 1]?.seasonLabel || '';
 }
 
-export function listEdenWorkspaces() {
-  return EDEN_WORKSPACE_IDS.map((id) => EDEN_WORKSPACE_DEFAULTS[id]);
+export function listEdenWorkspaces(extraIds = []) {
+  const ids = new Set([
+    ...EDEN_WORKSPACE_IDS,
+    ...extraIds.map(normalizeEdenWorkspaceId).filter(Boolean),
+  ]);
+  return [...ids].map(getEdenWorkspace);
 }
 
 export function edenWorkspaceFirestorePaths(workspaceId) {
   const id = normalizeEdenWorkspaceId(workspaceId) || 'eden-x2';
-  return EDEN_WORKSPACE_FIRESTORE_PATHS[id];
+  if (EDEN_WORKSPACE_FIRESTORE_PATHS[id]) return EDEN_WORKSPACE_FIRESTORE_PATHS[id];
+  const root = `eden_seasons/${id}`;
+  return {
+    dashboardData: `${root}/data/dashboard`,
+    rosterData: `${root}/data/roster`,
+    conductAdjustments: `${root}/conduct_adjustments`,
+    conductSuggestions: `${root}/conduct_suggestions`,
+    votes: `${root}/votes`,
+    voteHistory: `${root}/vote_history`,
+    voteSettings: `${root}/data/vote_settings`,
+    dutyPointWeights: `${root}/data/duty_point_weights`,
+    rewardSettings: `${root}/data/reward_settings`,
+    managementVotes: `${root}/data/management_votes`,
+    publications: `${root}/publications`,
+    publicVoteResults: `${root}/data/public_vote_results`,
+    publicProjection: `${root}/data/public_projection`,
+  };
+}
+
+export function edenWorkspacePublicUrl(workspaceId, { embed = false } = {}) {
+  const id = normalizeEdenWorkspaceId(workspaceId) || 'eden-x2';
+  const route = EDEN_WORKSPACE_IDS.includes(id) ? `${id}.html` : 'eden-season.html';
+  const params = new URLSearchParams();
+  if (!EDEN_WORKSPACE_IDS.includes(id)) params.set('workspace', id);
+  if (embed) params.set('embed', '1');
+  return `${route}${params.size ? `?${params}` : ''}`;
 }
 
 export function edenWorkspaceFirestorePath(workspaceId, name) {
@@ -182,7 +229,7 @@ export function parseEdenWorkspaceRecord(record) {
   if (!record || typeof record !== 'object') return null;
   const id = normalizeEdenWorkspaceId(record.id);
   if (!id) return null;
-  const defaults = EDEN_WORKSPACE_DEFAULTS[id];
+  const defaults = getEdenWorkspace(id);
   const lifecycle = EDEN_WORKSPACE_LIFECYCLES.includes(record.lifecycle)
     ? record.lifecycle
     : defaults.lifecycle;
@@ -278,6 +325,8 @@ export const EDEN_PROJECTION_VOTE_SETTINGS_FIELDS = Object.freeze([
   // keeps working.
   'showMemberResults',
   'showManagementResults',
+  'showMemberVoteCounts',
+  'showManagementVoteCounts',
   'showVoterNames',
   'contributionRankingMode',
   'closesAt',
@@ -319,6 +368,7 @@ export function buildEdenPublicProjection(options = {}) {
     publishedAtMs = Date.now(),
     scoring = null,
     rewardSettings = null,
+    managementVotes = null,
   } = options;
   const ws = getEdenWorkspace(workspace);
   if (ws.legacy) {
@@ -337,8 +387,7 @@ export function buildEdenPublicProjection(options = {}) {
     dashboard: pickAllowlisted(dashboardSource, EDEN_PROJECTION_DASHBOARD_FIELDS),
     rosterSnapshots: Array.isArray(rosterSnapshots) ? rosterSnapshots : [],
     voteSettings: pickAllowlisted(voteSettings || {}, EDEN_PROJECTION_VOTE_SETTINGS_FIELDS),
-    publicVoteResults:
-      publicVoteResults && typeof publicVoteResults === 'object' ? publicVoteResults : {},
+    publicVoteResults: projectEdenVoteResults(publicVoteResults, voteSettings),
     // The admin's scoring rules travel with the season so the public page ranks
     // players the same way. Absent on older publishes; readers then keep their
     // previous behaviour.
@@ -346,6 +395,75 @@ export function buildEdenPublicProjection(options = {}) {
     // The reward distribution travels too: the public page has to show the same
     // slot counts and the same guild-master holder the publishing admin chose.
     rewardSettings: normalizeEdenProjectionRewardSettings(rewardSettings),
+    managementVotes: projectEdenManagementVotes(managementVotes, voteSettings),
+  });
+}
+
+function rankedVoteRows(rows, showCounts) {
+  const sorted = rows
+    .filter((row) => row && typeof row.playerName === 'string' && row.playerName.trim())
+    .sort((a, b) =>
+      a.votes == null && b.votes == null
+        ? Number(a.rank || 0) - Number(b.rank || 0)
+        : Number(b.votes || 0) - Number(a.votes || 0)
+    );
+  let rank = 0;
+  let previousVotes;
+  return sorted.map((row, index) => {
+    const votes = Number(row.votes || 0);
+    if (votes !== previousVotes) rank = index + 1;
+    previousVotes = votes;
+    const identity = {
+      playerName: String(row.playerName || '').slice(0, 100),
+      rank: row.votes == null && Number.isInteger(row.rank) ? row.rank : rank,
+    };
+    for (const key of ['playerKey', 'familyKey']) {
+      if (typeof row[key] === 'string') identity[key] = row[key].slice(0, 160);
+    }
+    if (showCounts && row.votes != null) {
+      identity.votes = votes;
+      if (Number.isFinite(row.voters)) identity.voters = row.voters;
+    }
+    return identity;
+  });
+}
+
+export function projectEdenVoteResults(results, settings = {}) {
+  settings = settings || {};
+  if (!results || typeof results !== 'object') return {};
+  const visible = settings.showMemberResults ?? settings.showPublicResults ?? true;
+  return {
+    season: String(results.season || settings.season || '').slice(0, 40),
+    published: visible && results.published === true,
+    rankings:
+      visible && results.published === true
+        ? rankedVoteRows(
+            (Array.isArray(results.rankings) ? results.rankings : []).slice(0, 100),
+            settings.showMemberVoteCounts !== false
+          )
+        : [],
+  };
+}
+
+export function projectEdenManagementVotes(rows, settings = {}) {
+  settings = settings || {};
+  if ((settings.showManagementResults ?? settings.showPublicResults ?? true) === false) return [];
+  return rankedVoteRows(
+    normalizeEdenManagementVotes(rows),
+    settings.showManagementVoteCounts !== false
+  );
+}
+
+export function normalizeEdenManagementVotes(value) {
+  const rows = Array.isArray(value) ? value : Array.isArray(value?.rows) ? value.rows : [];
+  return rows.slice(0, 1000).flatMap((row) => {
+    const playerName = String(row?.playerName || '')
+      .trim()
+      .slice(0, 100);
+    const votes = Number(row?.votes);
+    return playerName && Number.isFinite(votes) && votes >= 0 && votes <= 1e9
+      ? [{ playerName, votes }]
+      : [];
   });
 }
 

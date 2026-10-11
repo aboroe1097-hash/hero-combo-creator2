@@ -2045,7 +2045,7 @@ const tr = {
   'ai.action.openHeroAtlas': 'Kahraman Atlasını Aç',
   'ai.action.openResearch': 'Araştırmayı Aç',
   'ai.action.openMaterials': 'Malzemeleri Aç',
-  'ai.action.openEden': 'Eden X1’i Aç',
+  'ai.action.openEden': 'Eden’i Aç',
   'ai.action.useInGenerator': 'Oluşturucu’da Kullan',
   'ai.action.reviewSelection': 'Seçimi incele',
   'ai.action.applySelection': 'Seçimi uygula',

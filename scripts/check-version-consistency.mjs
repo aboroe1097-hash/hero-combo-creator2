@@ -134,6 +134,7 @@ function main() {
     'admin.html',
     'eden-x1.html',
     'eden-x2.html',
+    'eden-season.html',
     'arcade.html',
   ]) {
     captureVersion(

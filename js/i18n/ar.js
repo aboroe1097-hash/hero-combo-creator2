@@ -2020,7 +2020,7 @@ const ar = {
   'ai.action.openHeroAtlas': 'فتح دليل الأبطال',
   'ai.action.openResearch': 'فتح البحث',
   'ai.action.openMaterials': 'فتح المواد',
-  'ai.action.openEden': 'فتح Eden X1',
+  'ai.action.openEden': 'فتح Eden',
   'ai.action.useInGenerator': 'استخدامها في أداة التوليد',
   'ai.action.reviewSelection': 'مراجعة التحديد',
   'ai.action.applySelection': 'تطبيق التحديد',

@@ -115,6 +115,7 @@
     more: 'More',
     moreTools: 'More tools',
     downloadsLink: 'PDF downloads',
+    competitionLink: 'VTS competition',
     buildingsLink: 'Buildings',
     close: 'Close',
     deckLabel: 'S1097 Deck',
@@ -712,6 +713,7 @@
   const moreLinks = document.createElement('div');
   moreLinks.className = 'shell-more-links';
   [
+    ['competitionLink', 'vtsscore.html'],
     ['downloadsLink', 'downloads.html'],
     ['buildingsLink', '#researchTowers?subtab=buildings'],
   ].forEach(([key, href]) => {

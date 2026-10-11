@@ -11,6 +11,12 @@ const MANAGEMENT_VOTE_SOURCES = Object.freeze({
     resultsSheetName: 'VoteResults',
   },
 });
+function managementVoteSource(workspace = 'eden-x2') {
+  const source = MANAGEMENT_VOTE_SOURCES[workspace];
+  if (!source) throw new Error('Management vote source is not configured for this season');
+  return source;
+}
+
 const DEFAULT_RAW_SHEET_NAME = 'Form Responses 1';
 const DEFAULT_PICK_COLUMN_LABEL = 'Pick 4 Names';
 const DEFAULT_NAME_COLUMN_LABEL = 'Name';
@@ -115,7 +121,7 @@ function uniqueValues(values) {
 }
 
 export function buildManagementVotesUrl(options = {}) {
-  const source = MANAGEMENT_VOTE_SOURCES[options.workspace] || MANAGEMENT_VOTE_SOURCES['eden-x2'];
+  const source = managementVoteSource(options.workspace);
   const sheetId = String(options.sheetId || source.sheetId).trim();
   const sheetName = String(options.sheetName || source.resultsSheetName).trim();
   const callbackName = String(options.callbackName || '').trim();
@@ -545,7 +551,8 @@ export async function loadManagementVotesViaProxy(options = {}) {
   }
 
   const url = new URL(proxyUrl);
-  const workspace = options.workspace === 'eden-x1' ? 'eden-x1' : 'eden-x2';
+  const workspace = options.workspace || 'eden-x2';
+  managementVoteSource(workspace);
   url.searchParams.set('workspace', workspace);
   url.searchParams.set(
     'sheet',
@@ -603,7 +610,7 @@ async function loadManagementVoteSheet(options) {
 }
 
 export async function loadManagementVotesPayloadWithFallback(options = {}) {
-  const source = MANAGEMENT_VOTE_SOURCES[options.workspace] || MANAGEMENT_VOTE_SOURCES['eden-x2'];
+  const source = managementVoteSource(options.workspace);
   const payload = await loadManagementVoteSheet({
     ...options,
     sheetName: options.sheetName || source.resultsSheetName,

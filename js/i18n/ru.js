@@ -2053,7 +2053,7 @@ const ru = {
   'ai.action.openHeroAtlas': 'Открыть Атлас героев',
   'ai.action.openResearch': 'Открыть Исследования',
   'ai.action.openMaterials': 'Открыть Материалы',
-  'ai.action.openEden': 'Открыть Eden X1',
+  'ai.action.openEden': 'Открыть Eden',
   'ai.action.useInGenerator': 'Использовать в Генераторе',
   'ai.action.reviewSelection': 'Проверить выбор',
   'ai.action.applySelection': 'Применить выбор',

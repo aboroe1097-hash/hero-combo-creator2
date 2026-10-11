@@ -2,6 +2,18 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.6.17 - 2026-10-11
+
+- Add a prominent Start X8 season flow that creates isolated draft dashboards, uploads, voting controls and public Eden hubs without a deployment; future seasons use the same routes.
+- Reorganize VTS Admin around season work, alliance operations and Super Admin controls, with private previews and explicit publication status.
+- Publish complete cloud snapshots atomically, retain immutable publication revisions for rollback, and enforce archived-season protection in Firestore.
+- Fix authoritative role listing, Super Admin self-demotion, stale role authorization and session revocation on demotion.
+- Add versioned workspace backup/restore coverage, dry-run recovery, concurrent-edit protection, per-season scoring and management-vote CSV imports.
+- Add expiring operational notices and pause controls, error triage, durable error-report retries, scheduled availability checks and an administrator handover guide.
+- Add complete signup, upload and competition audit exports, reconciliation warnings and editable dragon-tier and growth-review thresholds.
+- Redesign winner/category, Eden Top 20 and throne assignment images, including multilingual wrapping and buff icons; publish team and management vote counts independently from winner visibility.
+- Give ordinary Admins shared throne assignment history and add VTS competition to the navigation hub's More panel.
+
 ## 16.6.16 - 2026-10-09
 
 - **Artifact planner redesigned.** On wide screens the Sword of Judgment lies on its side next to a pinned inspector, so the whole tree fits in one view instead of a tall column of art beside a narrow sidebar; phones keep the upright sword. Nodes are larger and show at a glance whether they are available, in progress, maxed or locked; paths between funded nodes light up, and the recommended next node is highlighted. The inspector shows what a node does at your current level and at the next one, links its prerequisites, and gives the cost of the next level and to max. A new **List** view lists every node by tier with a quick +/− and its cost to max. Permanent bonuses are always visible instead of hidden in a collapsed panel.

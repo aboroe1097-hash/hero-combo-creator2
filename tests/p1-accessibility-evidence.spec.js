@@ -276,6 +276,11 @@ test('reduced motion removes computed motion while the mobile dock keeps three h
   await page.locator('#shellMoreButton').click();
   await expect(page.locator('#shellMorePanel')).toBeVisible();
   await expect(page.locator('#shellMoreBackdrop')).toBeVisible();
+  await expect(page.locator('[data-shell-more-link="competitionLink"]')).toHaveAttribute(
+    'href',
+    'vtsscore.html'
+  );
+  await expect(page.locator('[data-shell-more-link="competitionLink"]')).toBeVisible();
 });
 
 test('explicit transition components retain pointer, keyboard, selection, and sticky behavior', async ({

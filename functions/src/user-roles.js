@@ -55,6 +55,7 @@ export function createSetUserRoleHandler({ auth, db, now = () => Date.now() }) {
     if (!callerUid || !callerIsSuperAdmin) {
       throw new RoleError('permission-denied', 'Superadmin access is required.');
     }
+    await assertCurrentSuperAdmin(auth, callerUid);
 
     const { targetUid, role, granted } = request?.data || {};
     if (typeof targetUid !== 'string' || !targetUid.trim() || targetUid.length > MAX_UID_LENGTH) {
@@ -69,7 +70,7 @@ export function createSetUserRoleHandler({ auth, db, now = () => Date.now() }) {
 
     // Self-demotion is how a project ends up with zero superadmins and no route
     // back in. The break-glass script stays the only way to change your own.
-    if (role === 'superadmin' && granted === false && targetUid === callerUid) {
+    if (granted === false && targetUid === callerUid) {
       throw new RoleError('failed-precondition', 'A superadmin cannot remove their own access.');
     }
 
@@ -85,6 +86,7 @@ export function createSetUserRoleHandler({ auth, db, now = () => Date.now() }) {
 
     const claims = nextClaimsFor(existingClaims, role, granted);
     await auth.setCustomUserClaims(targetUid, claims);
+    if (!granted) await auth.revokeRefreshTokens(targetUid);
 
     // Audit after the claim lands: a record of a change that did not happen is
     // worse than a change with no record, and the write below is the one most
@@ -98,5 +100,52 @@ export function createSetUserRoleHandler({ auth, db, now = () => Date.now() }) {
     });
 
     return { ok: true, claims };
+  };
+}
+
+async function assertCurrentSuperAdmin(auth, uid) {
+  let caller;
+  try {
+    caller = await auth.getUser(uid);
+  } catch {
+    throw new RoleError('permission-denied', 'Superadmin access is required.');
+  }
+  if (caller.disabled || caller.customClaims?.superadmin !== true) {
+    throw new RoleError('permission-denied', 'Superadmin access is required.');
+  }
+}
+
+export function createListUserRolesHandler({ auth, db }) {
+  return async function listUserRoles(request) {
+    const uid = request?.auth?.uid;
+    if (!uid || request.auth.token?.superadmin !== true) {
+      throw new RoleError('permission-denied', 'Superadmin access is required.');
+    }
+    await assertCurrentSuperAdmin(auth, uid);
+    const { pageToken, pageSize = 100 } = request.data || {};
+    if (
+      !Number.isInteger(pageSize) ||
+      pageSize < 1 ||
+      pageSize > 1000 ||
+      (pageToken !== undefined && (typeof pageToken !== 'string' || pageToken.length > 2048))
+    ) {
+      throw new RoleError('invalid-argument', 'Invalid account page.');
+    }
+    const page = await auth.listUsers(pageSize, pageToken || undefined);
+    const profiles = page.users.length
+      ? await db.getAll(...page.users.map((user) => db.doc(`users/${user.uid}`)))
+      : [];
+    return {
+      members: page.users.map((user, index) => ({
+        uid: user.uid,
+        displayName: String(
+          profiles[index]?.data()?.accountProfile?.displayName || user.displayName || ''
+        ).slice(0, 80),
+        admin: user.customClaims?.admin === true,
+        superadmin: user.customClaims?.superadmin === true,
+        disabled: user.disabled === true,
+      })),
+      nextPageToken: page.pageToken || '',
+    };
   };
 }

@@ -364,26 +364,57 @@ export function renderThroneBuffs(
 
     const saveBtn = mount.querySelector('#throneSaveBtn');
     if (saveBtn) {
-      saveBtn.addEventListener('click', () => {
+      saveBtn.addEventListener('click', async () => {
+        if (saveBtn.disabled) return;
         const payload = normalizeWeekAssignment(currentWeekRecord, THRONE_BUFF_IDS);
-        if (typeof onSave === 'function') {
-          onSave(payload);
+        const controls = [...mount.querySelectorAll('input, button')];
+        const disabled = controls.map((control) => control.disabled);
+        controls.forEach((control) => {
+          control.disabled = true;
+        });
+        try {
+          if (typeof onSave !== 'function')
+            throw new Error('Cloud saving is unavailable. Reload and try again.');
+          const saved = (await onSave(payload)) || payload;
+          const index = currentHistory.findIndex((record) => record.weekKey === payload.weekKey);
+          if (index >= 0) currentHistory[index] = saved;
+          else currentHistory.push(saved);
+          currentWeekRecord = normalizeWeekAssignment(saved, THRONE_BUFF_IDS);
+          render();
+          window.showToast?.('Throne assignments saved.', 'success');
+        } catch (error) {
+          window.showToast?.(
+            error?.message || 'Could not save assignments. Try again.',
+            'error',
+            9000
+          );
+          saveBtn.title = error?.message || 'Could not save assignments. Try again.';
+        } finally {
+          controls.forEach((control, index) => {
+            control.disabled = disabled[index];
+          });
         }
       });
     }
-
     const exportBtn = mount.querySelector('#throneExportBtn');
     if (exportBtn) {
-      exportBtn.addEventListener('click', () => {
+      exportBtn.addEventListener('click', async () => {
         const payload = normalizeWeekAssignment(currentWeekRecord, THRONE_BUFF_IDS);
-        if (typeof onExport === 'function') {
-          onExport(payload);
-        } else {
-          void exportThroneWeekPng(payload);
+        exportBtn.disabled = true;
+        try {
+          if (typeof onExport === 'function') await onExport(payload);
+          else await exportThroneWeekPng(payload);
+        } catch (error) {
+          window.showToast?.(
+            error?.message || 'Could not export assignments. Try again.',
+            'error',
+            9000
+          );
+        } finally {
+          exportBtn.disabled = false;
         }
       });
     }
-
     const searchInput = mount.querySelector('#throneSearchInput');
     if (searchInput) {
       searchInput.addEventListener('input', (e) => {

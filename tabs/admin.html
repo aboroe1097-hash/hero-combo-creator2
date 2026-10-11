@@ -463,6 +463,31 @@
         </div>
       </div>
 
+      <section class="dash-command-center" aria-labelledby="dashCommandTitle">
+        <div class="dash-command-intro">
+          <div>
+            <p class="dash-command-eyebrow">VTS 1097 · Team workspace</p>
+            <h2 id="dashCommandTitle">Alliance command center</h2>
+            <p class="dash-command-description">Upload, review, and publish your season from one place.</p>
+          </div>
+          <span id="dashOperatorRole" class="dash-command-role">Admin</span>
+        </div>
+        <div class="dash-command-season">
+          <div>
+            <span class="dash-command-eyebrow">Selected season</span>
+            <strong data-selected-season>Current season</strong>
+            <span class="dash-command-hint">All season tools follow the workspace below.</span>
+          </div>
+          <button type="button" class="dash-btn dash-btn-primary" data-admin-action="season" data-requires-superadmin hidden>Start a new season</button>
+        </div>
+        <div class="dash-command-shortcuts" aria-label="Admin shortcuts">
+          <button type="button" data-admin-action="uploads"><span class="dash-command-step">01</span><strong>Upload &amp; review</strong><span>Add this season's results</span></button>
+          <button type="button" data-admin-action="preview"><span class="dash-command-step">02</span><strong>Public season view</strong><span>See what members can see</span></button>
+          <button type="button" data-admin-action="operations"><span class="dash-command-step">03</span><strong>Website health</strong><span>Check services and notices</span></button>
+          <button type="button" data-admin-action="recovery" data-requires-superadmin hidden><span class="dash-command-step">04</span><strong>Backup &amp; recovery</strong><span>Export and safely restore</span></button>
+        </div>
+      </section>
+
       <!-- Everything inside this scope follows the selected Eden workspace:
            changing the season changes the records these tabs read and write.
            Standing programs live in their own nav below, outside the switch. -->
@@ -471,8 +496,8 @@
         data-subtab-scope="season"
         aria-labelledby="dashWorkspaceScopeTitle"
       >
-        <h2 class="sr-only" id="dashWorkspaceScopeTitle" data-i18n="adminSeasonScopeTitle">
-          Eden season workspace
+        <h2 class="dash-context-label" id="dashWorkspaceScopeTitle">
+          Season workspace
         </h2>
       <!-- Eden Workspace Command Strip — season selector, lifecycle state, and
            safe season actions. The archived X1 workspace stays viewable and
@@ -482,8 +507,8 @@
           >Eden workspace</label
         >
         <select id="dashWorkspaceSelect" class="dash-workspace-select">
-          <option value="eden-x2" data-i18n="adminWorkspaceOptionX2">Eden X2 (current season)</option>
-          <option value="eden-x1" data-i18n="adminWorkspaceOptionX1">Eden X1 (previous season)</option>
+          <option value="eden-x2">Current season</option>
+          <option value="eden-x1">Previous season</option>
         </select>
         <span
           id="dashWorkspaceLifecycle"
@@ -755,8 +780,8 @@
       <div class="dash-subtab-nav dash-subtab-nav-grouped" data-subtab-scope="global" aria-labelledby="dashAllianceScopeTitle">
         <h2 class="sr-only" id="dashAllianceScopeTitle" data-i18n="adminAllianceScopeTitle">Alliance management</h2>
         <section class="dash-subtab-group">
-          <h3 class="dash-subtab-group-title" data-i18n="adminNavGroupAlliance">
-            Alliance management
+          <h3 class="dash-subtab-group-title">
+            Alliance operations
           </h3>
           <div class="dash-subtab-group-tabs" data-subtab-group="standing">
             <button class="dash-subtab-btn" data-subtab="allianceView">
@@ -817,6 +842,12 @@
                  local planner (npm run combos:plan) until a live editor ships. -->
             <button class="dash-subtab-btn" data-subtab="combos"><span data-i18n="adminCombosTab">Combos</span><span class="tab-badge tab-badge-beta">BETA</span></button>
             <button class="dash-subtab-btn" data-subtab="accounts"><span data-i18n="adminAccountsTab">Accounts</span></button>
+            <button class="dash-subtab-btn" data-subtab="operations" type="button"><span>Website health</span></button>
+          </div>
+        </section>
+        <section class="dash-subtab-group" data-requires-superadmin hidden>
+          <h3 class="dash-subtab-group-title">Super Admin</h3>
+          <div class="dash-subtab-group-tabs" data-subtab-group="leadership">
             <!-- Superadmin only. Hidden by default and revealed from the claim,
                  so an admin without the level never sees it; the callable and
                  firestore.rules enforce the boundary independently. -->
@@ -2367,6 +2398,7 @@
       </div>
       <div class="dash-subtab-panel hidden" id="dashSubtabUserRoles"><section id="dashUserRolesRoot"></section></div>
       <div class="dash-subtab-panel hidden" id="dashSubtabComplaints"><section id="dashComplaintsRoot"></section></div>
+      <div class="dash-subtab-panel hidden" id="dashSubtabOperations"><section id="dashOperationsRoot" aria-label="Website health and operations"></section></div>
       <!-- Superadmin season rollover: end the running season, start the next,
            rename a label, browse an ended season, recall a snapshot. The panel
            renders from the registry document; this section is only its host. -->
@@ -2485,6 +2517,20 @@
                   <small data-i18n="adminEdenVotesManagementResultsHint" data-eden-season-copy
                     >Publish the management ballot's winners publicly. It has its own switch because the management sheet is not season-scoped: a season that has not run its own R4/R5 vote would otherwise show the previous season's winners.</small
                   >
+                </span>
+              </label>
+              <label class="dash-eden-vote-toggle">
+                <input id="dashEdenVoteMemberCountsToggle" type="checkbox" checked />
+                <span>
+                  <strong>Show Team Players vote counts</strong>
+                  <small>Keep winners visible while hiding their vote totals from public pages and shared images. Publish the season again after changing this.</small>
+                </span>
+              </label>
+              <label class="dash-eden-vote-toggle">
+                <input id="dashEdenVoteManagementCountsToggle" type="checkbox" checked />
+                <span>
+                  <strong>Show R4 / management vote counts</strong>
+                  <small>Control management vote totals separately from Team Players. Publish the season again after changing this.</small>
                 </span>
               </label>
               <label class="dash-eden-vote-toggle">

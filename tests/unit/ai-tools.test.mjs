@@ -48,7 +48,9 @@ test('toolkit map lists every tab with a working deep link and routes queries', 
     assert.ok(['tab', 'page', 'drawer'].includes(tool.kind));
     if (tool.kind === 'tab') assert.ok(tool.hash, `${tool.id} tab hash`);
     // A page may deep-link to a section of itself (the complaint form).
-    if (tool.kind === 'page') assert.match(tool.href, /\.html(?:#[A-Za-z][\w-]*)?$/u);
+    if (tool.kind === 'page') {
+      assert.match(tool.href, /(?:\.html|^(?:eden|vote)\/)(?:#[A-Za-z][\w-]*)?$/u);
+    }
   }
   const spec = await executeAiToolCall(
     { name: 'get_toolkit_map', arguments: { query: 'where do I enter specialization medals' } },

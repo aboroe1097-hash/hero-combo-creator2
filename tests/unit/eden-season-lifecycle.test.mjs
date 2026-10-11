@@ -14,6 +14,7 @@ import {
   nextEdenSeasonId,
   normalizeSeasonRegistry,
   renameEdenSeason,
+  prepareNextEdenSeason,
   seasonWorkspaceCandidates,
   startNextEdenSeason,
 } from '../../js/eden-seasons.js';
@@ -80,7 +81,7 @@ test('the registry normalizer treats a stored document as hostile input', () => 
         startedAtMs: 5,
       },
       { id: 'season-2027', label: 'duplicate key', state: 'ended', workspaceId: 'eden-x1' },
-      { id: 'season-2028', label: '', state: 'nonsense', workspaceId: 'eden-x9' },
+      { id: 'season-2028', label: '', state: 'nonsense', workspaceId: 'eden-x0' },
       { id: 'x!', label: 'bad key', state: 'active' },
       null,
       'not a season',
@@ -196,8 +197,8 @@ test('starting the next season needs a workspace that is free and still served',
   const registry = normalizeSeasonRegistry(SEEDED_REGISTRY);
   const ended = endEdenSeason(registry, 'season-2027', { nowMs: 1_800_000_000_000 });
   const proposed = nextEdenSeasonId(ended.registry, { nowMs: Date.parse('2027-01-01T00:00:00Z') });
-  assert.equal(proposed, 'season-2028');
-  assert.equal(defaultEdenSeasonLabel(proposed), 'Eden 2028');
+  assert.equal(proposed, 'season-x8');
+  assert.equal(defaultEdenSeasonLabel(proposed), 'Eden X8');
 
   // Nothing is free yet: X2 is archived and X1 is the retired legacy archive.
   const blocked = startNextEdenSeason(ended.registry, {
@@ -252,8 +253,8 @@ test('starting the next season binds a free workspace and becomes the active sea
   assert.deepEqual(
     startNextEdenSeason(ended.registry, {
       seasonId: 'season-2028',
-      workspaceId: 'eden-x3',
-      workspaces: [{ id: 'eden-x3', label: 'Eden X3', lifecycle: 'draft' }],
+      workspaceId: 'eden-x0',
+      workspaces: [{ id: 'eden-x0', label: 'Invalid', lifecycle: 'draft' }],
     }),
     { ok: false, reason: 'unknown-workspace' }
   );
@@ -273,7 +274,7 @@ test('starting refuses a running season, a duplicate key, and a busy workspace',
   assert.deepEqual(
     startNextEdenSeason(ended, {
       seasonId: 'season-2028',
-      workspaceId: 'eden-x9',
+      workspaceId: 'eden-x0',
       workspaces: WORKSPACES,
     }),
     { ok: false, reason: 'unknown-workspace' }
@@ -368,7 +369,7 @@ test('the dashboard guards every season write with the archive guard', () => {
   // and refuses before it plans anything.
   assert.match(
     dashboard,
-    /async function applyEdenSnapshotRecall\(\) \{\s*if \(blockEdenArchiveWrite\('recall snapshot'\)\) return false;/
+    /async function applyEdenSnapshotRecall\(\) \{\s*if \(!\(await refreshSuperAdminSurfaces\(\)\)\) return false;\s*if \(blockEdenArchiveWrite\('recall snapshot'\)\) return false;/
   );
   assert.match(dashboard, /writable: !guardErr,/);
 });
@@ -413,4 +414,39 @@ test('an empty registry adopts the season the live workspace already runs', () =
     assert.equal(adoptEdenSeason(empty, { workspace }).ok, false);
     assert.equal(adoptableEdenWorkspace({ registry: empty, workspaces: [workspace] }), null);
   }
+});
+
+test('a real X8 draft prepares alongside the running legacy season without changing it', () => {
+  const registry = normalizeSeasonRegistry(SEEDED_REGISTRY);
+  const before = structuredClone(registry);
+  const prepared = prepareNextEdenSeason(registry, { nowMs: 1234 });
+  assert.equal(prepared.ok, true);
+  assert.deepEqual(prepared.season, {
+    id: 'season-x8',
+    label: 'Eden X8',
+    state: 'draft',
+    workspaceId: 'eden-x8',
+    startedAtMs: 0,
+    endedAtMs: 0,
+  });
+  assert.equal(activeEdenSeason(prepared.registry).id, 'season-2027');
+  assert.equal(nextEdenSeasonId(prepared.registry), 'season-x9');
+  assert.deepEqual(registry, before);
+  assert.equal(prepareNextEdenSeason(prepared.registry, { seasonId: 'season-x8' }).ok, false);
+  assert.equal(
+    prepareNextEdenSeason(prepared.registry, { seasonId: 'another', workspaceId: 'eden-x8' })
+      .reason,
+    'workspace-in-use'
+  );
+});
+
+test('an actual dynamic workspace starts once its predecessor ends', () => {
+  const ended = endEdenSeason(normalizeSeasonRegistry(SEEDED_REGISTRY), 'season-2027').registry;
+  const started = startNextEdenSeason(ended, {
+    workspaceId: 'eden-x8',
+    workspaces: [{ id: 'eden-x8', label: 'Eden X8', lifecycle: 'draft' }],
+  });
+  assert.equal(started.ok, true);
+  assert.equal(started.season.id, 'season-x8');
+  assert.equal(started.season.workspaceId, 'eden-x8');
 });

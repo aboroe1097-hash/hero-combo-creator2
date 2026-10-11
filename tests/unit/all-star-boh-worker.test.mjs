@@ -237,13 +237,20 @@ function firestoreGrantDocument(overrides = {}) {
   };
 }
 
-async function withMockFetch(providerHandler, operation, grantHandler = null) {
+async function withMockFetch(
+  providerHandler,
+  operation,
+  grantHandler = null,
+  operationsFields = {}
+) {
   const originalFetch = globalThis.fetch;
   const providerCalls = [];
   const grantCalls = [];
   clearFirebaseJwksCacheForTests();
   clearBohStatsOcrRateLimitForTests();
   globalThis.fetch = async (url, init = {}) => {
+    if (String(url).endsWith('/documents/vts_admin/operations_config'))
+      return Response.json({ fields: operationsFields });
     const target = String(url);
     if (target === FIREBASE_AUTH_JWKS_URL || target === FIREBASE_APPCHECK_JWKS_URL) {
       return Response.json(
@@ -506,6 +513,23 @@ test('All-Star OCR verifies the live own-member grant instead of custom claims',
       assert.equal(grantCalls[0].init.headers.Authorization, `Bearer ${tokens.authToken}`);
       assert.equal(grantCalls[0].init.headers['X-Firebase-AppCheck'], tokens.appCheckToken);
     }
+  );
+});
+
+test('Super Admin upload pause prevents OCR provider calls from an authenticated member', async () => {
+  const tokens = await signedTokens();
+  await withMockFetch(
+    () => {
+      throw new Error('Paid provider must not run while uploads are paused');
+    },
+    async (providerCalls) => {
+      const response = await worker.fetch(authorizedRequest(validBody(), tokens), baseEnv());
+      assert.equal(response.status, 503);
+      assert.equal((await response.json()).code, 'operation_paused');
+      assert.equal(providerCalls.length, 0);
+    },
+    null,
+    { disabledFeatures: { arrayValue: { values: [{ stringValue: 'uploads' }] } } }
   );
 });
 

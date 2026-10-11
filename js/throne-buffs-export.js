@@ -1,35 +1,24 @@
-// js/throne-buffs-export.js
-// Hand-drawn canvas PNG export for weekly Throne Buff assignments.
-//
-// Renders a styled summary card for the active week's throne titles,
-// assigned alliance members, and reasoning, downloadable as a high-resolution PNG.
-
-import { THRONE_BUFFS } from './throne-buffs-data.js';
+// Canvas export of the weekly assignments. Rows grow to keep every name and note.
+import { THRONE_BUFFS, throneBuffInitials } from './throne-buffs-data.js';
 import { drawCanvasFooter, getExportBranding } from './export-branding.js';
 
 const CANVAS_WIDTH = 1200;
-const CANVAS_HEIGHT = 1000;
-
-const COLORS = Object.freeze({
+const COLORS = {
   background: '#07111f',
-  cardBackground: '#0d1a2b',
-  cardBorder: '#29415e',
+  card: '#0d1a2b',
+  border: '#29415e',
   text: '#f3f7fc',
   muted: '#9db0c8',
   accent: '#58c7e8',
   gold: '#f1bf52',
-  rowEven: '#122238',
-  rowOdd: '#0d1a2b',
-  line: '#1c314a',
-});
+};
+const FONT = 'system-ui, "Noto Sans", "Segoe UI", sans-serif';
 
-function fillRoundedRect(ctx, x, y, width, height, radius, fill, stroke) {
+function rect(ctx, x, y, width, height, radius, fill, stroke) {
   ctx.beginPath();
   ctx.roundRect(x, y, width, height, radius);
-  if (fill) {
-    ctx.fillStyle = fill;
-    ctx.fill();
-  }
+  ctx.fillStyle = fill;
+  ctx.fill();
   if (stroke) {
     ctx.strokeStyle = stroke;
     ctx.lineWidth = 1.5;
@@ -37,172 +26,163 @@ function fillRoundedRect(ctx, x, y, width, height, radius, fill, stroke) {
   }
 }
 
-function renderThroneCardCanvas(weekRecord, options = {}) {
+// Break long unspaced names too (CJK and in-game handles), without truncation.
+export function wrapThroneText(ctx, value, maxWidth) {
+  const words = String(value || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  const lines = [];
+  let line = '';
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (ctx.measureText(candidate).width <= maxWidth) {
+      line = candidate;
+      continue;
+    }
+    if (line) {
+      lines.push(line);
+      line = '';
+    }
+    for (const char of Array.from(word)) {
+      if (line && ctx.measureText(line + char).width > maxWidth) {
+        lines.push(line);
+        line = '';
+      }
+      line += char;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function isRtl(text) {
+  return /^[^A-Za-z\u0590-\u08ff]*[\u0590-\u08ff]/u.test(text);
+}
+function textLines(ctx, lines, left, top, width, height) {
+  lines.forEach((line, index) => {
+    const rtl = isRtl(line);
+    ctx.direction = rtl ? 'rtl' : 'ltr';
+    ctx.textAlign = rtl ? 'right' : 'left';
+    ctx.fillText(line, rtl ? left + width : left, top + index * height);
+  });
+  ctx.direction = 'ltr';
+  ctx.textAlign = 'left';
+}
+
+export async function loadThroneIcons() {
+  return Object.fromEntries(
+    await Promise.all(
+      THRONE_BUFFS.map(
+        (buff) =>
+          new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve([buff.id, img]);
+            img.onerror = () => resolve([buff.id, null]);
+            img.src = new URL(`../images/throne/${buff.id}.webp`, import.meta.url).href;
+          })
+      )
+    )
+  );
+}
+
+export function renderThroneCardCanvas(weekRecord, { icons = {} } = {}) {
   const canvas = document.createElement('canvas');
   canvas.width = CANVAS_WIDTH;
-  canvas.height = CANVAS_HEIGHT;
   const ctx = canvas.getContext('2d');
-  if (!ctx) return canvas;
-
-  const weekKey = String(weekRecord?.weekKey || options.weekKey || 'Current Week').trim();
-  const assignments = weekRecord?.assignments || {};
-  const reasons = weekRecord?.reasons || {};
-
-  // Background
+  if (!ctx) throw new Error('PNG export is not supported in this browser.');
+  const rows = THRONE_BUFFS.map((buff) => {
+    ctx.font = `700 23px ${FONT}`;
+    const names = wrapThroneText(ctx, weekRecord?.assignments?.[buff.id] || '— Unassigned —', 530);
+    ctx.font = `500 17px ${FONT}`;
+    const notes = wrapThroneText(ctx, weekRecord?.reasons?.[buff.id], 530);
+    ctx.font = `700 21px ${FONT}`;
+    const titles = wrapThroneText(ctx, buff.name, 260);
+    const contentHeight = names.length * 29 + (notes.length ? 10 + notes.length * 24 : 0);
+    return {
+      buff,
+      names,
+      notes,
+      titles,
+      height: Math.max(100, contentHeight + 36, titles.length * 27 + 36),
+    };
+  });
+  canvas.height = 260 + rows.reduce((height, row) => height + row.height + 10, 0) + 122;
+  // Changing the canvas size resets its context, so apply drawing state below.
+  ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = COLORS.background;
-  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-  // Outer container card
-  fillRoundedRect(
-    ctx,
-    40,
-    40,
-    CANVAS_WIDTH - 80,
-    CANVAS_HEIGHT - 80,
-    24,
-    COLORS.cardBackground,
-    COLORS.cardBorder
-  );
-
-  // Header section
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  rect(ctx, 32, 32, 1136, canvas.height - 64, 26, COLORS.card, COLORS.border);
+  ctx.font = `700 16px ${FONT}`;
   ctx.fillStyle = COLORS.accent;
-  ctx.font = '700 16px sans-serif';
-  ctx.fillText('ICE & FIRE TOOLKIT · STATE 1097', 80, 95);
-
+  ctx.fillText('ICE & FIRE TOOLKIT · STATE 1097', 70, 83);
+  ctx.font = `800 36px ${FONT}`;
   ctx.fillStyle = COLORS.text;
-  ctx.font = '800 34px sans-serif';
-  ctx.fillText('Throne Buff Assignments', 80, 140);
-
-  // Week pill badge
-  const weekLabel = `WEEK ${weekKey}`;
-  ctx.font = '700 18px sans-serif';
-  const badgeWidth = ctx.measureText(weekLabel).width + 36;
-  fillRoundedRect(
-    ctx,
-    CANVAS_WIDTH - 80 - badgeWidth,
-    95,
-    badgeWidth,
-    42,
-    21,
-    '#1b324d',
-    COLORS.gold
-  );
+  ctx.fillText('Throne Buff Assignments', 70, 132);
+  ctx.font = `700 20px ${FONT}`;
   ctx.fillStyle = COLORS.gold;
-  ctx.fillText(weekLabel, CANVAS_WIDTH - 80 - badgeWidth + 18, 122);
-
-  // Header divider
-  ctx.strokeStyle = COLORS.line;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(80, 165);
-  ctx.lineTo(CANVAS_WIDTH - 80, 165);
-  ctx.stroke();
-
-  // Table rows for the 9 throne titles
-  const startY = 190;
-  const rowHeight = 72;
-  const tableWidth = CANVAS_WIDTH - 160;
-
-  THRONE_BUFFS.forEach((buff, index) => {
-    const y = startY + index * rowHeight;
-    const isEven = index % 2 === 0;
-    const rowBg = isEven ? COLORS.rowEven : COLORS.rowOdd;
-
-    fillRoundedRect(ctx, 80, y, tableWidth, rowHeight - 6, 12, rowBg, null);
-
-    // Number index
-    ctx.fillStyle = COLORS.muted;
-    ctx.font = '600 16px sans-serif';
-    ctx.fillText(String(index + 1).padStart(2, '0'), 100, y + 42);
-
-    // Throne title name
-    ctx.fillStyle = COLORS.text;
-    ctx.font = '700 20px sans-serif';
-    ctx.fillText(buff.name, 140, y + 42);
-
-    // Assigned member
-    const memberName = String(assignments[buff.id] || '').trim();
-    const reasonText = String(reasons[buff.id] || '').trim();
-
-    if (memberName) {
-      ctx.fillStyle = COLORS.accent;
-      ctx.font = '700 20px sans-serif';
-      ctx.fillText(memberName, 520, y + (reasonText ? 33 : 42));
-
-      if (reasonText) {
-        ctx.fillStyle = COLORS.muted;
-        ctx.font = '500 14px sans-serif';
-        const maxReasonWidth = CANVAS_WIDTH - 80 - 540;
-        let displayReason = reasonText;
-        if (ctx.measureText(displayReason).width > maxReasonWidth) {
-          while (
-            displayReason.length > 3 &&
-            ctx.measureText(`${displayReason}…`).width > maxReasonWidth
-          ) {
-            displayReason = displayReason.slice(0, -1);
-          }
-          displayReason += '…';
-        }
-        ctx.fillText(displayReason, 520, y + 54);
-      }
-    } else {
-      ctx.fillStyle = COLORS.muted;
-      ctx.font = '600 18px sans-serif';
-      ctx.fillText('— Unassigned —', 520, y + 42);
-    }
-  });
-
-  // Footer note
+  ctx.fillText(`WEEK ${String(weekRecord?.weekKey || 'Current Week')}`, 70, 174);
+  ctx.font = `600 14px ${FONT}`;
   ctx.fillStyle = COLORS.muted;
-  ctx.font = '500 14px sans-serif';
-  const exportDate = new Date().toISOString().slice(0, 10);
-  ctx.fillText(`Generated by VTS Admin · ${exportDate}`, 80, CANVAS_HEIGHT - 65);
-  drawCanvasFooter(ctx, getExportBranding(), {
-    x: 80,
-    y: CANVAS_HEIGHT - 46,
-    width: CANVAS_WIDTH - 160,
+  ctx.fillText('THRONE TITLE', 158, 231);
+  ctx.fillText('ASSIGNED MEMBER / NOTES', 580, 231);
+  let y = 250;
+  rows.forEach((row, index) => {
+    rect(ctx, 60, y, 1080, row.height, 14, index % 2 ? COLORS.card : '#122238');
+    const icon = icons[row.buff.id];
+    rect(ctx, 76, y + 18, 64, 64, 12, '#1b324d', COLORS.border);
+    if (icon) {
+      const scale = Math.min(56 / (icon.naturalWidth || 56), 56 / (icon.naturalHeight || 56));
+      const w = (icon.naturalWidth || 56) * scale,
+        h = (icon.naturalHeight || 56) * scale;
+      ctx.drawImage(icon, 108 - w / 2, y + 50 - h / 2, w, h);
+    } else {
+      ctx.font = `700 20px ${FONT}`;
+      ctx.fillStyle = COLORS.gold;
+      ctx.fillText(throneBuffInitials(row.buff.id), 92, y + 57);
+    }
+    ctx.font = `700 21px ${FONT}`;
+    ctx.fillStyle = COLORS.text;
+    textLines(ctx, row.titles, 158, y + 38, 260, 27);
+    ctx.font = `700 23px ${FONT}`;
+    ctx.fillStyle = COLORS.accent;
+    textLines(ctx, row.names, 580, y + 38, 530, 29);
+    ctx.font = `500 17px ${FONT}`;
+    ctx.fillStyle = COLORS.muted;
+    textLines(ctx, row.notes, 580, y + 38 + row.names.length * 29 + 10, 530, 24);
+    y += row.height + 10;
   });
-
+  ctx.font = `500 14px ${FONT}`;
+  ctx.fillStyle = COLORS.muted;
+  ctx.fillText(`Generated by VTS Admin · ${new Date().toISOString().slice(0, 10)}`, 70, y + 27);
+  drawCanvasFooter(ctx, getExportBranding(), {
+    x: 70,
+    y: y + 58,
+    width: 1060,
+    fontLine1: `600 14px ${FONT}`,
+    fontLine2: `500 12px ${FONT}`,
+  });
   return canvas;
 }
 
-function canvasBlob(canvas) {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (blob) resolve(blob);
-      else reject(new Error('Throne Buffs PNG export failed.'));
-    }, 'image/png');
-  });
-}
-
-/**
- * Renders the given week's throne assignments to a canvas and triggers a PNG download.
- *
- * @param {Object} weekRecord The normalized assignment record for the week.
- * @param {Object} [options] Export options.
- * @returns {Promise<{ width: number, height: number, filename: string }>}
- */
 export async function exportThroneWeekPng(weekRecord, options = {}) {
-  if (document.fonts?.ready) {
-    try {
-      await document.fonts.ready;
-    } catch {
-      // Ignore font readiness timeout
-    }
-  }
-
-  const weekKey = String(weekRecord?.weekKey || options.weekKey || 'week').trim();
-  const canvas = renderThroneCardCanvas(weekRecord, options);
-  const blob = await canvasBlob(canvas);
+  await document.fonts?.ready;
+  const icons = options.icons || (await loadThroneIcons());
+  const canvas = renderThroneCardCanvas(weekRecord, { ...options, icons });
+  const blob = await new Promise((resolve, reject) =>
+    canvas.toBlob(
+      (value) => (value ? resolve(value) : reject(new Error('Throne Buffs PNG export failed.'))),
+      'image/png'
+    )
+  );
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
-  const filename = `throne-buffs-${weekKey}.png`;
+  const filename = `throne-buffs-${String(weekRecord?.weekKey || 'week').replace(/[^a-z0-9-]/gi, '')}.png`;
   link.href = url;
   link.download = filename;
   document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
-
-  return { width: CANVAS_WIDTH, height: CANVAS_HEIGHT, filename };
+  return { width: canvas.width, height: canvas.height, filename };
 }

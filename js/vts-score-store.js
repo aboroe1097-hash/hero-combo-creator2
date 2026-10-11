@@ -15,6 +15,9 @@ import {
   COMPETITION_BASELINE_SEASON,
   COMPETITION_SCHEDULE_DOC_PATH,
 } from './competition-growth.js';
+import { VTS_SCORE_SETTINGS_PATH, normalizeVtsScoreSettings } from './vts-score-settings.js';
+// Kept as a path here so read-only VtsScore does not import the OCR/DOM graph.
+const BOH_MATCH_RESULTS_COLLECTION_PATH = 'vts_admin/boh_match_results/records';
 
 const SEASON_PATTERN = /^[a-z0-9_-]{1,80}$/iu;
 
@@ -77,7 +80,62 @@ export async function loadVtsScoreActiveSeason() {
 }
 
 function docsWithUid(snapshot) {
-  return snapshot.docs.map((entry) => ({ submissionUid: entry.id, ...entry.data() }));
+  return snapshot.docs.map((entry) => ({
+    ...entry.data(),
+    storedSubmissionUid: entry.data()?.submissionUid ?? null,
+    documentId: entry.id,
+    documentPath: entry.ref?.path || '',
+    submissionUid: entry.id,
+  }));
+}
+
+export async function saveVtsScoreSettings(
+  dragonTierCutoff,
+  expectedRevision,
+  context,
+  warningSettings = {}
+) {
+  if (
+    !Number.isSafeInteger(dragonTierCutoff) ||
+    dragonTierCutoff < 0 ||
+    dragonTierCutoff > 1_000_000_000_000
+  )
+    throw new Error('Enter a whole Dragon power between 0 and 1,000,000,000,000.');
+  for (const [key, maximum] of [
+    ['growthWarningAbsolute', 1_000_000_000_000],
+    ['growthWarningPercent', 1_000_000_000],
+  ]) {
+    if (
+      key in warningSettings &&
+      (!Number.isSafeInteger(warningSettings[key]) ||
+        warningSettings[key] < 0 ||
+        warningSettings[key] > maximum)
+    )
+      throw new Error('Enter whole, non-negative growth warning thresholds.');
+  }
+  const { db, firestore, user } = context || (await adminContext());
+  const claims = (await user?.getIdTokenResult?.(true))?.claims || {};
+  if (claims.admin !== true && claims.superadmin !== true)
+    throw new Error('Admin access is required.');
+  const ref = firestore.doc(db, VTS_SCORE_SETTINGS_PATH);
+  return firestore.runTransaction(db, async (transaction) => {
+    const current = await transaction.get(ref);
+    const settings = normalizeVtsScoreSettings(current.data() || {});
+    if (settings.revision !== expectedRevision)
+      throw new Error('Another Admin changed the cutoff. Refresh before saving.');
+    const data = {
+      dragonTierCutoff,
+      revision: settings.revision + 1,
+      updatedBy: user.uid,
+      updatedAtMs: Date.now(),
+      growthWarningAbsolute: normalizeVtsScoreSettings({ ...settings, ...warningSettings })
+        .growthWarningAbsolute,
+      growthWarningPercent: normalizeVtsScoreSettings({ ...settings, ...warningSettings })
+        .growthWarningPercent,
+    };
+    transaction.set(ref, data);
+    return data;
+  });
 }
 
 /**
@@ -93,11 +151,16 @@ export async function loadCompetitionGrowthSnapshot(seasonId) {
     throw new Error('The competition season must not be the baseline season.');
   }
   const { db, firestore } = await adminContext();
-  const { collection, collectionGroup, doc, getDoc, getDocs } = firestore;
-  const [submissions, raceScores, schedule] = await Promise.all([
+  const { collection, collectionGroup, doc } = firestore;
+  const getDocs = firestore.getDocsFromServer || firestore.getDocs;
+  const getDoc = firestore.getDocFromServer || firestore.getDoc;
+  const [submissions, raceScores, schedule, settings, matchResults, config] = await Promise.all([
     getDocs(collection(db, getVtsScoreSubmissionsPath(season))),
     getDocs(collection(db, getVtsScoreRaceScoresPath(season))),
     getDoc(doc(db, COMPETITION_SCHEDULE_DOC_PATH)),
+    getDoc(doc(db, VTS_SCORE_SETTINGS_PATH)),
+    getDocs(collection(db, BOH_MATCH_RESULTS_COLLECTION_PATH)),
+    getDoc(doc(db, ALL_STAR_BOH_CONFIG_PATH)),
   ]);
   // Every earlier season's uploads, read as a collection group: the season
   // parent documents were never written, so a plain read of the seasons
@@ -106,16 +169,21 @@ export async function loadCompetitionGrowthSnapshot(seasonId) {
   // query itself is unavailable, fall back to the 2026 baseline season rather
   // than dropping baselines entirely.
   let baselineRaceScores = [];
+  let historyScope = 'all-earlier-seasons';
   try {
     const allScores = await getDocs(collectionGroup(db, 'raceScores'));
     baselineRaceScores = allScores.docs
       .map((entry) => ({
-        submissionUid: entry.id,
         ...entry.data(),
+        storedSubmissionUid: entry.data()?.submissionUid ?? null,
+        documentId: entry.id,
+        documentPath: entry.ref?.path || '',
+        submissionUid: entry.id,
         seasonId: normalizeVtsScoreSeasonId(entry.ref?.parent?.parent?.id),
       }))
       .filter((record) => record.seasonId && record.seasonId !== season);
   } catch {
+    historyScope = 'baseline-fallback';
     baselineRaceScores = docsWithUid(
       await getDocs(collection(db, getVtsScoreRaceScoresPath(COMPETITION_BASELINE_SEASON)))
     ).map((record) => ({ ...record, seasonId: COMPETITION_BASELINE_SEASON }));
@@ -126,6 +194,14 @@ export async function loadCompetitionGrowthSnapshot(seasonId) {
     submissions: docsWithUid(submissions),
     raceScores: docsWithUid(raceScores),
     baselineRaceScores,
+    historyScope,
+    config: config.exists() ? config.data() : null,
+    settings: settings.exists() ? settings.data() : {},
+    matchResults: matchResults.docs.map((entry) => ({
+      ...entry.data(),
+      documentId: entry.id,
+      documentPath: entry.ref?.path || '',
+    })),
     schedule: scheduleData?.seasonId === season ? scheduleData : null,
   };
 }
@@ -136,20 +212,26 @@ export async function loadCompetitionGrowthSnapshot(seasonId) {
 export async function loadVtsScoreSnapshot(seasonId) {
   const season = normalizeVtsScoreSeasonId(seasonId) || (await loadVtsScoreActiveSeason());
   const { db, firestore } = await adminContext();
-  const { collection, getDocs } = firestore;
-  const [submissionDocs, raceScoreDocs] = await Promise.all([
+  const { collection, doc } = firestore;
+  const getDocs = firestore.getDocsFromServer || firestore.getDocs;
+  const getDoc = firestore.getDocFromServer || firestore.getDoc;
+  const [submissionDocs, raceScoreDocs, settings, matchResults, config] = await Promise.all([
     getDocs(collection(db, getVtsScoreSubmissionsPath(season))),
     getDocs(collection(db, getVtsScoreRaceScoresPath(season))),
+    getDoc(doc(db, VTS_SCORE_SETTINGS_PATH)),
+    getDocs(collection(db, BOH_MATCH_RESULTS_COLLECTION_PATH)),
+    getDoc(doc(db, ALL_STAR_BOH_CONFIG_PATH)),
   ]);
   return {
     season,
-    submissions: submissionDocs.docs.map((entry) => ({
-      submissionUid: entry.id,
+    config: config.exists() ? config.data() : null,
+    submissions: docsWithUid(submissionDocs),
+    raceScores: docsWithUid(raceScoreDocs),
+    settings: settings.exists() ? settings.data() : {},
+    matchResults: matchResults.docs.map((entry) => ({
       ...entry.data(),
-    })),
-    raceScores: raceScoreDocs.docs.map((entry) => ({
-      submissionUid: entry.id,
-      ...entry.data(),
+      documentId: entry.id,
+      documentPath: entry.ref?.path || '',
     })),
   };
 }
