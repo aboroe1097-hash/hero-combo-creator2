@@ -320,7 +320,9 @@
   /* A native grouped picker exposes every tool without a long fixed dock or
      two competing navigation rails covering the workspace. */
   body.admin-has-subtool-dock #ocrDashboardRoot .dash-subtab-nav.dash-subtab-nav-grouped,
-  body.admin-has-subtool-dock #ocrDashboardRoot .dash-subtab-nav.dash-subtab-nav-grouped.dash-subtab-nav-docked {
+  body.admin-has-subtool-dock
+    #ocrDashboardRoot
+    .dash-subtab-nav.dash-subtab-nav-grouped.dash-subtab-nav-docked {
     display: none !important;
   }
 
@@ -342,4 +344,30 @@
   #ocrDashboardRoot .dash-operations-form {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+#ocrDashboardRoot .dash-admin-power-editor {
+  display: grid;
+  gap: 16px;
+  scroll-margin-top: 120px;
+}
+#ocrDashboardRoot .dash-admin-power-editor label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+#ocrDashboardRoot .dash-admin-power-editor input,
+#ocrDashboardRoot .dash-admin-power-editor select,
+#ocrDashboardRoot .dash-admin-power-editor textarea {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+#ocrDashboardRoot .dash-admin-power-editor input[type='checkbox'] {
+  justify-self: start;
+}
+#ocrDashboardRoot .dash-admin-power-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 16px;
 }

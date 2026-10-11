@@ -163,9 +163,9 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   // Hall of Fame grow it to 12005.3 KiB. 12017 since 16.6.15: the admin
   // growth-board switch and the re-upload name-search note grow it to 12015.8-12016.1 KiB (CI measures 0.3 KiB more).
   // 12024 since 16.6.16: the Artifact and DM Materials redesign grows it to 12022.7 KiB.
-  // 12099 since 16.6.19: audited admin navigation and operation forms measure
-  // 12095.7 KiB, retaining approximately 3 KiB for CI drift.
-  assert.match(sizeCheck, /totalJsBytes: 12099 \* 1024/);
+  // 12108 since 16.6.19: audited admin navigation and on-behalf member editor measure
+  // 12104.0 KiB, retaining approximately 4 KiB for CI drift.
+  assert.match(sizeCheck, /totalJsBytes: 12108 \* 1024/);
   // 427 since 16.5.0 Phase 0: removing the unconsumed .u-* utilities from
   // atmosphere.css and four dead compatibility tokens from _tokens.css measured
   // 431,155 -> 428,135 bytes, so the ceiling drops by the verified reclaim.
@@ -179,7 +179,8 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   // 16.5.9: +4 measured chunks for the admin export model, the R5 bonus export
   // and the shared game-time parser; raised by the minimum.
   // 16.5.13: +12 measured chunks for the lazy Velo tools, raised by the minimum.
-  assert.match(sizeCheck, /deployFileCount: 861/);
+  // 16.6.19 adds one shared lazy member-power editor chunk (862 measured).
+  assert.match(sizeCheck, /deployFileCount: 862/);
   assert.match(sizeCheck, /'profile\.html': \{ desktop: 25 \* 1024, mobile: 25 \* 1024 \}/);
   assert.match(sizeCheck, /'arcade\.html': \{ desktop: 463 \* 1024, mobile: 585 \* 1024 \}/);
   assert.match(

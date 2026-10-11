@@ -401,6 +401,7 @@ export function createVtsScoreAdminView(options = {}) {
   }
 
   function ocrStatusLabel(row) {
+    if (row.adminEntered) return 'Reviewed by Admin';
     if (row.legacyUpload) return t('adminVtsScoreLegacy', {}, 'Legacy upload - re-upload required');
     if (!row.submitted) return t('adminVtsScoreAwaiting', {}, 'Awaiting upload');
     if (row.ocrCorrected) return t('adminVtsScoreCorrected', {}, 'OCR corrected');
@@ -418,7 +419,7 @@ export function createVtsScoreAdminView(options = {}) {
         (
           row
         ) => `<tr data-vts-score-status="${row.submitted ? 'submitted' : row.legacyUpload ? 'incomplete' : 'missing'}">
-        <th scope="row"><strong>${esc(row.gameName)}</strong>${renderBreakdown(row)}</th>
+        <th scope="row"><strong>${esc(row.gameName)}</strong>${renderBreakdown(row)}${options.onEntry ? `<button type="button" class="dash-btn" data-vts-entry="${esc(row.submissionUid)}">Submit for member</button>` : ''}</th>
         <td><span class="vts-admin-chip">${esc(t('adminVtsScoreTierChip', { tier: row.tier }, 'Tier {tier}'))}</span></td>
         <td>${esc(num(row.baselineTotalPower))}</td>
         <td>${esc(row.finalTotalPower === null ? '—' : num(row.finalTotalPower))}</td>
@@ -670,6 +671,11 @@ export function createVtsScoreAdminView(options = {}) {
   }
 
   function bind(root, rows, snapshot) {
+    root.querySelectorAll('[data-vts-entry]').forEach((button) => {
+      button.addEventListener('click', () =>
+        options.onEntry({ root, snapshot, submissionUid: button.dataset.vtsEntry })
+      );
+    });
     root
       .querySelectorAll('[data-vts-audit-export]')
       .forEach((button) =>

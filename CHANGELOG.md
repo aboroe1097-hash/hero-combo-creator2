@@ -4,6 +4,8 @@ This is the release history, newest first. Entries describe their release-time b
 
 ## 16.6.19 - 2026-10-11
 
+- Let Admins submit reviewed screenshots or typed powers for existing members in VtsScore and 2027 signup review, preserving signup answers and consent, recording the operator/reason, and requiring explicit late-final approval.
+
 - Make VTS Admin more compact on phones, add a grouped tool picker, retain selected tools in shareable URLs, and clarify season versus alliance-wide records.
 - Improve season creation, publication recovery and website-health form spacing in both themes; label working previews accurately and move signups into alliance operations.
 - Restore keyboard access to every admin tool group and skip unavailable leadership tabs; require confirmation before removing diagnostic reports.

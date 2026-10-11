@@ -8631,6 +8631,28 @@ function setVtsScoreStatus(message = '', type = 'info') {
   el.className = `dash-upload-status ${message ? type : 'hidden'}`;
 }
 
+async function openAdminPowerEditor({ root, snapshot, submissionUid, mode = 'power-final' }) {
+  try {
+    const { openCompetitionAdminEntry } = await import('./competition-admin-entry.js');
+    openCompetitionAdminEntry({
+      root,
+      snapshot,
+      submissionUid,
+      mode,
+      endpoint: BOH_SIGNUP_ADMIN_ENDPOINT,
+      post: (endpoint, payload) => postAdminFunction(endpoint, payload, 'entry_failed'),
+      onSaved: async () => {
+        state.vtsScoreSnapshot = null;
+        state.bohSignupsSnapshot = null;
+        if (root.id === 'dashVtsScoreRoot') await loadVtsScoreAdminSnapshot({ force: true });
+        else await loadBohSignupsAdmin({ force: true });
+      },
+    });
+  } catch (error) {
+    showCloudSyncFailure(error, 'Member power editor failed');
+  }
+}
+
 function ensureVtsScoreView() {
   if (vtsScoreView) return vtsScoreView;
   vtsScoreView = createVtsScoreAdminView({
@@ -8640,6 +8662,7 @@ function ensureVtsScoreView() {
     },
     locale: () => getDashboardLang(),
     setStatus: (message, type) => setVtsScoreStatus(message, type),
+    onEntry: (options) => void openAdminPowerEditor(options),
     growth: {
       load: () => loadCompetitionGrowthSnapshot(),
     },
@@ -8843,6 +8866,7 @@ async function postAdminFunction(endpoint, payload, fallbackCode) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(90000),
   });
   const body = await response.json().catch(() => null);
   if (!response.ok) {
@@ -8977,6 +9001,25 @@ function bindBohSignupsControls() {
       const signupFor = (uid) =>
         (state.bohSignupsSnapshot?.signups || []).find((entry) => entry.submissionUid === uid) ||
         null;
+
+      const powerButton = event.target.closest('[data-boh-signup-power]');
+      if (powerButton) {
+        powerButton.disabled = true;
+        try {
+          const snapshot = await loadVtsScoreSnapshot(state.bohSignupsSnapshot?.season);
+          await openAdminPowerEditor({
+            root,
+            snapshot,
+            submissionUid: powerButton.dataset.bohSignupPower,
+            mode: 'power-baseline',
+          });
+        } catch (error) {
+          setBohSignupsStatus(error.message, 'error');
+        } finally {
+          powerButton.disabled = false;
+        }
+        return;
+      }
 
       const deleteButton = event.target.closest('[data-boh-signup-delete]');
       if (deleteButton) {

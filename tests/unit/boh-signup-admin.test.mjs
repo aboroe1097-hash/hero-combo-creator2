@@ -999,3 +999,21 @@ test('the growth-board switch merges one flag and defaults to shown', async () =
   assert.equal(isGrowthBoardVisible({ growthBoardVisible: true }), true);
   assert.equal(isGrowthBoardVisible({ growthBoardVisible: false }), false);
 });
+
+test('power corrections keep member signups out of the destructive full editor', () => {
+  const html = renderBohSignupRows(
+    [
+      {
+        submissionUid: 'member',
+        uid: 'member',
+        gameName: 'Member',
+        updatedBy: 'admin',
+        adminEntry: { memberOwned: true },
+      },
+    ],
+    (_key, _vars, fallback) => fallback
+  );
+  assert.match(html, /data-boh-signup-power="member"/);
+  assert.doesNotMatch(html, /data-boh-signup-edit/);
+  assert.match(html, /Member form/);
+});

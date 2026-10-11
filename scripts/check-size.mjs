@@ -229,7 +229,9 @@ const LIMITS = {
   // operation forms measure 12095.7 KiB. Reuse existing tab definitions and
   // centralize the settings summary; no duplicated module graph or new asset
   // files. Retain the existing ~3 KiB CI margin; route/media caps stay fixed.
-  totalJsBytes: 12099 * 1024,
+  // The on-behalf editor reuses power validation and adds one lazy chunk.
+  // Measured 12104.0 KiB; retain roughly 4 KiB for CI drift.
+  totalJsBytes: 12108 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -450,7 +452,8 @@ const LIMITS = {
   // 16.6.17 adds the generic season shell and isolated operations/recovery
   // chunks plus audit/settings and nine throne icon assets: measured 859 files;
   // retain two files of headroom.
-  deployFileCount: 861,
+  // 16.6.19 adds one shared, lazy Admin member-power editor chunk: 862 measured.
+  deployFileCount: 862,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive

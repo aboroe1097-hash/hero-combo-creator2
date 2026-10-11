@@ -1827,7 +1827,10 @@ async function handleBohStatsOcr(request, env) {
       bohFail(400, 'invalid_json', 'All-Star OCR request body is invalid JSON.');
     }
     validateBohStatsOcrRequestMetadata(payload);
-    await verifyBohStatsOcrMemberGrant(request, firebaseEnv, auth.uid, payload.seasonId);
+    // Verified Admins can read a member's screenshot without a member PIN grant.
+    // App Check, operation gates, image limits and per-actor rates still apply.
+    if (auth.claims?.admin !== true)
+      await verifyBohStatsOcrMemberGrant(request, firebaseEnv, auth.uid, payload.seasonId);
 
     const rateLimit = await checkBohStatsOcrRateLimit(request, env, auth.uid);
     if (!rateLimit.allowed) {
