@@ -4523,7 +4523,8 @@ function bindSubtabNavigation() {
     };
   });
   const picker = $id('dashToolSelect');
-  if (picker) picker.onchange = () => switchDashSubtab(picker.value, { focus: true });
+  // Keep focus in the native picker so repeated arrow-key changes remain usable.
+  if (picker) picker.onchange = () => switchDashSubtab(picker.value);
   syncAdminToolNavigation();
 }
 

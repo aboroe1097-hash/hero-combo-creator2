@@ -193,7 +193,7 @@ async function loadAdminTemplate() {
   const timer = setTimeout(() => controller.abort(), ADMIN_TEMPLATE_TIMEOUT_MS);
   let res;
   try {
-    res = await fetch('tabs/admin.html?v=20261011_160029', { signal: controller.signal });
+    res = await fetch('tabs/admin.html?v=20261011_160911', { signal: controller.signal });
   } catch (error) {
     if (error?.name === 'AbortError') {
       throw new Error(`Admin template timed out after ${ADMIN_TEMPLATE_TIMEOUT_MS}ms`);
@@ -230,7 +230,7 @@ async function bootAdminPage() {
   await loadAdminTemplate();
   bindAdminLanguageSelector();
   await requestAdminLanguage(getLanguage());
-  const mod = await import('./ocr-dashboard.js?v=20261011_160029');
+  const mod = await import('./ocr-dashboard.js?v=20261011_160911');
   await mod.bootOcrDashboard();
 }
 
