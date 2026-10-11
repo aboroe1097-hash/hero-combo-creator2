@@ -5,6 +5,7 @@ import {
   edenWorkspaceFirestorePath,
   getEdenWorkspace,
   normalizeEdenWorkspaceId,
+  normalizeEdenManagementVotes,
   parseEdenWorkspaceRecord,
 } from './eden-workspaces.js';
 import {
@@ -157,12 +158,41 @@ export async function publishSeason({
   unpublish = false,
   expectedActiveWorkspace = null,
   restoreRevision = null,
+  loadLegacyManagementVotes = null,
 }) {
   requireWorkspace(workspaceId);
   if (restoreRevision !== null && (!Number.isInteger(restoreRevision) || restoreRevision < 1)) {
     throw new Error('Choose a valid publication revision.');
   }
   const { doc, runTransaction, serverTimestamp } = firestore;
+  // X2 predates cloud-managed management ballots. Import its existing Sheet
+  // once, before publication, rather than exposing an unredacted public fallback.
+  let legacyManagement = null;
+  if (
+    workspaceId === 'eden-x2' &&
+    !unpublish &&
+    restoreRevision === null &&
+    typeof loadLegacyManagementVotes === 'function'
+  ) {
+    const getDoc = firestore.getDocFromServer || firestore.getDoc;
+    const existing = await getDoc(
+      doc(db, edenWorkspaceFirestorePath(workspaceId, 'managementVotes'))
+    );
+    if (!existing.exists()) {
+      const settings = await getDoc(
+        doc(db, edenWorkspaceFirestorePath(workspaceId, 'voteSettings'))
+      );
+      if (settings.data()?.showManagementResults === true) {
+        const season = settings.data().season;
+        const rows = normalizeEdenManagementVotes(await loadLegacyManagementVotes());
+        if (!rows.length)
+          throw new Error(
+            'Management results could not be imported. Retry or import a results CSV before publishing.'
+          );
+        legacyManagement = { season, rows };
+      }
+    }
+  }
   return runTransaction(db, async (tx) => {
     const registryRef = doc(db, SEASON_REGISTRY_PATH);
     const pointerRef = doc(db, PUBLIC_SEASON_PATH);
@@ -194,6 +224,7 @@ export async function publishSeason({
       previousMetadata = snap.exists() ? snap.data() : null;
     }
     let projection;
+    let managementImport = null;
     const revision = (Number(projectionSnap.data()?.revision) || 0) + 1;
     if (restoreRevision !== null) {
       const history = await tx.get(doc(db, publicationHistoryPath(workspaceId, restoreRevision)));
@@ -225,6 +256,12 @@ export async function publishSeason({
       }
       if (!unpublish && !records.dashboardData)
         throw new Error('The cloud dashboard is not ready.');
+      if (!records.managementVotes && legacyManagement) {
+        if (records.voteSettings?.season !== legacyManagement.season)
+          throw new Error('The voting season changed. Refresh before publishing.');
+        managementImport = { ...legacyManagement, updatedBy: uid, updatedAt: serverTimestamp() };
+        records.managementVotes = managementImport;
+      }
       const weights = records.dutyPointWeights;
       projection = buildEdenPublicProjection({
         workspace: workspaceId,
@@ -241,6 +278,8 @@ export async function publishSeason({
       });
     }
     const currentMetadata = metadataSnap.data() || {};
+    if (managementImport)
+      tx.set(doc(db, edenWorkspaceFirestorePath(workspaceId, 'managementVotes')), managementImport);
     tx.set(projectionRef, projection);
     tx.set(doc(db, publicationHistoryPath(workspaceId, revision)), projection);
     tx.set(metadataRef, {

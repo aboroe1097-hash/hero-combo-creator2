@@ -2,6 +2,11 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.6.18 - 2026-10-11
+
+- Restore existing X2 management vote results during publication by importing the legacy Sheet once when cloud results are missing; preserve reviewed imports and independent vote-count privacy.
+- Stop publication with an actionable error if the import fails, and protect concurrent CSV edits and voting-season changes.
+
 ## 16.6.17 - 2026-10-11
 
 - Add a prominent Start X8 season flow that creates isolated draft dashboards, uploads, voting controls and public Eden hubs without a deployment; future seasons use the same routes.

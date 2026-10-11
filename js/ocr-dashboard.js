@@ -4565,6 +4565,12 @@ async function publishActiveEdenWorkspace({ unpublish = false, restoreRevision =
       unpublish,
       restoreRevision,
       expectedActiveWorkspace: previous?.workspaceId || '',
+      loadLegacyManagementVotes: async () => {
+        const { loadManagementVotesPayloadWithFallback, summarizeManagementVotePayload } =
+          await import('./eden-x1-management-votes.js');
+        const payload = await loadManagementVotesPayloadWithFallback({ workspace: ws.id });
+        return summarizeManagementVotePayload(payload).rankings;
+      },
     });
     await loadEdenWorkspaceCloudRecord();
     await refreshEdenSeasonLifecyclePanel();

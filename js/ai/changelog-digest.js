@@ -1,10 +1,18 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.17";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.18";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.6.18",
+    "date": "2026-10-11",
+    "highlights": [
+      "Restore existing X2 management vote results during publication by importing the legacy Sheet once when cloud results are missing; preserve reviewed imports and independent vote-count privacy.",
+      "Stop publication with an actionable error if the import fails, and protect concurrent CSV edits and voting-season changes."
+    ]
+  },
   {
     "version": "16.6.17",
     "date": "2026-10-11",
@@ -82,13 +90,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
       "Sign-up assist: the name field suggests the closest known names (this season's sign-ups and every earlier upload, canonical spellings only) and warns when the typed name is already registered this season. The score picker marks your own row \"(you)\" so twin names cannot be mixed …",
       "Sign-up admin: rows show whether leadership added them or the member filed them (the writer marker, not entryMethod), each chosen time renders as its own badge instead of one \"›\" string, and the edit form refuses member-filed rows instead of overwriting the fields it cannot show.",
       "The rules emulator pins the heaviest OCR sign-up (30 known names, 20 warnings, the full confidence map) as a create and an update, and the total JS budget moves by the measured minimum. **Redeploy the vtsScore and bohSignupAdmin functions after this release.**"
-    ]
-  },
-  {
-    "version": "16.6.8",
-    "date": "2026-09-27",
-    "highlights": [
-      "The Eden X2 hub's invitation card is now the VTS Competition section: the old \"Season signup / Sign up for the 2027 season\" kicker and title read \"Competition / VTS Competition\" in every locale, and the copy describes the competition registration — baseline, role, fight times an…"
     ]
   }
 ].map((release) =>
