@@ -51,6 +51,8 @@ Final `check:fast` passed **2,300/2,300 unit tests**, version consistency, lint,
 
 Local browser retries experienced loading/capture timeouts during simultaneous build work; the affected desktop and operations cases passed when run separately. Production build and version consistency passed. Size verification measured **12,095.7 KiB total JavaScript and 861 deployed files**. The aggregate JavaScript cap moves from 12,092 to 12,099 KiB to cover the intentional admin controls with approximately 3 KiB of CI margin; no duplicated asset graph or new production files were found, and all route, CSS and media caps remain unchanged. The size check passes with this measured cap.
 
+CI follow-up: PR #288 exposed an outdated unit assertion for the final JavaScript budget. The assertion now expects the measured 12,099 KiB cap, preserving the existing guard. No application code or budget was changed by this correction.
+
 No backend contract or rules change is required for the interface corrections.
 
 UI review used the [Web Interface Guidelines](https://github.com/vercel-labs/web-interface-guidelines/blob/main/command.md).

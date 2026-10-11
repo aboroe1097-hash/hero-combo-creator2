@@ -163,7 +163,9 @@ test('aggregate CSS budget records the current route-isolated feature baseline',
   // Hall of Fame grow it to 12005.3 KiB. 12017 since 16.6.15: the admin
   // growth-board switch and the re-upload name-search note grow it to 12015.8-12016.1 KiB (CI measures 0.3 KiB more).
   // 12024 since 16.6.16: the Artifact and DM Materials redesign grows it to 12022.7 KiB.
-  assert.match(sizeCheck, /totalJsBytes: 12092 \* 1024/);
+  // 12099 since 16.6.19: audited admin navigation and operation forms measure
+  // 12095.7 KiB, retaining approximately 3 KiB for CI drift.
+  assert.match(sizeCheck, /totalJsBytes: 12099 \* 1024/);
   // 427 since 16.5.0 Phase 0: removing the unconsumed .u-* utilities from
   // atmosphere.css and four dead compatibility tokens from _tokens.css measured
   // 431,155 -> 428,135 bytes, so the ceiling drops by the verified reclaim.
