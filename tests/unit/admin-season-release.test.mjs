@@ -53,6 +53,97 @@ function fixture(seed = {}) {
 const metadata = (workspace) => `${EDEN_WORKSPACE_COLLECTION_PATH}/${workspace}`;
 const data = (key) => edenWorkspaceFirestorePath('eden-x8', key);
 
+function legacyFixture({ showCounts = true, imported } = {}) {
+  const legacyData = (key) => edenWorkspaceFirestorePath('eden-x2', key);
+  const f = fixture({
+    [legacyData('dashboardData')]: buildEmptyEdenWorkspaceDashboard('season-2027'),
+    [legacyData('voteSettings')]: {
+      season: 'season-2027',
+      showManagementResults: true,
+      showManagementVoteCounts: showCounts,
+    },
+    ...(imported ? { [legacyData('managementVotes')]: imported } : {}),
+  });
+  return { ...f, legacyData, options: { ...f.options, workspaceId: 'eden-x2' } };
+}
+
+test('X2 publication imports existing management results atomically and respects count privacy', async () => {
+  const f = legacyFixture({ showCounts: false });
+  const { projection } = await publishSeason({
+    ...f.options,
+    loadLegacyManagementVotes: async () => [
+      { playerName: 'Existing winner', votes: 10, voters: ['private'] },
+    ],
+  });
+  assert.deepEqual(f.records.get(f.legacyData('managementVotes')).rows, [
+    { playerName: 'Existing winner', votes: 10 },
+  ]);
+  assert.deepEqual(projection.managementVotes, [{ playerName: 'Existing winner', rank: 1 }]);
+  assert.deepEqual(f.records.get('eden_seasons/eden-x2/publications/1'), projection);
+});
+
+test('an existing reviewed import, including an intentionally empty result, never reads the Sheet', async () => {
+  for (const rows of [[], [{ playerName: 'Reviewed winner', votes: 3 }]]) {
+    const f = legacyFixture({ imported: { season: 'season-2027', rows } });
+    await publishSeason({
+      ...f.options,
+      loadLegacyManagementVotes: async () => {
+        throw Error('Unexpected Sheet read');
+      },
+    });
+    assert.deepEqual(f.records.get(f.legacyData('managementVotes')).rows, rows);
+  }
+});
+
+test('a concurrently reviewed CSV wins over the legacy import', async () => {
+  const f = legacyFixture();
+  const result = await publishSeason({
+    ...f.options,
+    loadLegacyManagementVotes: async () => {
+      f.records.set(f.legacyData('managementVotes'), {
+        rows: [{ playerName: 'Reviewed winner', votes: 4 }],
+      });
+      return [{ playerName: 'Old source', votes: 10 }];
+    },
+  });
+  assert.equal(result.projection.managementVotes[0].playerName, 'Reviewed winner');
+});
+
+test('empty or failed legacy imports do not publish a misleading blank result', async () => {
+  for (const loadLegacyManagementVotes of [
+    async () => [],
+    async () => {
+      throw Error('Sheet unavailable');
+    },
+  ]) {
+    const f = legacyFixture();
+    await assert.rejects(
+      publishSeason({ ...f.options, loadLegacyManagementVotes }),
+      /imported|unavailable/
+    );
+    assert.equal(f.records.has(f.legacyData('publicProjection')), false);
+    assert.equal(f.records.has(f.legacyData('managementVotes')), false);
+  }
+});
+
+test('a voting season change during import aborts publication', async () => {
+  const f = legacyFixture();
+  await assert.rejects(
+    publishSeason({
+      ...f.options,
+      loadLegacyManagementVotes: async () => {
+        f.records.set(f.legacyData('voteSettings'), {
+          season: 'next-season',
+          showManagementResults: true,
+        });
+        return [{ playerName: 'Previous winner', votes: 10 }];
+      },
+    }),
+    /voting season changed/
+  );
+  assert.equal(f.records.has(f.legacyData('publicProjection')), false);
+});
+
 test('preparing X8 atomically initializes isolated data without ending the running season', async () => {
   const oldDashboard = buildEmptyEdenWorkspaceDashboard('season-2027');
   const f = fixture({ [edenWorkspaceFirestorePath('eden-x2', 'dashboardData')]: oldDashboard });
