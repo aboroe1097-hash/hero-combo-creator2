@@ -225,7 +225,11 @@ const LIMITS = {
   // reusing the built Eden shell instead of duplicating its CSS/module graph.
   // Competition audits, configurable thresholds, vote privacy and shared throne
   // assignments bring the measured total to 12088.1 KiB; retain CI drift headroom.
-  totalJsBytes: 12092 * 1024,
+  // 16.6.19: the audited admin tool picker, keyboard/focus routing and clearer
+  // operation forms measure 12095.7 KiB. Reuse existing tab definitions and
+  // centralize the settings summary; no duplicated module graph or new asset
+  // files. Retain the existing ~3 KiB CI margin; route/media caps stay fixed.
+  totalJsBytes: 12099 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and

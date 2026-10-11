@@ -482,7 +482,7 @@
         </div>
         <div class="dash-command-shortcuts" aria-label="Admin shortcuts">
           <button type="button" data-admin-action="uploads"><span class="dash-command-step">01</span><strong>Upload &amp; review</strong><span>Add this season's results</span></button>
-          <button type="button" data-admin-action="preview"><span class="dash-command-step">02</span><strong>Public season view</strong><span>See what members can see</span></button>
+          <button type="button" data-admin-action="preview"><span class="dash-command-step">02</span><strong>Preview working season</strong><span>Review saved changes before publishing</span></button>
           <button type="button" data-admin-action="operations"><span class="dash-command-step">03</span><strong>Website health</strong><span>Check services and notices</span></button>
           <button type="button" data-admin-action="recovery" data-requires-superadmin hidden><span class="dash-command-step">04</span><strong>Backup &amp; recovery</strong><span>Export and safely restore</span></button>
         </div>
@@ -753,6 +753,17 @@
                 <path d="M12 6a5 5 0 0 1 3 9v3H9v-3a5 5 0 0 1 3-9z" /></svg
               ><span data-i18n="adminSuggestTab">Suggest Points</span>
             </button>
+          </div>
+        </section>
+      </div>
+      </section>
+
+      <!-- These programs have their own records, independent of the Eden selector. -->
+      <div class="dash-subtab-nav dash-subtab-nav-grouped" data-subtab-scope="global" aria-labelledby="dashAllianceScopeTitle">
+        <h2 class="sr-only" id="dashAllianceScopeTitle" data-i18n="adminAllianceScopeTitle">Alliance management</h2>
+        <section class="dash-subtab-group">
+          <h3 class="dash-subtab-group-title">Alliance operations</h3>
+          <div class="dash-subtab-group-tabs" data-subtab-group="standing">
             <button class="dash-subtab-btn" data-subtab="bohSignups">
               <svg
                 width="14"
@@ -769,21 +780,6 @@
                 <path d="M4 17h8" /></svg
               ><span data-i18n="adminBohSignupsTab">2027 Signups</span>
             </button>
-          </div>
-        </section>
-      </div>
-      </section>
-
-      <!-- Standing programs run every season and sit deliberately outside the
-           Eden workspace switch above: their records are global, so changing
-           the active season must never change what these tabs show. -->
-      <div class="dash-subtab-nav dash-subtab-nav-grouped" data-subtab-scope="global" aria-labelledby="dashAllianceScopeTitle">
-        <h2 class="sr-only" id="dashAllianceScopeTitle" data-i18n="adminAllianceScopeTitle">Alliance management</h2>
-        <section class="dash-subtab-group">
-          <h3 class="dash-subtab-group-title">
-            Alliance operations
-          </h3>
-          <div class="dash-subtab-group-tabs" data-subtab-group="standing">
             <button class="dash-subtab-btn" data-subtab="allianceView">
               <svg
                 width="14"
@@ -860,6 +856,12 @@
           </div>
         </section>
       </div>
+
+      <div class="dash-mobile-tool-picker">
+        <label for="dashToolSelect">Open admin tool</label>
+        <select id="dashToolSelect" class="dash-input" aria-describedby="dashToolContext"></select>
+      </div>
+      <p id="dashToolContext" class="dash-tool-context" role="status" aria-live="polite"></p>
 
       <!-- Analysis Terminal — global log across all admin subtabs -->
       <section

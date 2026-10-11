@@ -1,10 +1,20 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.18";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.19";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.6.19",
+    "date": "2026-10-11",
+    "highlights": [
+      "Make VTS Admin more compact on phones, add a grouped tool picker, retain selected tools in shareable URLs, and clarify season versus alliance-wide records.",
+      "Improve season creation, publication recovery and website-health form spacing in both themes; label working previews accurately and move signups into alliance operations.",
+      "Restore keyboard access to every admin tool group and skip unavailable leadership tabs; require confirmation before removing diagnostic reports.",
+      "Rehearse season creation, management-results import, publication, operation conflicts and ordinary-Admin throne assignments in isolated browser fixtures."
+    ]
+  },
   {
     "version": "16.6.18",
     "date": "2026-10-11",
@@ -79,17 +89,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-09-27",
     "highlights": [
       "Reverted the account-id baseline join from 16.6.9: matching is by in-game name again (exact, then the confirmed-alias loose key). One browser or account often files uploads for several people — a member uploading for a friend carries their account id — so a shared account id had…"
-    ]
-  },
-  {
-    "version": "16.6.9",
-    "date": "2026-09-27",
-    "highlights": [
-      "Competition #12 ranks sign-up → final upload now: winners and standings use that Total Power growth, and the last-season comparison becomes the personal growth tracker. Until the first final upload lands the tracker ranks the board so the standing stays alive, the projection car…",
-      "Growth baselines join in order of confidence: the account id (the upload document id is the sign-up uid its numbers belong to), the exact in-game name, then a loose key that resolves owner-confirmed aliases and drops decorations (\"〽️ Anne〽️\", \"~Sarafino~\"). Accounts the owner se…",
-      "Sign-up assist: the name field suggests the closest known names (this season's sign-ups and every earlier upload, canonical spellings only) and warns when the typed name is already registered this season. The score picker marks your own row \"(you)\" so twin names cannot be mixed …",
-      "Sign-up admin: rows show whether leadership added them or the member filed them (the writer marker, not entryMethod), each chosen time renders as its own badge instead of one \"›\" string, and the edit form refuses member-filed rows instead of overwriting the fields it cannot show.",
-      "The rules emulator pins the heaviest OCR sign-up (30 known names, 20 warnings, the full confidence map) as a create and an update, and the total JS budget moves by the measured minimum. **Redeploy the vtsScore and bohSignupAdmin functions after this release.**"
     ]
   }
 ].map((release) =>

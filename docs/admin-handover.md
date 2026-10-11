@@ -24,6 +24,10 @@ Deploy the Firestore rules first, then the changed Firebase Functions and both A
 
 Season creation and publication do not require a new website release once this frontend and its corresponding backend rules have deployed.
 
+## Finding your tools
+
+On phones, use **Open admin tool** to move between Eden and alliance programs. The selected tool stays in the URL after refresh. Context above the active panel identifies its scope; changing the Eden workspace does not change signups, VtsScore, throne assignments or other alliance-wide records. **Preview working season** shows saved draft changes before publication.
+
 ## Daily operation
 
 - **Competition review:** VtsScore exports preserve raw signup, upload and match records with document provenance. Use the reconciliation report to investigate duplicate identities, missing records, mismatched totals and extreme growth. Review warnings do not alter records or competition rankings. Set the dragon tier boundary and optional growth-warning limits in VtsScore; exported images record the selected threshold.

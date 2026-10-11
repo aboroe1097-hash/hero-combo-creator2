@@ -1,6 +1,6 @@
 #ocrDashboardRoot .dash-command-center {
-  margin-block: 4px 24px;
-  padding: clamp(18px, 3vw, 30px);
+  margin-block: 4px 16px;
+  padding: clamp(16px, 2vw, 22px);
   border: 1px solid var(--ff-hairline);
   border-radius: var(--ff-r-hero, 24px);
   background: var(--ff-deep);
@@ -17,7 +17,7 @@
 
 #ocrDashboardRoot .dash-command-intro h2 {
   margin: 6px 0;
-  font-size: clamp(22px, 3vw, 32px);
+  font-size: clamp(22px, 2vw, 28px);
   line-height: 1.2;
   letter-spacing: -0.025em;
 }
@@ -50,8 +50,8 @@
 }
 
 #ocrDashboardRoot .dash-command-season {
-  margin-block: 22px 16px;
-  padding-block: 18px;
+  margin-block: 14px;
+  padding-block: 12px;
   border-block: 1px solid var(--ff-hairline);
 }
 
@@ -81,9 +81,9 @@
 #ocrDashboardRoot .dash-command-shortcuts button {
   display: grid;
   gap: 7px;
-  min-height: 108px;
+  min-height: 84px;
   min-width: 0;
-  padding: 16px;
+  padding: 12px;
   border: 1px solid var(--ff-hairline);
   border-radius: 14px;
   background: var(--ff-glass);
@@ -120,7 +120,7 @@
 }
 
 #ocrDashboardRoot .dash-context-label {
-  margin-block: 24px 12px;
+  margin-block: 16px 10px;
 }
 
 #ocrDashboardRoot .dash-command-season button,
@@ -142,5 +142,204 @@
     max-width: 110px;
     overflow-wrap: anywhere;
     text-align: center;
+  }
+
+  #ocrDashboardRoot .dash-command-shortcuts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #ocrDashboardRoot .dash-command-step {
+    display: none;
+  }
+
+  #ocrDashboardRoot .dash-command-intro {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  #ocrDashboardRoot .dash-command-intro > div {
+    flex: 1 1 200px;
+  }
+}
+
+#ocrDashboardRoot .dash-mobile-tool-picker {
+  display: none;
+}
+
+#ocrDashboardRoot .dash-tool-context {
+  margin-block: 12px;
+  padding: 10px 14px;
+  border-inline-start: 3px solid var(--ff-cyan);
+  background: var(--ff-glass);
+  color: var(--ff-text-dim);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+#ocrDashboardRoot .dash-subtab-panel {
+  scroll-margin-block-start: 120px;
+}
+
+#ocrDashboardRoot .dash-subtab-panel:focus-visible {
+  outline: 2px solid var(--ff-cyan);
+  outline-offset: 4px;
+}
+
+#ocrDashboardRoot #dashSeasonLifecycleRoot {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+#ocrDashboardRoot #dashSeasonLifecycleRoot > .dash-card,
+#ocrDashboardRoot .dash-season-start-card {
+  margin: 0;
+  min-width: 0;
+  padding: clamp(16px, 2vw, 24px);
+  border: 1px solid var(--ff-hairline);
+  border-radius: var(--ff-r-card, 16px);
+  background: var(--ff-glass);
+}
+
+#ocrDashboardRoot .dash-season-start-card,
+#ocrDashboardRoot #dashSeasonRecoveryCard,
+#ocrDashboardRoot .dash-season-timeline {
+  grid-column: 1 / -1;
+}
+
+#ocrDashboardRoot .dash-season-start-card {
+  border-color: color-mix(in srgb, var(--ff-cyan) 45%, var(--ff-hairline));
+}
+
+#ocrDashboardRoot .dash-season-start-card h2,
+#ocrDashboardRoot #dashSeasonLifecycleRoot h2 {
+  margin-block: 6px 12px;
+  font-size: clamp(20px, 2vw, 24px);
+  line-height: 1.3;
+  text-wrap: balance;
+}
+
+#ocrDashboardRoot #dashSeasonLifecycleRoot p {
+  color: var(--ff-text-dim);
+  line-height: 1.6;
+}
+
+#ocrDashboardRoot .dash-season-start-fields,
+#ocrDashboardRoot .dash-operations-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-block: 16px;
+}
+
+#ocrDashboardRoot .dash-season-start-fields label,
+#ocrDashboardRoot .dash-form-field {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  line-height: 1.5;
+}
+
+#ocrDashboardRoot .dash-season-start-fields .dash-input,
+#ocrDashboardRoot .dash-form-field .dash-input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: 44px;
+}
+
+#ocrDashboardRoot .dash-form-check,
+#ocrDashboardRoot .dash-season-start-fields .dash-form-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 44px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+#ocrDashboardRoot .dash-form-check input {
+  flex: none;
+  margin-block-start: 5px;
+  accent-color: var(--ff-cyan);
+}
+
+#ocrDashboardRoot .dash-form-wide {
+  grid-column: 1 / -1;
+}
+
+#ocrDashboardRoot #dashManagementVotesPreview {
+  display: block;
+  margin-block: 14px;
+  overflow-wrap: anywhere;
+}
+
+#ocrDashboardRoot #dashSeasonLifecycleRoot .dash-btn {
+  min-height: 44px;
+  margin-block-start: 8px;
+  white-space: normal;
+}
+
+#ocrDashboardRoot .dash-operations-form fieldset {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+  padding: 16px;
+  border: 1px solid var(--ff-hairline);
+  border-radius: 12px;
+}
+
+#ocrDashboardRoot .dash-operations-form textarea {
+  resize: vertical;
+}
+
+#ocrDashboardRoot .dash-operations-errors {
+  display: grid;
+  gap: 12px;
+  margin-block-start: 16px;
+}
+
+#ocrDashboardRoot .dash-operations-errors article {
+  padding: 16px;
+  border: 1px solid var(--ff-hairline);
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+
+#ocrDashboardRoot .dash-operations-errors p {
+  white-space: pre-wrap;
+}
+
+#ocrDashboardRoot .dash-season-start-card,
+#ocrDashboardRoot #dashSeasonRecoveryCard {
+  scroll-margin-block-start: 120px;
+}
+
+@media (max-width: 768px) {
+  /* A native grouped picker exposes every tool without a long fixed dock or
+     two competing navigation rails covering the workspace. */
+  body.admin-has-subtool-dock #ocrDashboardRoot .dash-subtab-nav.dash-subtab-nav-grouped,
+  body.admin-has-subtool-dock #ocrDashboardRoot .dash-subtab-nav.dash-subtab-nav-grouped.dash-subtab-nav-docked {
+    display: none !important;
+  }
+
+  #ocrDashboardRoot .dash-mobile-tool-picker {
+    display: grid;
+    gap: 8px;
+    margin-block: 16px 8px;
+  }
+
+  #ocrDashboardRoot .dash-mobile-tool-picker select {
+    width: 100%;
+    min-height: 48px;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  #ocrDashboardRoot #dashSeasonLifecycleRoot,
+  #ocrDashboardRoot .dash-season-start-fields,
+  #ocrDashboardRoot .dash-operations-form {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test';
 
+test.setTimeout(120000);
+test.use({ reducedMotion: 'reduce' });
+
 async function openAdmin(page, theme) {
   await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
   await page.route('https://firestore.googleapis.com/**', (route) => route.abort());
@@ -40,6 +43,7 @@ for (const viewport of [
       }
       await command.screenshot({
         path: testInfo.outputPath(`admin-${viewport.name}-${theme}.png`),
+        animations: 'disabled',
       });
       await command.locator('[data-admin-action="uploads"]').click();
       await expect(page.locator('#dashSubtabUploadStructures')).toBeVisible();

@@ -2,6 +2,13 @@
 
 This is the release history, newest first. Entries describe their release-time behavior and may refer to retired features. For the current toolkit use the [README](README.md); for release rules use [AGENTS.md](AGENTS.md). Documentation and internal cleanup may ship without an application-version change.
 
+## 16.6.19 - 2026-10-11
+
+- Make VTS Admin more compact on phones, add a grouped tool picker, retain selected tools in shareable URLs, and clarify season versus alliance-wide records.
+- Improve season creation, publication recovery and website-health form spacing in both themes; label working previews accurately and move signups into alliance operations.
+- Restore keyboard access to every admin tool group and skip unavailable leadership tabs; require confirmation before removing diagnostic reports.
+- Rehearse season creation, management-results import, publication, operation conflicts and ordinary-Admin throne assignments in isolated browser fixtures.
+
 ## 16.6.18 - 2026-10-11
 
 - Restore existing X2 management vote results during publication by importing the legacy Sheet once when cloud results are missing; preserve reviewed imports and independent vote-count privacy.
