@@ -1,0 +1,49 @@
+name: Read-only site availability
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  availability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Check published pages and provider configuration
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const origin = `https://${readFileSync('CNAME', 'utf8').trim()}`;
+          const checks = [
+            ['Home', `${origin}/`, null],
+            ['Admin recovery', `${origin}/admin.html`, null],
+            ['Public Eden', `${origin}/eden-season.html`, null],
+            ['AI configuration', 'https://vts-ai-strategy-assistant.aboroe1097.workers.dev/healthz', (data) => data.ok === true && data.enabled === true],
+            ['OCR configuration', 'https://delicate-term-725f.aboroe1097.workers.dev/status', (data) => data.configured === true && data.appCheckConfigured === true],
+          ];
+          let failures = 0;
+          for (const [name, url, validate] of checks) {
+            let failure;
+            for (let attempt = 0; attempt < 3; attempt += 1) {
+              try {
+                const response = await fetch(url, { headers: { Origin: origin }, signal: AbortSignal.timeout(20000) });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                if (validate) { if (!validate(await response.json())) throw new Error('Required configuration is unavailable'); }
+                else if (!(await response.text()).includes('<html')) throw new Error('Expected a website page');
+                failure = null;
+                break;
+              } catch (error) { failure = error.message; }
+            }
+            if (failure) { failures += 1; console.error(`::error::${name}: ${failure}`); }
+            else console.log(`${name}: available`);
+          }
+          if (failures) process.exitCode = 1;
+          NODE

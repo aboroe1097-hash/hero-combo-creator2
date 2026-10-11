@@ -15,7 +15,7 @@
  * every hostile-document case is unit-testable without a network.
  */
 
-import { EDEN_WORKSPACE_IDS } from './eden-workspaces.js';
+import { normalizeEdenWorkspaceId } from './eden-workspaces.js';
 
 export const SEASON_REGISTRY_PATH = 'vts_admin/season_registry';
 export const SEASON_REGISTRY_SCHEMA_VERSION = 1;
@@ -27,7 +27,7 @@ export const SEASON_STATES = Object.freeze(['ended', 'active', 'draft']);
 
 // The registry is pinned in firestore.rules, and rules cannot iterate a list,
 // so the validator checks each entry position explicitly. Eight seasons is
-// eight years of history and keeps that unrolled check honest.
+// a bounded recent timeline and keeps that unrolled check honest.
 export const MAX_SEASON_COUNT = 8;
 export const MAX_SEASON_LABEL_LENGTH = 60;
 export const MAX_SEASON_ID_LENGTH = 40;
@@ -75,18 +75,27 @@ export const EDEN_SNAPSHOT_DOC_KEYS = Object.freeze([
   'voteSettings',
   'publicVoteResults',
   'publicProjection',
+  'dutyPointWeights',
+  'rewardSettings',
+  'managementVotes',
 ]);
 export const EDEN_SNAPSHOT_COLLECTION_KEYS = Object.freeze([
   'votes',
   'voteHistory',
   'conductAdjustments',
+  'conductSuggestions',
+  'publications',
 ]);
 
 // Vote history is written once, by the voter, with `createdAt == request.time`
 // and `voterAuthUid == request.auth.uid`; firestore.rules refuses every update.
 // A recall therefore reports those rows and writes none of them, instead of
 // half-importing a trail that can never be completed.
-export const EDEN_SNAPSHOT_UNRECALLABLE_KEYS = Object.freeze(['voteHistory']);
+export const EDEN_SNAPSHOT_UNRECALLABLE_KEYS = Object.freeze([
+  'voteHistory',
+  'conductSuggestions',
+  'publications',
+]);
 
 function normalizeTimestampMs(value) {
   if (typeof value?.toMillis === 'function') {
@@ -115,10 +124,7 @@ export function normalizeEdenSeasonLabel(value, fallback = '') {
 }
 
 export function normalizeEdenSeasonWorkspaceId(value) {
-  const id = String(value ?? '')
-    .trim()
-    .toLowerCase();
-  return EDEN_WORKSPACE_IDS.includes(id) ? id : '';
+  return normalizeEdenWorkspaceId(value);
 }
 
 export function normalizeEdenSeasonState(value, fallback = 'draft') {
@@ -213,11 +219,18 @@ export function nextEdenSeasonYear(registry, { nowMs = Date.now() } = {}) {
   return Number.isFinite(year) ? year : 2027;
 }
 
-export function nextEdenSeasonId(registry, options = {}) {
-  return `season-${nextEdenSeasonYear(registry, options)}`;
+export function nextEdenSeasonId(registry) {
+  const numbers = registry.seasons.flatMap((season) => {
+    const match = /^season-x(\d+)$/.exec(season.id);
+    const workspace = /^eden-x(\d+)$/.exec(season.workspaceId || '');
+    return [match, workspace].filter(Boolean).map((entry) => Number(entry[1]));
+  });
+  return `season-x${Math.max(7, ...numbers) + 1}`;
 }
 
 export function defaultEdenSeasonLabel(seasonId) {
+  const number = /^season-x(\d+)$/.exec(String(seasonId || ''))?.[1];
+  if (number) return `Eden X${number}`;
   const year = (/^season-(\d{4})$/.exec(String(seasonId || '')) || [])[1];
   return year ? `Eden ${year}` : String(seasonId || '');
 }
@@ -229,6 +242,41 @@ function cloneRegistry(registry) {
     updatedAtMs: registry.updatedAtMs,
     updatedBy: registry.updatedBy,
   };
+}
+
+// Preparing a season must not close the currently published season. Its empty
+// workspace is initialized by the caller in the same transaction as this draft.
+export function prepareNextEdenSeason(registry, options = {}) {
+  const { nowMs = Date.now(), seasonId = '', workspaceId = '', label = '' } = options;
+  const id = normalizeEdenSeasonId(seasonId) || nextEdenSeasonId(registry);
+  const workspace = normalizeEdenSeasonWorkspaceId(workspaceId || id.replace(/^season-/, 'eden-'));
+  if (!workspace || workspace === 'eden-x1' || workspace === 'eden-x2') {
+    return { ok: false, reason: SEASON_START_REASONS.UNKNOWN_WORKSPACE };
+  }
+  if (findEdenSeason(registry, id)) {
+    return { ok: false, reason: SEASON_START_REASONS.DUPLICATE_SEASON };
+  }
+  if (registry.seasons.some((season) => season.workspaceId === workspace)) {
+    return { ok: false, reason: SEASON_START_REASONS.WORKSPACE_IN_USE };
+  }
+  const next = cloneRegistry(registry);
+  const season = {
+    id,
+    label: normalizeEdenSeasonLabel(label, defaultEdenSeasonLabel(id)),
+    state: 'draft',
+    workspaceId: workspace,
+    startedAtMs: 0,
+    endedAtMs: 0,
+  };
+  next.seasons.push(season);
+  // Keep the bounded timeline, preserving the new draft and any running season.
+  if (next.seasons.length > MAX_SEASON_COUNT) {
+    const oldestEnded = next.seasons.findIndex((entry) => entry.state === 'ended');
+    if (oldestEnded < 0) return { ok: false, reason: 'season-registry-full' };
+    next.seasons.splice(oldestEnded, 1);
+  }
+  next.updatedAtMs = Math.max(1, normalizeTimestampMs(nowMs));
+  return { ok: true, registry: next, season: { ...season } };
 }
 
 /**
@@ -691,11 +739,24 @@ export function planEdenSnapshotRecallWrites(plan, snapshot) {
 }
 
 export function edenSnapshotRecallKeyNeedsTimestamp(key) {
-  return key === 'votes' || key === 'voteSettings' || key === 'publicVoteResults';
+  return [
+    'votes',
+    'voteSettings',
+    'publicVoteResults',
+    'dutyPointWeights',
+    'rewardSettings',
+    'managementVotes',
+  ].includes(key);
 }
 
 export function edenSnapshotRecallKeyNeedsAuthorStamp(key) {
-  return key === 'voteSettings' || key === 'publicVoteResults';
+  return [
+    'voteSettings',
+    'publicVoteResults',
+    'dutyPointWeights',
+    'rewardSettings',
+    'managementVotes',
+  ].includes(key);
 }
 
 /**

@@ -46,6 +46,9 @@ function runWhenLoaded(fn) {
 }
 
 export function registerServiceWorker() {
+  void import('./operations-runtime.js')
+    .then(({ initOperationsRuntime }) => initOperationsRuntime())
+    .catch(() => {});
   if (!('serviceWorker' in navigator)) return;
   if (import.meta.env?.DEV) {
     runWhenLoaded(() => {
@@ -194,7 +197,11 @@ export function setupInstallPrompt() {
   }
 
   document.addEventListener('focusin', (event) => {
-    if (event.target?.matches?.('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) {
+    if (
+      event.target?.matches?.(
+        'input, textarea, select, [contenteditable]:not([contenteditable="false"])'
+      )
+    ) {
       dismissA2hs({ remember: false });
     }
   });

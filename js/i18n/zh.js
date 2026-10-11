@@ -1988,7 +1988,7 @@ const zh = {
   'ai.action.openHeroAtlas': '打开英雄图鉴',
   'ai.action.openResearch': '打开研究',
   'ai.action.openMaterials': '打开材料',
-  'ai.action.openEden': '打开 Eden X1',
+  'ai.action.openEden': '打开 Eden',
   'ai.action.useInGenerator': '在生成器中使用',
   'ai.action.reviewSelection': '检查选择',
   'ai.action.applySelection': '应用选择',

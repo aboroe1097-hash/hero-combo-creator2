@@ -221,7 +221,11 @@ const LIMITS = {
   // 16.6.16: the Artifact planner redesign (tree/list views, per-level
   // effects) with 17 strings in 13 languages, and the DM Materials plan bar,
   // grow it to 12022.7 KiB locally; the cap keeps CI's 0.3 KiB drift.
-  totalJsBytes: 12024 * 1024,
+  // 16.6.17 autonomous seasons, recovery and operations add 37.1 KiB after
+  // reusing the built Eden shell instead of duplicating its CSS/module graph.
+  // Competition audits, configurable thresholds, vote privacy and shared throne
+  // assignments bring the measured total to 12088.1 KiB; retain CI drift headroom.
+  totalJsBytes: 12092 * 1024,
   // Specialization Towers, Skin Atlas, and the player/Admin All-Star surfaces
   // ship as lazy CSS chunks without changing the primary route's initial CSS
   // graph. The touch-safe Specialization inspector, mobile command view, and
@@ -439,7 +443,10 @@ const LIMITS = {
   // line and competition status load as chunks of their own. No headroom.
   // 16.5.14 Combos planner chunks and the live-publish loader: 831 measured; keep
   // two of headroom.
-  deployFileCount: 833,
+  // 16.6.17 adds the generic season shell and isolated operations/recovery
+  // chunks plus audit/settings and nine throne icon assets: measured 859 files;
+  // retain two files of headroom.
+  deployFileCount: 861,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     // The audited v14.2.15 profile route links 24,013 bytes of responsive
@@ -515,6 +522,7 @@ const LIMITS = {
     // it inherits the audited Eden budget rather than getting its own.
     // 16.6.2: same shared-stylesheet growth as eden-x1.html.
     'eden-x2.html': { desktop: 666 * 1024, mobile: 762 * 1024 },
+    'eden-season.html': { desktop: 666 * 1024, mobile: 762 * 1024 },
     // Arcade measures 437.3/530.0 KiB with the audited 14.2.8 shared graph;
     // retain less than 2 KiB of route-specific headroom.
     'arcade.html': { desktop: 463 * 1024, mobile: 585 * 1024 },

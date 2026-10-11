@@ -610,6 +610,8 @@ test('authenticated initial turn enforces Firebase tokens and streams normalized
   const originalFetch = globalThis.fetch;
   let providerRequestCount = 0;
   globalThis.fetch = async (url, init = {}) => {
+    if (String(url).endsWith('/documents/vts_admin/operations_config'))
+      return Response.json({ fields: {} });
     if (url === FIREBASE_AUTH_JWKS_URL || url === FIREBASE_APPCHECK_JWKS_URL) {
       return Response.json(
         { keys: [signer.jwk] },
@@ -1004,6 +1006,8 @@ test('handler switches provider between gemini and deepseek on env.AI_PROVIDER',
   let sawDeepseekAuthHeader = false;
   let targetUrl = '';
   globalThis.fetch = async (url, init = {}) => {
+    if (String(url).endsWith('/documents/vts_admin/operations_config'))
+      return Response.json({ fields: {} });
     if (url === FIREBASE_AUTH_JWKS_URL || url === FIREBASE_APPCHECK_JWKS_URL) {
       return Response.json(
         { keys: [signer.jwk] },
@@ -1087,6 +1091,8 @@ test('DeepSeek tool turn and continuation round trip correctly', async () => {
   const originalFetch = globalThis.fetch;
   let round1UpstreamBody = null;
   globalThis.fetch = async (url, init = {}) => {
+    if (String(url).endsWith('/documents/vts_admin/operations_config'))
+      return Response.json({ fields: {} });
     if (url === FIREBASE_AUTH_JWKS_URL || url === FIREBASE_APPCHECK_JWKS_URL) {
       return Response.json(
         { keys: [signer.jwk] },

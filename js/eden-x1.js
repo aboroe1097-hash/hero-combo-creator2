@@ -74,11 +74,7 @@ import {
   hasAuthoritativeEdenVoteSettings,
   hasUsableDashboardCache,
 } from './dashboard-cache-policy.js';
-import {
-  edenWorkspaceFirestorePath,
-  getEdenWorkspace,
-  isPublishedEdenProjection,
-} from './eden-workspaces.js';
+import { edenWorkspaceFirestorePath, getEdenWorkspace } from './eden-workspaces.js';
 import {
   EDEN_ACCOUNT_LINK_STATUS,
   EDEN_ACCOUNT_PROFILE_COLLECTION,
@@ -88,19 +84,26 @@ import {
   resolveEdenAccountPlayer,
 } from './eden-account-link.js';
 
-export const APP_VERSION = '16.6.16';
-// Season-configured viewer: eden-x1.html keeps its archive defaults, while
-// eden-x2.html marks the body with data-eden-workspace="x2" and this renderer
-// switches to the published-projection read path, X2 vote collections, and
-// workspace-namespaced caches. X1 behavior is byte-identical to before.
-const EDEN_WORKSPACE_ID = (() => {
-  const raw = String(document.body?.dataset?.edenWorkspace || '')
-    .trim()
-    .toLowerCase();
-  return raw === 'x2' || raw === 'eden-x2' ? 'eden-x2' : 'eden-x1';
-})();
-const EDEN_WORKSPACE = getEdenWorkspace(EDEN_WORKSPACE_ID);
-const EDEN_IS_X2 = EDEN_WORKSPACE_ID === 'eden-x2';
+import {
+  resolvePublicEdenWorkspace,
+  publicEdenCacheKey,
+  isPublishedWorkspaceProjection,
+  consumeAdminEdenPreview,
+} from './eden-public-season.js';
+import { SEASON_REGISTRY_PATH, normalizeSeasonRegistry } from './eden-seasons.js';
+
+export const APP_VERSION = '16.6.17';
+// Every new season uses the published projection; legacy X1 retains its archive.
+const EDEN_WORKSPACE_ID = resolvePublicEdenWorkspace({
+  workspace: document.body?.dataset?.edenWorkspace,
+  search: window.location.search,
+  pathname: window.location.pathname,
+});
+let EDEN_WORKSPACE = EDEN_WORKSPACE_ID
+  ? getEdenWorkspace(EDEN_WORKSPACE_ID)
+  : { seasonLabel: 'Eden', label: 'Eden' };
+const EDEN_ADMIN_PREVIEW = new URLSearchParams(window.location.search).get('preview') === '1';
+const EDEN_IS_PROJECTION = EDEN_ADMIN_PREVIEW || EDEN_WORKSPACE_ID !== 'eden-x1';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -108,18 +111,20 @@ const EDEN_X1_VOTES_COLLECTION_PATH = 'vts_admin/eden_x1_votes/records';
 const EDEN_X1_VOTE_HISTORY_COLLECTION_PATH = 'vts_admin/eden_x1_vote_history/records';
 const EDEN_X1_VOTE_SETTINGS_DOC_PATH = 'vts_admin/eden_x1_vote_settings';
 const EDEN_X1_PUBLIC_VOTE_RESULTS_DOC_PATH = 'vts_admin/eden_x1_public_vote_results';
-const EDEN_X2_PROJECTION_PATH = edenWorkspaceFirestorePath('eden-x2', 'publicProjection');
-const EDEN_ACTIVE_VOTE_SETTINGS_PATH = EDEN_IS_X2
-  ? edenWorkspaceFirestorePath('eden-x2', 'voteSettings')
+const EDEN_PROJECTION_PATH = EDEN_WORKSPACE_ID
+  ? edenWorkspaceFirestorePath(EDEN_WORKSPACE_ID, 'publicProjection')
+  : null;
+const EDEN_ACTIVE_VOTE_SETTINGS_PATH = EDEN_IS_PROJECTION
+  ? edenWorkspaceFirestorePath(EDEN_WORKSPACE_ID, 'voteSettings')
   : EDEN_X1_VOTE_SETTINGS_DOC_PATH;
-const EDEN_ACTIVE_VOTES_PATH = EDEN_IS_X2
-  ? edenWorkspaceFirestorePath('eden-x2', 'votes')
+const EDEN_ACTIVE_VOTES_PATH = EDEN_IS_PROJECTION
+  ? edenWorkspaceFirestorePath(EDEN_WORKSPACE_ID, 'votes')
   : EDEN_X1_VOTES_COLLECTION_PATH;
-const EDEN_ACTIVE_VOTE_HISTORY_PATH = EDEN_IS_X2
-  ? edenWorkspaceFirestorePath('eden-x2', 'voteHistory')
+const EDEN_ACTIVE_VOTE_HISTORY_PATH = EDEN_IS_PROJECTION
+  ? edenWorkspaceFirestorePath(EDEN_WORKSPACE_ID, 'voteHistory')
   : EDEN_X1_VOTE_HISTORY_COLLECTION_PATH;
 const EDEN_X1_TEAM_VOTE_CATEGORY = 'team_players';
-const EDEN_X1_VOTE_LOCAL_PREFIX = 'vts_eden_x1_vote';
+const EDEN_X1_VOTE_LOCAL_PREFIX = `vts_${EDEN_WORKSPACE_ID.replace('-', '_')}_vote`;
 const EDEN_X1_VOTE_CANDIDATE_INPUT_IDS = [
   'edenX1CandidateName',
   'edenX1CandidateName2',
@@ -136,10 +141,7 @@ const EDEN_X1_ATTACK_WINDOW_EPOCH_DOW = 4;
 const MS_PER_DAY = 86_400_000;
 const THEME_STORAGE_KEY = 'vts_theme';
 const WEIGHTED_CONTRIBUTION_COMPACT_KEY = 'vts_weighted_contribution_compact';
-const EDEN_X1_PUBLIC_CACHE_KEY = 'vts_eden_x1_public_dashboard_cache_v1';
-const EDEN_PUBLIC_CACHE_KEY = EDEN_IS_X2
-  ? 'vts_eden_x2_public_dashboard_cache_v1'
-  : EDEN_X1_PUBLIC_CACHE_KEY;
+const EDEN_PUBLIC_CACHE_KEY = publicEdenCacheKey(EDEN_WORKSPACE_ID);
 const EDEN_X1_PUBLIC_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const EDEN_X1_TEST_MODE = Boolean(globalThis.VTS_EDEN_X1_TEST_MODE);
 const EDEN_X1_SEASON_STATES = new Set(['archive', 'active']);
@@ -160,9 +162,10 @@ function resolveEdenX1SeasonState() {
   return state;
 }
 
-const EDEN_X1_SEASON_STATE = resolveEdenX1SeasonState();
-const EDEN_X1_IS_ARCHIVE = EDEN_X1_SEASON_STATE === 'archive';
+let EDEN_X1_SEASON_STATE = resolveEdenX1SeasonState();
+let EDEN_X1_IS_ARCHIVE = EDEN_X1_SEASON_STATE === 'archive';
 
+let publishedManagementVotes = [];
 let currentLang = 'en';
 let currentRows = [];
 let currentForfeitedRewardIdentities = createRewardPriorityIdentitySet();
@@ -438,10 +441,12 @@ function t(key, vars = {}) {
   });
   // The X2 page reuses the X1 catalogs; only the season label differs, so the
   // label is swapped at read time instead of duplicating every catalog key.
-  if (EDEN_IS_X2) {
+  if (EDEN_IS_PROJECTION) {
     // Localized catalogs spell "Eden" in their own script (Arabic "عدن X1"), so
     // the bare season code is swapped too.
-    value = value.replace(/Eden X1/g, EDEN_WORKSPACE.seasonLabel).replace(/\bX1\b/g, 'X2');
+    value = value
+      .replace(/Eden X1/g, EDEN_WORKSPACE.seasonLabel)
+      .replace(/\bX1\b/g, `X${EDEN_WORKSPACE_ID.slice(6)}`);
   }
   return value;
 }
@@ -728,6 +733,16 @@ function resolveEdenManagementVoteCandidate(rawName) {
 }
 
 function summarizeEdenManagementVotes(payloadOrRows) {
+  if (Array.isArray(payloadOrRows?.publishedRankings)) {
+    const rankings = payloadOrRows.publishedRankings
+      .map((row) => ({
+        ...resolveEdenManagementVoteCandidate(row.playerName),
+        votes: Number.isFinite(row.votes) ? row.votes : null,
+        rank: Math.max(1, Math.floor(Number(row.rank) || 1)),
+      }))
+      .filter((row) => row.playerKey);
+    return { rankings, winners: rankings.slice(0, EDEN_X1_MANAGEMENT_VOTE_WINNER_LIMIT) };
+  }
   return summarizeManagementVotePayload(payloadOrRows, {
     limit: EDEN_X1_MANAGEMENT_VOTE_WINNER_LIMIT,
     resolveCandidate: resolveEdenManagementVoteCandidate,
@@ -803,7 +818,10 @@ function loadEdenManagementVoteResults(options = {}) {
       ? globalThis.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER
       : loadManagementVotesPayloadWithFallback;
   managementVoteLoadPromise = Promise.resolve()
-    .then(() => payloadLoader({ timeoutMs: 20_000, workspace: EDEN_WORKSPACE_ID }))
+    .then(() => {
+      if (EDEN_IS_PROJECTION) return { publishedRankings: publishedManagementVotes };
+      return payloadLoader({ timeoutMs: 20_000, workspace: EDEN_WORKSPACE_ID });
+    })
     .then((payload) => {
       if (token !== managementVoteLoadToken) return currentManagementVoteResults;
       pendingManagementVotePayload = payload;
@@ -1113,6 +1131,8 @@ function normalizeEdenVoteSettings(settings = {}) {
     allowEditing: settings.allowEditing !== false,
     showMemberResults: readToggle('showMemberResults'),
     showManagementResults: readToggle('showManagementResults'),
+    showMemberVoteCounts: settings.showMemberVoteCounts !== false,
+    showManagementVoteCounts: settings.showManagementVoteCounts !== false,
     showPublicResults: readToggle('showMemberResults') && readToggle('showManagementResults'),
     showVoterNames: settings.showVoterNames === true,
     contributionRankingMode: normalizeEdenX1ContributionRankingMode(
@@ -1125,7 +1145,9 @@ function normalizeEdenVoteSettings(settings = {}) {
 function requireAuthoritativeEdenVoteSettings(snapshot, expectedSeason = '') {
   const settings = snapshot?.exists?.() ? snapshot.data() : null;
   if (!hasAuthoritativeEdenVoteSettings(settings, expectedSeason)) {
-    const error = new Error('Eden X1 contribution ranking authority is unavailable.');
+    const error = new Error(
+      `${EDEN_WORKSPACE.seasonLabel} contribution ranking authority is unavailable.`
+    );
     error.code = 'eden-x1/vote-settings-unavailable';
     error.dashboardSeason = String(expectedSeason || '').trim();
     error.settingsSeason = String(settings?.season || '').trim();
@@ -1149,7 +1171,11 @@ function applyEdenVoteSettings(settings = {}) {
 }
 
 function isEdenVoteSubmissionClosed(settings = edenVoteSettings, nowMs = Date.now()) {
-  return settings.votingOpen === false || isEdenVoteDeadlineExpired(settings.closesAt, nowMs);
+  return (
+    EDEN_ADMIN_PREVIEW ||
+    settings.votingOpen === false ||
+    isEdenVoteDeadlineExpired(settings.closesAt, nowMs)
+  );
 }
 
 function formatEdenVoteDeadlineDate(closesAt) {
@@ -1254,8 +1280,9 @@ function normalizePublicEdenVoteResults(results = {}) {
         playerName: String(row?.playerName || '').trim(),
         playerKey: String(row?.playerKey || compactPlayerIdentity(row?.playerName)).trim(),
         familyKey: String(row?.familyKey || '').trim(),
-        votes: Math.max(0, Math.floor(Number(row?.votes) || 0)),
-        voters: Math.max(0, Math.floor(Number(row?.voters) || 0)),
+        votes: Number.isFinite(row?.votes) ? Math.max(0, Math.floor(row.votes)) : null,
+        voters: Number.isFinite(row?.voters) ? Math.max(0, Math.floor(row.voters)) : null,
+        rank: Math.max(1, Math.floor(Number(row?.rank) || 1)),
       }))
       .filter((row) => row.playerName && row.playerKey),
   };
@@ -4487,7 +4514,11 @@ function consolidateVoteWinnerRankings(rankings) {
       playerKey: identity.playerKey,
       playerName: identity.playerName,
       familyKey,
-      votes: valueOf(current.votes) + valueOf(candidate.votes),
+      votes:
+        current.votes === null || candidate.votes === null
+          ? null
+          : valueOf(current.votes) + valueOf(candidate.votes),
+      rank: Math.min(Number(current.rank) || Infinity, Number(candidate.rank) || Infinity),
       rawNames: [
         ...new Set([...(current.rawNames || []), ...(candidate.rawNames || [])].filter(Boolean)),
       ],
@@ -4501,7 +4532,10 @@ function selectEligibleVoteWinners(rankings, reserved) {
   const winners = [];
   const groupsByVotes = new Map();
   consolidateVoteWinnerRankings(rankings).forEach((candidate) => {
-    const votes = Math.max(0, Math.floor(Number(candidate.votes) || 0));
+    const votes =
+      candidate.votes === null
+        ? -Math.max(1, Number(candidate.rank) || 1)
+        : Math.max(0, Math.floor(Number(candidate.votes) || 0));
     if (!groupsByVotes.has(votes)) groupsByVotes.set(votes, []);
     groupsByVotes.get(votes).push(candidate);
   });
@@ -4511,7 +4545,7 @@ function selectEligibleVoteWinners(rankings, reserved) {
     .sort((a, b) => b[0] - a[0])
     .forEach(([, voteGroup]) => {
       if (winners.length >= EDEN_X1_MANAGEMENT_VOTE_WINNER_LIMIT) return;
-      const voteRank = rankedCandidates + 1;
+      const voteRank = voteGroup[0]?.votes === null ? voteGroup[0].rank : rankedCandidates + 1;
       rankedCandidates += voteGroup.length;
       const eligible = voteGroup.filter(
         (candidate) => !managementVoteCandidateIsReserved(candidate, reserved)
@@ -4569,6 +4603,12 @@ function getEligibleTeamVoteWinners() {
   return selectEligibleVoteWinners(results.rankings, reserved);
 }
 
+function showVoteCounts(view) {
+  return view === 'management'
+    ? edenVoteSettings.showManagementVoteCounts !== false
+    : edenVoteSettings.showMemberVoteCounts !== false;
+}
+
 function rewardSlotRows(view) {
   if (view === 'management') {
     const winners = getEligibleManagementVoteWinners();
@@ -4593,10 +4633,12 @@ function rewardSlotRows(view) {
           ? t('managementVotesUnavailable')
           : t('edenX1RewardManagementVotePending'),
       statusReason: winners[index]
-        ? t('edenX1RewardVoteDetails', {
-            rank: winners[index].voteRank,
-            voters: winners[index].votes,
-          })
+        ? !showVoteCounts(view)
+          ? t('edenX1PosterVoteRank', { rank: winners[index].voteRank })
+          : t('edenX1RewardVoteDetails', {
+              rank: winners[index].voteRank,
+              voters: winners[index].votes,
+            })
         : '',
     }));
   }
@@ -4623,10 +4665,12 @@ function rewardSlotRows(view) {
           ? t('managementVotesUnavailable')
           : t('edenX1RewardVotePending'),
       statusReason: winners[index]
-        ? t('edenX1RewardVoteDetails', {
-            rank: winners[index].voteRank,
-            voters: winners[index].votes,
-          })
+        ? !showVoteCounts(view)
+          ? t('edenX1PosterVoteRank', { rank: winners[index].voteRank })
+          : t('edenX1RewardVoteDetails', {
+              rank: winners[index].voteRank,
+              voters: winners[index].votes,
+            })
         : '',
     }));
   }
@@ -4666,7 +4710,7 @@ function renderRewardSlotStatus(row, view) {
     : row.status;
   const popoverBody = voteDetails
     ? `<strong>${esc(detailsTitle)}</strong>
-      <span><span>${esc(t('edenX1RewardVoted'))}</span><b>${formatScore(Math.max(0, Math.floor(Number(row.votes) || 0)))}</b></span>
+      ${showVoteCounts(view) ? `<span><span>${esc(t('edenX1RewardVoted'))}</span><b>${formatScore(Math.max(0, Math.floor(Number(row.votes) || 0)))}</b></span>` : ''}
       <span><span>${esc(t('edenX1ThConduct'))}</span><b>${formatSignedNumber(voteDetails.bonusTeamEffort)}</b></span>
       <span><span>${esc(t('edenX1BreakdownContribution'))}</span><b>${weighted ? formatScore(weighted.contributionScore) : '--'}</b></span>
       <span><span>${esc(t('edenX1BreakdownExGuild'))}</span><b>${weighted ? formatScore(weighted.contributionExGuild) : '--'}</b></span>
@@ -6328,7 +6372,8 @@ function updateTextContent(lang) {
     if (dict[key]) el.setAttribute('aria-label', t(key));
   });
 
-  localizeEdenX1Shell(document, lang, { season: EDEN_IS_X2 ? 'X2' : 'X1' });
+  const seasonCode = 'X' + EDEN_WORKSPACE_ID.slice(6);
+  localizeEdenX1Shell(document, lang, { season: seasonCode, label: EDEN_WORKSPACE.seasonLabel });
   syncGameClockTitles();
   scheduleLocalizedRerender();
   window.dispatchEvent(new CustomEvent('vts:language-change', { detail: { lang } }));
@@ -6736,8 +6781,8 @@ function posterRowScore(row) {
   }
   const votes = Math.max(0, Math.floor(Number(entry.votes) || 0));
   return {
-    scoreValue: formatScore(votes),
-    scoreLabel: t('edenX1PosterVotes'),
+    scoreValue: showVoteCounts(row.category) ? formatScore(votes) : '',
+    scoreLabel: showVoteCounts(row.category) ? t('edenX1PosterVotes') : '',
     breakdown: [
       entry.voteRank ? t('edenX1PosterVoteRank', { rank: entry.voteRank }) : '',
       valueOf(entry.weightedScore)
@@ -6956,7 +7001,10 @@ function bindAnnouncementDownloads(host) {
       if (!target) return;
       button.disabled = true;
       try {
-        await downloadAnnouncementImage(target, `vts-eden-x1-${kind}.png`);
+        const season = EDEN_WORKSPACE_ID.replace(/^eden-/, '');
+        if (kind === 'top20')
+          await downloadTop20Poster(buildTop20PosterModel(), `vts-eden-${season}-top20.png`);
+        else await downloadAnnouncementImage(target, `vts-eden-${season}-${kind}.png`);
       } finally {
         button.disabled = false;
       }
@@ -7075,9 +7123,14 @@ function tf(key, vars = {}) {
   const dict = translations[currentLang] || {};
   const enDict = translations.en || {};
   const raw = dict[key] || enDict[key] || EDEN_FROST_TEXT[key] || key;
-  return raw
+  const value = raw
     .replaceAll('{version}', APP_VERSION)
     .replace(/\{(\w+)\}/g, (_, name) => (name in vars ? String(vars[name]) : `{${name}}`));
+  return EDEN_IS_PROJECTION
+    ? value
+        .replace(/Eden X1/gi, EDEN_WORKSPACE.seasonLabel)
+        .replace(/\bX1\b/g, `X${EDEN_WORKSPACE_ID.slice(6)}`)
+    : value;
 }
 
 function edenMarqueeStatusState() {
@@ -7100,10 +7153,7 @@ function edenMarqueeStatusState() {
     minutes: pad2(parts.minutes),
     seconds: pad2(parts.seconds),
   };
-  const countdown = tf(
-    parts.days ? 'edenX1VoteCountdownDays' : 'edenX1VoteCountdownClock',
-    vars
-  );
+  const countdown = tf(parts.days ? 'edenX1VoteCountdownDays' : 'edenX1VoteCountdownClock', vars);
   const urgent = parts.remainingSeconds <= 86_400;
   return {
     state: urgent ? 'urgent' : 'open',
@@ -7511,6 +7561,7 @@ function withEdenBootTimeout(promise) {
 function readEdenPublicDashboardCache() {
   try {
     const cached = JSON.parse(localStorage.getItem(EDEN_PUBLIC_CACHE_KEY) || 'null');
+    if (EDEN_IS_PROJECTION && cached?.workspace !== EDEN_WORKSPACE_ID) return null;
     const savedAt = Number(cached?.savedAt);
     if (!Number.isFinite(savedAt) || Date.now() - savedAt > EDEN_X1_PUBLIC_CACHE_MAX_AGE_MS) {
       return null;
@@ -7538,9 +7589,12 @@ function edenDashboardLiveStateVersion(data) {
 }
 
 function writeEdenPublicDashboardCache(data) {
-  if (!hasUsableDashboardCache(data)) return;
+  if (EDEN_ADMIN_PREVIEW || !hasUsableDashboardCache(data)) return;
   try {
-    localStorage.setItem(EDEN_PUBLIC_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), data }));
+    localStorage.setItem(
+      EDEN_PUBLIC_CACHE_KEY,
+      JSON.stringify({ savedAt: Date.now(), workspace: EDEN_WORKSPACE_ID, data })
+    );
   } catch {
     // A full or restricted storage area must never block the live public view.
   }
@@ -7634,7 +7688,14 @@ async function loadEdenX1Dashboard() {
     panel.innerHTML = renderEdenBootPending();
   }
   startEdenLoadingProgress(generation);
-  const cachedData = readEdenPublicDashboardCache();
+  if (!EDEN_WORKSPACE_ID) {
+    stopEdenLoadingProgress(generation, 100);
+    if (panel) panel.textContent = 'Choose a valid published Eden season.';
+    setEdenPanelLoading(false);
+    return;
+  }
+  // A projection must be verified live before showing data that may have been unpublished.
+  const cachedData = EDEN_IS_PROJECTION ? null : readEdenPublicDashboardCache();
   const cachedVersion = dashboardCacheVersion(cachedData);
   const cachedLiveStateVersion = edenDashboardLiveStateVersion(cachedData);
   let cacheApplied = false;
@@ -7671,12 +7732,50 @@ async function loadEdenX1Dashboard() {
         // public view is one allowlisted projection, written by an explicit
         // admin publish. Until that document says published, the page shows the
         // draft state rather than an empty season.
-        if (EDEN_IS_X2) {
-          const projectionSnap = await getDoc(doc(db, EDEN_X2_PROJECTION_PATH));
+        if (EDEN_IS_PROJECTION) {
+          let projection;
+          if (EDEN_ADMIN_PREVIEW) {
+            projection = await consumeAdminEdenPreview(sessionStorage, EDEN_WORKSPACE_ID, voteUser);
+            let banner = document.getElementById('edenAdminPreviewBanner');
+            if (!banner) {
+              banner = document.createElement('p');
+              banner.id = 'edenAdminPreviewBanner';
+              banner.className = 'eden-x1-subtitle';
+              banner.setAttribute('role', 'status');
+              banner.textContent =
+                'Preview — not published. Only you can see this draft. Voting is disabled.';
+              panel?.before(banner);
+            }
+          } else {
+            const projectionSnap = await getDoc(doc(db, EDEN_PROJECTION_PATH));
+            projection = projectionSnap.exists() ? projectionSnap.data() : null;
+          }
           setEdenLoadingProgress(generation, 76);
-          const projection = projectionSnap.exists() ? projectionSnap.data() : null;
-          if (!isPublishedEdenProjection(projection)) {
+          if (!isPublishedWorkspaceProjection(projection, EDEN_WORKSPACE_ID)) {
             return { kind: 'unpublished', db, firestore, voteUser };
+          }
+          publishedManagementVotes = Array.isArray(projection.managementVotes)
+            ? projection.managementVotes.filter(
+                (entry) =>
+                  typeof entry?.playerName === 'string' &&
+                  ((Number.isFinite(entry.votes) && entry.votes >= 0) ||
+                    (Number.isFinite(entry.rank) && entry.rank >= 1))
+              )
+            : [];
+          const registrySnap = await loadEdenOptionalData(
+            getDoc(doc(db, SEASON_REGISTRY_PATH)),
+            'season registry'
+          );
+          if (registrySnap?.exists?.()) {
+            const entry = normalizeSeasonRegistry(registrySnap.data()).seasons.find(
+              (season) => season.workspaceId === EDEN_WORKSPACE_ID
+            );
+            if (entry) {
+              EDEN_WORKSPACE = { ...EDEN_WORKSPACE, label: entry.label, seasonLabel: entry.label };
+              EDEN_X1_SEASON_STATE = entry.state === 'ended' ? 'archive' : 'active';
+              EDEN_X1_IS_ARCHIVE = EDEN_X1_SEASON_STATE === 'archive';
+              updateTextContent(currentLang);
+            }
           }
           // The projection carries the vote settings inline, so wrap them in the
           // snapshot shape the shared authority check already expects instead of
@@ -7685,6 +7784,8 @@ async function loadEdenX1Dashboard() {
             { exists: () => true, data: () => projection.voteSettings || {} },
             projection.dashboard?.r5Season || projection.season
           );
+          // A private preview is read-only even when the future ballot is open.
+          if (EDEN_ADMIN_PREVIEW) verifiedVoteSettings.votingOpen = false;
           const data = {
             ...(projection.dashboard || {}),
             edenX1VoteSettings: verifiedVoteSettings,
@@ -7694,6 +7795,7 @@ async function loadEdenX1Dashboard() {
                 : null,
             // The season's reward distribution. The cached copy is written from
             // this same object, so a cached load keeps the published quotas too.
+            managementVotes: publishedManagementVotes,
             rewardSettings:
               projection.rewardSettings && typeof projection.rewardSettings === 'object'
                 ? projection.rewardSettings
@@ -7816,7 +7918,9 @@ async function loadEdenX1Dashboard() {
       return;
     }
 
-    edenVoteWriteContext = { db: result.db, firestore: result.firestore, user: result.voteUser };
+    edenVoteWriteContext = EDEN_ADMIN_PREVIEW
+      ? null
+      : { db: result.db, firestore: result.firestore, user: result.voteUser };
 
     if (result.kind === 'no-data') {
       stopEdenLoadingProgress(generation, 100);
@@ -8004,7 +8108,7 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
   const dateStr = data.date || data.updatedAt || '';
   currentRows = model.rows;
   currentRecordLabel = dateStr
-    ? `${EDEN_IS_X2 ? 'Eden X2' : 'Eden X1'} - ${String(dateStr).split('T')[0] || dateStr}`
+    ? `${EDEN_WORKSPACE.seasonLabel} - ${String(dateStr).split('T')[0] || dateStr}`
     : t('edenX1PageTitle');
   setRewardFlowReady(true);
   applyPendingEdenManagementVotePayload();
@@ -8052,6 +8156,7 @@ window.setEdenX1ManagementVotesForTest = function setEdenX1ManagementVotesForTes
 };
 
 if (EDEN_X1_TEST_MODE) {
+  window.getEdenTop20PosterModelForTest = buildTop20PosterModel;
   window.loadEdenX1ManagementVotesForTest = function loadEdenX1ManagementVotesForTest(options) {
     return loadEdenManagementVoteResults(options);
   };

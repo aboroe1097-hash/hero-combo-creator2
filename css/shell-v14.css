@@ -947,6 +947,12 @@ body.shell-more-open #app .tool-nav-inner {
   border-color: var(--shell-line-strong);
 }
 
+#app .shell-more-link[data-shell-more-link='competitionLink'] {
+  grid-column: 1 / -1;
+  border-style: solid;
+  color: var(--accent-primary);
+}
+
 #app .shell-more-tools > .tab-item {
   position: relative;
   display: flex !important;

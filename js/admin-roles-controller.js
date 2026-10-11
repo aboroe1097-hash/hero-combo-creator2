@@ -84,7 +84,7 @@ function memberRowHtml(member, currentUid, t) {
       </td>
       <td>
         <label class="dash-roles-toggle">
-          <input type="checkbox" data-role-toggle="${ROLE_ADMIN}" data-role-uid="${escapeHtml(uid)}"${admin ? ' checked' : ''} />
+          <input type="checkbox" data-role-toggle="${ROLE_ADMIN}" data-role-uid="${escapeHtml(uid)}"${admin ? ' checked' : ''}${isSelf ? ' disabled' : ''} />
           <span>${escapeHtml(t('adminRolesAdmin'))}</span>
         </label>
       </td>

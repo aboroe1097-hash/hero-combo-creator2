@@ -2120,7 +2120,7 @@ const fr = {
   'ai.action.openHeroAtlas': 'Ouvrir l’Atlas des héros',
   'ai.action.openResearch': 'Ouvrir Recherche',
   'ai.action.openMaterials': 'Ouvrir Matériaux',
-  'ai.action.openEden': 'Ouvrir Eden X1',
+  'ai.action.openEden': 'Ouvrir Eden',
   'ai.action.useInGenerator': 'Utiliser dans le Générateur',
   'ai.action.reviewSelection': 'Vérifier la sélection',
   'ai.action.applySelection': 'Appliquer la sélection',

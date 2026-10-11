@@ -14,6 +14,7 @@ const entryHtmlFiles = [
   'admin.html',
   'eden-x1.html',
   'eden-x2.html',
+  'eden-season.html',
   'arcade.html',
   'battle-simulator.html',
   'specialization-towers.html',

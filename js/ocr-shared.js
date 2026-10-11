@@ -1,5 +1,6 @@
 // Shared constants, state, and helpers for OCR dashboard modules
 import { isLocalDevHost } from './utils.js';
+import { assertClientOperationAvailable } from './operations-config.js';
 import { resolvePlayerRegistryAlias } from './player-registry.js';
 import { resolveConfirmedPlayerAlias } from './vts-player-aliases.js';
 import { getPublicVtsPlayerProfile } from './vts-public-players.js';
@@ -313,6 +314,7 @@ async function getOcrAppCheckToken(options = {}) {
 }
 
 export async function qwenVisionRequest(messages, options = {}) {
+  assertClientOperationAvailable('uploads');
   const appCheckToken = await getOcrAppCheckToken(options);
   const res = await fetch(QWEN_WORKER_URL, {
     method: 'POST',
@@ -1653,7 +1655,11 @@ export function collectCurrentSeasonPlayerNames(source = {}) {
     const name =
       typeof value === 'string'
         ? value
-        : value?.playerName || value?.display_player_name || value?.displayName || value?.name || '';
+        : value?.playerName ||
+          value?.display_player_name ||
+          value?.displayName ||
+          value?.name ||
+          '';
     if (String(name || '').trim()) players.push(name);
   };
 
@@ -1705,7 +1711,9 @@ export function resolvesToKnownDutyPlayer(value) {
   // under that exact name: "(Zubbs)" operates for the Zubbs family, whose X2
   // account is Lady Zubbs. Family pooling then lands the credit on that account.
   if (getPublicVtsPlayerProfile(resolved)) return true;
-  return collectCurrentSeasonPlayerNames(state).some((name) => compactPlayerIdentity(name) === compact);
+  return collectCurrentSeasonPlayerNames(state).some(
+    (name) => compactPlayerIdentity(name) === compact
+  );
 }
 
 function isRedBullDutyOwner(value) {
@@ -1762,7 +1770,8 @@ export function getDutyCreditedNames(raw, ownerCredited) {
     .forEach((part) => {
       if (!resolvesToKnownDutyPlayer(part)) return;
       const partner = resolveDutyPlayerName(part);
-      if (partner && partner !== ownerCanonForParts && !names.includes(partner)) names.push(partner);
+      if (partner && partner !== ownerCanonForParts && !names.includes(partner))
+        names.push(partner);
     });
   const note = getDutyOperatorNote(raw);
   if (isRedBullDutyOwner(owner) || isRedBullDutyOwner(raw)) return names;

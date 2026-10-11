@@ -9,7 +9,7 @@ import { installShowToast, resolveIntlLocale } from './utils.js';
 import { initUndoToasts } from './app-undo.js';
 import { setCurrentLanguage } from './state.js';
 
-export const APP_VERSION = '16.6.16';
+export const APP_VERSION = '16.6.17';
 const THEME_STORAGE_KEY = 'vts_theme';
 const STALE_ASSET_RECOVERY_KEY = 'vts_admin_stale_asset_recovery_v1';
 const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#070b16' };
@@ -112,7 +112,21 @@ function getLanguage() {
   try {
     const stored = localStorage.getItem('vts_hero_lang');
     if (stored) return stored;
-    const supported = ['en', 'es', 'pt', 'de', 'fr', 'hr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr', 'it'];
+    const supported = [
+      'en',
+      'es',
+      'pt',
+      'de',
+      'fr',
+      'hr',
+      'tr',
+      'ru',
+      'id',
+      'zh',
+      'ar',
+      'kr',
+      'it',
+    ];
     const primary = String(navigator.language || '')
       .toLowerCase()
       .split('-')[0];
@@ -179,7 +193,7 @@ async function loadAdminTemplate() {
   const timer = setTimeout(() => controller.abort(), ADMIN_TEMPLATE_TIMEOUT_MS);
   let res;
   try {
-    res = await fetch('tabs/admin.html?v=20261008_231006', { signal: controller.signal });
+    res = await fetch('tabs/admin.html?v=20261011_091402', { signal: controller.signal });
   } catch (error) {
     if (error?.name === 'AbortError') {
       throw new Error(`Admin template timed out after ${ADMIN_TEMPLATE_TIMEOUT_MS}ms`);
@@ -216,7 +230,7 @@ async function bootAdminPage() {
   await loadAdminTemplate();
   bindAdminLanguageSelector();
   await requestAdminLanguage(getLanguage());
-  const mod = await import('./ocr-dashboard.js?v=20261008_231006');
+  const mod = await import('./ocr-dashboard.js?v=20261011_091402');
   await mod.bootOcrDashboard();
 }
 

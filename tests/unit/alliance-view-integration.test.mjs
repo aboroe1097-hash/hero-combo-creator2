@@ -73,7 +73,10 @@ test('the duty weight document is writable by a superadmin and shape-checked', a
       .find((part) => part.startsWith(`/vts_admin/eden_${season}_duty_point_weights {`));
     assert.ok(block, `${season} has a rule`);
     assert.match(block, /allow read: if isAdmin\(\);/);
-    assert.match(block, /allow create, update: if isSuperAdmin\(\) && validDutyPointWeights\(\);/);
+    assert.match(
+      block,
+      /allow create, update: if edenWorkspaceWritable\([\s\S]*?operationalWritesAllowed\(''\)[\s\S]*?\(isSuperAdmin\(\) && validDutyPointWeights\(\)\);/
+    );
     assert.match(block, /allow delete: if false;/);
   }
   // A number here multiplies real scores, so the shape is pinned rather than trusted.

@@ -1353,7 +1353,7 @@ test('the multipliers are edited by a superadmin, rescore, and publish with the 
   );
   assert.match(
     dashboard,
-    /contributionWeight: normalizeContributionWeight\(state\.contributionWeight\)/
+    /contributionWeight: normalizeContributionWeight\(source\.contributionWeight\)/
   );
   assert.match(dashboard, /collectScoringMultipliersFromInputs/);
   assert.match(dashboard, /blockEdenArchiveWrite\('save duty point weights'\)/);

@@ -27,6 +27,9 @@ import {
   buildCompetitionGrowthRows,
   rankCompetitionGrowth,
 } from './competition-growth.js';
+import { buildVtsScoreAudit, downloadVtsScoreAudit } from './vts-score-audit.js';
+import { normalizeVtsScoreSettings } from './vts-score-settings.js';
+import { saveVtsScoreSettings } from './vts-score-store.js';
 
 function esc(value) {
   return String(value ?? '')
@@ -51,6 +54,19 @@ function summaryCard(value, label, tone = 'neutral') {
 
 function growthTone(value) {
   return value === null ? 'missing' : value >= 0 ? 'positive' : 'negative';
+}
+
+function renderAuditSummary(audit) {
+  return `<details class="vts-admin-card"><summary>Data cross-check: ${audit.counts.signups} signups · ${audit.counts.finalUploads} final uploads · ${audit.counts.issues} items to review</summary><p>Exports include every loaded record and its source path, including invalid and unmatched records. Private export: keep it with authorized leadership.</p><ul>${
+    audit.reconciliation
+      .slice(0, 100)
+      .map(
+        (issue) =>
+          `<li><strong>${esc(issue.code)}</strong> ${esc(issue.documentId)} — ${esc(issue.detail)}</li>`
+      )
+      .join('') ||
+    '<li>No structural issues found. Review comparisons before awarding results.</li>'
+  }</ul>${audit.counts.issues > 100 ? '<p>First 100 shown. Download JSON or CSV for every issue.</p>' : ''}</details>`;
 }
 
 // Competition #12 copy reuses existing admin keys wherever one fits, and its
@@ -259,7 +275,7 @@ export function createCompetitionGrowthSection(options = {}) {
       body = `<div class="vts-admin-summary-grid">${summaryCard(notRanked.length, t('c12NotRanked'), notRanked.length ? 'warning' : 'positive')}
           ${summaryCard(pending, t('c12ToReview'), pending ? 'warning' : 'positive')}</div><div class="vts-admin-table-wrap"><table class="vts-admin-table"><thead><tr>${heads}</tr></thead><tbody>${all.map(tableRow).join('') || `<tr><td colspan="9">${esc(t('adminVtsScoreEmpty'))}</td></tr>`}</tbody></table></div><div class="vts-admin-compare">${comparisonPanel(all)}</div>`;
     }
-    host.innerHTML = `<div class="vts-admin-card-heading"><div><h3>${esc(t('c12Title'))}</h3><p>${esc(t('c12Hint'))}</p></div><div class="vts-admin-chip-row"><button type="button" class="dash-btn" data-comp12-reload>${esc(t('adminVtsScoreRefresh'))}</button></div></div>${body}`;
+    host.innerHTML = `<div class="vts-admin-card-heading"><div><h3>${esc(t('c12Title'))}</h3><p>${esc(t('c12Hint'))}</p></div><div class="vts-admin-chip-row"><button type="button" class="dash-btn" data-comp12-reload>${esc(t('adminVtsScoreRefresh'))}</button>${state.snapshot ? '<button type="button" class="dash-btn" data-comp12-export="json">Export competition JSON</button><button type="button" class="dash-btn" data-comp12-export="csv">Export competition CSV</button>' : ''}</div></div>${state.snapshot ? renderAuditSummary(buildVtsScoreAudit(state.snapshot, { includeCompetition: true })) : ''}${body}`;
     bind();
   }
 
@@ -269,6 +285,9 @@ export function createCompetitionGrowthSection(options = {}) {
         element.addEventListener('click', () => handler(element.dataset));
       });
     on('[data-comp12-reload]', () => void load());
+    on('[data-comp12-export]', (dataset) =>
+      downloadVtsScoreAudit(state.snapshot, dataset.comp12Export, { includeCompetition: true })
+    );
     host.querySelectorAll('[data-compare]').forEach((select) => {
       select.addEventListener('change', () => {
         if (select.dataset.compare === 'left') state.compareLeft = select.value;
@@ -323,6 +342,7 @@ export function createVtsScoreAdminView(options = {}) {
       })
     : null;
   let lastSnapshot = null;
+  let effectiveSettings = normalizeVtsScoreSettings();
 
   function num(value, decimals = 0) {
     if (!Number.isFinite(Number(value))) return '—';
@@ -438,9 +458,7 @@ export function createVtsScoreAdminView(options = {}) {
 
   function tierHeading(tier) {
     if (tier === VTS_SCORE_ALL_TIERS) return t('adminVtsScoreAllTiers', {}, 'Both tiers combined');
-    return tier === 1
-      ? t('adminVtsScoreTierOne', {}, 'Tier 1 - Dragon 7M+')
-      : t('adminVtsScoreTierTwo', {}, 'Tier 2 - Dragon below 7M');
+    return `Tier ${tier} — Dragon ${tier === 1 ? '≥' : '<'} ${num(effectiveSettings.dragonTierCutoff)}`;
   }
 
   function renderTierSection(rows, tier, exemptions) {
@@ -519,7 +537,13 @@ export function createVtsScoreAdminView(options = {}) {
 
   function render(root, snapshot) {
     if (!root) return;
-    const rows = buildAdminVtsScoreRows(snapshot?.submissions, snapshot?.raceScores);
+    effectiveSettings = normalizeVtsScoreSettings(snapshot?.settings);
+    const rows = buildAdminVtsScoreRows(
+      snapshot?.submissions,
+      snapshot?.raceScores,
+      effectiveSettings
+    );
+    const audit = buildVtsScoreAudit(snapshot);
     const exemptions = readVtsScoreExemptions();
     const submitted = rows.filter((row) => row.submitted).length;
     const tierOne = rows.filter((row) => row.tier === 1).length;
@@ -534,11 +558,11 @@ export function createVtsScoreAdminView(options = {}) {
       .filter(Boolean)
       .join('');
 
-    root.innerHTML = `<div class="vts-admin-summary-grid">
+    root.innerHTML = `<section class="vts-admin-card"><h3>Review and export</h3><p>Season ${esc(snapshot?.season || '—')}. JSON preserves all stored fields; CSV includes every signup, upload, team result and reconciliation item.</p><div class="vts-admin-chip-row"><button type="button" class="dash-btn" data-vts-audit-export="json">Download full JSON</button><button type="button" class="dash-btn" data-vts-audit-export="csv">Download full CSV</button></div><form data-vts-cutoff-form><label>Tier 1 Dragon power cutoff <input class="dash-input" name="dragonTierCutoff" type="number" min="0" max="1000000000000" step="1" required value="${effectiveSettings.dragonTierCutoff}"></label><label>Absolute growth review threshold <input class="dash-input" name="growthWarningAbsolute" type="number" min="0" max="1000000000000" step="1" required value="${effectiveSettings.growthWarningAbsolute}"></label><label>Growth percentage review threshold <input class="dash-input" name="growthWarningPercent" type="number" min="0" max="1000000000" step="1" required value="${effectiveSettings.growthWarningPercent}"></label><button class="dash-btn" type="submit">Save shared settings</button><p>Uses signup Dragon power. Tier 1 includes the cutoff. Changing it updates all Admin tier summaries and images; competition growth formulas are unchanged.</p></form></section>${renderAuditSummary(audit)}<div class="vts-admin-summary-grid">
         ${summaryCard(submitted, t('adminVtsScoreSubmitted', {}, 'Final uploads'), 'positive')}
         ${summaryCard(rows.length - submitted, t('adminVtsScoreMissing', {}, 'Still missing'), rows.length - submitted ? 'warning' : 'positive')}
-        ${summaryCard(tierOne, t('adminVtsScoreTierOne', {}, 'Tier 1 - Dragon 7M+'))}
-        ${summaryCard(rows.length - tierOne, t('adminVtsScoreTierTwo', {}, 'Tier 2 - Dragon below 7M'))}
+        ${summaryCard(tierOne, tierHeading(1))}
+        ${summaryCard(rows.length - tierOne, tierHeading(2))}
       </div>
       ${renderStandings(rows)}
       ${
@@ -548,7 +572,7 @@ export function createVtsScoreAdminView(options = {}) {
                 <h3>${esc(t('adminVtsScoreBestTitle', {}, 'Best growth per category'))}</h3>
                 <p>${esc(t('adminVtsScoreBestHint', {}, 'Category leaders per Dragon tier and across both tiers, ranked by raw growth and by percentage growth side by side.'))}</p>
               </div>
-              <button type="button" class="dash-btn dash-btn-primary" data-vts-export>${esc(t('adminVtsScoreExportPng', {}, 'Export PNG'))}</button>
+              <div class="vts-admin-chip-row"><label>Image tier <select class="dash-input" data-vts-image-tier><option value="all">Both tiers</option><option value="1">${esc(tierHeading(1))}</option><option value="2">${esc(tierHeading(2))}</option></select></label><label>Image category <select class="dash-input" data-vts-image-category><option value="all">All categories</option>${VTS_SCORE_COMPARISON_FIELDS.map(([field]) => `<option value="${field}">${esc(categoryLabel(field))}</option>`).join('')}</select></label><button type="button" class="dash-btn dash-btn-primary" data-vts-export>${esc(t('adminVtsScoreExportPng', {}, 'Export PNG'))}</button><button type="button" class="dash-btn" data-vts-share>Share image</button></div>
             </div>
             <datalist id="dashVtsScoreExemptOptions">${nameOptions}</datalist>
             ${renderExemptions(exemptions)}
@@ -567,32 +591,78 @@ export function createVtsScoreAdminView(options = {}) {
     lastSnapshot = snapshot;
   }
 
-  function exportLeaderPng(rows) {
-    const summary = buildVtsScoreTierSummary(rows, VTS_SCORE_ALL_TIERS, readVtsScoreExemptions());
+  async function exportLeaderPng(rows, root, snapshot, share = false) {
+    const chosenTier = root.querySelector('[data-vts-image-tier]')?.value || 'all';
+    const tier = chosenTier === 'all' ? VTS_SCORE_ALL_TIERS : Number(chosenTier);
+    const summary = buildVtsScoreTierSummary(rows, tier, readVtsScoreExemptions());
+    const category = root.querySelector('[data-vts-image-category]')?.value || 'all';
+    if (category !== 'all')
+      summary.categories = summary.categories.filter((entry) => entry.field === category);
     if (!summary.submitted) {
       setStatus(t('adminVtsScoreExportEmpty', {}, 'No uploads to export yet.'), 'warn');
       return;
     }
     const canvas = document.createElement('canvas');
+    const iconPaths = {
+      totalCastlePower: 'assets/eden-reference/icons/user-town-marker.webp',
+      buildingPower: 'assets/eden-reference/icons/st1.png',
+      troopPower: 'assets/dm/equipment/dragon-master/weapon.png',
+      dragonPower: 'assets/dm/resources/dragonite.png',
+      artifactPower: 'assets/artifact/sword/Artifacts_icon_jian.png',
+      heroCombatPower: 'assets/skins/king-arthur-arthur-pendragon-icon.webp',
+      unitSpecialtyPower: 'images/throne/royal-guard.webp',
+    };
+    const icons = {};
+    await Promise.all(
+      Object.entries(iconPaths).map(async ([field, path]) => {
+        try {
+          const image = new Image();
+          image.src = path;
+          await image.decode();
+          icons[field] = image;
+        } catch {
+          /* Canvas keeps an accessible category number when an optional icon fails. */
+        }
+      })
+    );
     drawVtsScoreLeaderCanvas(canvas, summary, {
+      icons,
       title: t('adminVtsScoreExportTitle', {}, 'VtsScore - best growth per category'),
       subtitle: t(
         'adminVtsScoreExportSubtitle',
         { count: summary.submitted },
-        '{count} uploads across both tiers'
-      ),
+        '{count} final uploads'
+      ).replaceAll('{count}', String(summary.submitted)),
       formatNumber: (value, decimals = 0) => num(value, decimals),
       labelFor: (entry) => t(entry.i18nKey, {}, entry.label),
+      provenance: `${snapshot?.season || 'Season'} · ${tierHeading(tier)} · Dragon cutoff ${num(effectiveSettings.dragonTierCutoff)} · ${new Date().toISOString().slice(0, 10)} UTC`,
+      footer: `Source: Admin cloud snapshot · ${summary.submitted} uploads · ${readVtsScoreExemptions().length} local exemptions · Review before sharing`,
     });
-    canvas.toBlob((blob) => {
+    canvas.toBlob(async (blob) => {
       if (!blob) {
         setStatus(t('adminVtsScoreExportFailed', {}, 'Could not build the image.'), 'error');
         return;
       }
+      if (share && navigator.canShare && navigator.share) {
+        const file = new File(
+          [blob],
+          `vtsscore-${snapshot?.season || 'leaders'}-${chosenTier}-${category}.png`,
+          { type: 'image/png' }
+        );
+        if (navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({ files: [file], title: 'VtsScore category leaders' });
+            setStatus('Image shared.', 'success');
+            return;
+          } catch (error) {
+            if (error.name === 'AbortError') return;
+          }
+        }
+      }
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'vtsscore-leaders.png';
+      link.download = `vtsscore-${snapshot?.season || 'leaders'}-${chosenTier}-${category}.png`;
       link.click();
       URL.revokeObjectURL(url);
       setStatus(t('adminVtsScoreExportDone', {}, 'Leader board image downloaded.'), 'success');
@@ -600,7 +670,41 @@ export function createVtsScoreAdminView(options = {}) {
   }
 
   function bind(root, rows, snapshot) {
-    root.querySelector('[data-vts-export]')?.addEventListener('click', () => exportLeaderPng(rows));
+    root
+      .querySelectorAll('[data-vts-audit-export]')
+      .forEach((button) =>
+        button.addEventListener('click', () =>
+          downloadVtsScoreAudit(snapshot, button.dataset.vtsAuditExport)
+        )
+      );
+    root.querySelector('[data-vts-cutoff-form]')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const button = form.querySelector('button');
+      button.disabled = true;
+      try {
+        const settings = await (options.saveSettings || saveVtsScoreSettings)(
+          Number(form.elements.dragonTierCutoff.value),
+          effectiveSettings.revision,
+          undefined,
+          {
+            growthWarningAbsolute: Number(form.elements.growthWarningAbsolute.value),
+            growthWarningPercent: Number(form.elements.growthWarningPercent.value),
+          }
+        );
+        render(root, { ...snapshot, settings });
+        setStatus('Shared Dragon cutoff saved.', 'success');
+      } catch (error) {
+        setStatus(error.message, 'error');
+        button.disabled = false;
+      }
+    });
+    root
+      .querySelector('[data-vts-export]')
+      ?.addEventListener('click', () => void exportLeaderPng(rows, root, snapshot));
+    root
+      .querySelector('[data-vts-share]')
+      ?.addEventListener('click', () => void exportLeaderPng(rows, root, snapshot, true));
     root.querySelectorAll('[data-vts-exempt-remove]').forEach((button) => {
       button.addEventListener('click', () => {
         const name = button.dataset.vtsExemptRemove;

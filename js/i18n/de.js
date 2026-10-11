@@ -2231,7 +2231,7 @@ const de = {
   'ai.action.openHeroAtlas': 'Heldenatlas öffnen',
   'ai.action.openResearch': 'Forschung öffnen',
   'ai.action.openMaterials': 'Materialien öffnen',
-  'ai.action.openEden': 'Eden X1 öffnen',
+  'ai.action.openEden': 'Eden öffnen',
   'ai.action.useInGenerator': 'Im Generator verwenden',
   'ai.action.reviewSelection': 'Auswahl prüfen',
   'ai.action.applySelection': 'Auswahl übernehmen',

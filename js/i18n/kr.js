@@ -2029,7 +2029,7 @@ const kr = {
   'ai.action.openHeroAtlas': '영웅 도감 열기',
   'ai.action.openResearch': '연구 열기',
   'ai.action.openMaterials': '재료 열기',
-  'ai.action.openEden': 'Eden X1 열기',
+  'ai.action.openEden': 'Eden 열기',
   'ai.action.useInGenerator': '생성기에서 사용',
   'ai.action.reviewSelection': '선택 검토',
   'ai.action.applySelection': '선택 적용',

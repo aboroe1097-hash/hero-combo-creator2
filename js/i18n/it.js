@@ -2214,7 +2214,7 @@ const it = {
   'ai.action.openHeroAtlas': 'Apri Atlante eroi',
   'ai.action.openResearch': 'Apri Ricerca',
   'ai.action.openMaterials': 'Apri Materiali DM',
-  'ai.action.openEden': 'Apri Eden X1',
+  'ai.action.openEden': 'Apri Eden',
   'ai.action.useInGenerator': 'Usa nel Generatore',
   'ai.action.reviewSelection': 'Rivedi selezione',
   'ai.action.applySelection': 'Applica selezione',

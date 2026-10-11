@@ -133,6 +133,6 @@ test('the Contact Devs link lands on the complaint form already open', async ({ 
   await expect(page.locator('#edenX1ComplaintOpen')).toHaveAttribute('aria-expanded', 'true');
   await expect(page.locator('#edenX1ComplaintCategory')).toBeFocused();
   const contact = page.locator('footer a', { hasText: 'Contact Devs' }).first();
-  await expect(contact).toHaveAttribute('href', 'eden-x2.html#edenX1Complaints');
+  await expect(contact).toHaveAttribute('href', 'eden/#edenX1Complaints');
   expect(outbound).toEqual([]);
 });

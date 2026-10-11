@@ -12,9 +12,11 @@ function stubDeps({ existingClaims = {}, userExists = true } = {}) {
   const calls = { setClaims: [], audit: [] };
   const auth = {
     async getUser(uid) {
+      if (uid === 'caller-1') return { uid, customClaims: { admin: true, superadmin: true } };
       if (!userExists) throw new Error('no such user');
       return { uid, customClaims: existingClaims };
     },
+    async revokeRefreshTokens() {},
     async setCustomUserClaims(uid, claims) {
       calls.setClaims.push({ uid, claims });
     },
@@ -135,7 +137,7 @@ test('a superadmin cannot remove their own superadmin access', async () => {
   assert.equal(deps.calls.setClaims.length, 0);
 });
 
-test('a superadmin may still change their own admin claim and others freely', async () => {
+test('a superadmin may demote another account', async () => {
   const deps = stubDeps({ existingClaims: { admin: true, superadmin: true } });
   const handler = createSetUserRoleHandler(deps);
   const result = await handler({
@@ -195,4 +197,39 @@ test('the audit record carries only the five allowlisted fields', async () => {
     'role',
     'targetUid',
   ]);
+});
+
+test('self revocation through admin is refused', async () => {
+  const deps = stubDeps();
+  await expectCode(
+    createSetUserRoleHandler(deps)({
+      auth: superadminCaller,
+      data: { targetUid: 'caller-1', role: 'admin', granted: false },
+    }),
+    'failed-precondition'
+  );
+  assert.equal(deps.calls.setClaims.length, 0);
+});
+
+test('stale superadmin tokens cannot change roles', async () => {
+  const deps = stubDeps();
+  deps.auth.getUser = async () => ({ customClaims: { admin: true } });
+  await expectCode(
+    createSetUserRoleHandler(deps)({
+      auth: superadminCaller,
+      data: { targetUid: 'target-1', role: 'admin', granted: true },
+    }),
+    'permission-denied'
+  );
+});
+
+test('demotion revokes the targets refresh sessions', async () => {
+  const deps = stubDeps();
+  const revoked = [];
+  deps.auth.revokeRefreshTokens = async (uid) => revoked.push(uid);
+  await createSetUserRoleHandler(deps)({
+    auth: superadminCaller,
+    data: { targetUid: 'target-1', role: 'admin', granted: false },
+  });
+  assert.deepEqual(revoked, ['target-1']);
 });

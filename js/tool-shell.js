@@ -168,7 +168,7 @@ export const TOOL_SHELL_LOCALES = Object.freeze(Object.keys(STRINGS));
 // untranslated, as they do everywhere else on the site.
 const FOOTER_LINKS = [
   { href: 'index.html', key: 'tools' },
-  { href: 'eden-x2.html', label: 'Eden X2' },
+  { href: 'index.html#edenHub', label: 'Eden hub' },
   { href: 'vtsscore.html', label: 'VtsScore' },
   { href: 'arcade.html', label: 'Arcade' },
   { href: 'downloads.html', key: 'downloads' },
@@ -298,7 +298,7 @@ function buildFooter() {
   actions.className = 'standalone-footer-actions';
   const contact = document.createElement('a');
   // Contact Devs opens the feedback/complaint form rather than a mail client.
-  contact.href = 'eden-x2.html#edenX1Complaints';
+  contact.href = 'eden/#edenX1Complaints';
   contact.dataset.toolShellText = 'contact';
   const site = document.createElement('a');
   site.href = 'https://roc-vts.com/';

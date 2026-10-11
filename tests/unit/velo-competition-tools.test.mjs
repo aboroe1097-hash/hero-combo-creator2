@@ -458,7 +458,7 @@ test('answers from the new tools offer buttons that open the right tool', async 
     base
   );
   assert.equal(complaint.data.tools[0].id, 'complaints');
-  assert.deepEqual(labels([complaint]), ['eden-x2.html#edenX1Complaints']);
+  assert.deepEqual(labels([complaint]), ['eden/#edenX1Complaints']);
   const sources = deriveExecutedSources([status, castle, staffing]).map((source) => source.label);
   assert.deepEqual(sources, [
     'Competition #12 schedule',

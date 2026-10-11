@@ -454,6 +454,16 @@ function verifyDistHtmlReferences() {
   );
 }
 
+// The generic season uses the exact same shell and modules as X2. Reuse the
+// emitted shell to avoid bundling a second copy of its large shared styles.
+if (fs.existsSync(path.join(root, 'eden-season.html'))) {
+  const genericSeasonHtml = fs
+    .readFileSync(path.join(dist, 'eden-x2.html'), 'utf8')
+    .replaceAll('Eden X2', 'Eden Season')
+    .replace('data-eden-workspace="eden-x2"', 'data-eden-workspace="dynamic"');
+  fs.writeFileSync(path.join(dist, 'eden-season.html'), genericSeasonHtml);
+}
+
 verifyDistHtmlReferences();
 updateServiceWorkerManifest();
 

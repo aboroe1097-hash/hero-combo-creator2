@@ -62,7 +62,7 @@ test('admin, public UI, and Firestore rules share vote settings contracts', () =
     publicPage,
     /const countdown = tf\([\s\S]*?edenX1VoteCountdownDays[\s\S]*?edenX1VoteCountdownClock/
   );
-  assert.doesNotMatch(publicPage, /const countdown = .*parts\.days/);
+  assert.doesNotMatch(publicPage, /const countdown = [^\n]*\+[^\n]*parts\.days/);
   assert.match(publicPage, /window\.setInterval\([\s\S]*?1000\)/);
   assert.match(publicPage, /if \(isEdenVoteSubmissionClosed\(\)\)/);
   assert.match(

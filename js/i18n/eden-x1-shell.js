@@ -231,17 +231,22 @@ export function getEdenX1ShellCopy(locale) {
 // The same page shell serves both seasons. The copy is written for Eden X1;
 // the Eden X2 page asks for its own season name so its tab title and landmark
 // labels stop saying X1.
-function forSeason(copy, season) {
-  if (season !== 'X2') return copy;
+function forSeason(copy, season, label) {
+  if (!/^X[1-9]\d{0,3}$/.test(String(season || ''))) return copy;
   return Object.fromEntries(
-    Object.entries(copy).map(([key, value]) => [key, String(value).replaceAll('X1', 'X2')])
+    Object.entries(copy).map(([key, value]) => [
+      key,
+      String(value)
+        .replaceAll('Eden X1', label || `Eden ${season}`)
+        .replaceAll('X1', season),
+    ])
   );
 }
 
 export function localizeEdenX1Shell(documentRef, locale, options = {}) {
   if (!documentRef) return normalizeLocale(locale);
   const normalized = normalizeLocale(locale);
-  const copy = forSeason(getEdenX1ShellCopy(normalized), options.season);
+  const copy = forSeason(getEdenX1ShellCopy(normalized), options.season, options.label);
   documentRef.title = copy.documentTitle;
 
   const description = documentRef.querySelector?.('meta[name="description"]');

@@ -1,4 +1,5 @@
 import { authenticateFirebaseRequest } from './ai/firebase-jwt.js';
+import { workerOperationPaused } from './operations-gate.js';
 
 // Cloudflare Worker - secured proxy for Qwen/DashScope OCR.
 //
@@ -1806,6 +1807,9 @@ async function handleBohStatsOcr(request, env) {
       );
     }
 
+    if (await workerOperationPaused(env, ['uploads', 'competition'], { claims: auth.claims })) {
+      bohFail(503, 'operation_paused', 'OCR uploads are temporarily paused.');
+    }
     const maximumBodyBytes = boundedNumericEnv(
       env,
       'BOH_OCR_MAX_BODY_BYTES',
@@ -2252,6 +2256,9 @@ export default {
     const appCheck = await verifyAppCheck(request, env);
     if (!appCheck.ok) {
       return json({ error: appCheck.error }, { status: appCheck.status }, request, env);
+    }
+    if (await workerOperationPaused(env, ['uploads'])) {
+      return json({ error: 'OCR uploads are temporarily paused.' }, { status: 503 }, request, env);
     }
 
     if (!env.DASHSCOPE_API_KEY) {

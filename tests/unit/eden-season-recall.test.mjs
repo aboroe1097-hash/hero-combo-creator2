@@ -4,6 +4,7 @@ import test from 'node:test';
 
 import {
   EDEN_SNAPSHOT_DOC_KEYS,
+  EDEN_SNAPSHOT_COLLECTION_KEYS,
   EDEN_SNAPSHOT_SCHEMA,
   buildEdenSnapshotRecallPlan,
   edenRecallDashboardWrite,
@@ -78,9 +79,7 @@ test('a snapshot is refused unless it is the documented envelope', () => {
   assert.equal(parsed.snapshot.workspace, 'eden-x2');
   assert.deepEqual(Object.keys(parsed.snapshot.docs), [
     ...EDEN_SNAPSHOT_DOC_KEYS,
-    'votes',
-    'voteHistory',
-    'conductAdjustments',
+    ...EDEN_SNAPSHOT_COLLECTION_KEYS,
   ]);
   // Unknown keys are ignored rather than guessed at, so a newer export still
   // imports into an older reader.
@@ -269,12 +268,13 @@ test('the panel drives the recall through the exported snapshot format', () => {
   assert.match(dashboard, /id="dashSeasonRecallApplyBtn"/);
   assert.match(
     dashboard,
-    /async function dryRunEdenSnapshotRecall\(file\)[\s\S]*?parseEdenSnapshotJson\(await file\.text\(\)\)/
+    /async function dryRunEdenSnapshotRecall\(file\)[\s\S]*?JSON\.parse\(await file\.text\(\)\)[\s\S]*?parseEdenSnapshotJson\(\s*JSON\.stringify\(\s*fullBackupToSnapshot\(original, ACTIVE_EDEN_WORKSPACE_ID\)\s*\)\s*\)/
   );
   assert.match(
     dashboard,
     /async function applyEdenSnapshotRecall\(\)[\s\S]*?planEdenSnapshotRecallWrites\(draft\.plan, draft\.snapshot\)/
   );
+  assert.match(dashboard, /const live = draft\.live;/);
   assert.match(dashboard, /edenRecallDashboardWrite\(payload, live\.docs\?\.dashboardData/);
   assert.match(
     dashboard,
@@ -283,7 +283,10 @@ test('the panel drives the recall through the exported snapshot format', () => {
   // The revived timestamps go to Firestore untouched: sanitizeForFirestore()
   // flattens a Timestamp into a plain map, which the conduct and vote
   // validators refuse.
-  assert.match(dashboard, /await setDoc\(ref, payload\);/);
+  assert.match(
+    dashboard,
+    /await runTransaction\(db, async \(tx\) => \{[\s\S]*?const current = await tx\.get\(ref\);[\s\S]*?snapshotValuesEqual\([\s\S]*?tx\.set\(ref, payload\);/
+  );
   assert.equal(/setDoc\(ref, sanitizeForFirestore\(payload\)\)/.test(dashboard), false);
   assert.match(
     dashboard,

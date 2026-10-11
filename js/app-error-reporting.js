@@ -51,7 +51,8 @@ function serializeError(error) {
 function readQueue() {
   try {
     const raw = localStorage.getItem(ERROR_QUEUE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.slice(-MAX_QUEUE_LENGTH) : [];
   } catch {
     return [];
   }
@@ -65,16 +66,9 @@ function writeQueue(queue) {
   }
 }
 
-function clearQueue() {
-  try {
-    localStorage.removeItem(ERROR_QUEUE_KEY);
-  } catch {
-    // Storage can be unavailable in private mode; reporting should stay non-blocking.
-  }
-}
-
 async function getReportingContext() {
-  const { initFirebase, ensureAnonymousAuth, getDb, getAuthInstance } = await import('./firebase.js');
+  const { initFirebase, ensureAnonymousAuth, getDb, getAuthInstance } =
+    await import('./firebase.js');
   const firebase = initFirebase();
   if (!firebase?.configured) return { db: null, user: null };
   const auth = getAuthInstance();
@@ -83,7 +77,6 @@ async function getReportingContext() {
 }
 
 export function logClientError(source, error, extra = {}) {
-  if (remoteReportingDisabled) return;
   const entry = {
     source: limitText(source, MAX_SOURCE_LENGTH),
     error: serializeError(error),
@@ -100,36 +93,35 @@ export function logClientError(source, error, extra = {}) {
 
 export async function flushClientErrors() {
   if (flushing || remoteReportingDisabled) return;
-  let context;
-  try {
-    context = await getReportingContext();
-  } catch {
-    return;
-  }
-  const { db, user } = context;
-  const queue = readQueue();
-  if (!db || !user || !queue.length) return;
   flushing = true;
   try {
+    const { db, user } = await getReportingContext();
+    if (!db || !user || !readQueue().length) return;
     const { collection, addDoc, serverTimestamp } = await importFirestore();
-    while (queue.length) {
-      const entry = queue.shift();
+    for (let sent = 0; sent < MAX_QUEUE_LENGTH; sent += 1) {
+      const entry = readQueue()[0];
+      if (!entry) break;
       await addDoc(collection(db, 'errors'), {
         ...entry,
         authorId: user.uid,
         receivedAt: serverTimestamp(),
       });
-      writeQueue(queue);
+      // Re-read after the network write: another error may have joined the
+      // queue while this report was in flight. Remove only the delivered one.
+      const current = readQueue();
+      const index = current.findIndex(
+        (candidate) => JSON.stringify(candidate) === JSON.stringify(entry)
+      );
+      if (index >= 0) current.splice(index, 1);
+      writeQueue(current);
     }
   } catch (err) {
     if (err?.code === 'permission-denied') {
       remoteReportingDisabled = true;
-      clearQueue();
-      console.info('[error-reporting] Firestore writes are not permitted; remote reports disabled.');
+      console.info('[error-reporting] Reports retained locally; retry after reconnecting.');
       return;
     }
     console.warn('[error-reporting] remote flush failed:', err);
-    writeQueue(queue);
   } finally {
     flushing = false;
   }
@@ -138,6 +130,10 @@ export async function flushClientErrors() {
 export function initErrorReporting() {
   if (document.documentElement.dataset.errorReportingWired === '1') return;
   document.documentElement.dataset.errorReportingWired = '1';
+  window.addEventListener('online', () => {
+    remoteReportingDisabled = false;
+    void flushClientErrors();
+  });
   window.addEventListener('error', (event) => {
     logClientError('window.error', event.error || new Error(event.message), {
       filename: event.filename,
@@ -146,7 +142,10 @@ export function initErrorReporting() {
     });
   });
   window.addEventListener('unhandledrejection', (event) => {
-    logClientError('window.unhandledrejection', event.reason || new Error('Unhandled promise rejection'));
+    logClientError(
+      'window.unhandledrejection',
+      event.reason || new Error('Unhandled promise rejection')
+    );
   });
   if (typeof requestIdleCallback === 'function') {
     requestIdleCallback(() => flushClientErrors(), { timeout: 3000 });

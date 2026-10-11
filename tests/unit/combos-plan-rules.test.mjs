@@ -27,7 +27,10 @@ test('the live Combos ranking is readable by any visitor and written by a supera
   // A direct document get is public, while list remains denied.
   assert.match(block, /allow get: if true;/);
   assert.match(block, /allow list: if false;/);
-  assert.match(block, /allow create, update: if isSuperAdmin\(\) && validCombosPlan\(\);/);
+  assert.match(
+    block,
+    /allow create, update: if operationalWritesAllowed\('combos'\) && \(isSuperAdmin\(\) && validCombosPlan\(\)\);/
+  );
   assert.match(block, /allow delete: if false;/);
   assert.doesNotMatch(block, /isAdmin\(\)/);
   assert.doesNotMatch(rules, /match \/combos_plan\/\{/, 'no wildcard opens the collection');

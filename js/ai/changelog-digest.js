@@ -1,10 +1,22 @@
 // GENERATED FILE — do not edit by hand.
 // Regenerate with `npm run velo:changelog` (scripts/build-changelog-digest.mjs)
 // after every CHANGELOG.md release entry so Velo can answer "what changed?".
-export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.16";
+export const VELO_CHANGELOG_DIGEST_VERSION = "16.6.17";
 
 export const VELO_CHANGELOG_DIGEST = Object.freeze(
   [
+  {
+    "version": "16.6.17",
+    "date": "2026-10-11",
+    "highlights": [
+      "Add a prominent Start X8 season flow that creates isolated draft dashboards, uploads, voting controls and public Eden hubs without a deployment; future seasons use the same routes.",
+      "Reorganize VTS Admin around season work, alliance operations and Super Admin controls, with private previews and explicit publication status.",
+      "Publish complete cloud snapshots atomically, retain immutable publication revisions for rollback, and enforce archived-season protection in Firestore.",
+      "Fix authoritative role listing, Super Admin self-demotion, stale role authorization and session revocation on demotion.",
+      "Add versioned workspace backup/restore coverage, dry-run recovery, concurrent-edit protection, per-season scoring and management-vote CSV imports.",
+      "Add expiring operational notices and pause controls, error triage, durable error-report retries, scheduled availability checks and an administrator handover guide."
+    ]
+  },
   {
     "version": "16.6.16",
     "date": "2026-10-09",
@@ -77,13 +89,6 @@ export const VELO_CHANGELOG_DIGEST = Object.freeze(
     "date": "2026-09-27",
     "highlights": [
       "The Eden X2 hub's invitation card is now the VTS Competition section: the old \"Season signup / Sign up for the 2027 season\" kicker and title read \"Competition / VTS Competition\" in every locale, and the copy describes the competition registration — baseline, role, fight times an…"
-    ]
-  },
-  {
-    "version": "16.6.7",
-    "date": "2026-09-27",
-    "highlights": [
-      "The VtsScore language picker offers all thirteen languages. Croatian, Indonesian, Italian, Korean, Russian, Turkish and Chinese were translated in 16.6.5 but never added to the page's selector, so members could not choose them. A unit test now keeps the picker and the translatio…"
     ]
   }
 ].map((release) =>

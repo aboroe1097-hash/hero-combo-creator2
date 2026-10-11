@@ -32,6 +32,25 @@ test('boot games return to the deployed Arcade lobby', () => {
   assert.doesNotMatch(sharedGameShell, /class="btn ghost nav-back"[^>]*href="\.\/index\.html"/);
 });
 
+test('generic Eden seasons reuse the emitted shell with a dynamic identity', (t) => {
+  const fixtureRoot = createPostBuildFixture();
+  t.after(() => rmSync(fixtureRoot, { recursive: true, force: true }));
+  writeFileSync(path.join(fixtureRoot, 'eden-season.html'), '<!-- generic source exists -->');
+  writeFixtureFile(fixtureRoot, 'assets/eden.css', 'body{}');
+  writeFixtureFile(
+    fixtureRoot,
+    'eden-x2.html',
+    '<html><head><title>Eden X2</title><link href="assets/eden.css" rel="stylesheet"></head><body data-eden-workspace="eden-x2"></body></html>'
+  );
+  const result = runPostBuild(fixtureRoot);
+  assert.equal(result.status, 0, result.stderr);
+  const generic = readFileSync(path.join(fixtureRoot, 'dist/eden-season.html'), 'utf8');
+  assert.match(generic, /data-eden-workspace="dynamic"/);
+  assert.match(generic, /<title>Eden Season<\/title>/);
+  assert.match(generic, /href="assets\/eden.css"/);
+  assert.doesNotMatch(generic, /Eden X2/);
+});
+
 test('post-build accepts resolved HTML references and ignores non-file URL attributes', (t) => {
   const fixtureRoot = createPostBuildFixture();
   t.after(() => rmSync(fixtureRoot, { recursive: true, force: true }));

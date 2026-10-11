@@ -2057,7 +2057,7 @@ const id = {
   'ai.action.openHeroAtlas': 'Buka Atlas Hero',
   'ai.action.openResearch': 'Buka Riset',
   'ai.action.openMaterials': 'Buka Material',
-  'ai.action.openEden': 'Buka Eden X1',
+  'ai.action.openEden': 'Buka Eden',
   'ai.action.useInGenerator': 'Gunakan di Generator',
   'ai.action.reviewSelection': 'Tinjau pilihan',
   'ai.action.applySelection': 'Terapkan pilihan',

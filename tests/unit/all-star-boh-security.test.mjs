@@ -29,7 +29,17 @@ const NOW_MS = 1_750_000_000_000;
 const REPOSITORY_ROOT_URL = new URL('../../', import.meta.url);
 
 function readRepositoryFile(path) {
-  return readFileSync(new URL(path, REPOSITORY_ROOT_URL), 'utf8');
+  const source = readFileSync(new URL(path, REPOSITORY_ROOT_URL), 'utf8');
+  // Existing contract assertions check the underlying member/leadership gate.
+  // Operational pause enforcement is independently exercised by the emulator.
+  return path === 'firestore.rules' ? withoutOperationsWrapper(source) : source;
+}
+
+function withoutOperationsWrapper(source) {
+  return source.replace(
+    /(allow [^:]+: if )operationalWritesAllowed\('[^']+'\) && \(([\s\S]*?)\);/g,
+    '$1$2;'
+  );
 }
 
 function snapshot(value) {
@@ -1440,7 +1450,7 @@ test('Firestore rules cover All-Star schedule, standby, and co-leader publicatio
 });
 
 test('Competition #12 schedule is superadmin-written, public-readable, and new sign-ups follow the phase flag', () => {
-  const rules = readFileSync('firestore.rules', 'utf8');
+  const rules = readRepositoryFile('firestore.rules');
   const block = rulesMatch(
     rules,
     /match \/boh_allstar_competition\/current \{[\s\S]*?\n {4}\}/,

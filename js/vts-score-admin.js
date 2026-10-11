@@ -12,6 +12,8 @@
 // leadership scratch state, and the canvas drawing, which takes the canvas it
 // is handed. No Firestore, no i18n, no DOM lookups.
 
+import { normalizeVtsScoreSettings } from './vts-score-settings.js';
+
 function cleanText(value) {
   return String(value ?? '')
     .normalize('NFC')
@@ -57,7 +59,8 @@ const VTS_SCORE_REQUIRED_COMPARISON_FIELDS = new Set(
   VTS_SCORE_COMPARISON_FIELDS.slice(0, 7).map(([field]) => field)
 );
 
-export function buildAdminVtsScoreRows(submissionsInput = [], raceScoresInput = []) {
+export function buildAdminVtsScoreRows(submissionsInput = [], raceScoresInput = [], settings = {}) {
+  const { dragonTierCutoff } = normalizeVtsScoreSettings(settings);
   const scoreBySubmission = new Map(
     list(raceScoresInput)
       .map((score) => [cleanText(score?.submissionUid), score])
@@ -133,7 +136,7 @@ export function buildAdminVtsScoreRows(submissionsInput = [], raceScoresInput = 
       return {
         submissionUid,
         gameName: playerName(submission) || cleanText(score?.gameName) || submissionUid,
-        tier: baselineDragonPower >= 7_000_000 ? 1 : 2,
+        tier: baselineDragonPower >= dragonTierCutoff ? 1 : 2,
         comparisons,
         baselineTotalPower: totalComparison.baseline ?? 0,
         finalTotalPower: totalComparison.final,
@@ -274,10 +277,10 @@ export function buildVtsScoreTierSummary(rows = [], tier = 1, exemptions = []) {
 export function drawVtsScoreLeaderCanvas(canvas, summary, options = {}) {
   const format = options.formatNumber || ((value) => String(value));
   const labelFor = options.labelFor || ((entry) => entry.label);
-  const rowHeight = 46;
-  const headerHeight = 132;
-  const width = 900;
-  const height = headerHeight + summary.categories.length * rowHeight + 58;
+  const rowHeight = 112;
+  const headerHeight = 218;
+  const width = 1200;
+  const height = headerHeight + summary.categories.length * rowHeight + 90;
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
@@ -288,42 +291,88 @@ export function drawVtsScoreLeaderCanvas(canvas, summary, options = {}) {
   ctx.fillRect(0, 0, width, 4);
 
   ctx.fillStyle = '#edf6ff';
-  ctx.font = 'bold 30px Inter, system-ui, sans-serif';
-  ctx.fillText(options.title || 'VtsScore — best growth', 32, 58);
+  ctx.font = 'bold 32px Inter, system-ui, sans-serif';
+  ctx.fillText(options.title || 'VtsScore — category leaders', 32, 58, width - 64);
   ctx.fillStyle = '#8fa8bc';
   ctx.font = '16px Inter, system-ui, sans-serif';
-  ctx.fillText(options.subtitle || '', 32, 86);
+  ctx.fillText(options.subtitle || '', 32, 94, width - 64);
+  ctx.fillText(options.provenance || '', 32, 124, width - 64);
 
-  const columns = [32, 300, 520, 700];
+  const columns = [32, 300, 750];
   ctx.fillStyle = '#8fa8bc';
   ctx.font = 'bold 13px Inter, system-ui, sans-serif';
-  ['CATEGORY', 'PLAYER', 'GROWTH', 'GROWTH %'].forEach((heading, index) => {
-    ctx.fillText(heading, columns[index], headerHeight - 14);
-  });
+  ['POWER CATEGORY', 'ABSOLUTE GROWTH LEADER', 'PERCENTAGE GROWTH LEADER'].forEach(
+    (heading, index) => {
+      ctx.fillText(heading, columns[index], headerHeight - 30);
+    }
+  );
+
+  const measure = (text) => ctx.measureText?.(text)?.width ?? String(text).length * 9;
+  function wrap(text, x, y, maxWidth, maxLines = 2) {
+    const characters = Array.from(String(text || '—'));
+    let line = '';
+    let lines = 0;
+    for (let index = 0; index < characters.length; index += 1) {
+      const next = line + characters[index];
+      if (line && measure(next) > maxWidth) {
+        if (lines === maxLines - 1) {
+          while (line && measure(`${line}…`) > maxWidth) line = line.slice(0, -1);
+          ctx.fillText(`${line}…`, x, y + lines * 26);
+          return;
+        }
+        ctx.fillText(line, x, y + lines * 26);
+        line = characters[index];
+        lines += 1;
+      } else line = next;
+    }
+    if (line) ctx.fillText(line, x, y + lines * 26);
+  }
 
   summary.categories.forEach((entry, index) => {
     const y = headerHeight + index * rowHeight;
     if (index % 2 === 0) {
       ctx.fillStyle = 'rgba(255,255,255,0.03)';
-      ctx.fillRect(24, y - 22, width - 48, rowHeight - 6);
+      ctx.fillRect(24, y - 8, width - 48, rowHeight - 6);
     }
     ctx.fillStyle = '#edf6ff';
-    ctx.font = 'bold 17px Inter, system-ui, sans-serif';
-    ctx.fillText(labelFor(entry), columns[0], y);
-    ctx.font = '17px Inter, system-ui, sans-serif';
-    ctx.fillText(entry.growthPlayer || '—', columns[1], y);
+    ctx.font = 'bold 18px Inter, system-ui, sans-serif';
+    const icon = options.icons?.[entry.field];
+    if (icon && ctx.drawImage) ctx.drawImage(icon, columns[0], y + 12, 40, 40);
+    else {
+      ctx.fillStyle = '#164251';
+      ctx.fillRect(columns[0], y + 12, 40, 40);
+      ctx.fillStyle = '#c9f7ff';
+      ctx.fillText(String(index + 1).padStart(2, '0'), columns[0] + 8, y + 39);
+    }
+    ctx.fillStyle = '#edf6ff';
+    wrap(labelFor(entry), columns[0] + 52, y + 30, 185, 2);
+    ctx.font = 'bold 21px Inter, system-ui, sans-serif';
+    wrap(entry.growthPlayer, columns[1], y + 28, 390, 2);
+    wrap(entry.percentPlayer, columns[2], y + 28, 390, 2);
+    ctx.font = 'bold 20px Inter, system-ui, sans-serif';
     ctx.fillStyle = entry.growth === null || entry.growth < 0 ? '#8fa8bc' : '#34d399';
-    ctx.fillText(entry.growth === null ? '—' : `+${format(entry.growth)}`, columns[2], y);
+    const growthText =
+      entry.growth === null ? '—' : `${entry.growth > 0 ? '+' : ''}${format(entry.growth)}`;
+    ctx.fillText(growthText, columns[1], y + 84, 390);
     ctx.fillStyle = entry.growthPercent === null || entry.growthPercent < 0 ? '#8fa8bc' : '#34d399';
     ctx.fillText(
-      entry.growthPercent === null ? '—' : `+${format(entry.growthPercent, 2)}%`,
-      columns[3],
-      y
+      entry.growthPercent === null
+        ? '—'
+        : `${entry.growthPercent > 0 ? '+' : ''}${format(entry.growthPercent, 2)}%`,
+      columns[2],
+      y + 84,
+      390
     );
   });
 
   ctx.fillStyle = '#587086';
   ctx.font = '14px Inter, system-ui, sans-serif';
-  ctx.fillText(options.footer || '', 32, height - 22);
+  ctx.fillText(
+    options.footer ||
+      'Leadership review · absolute and percentage leaders may be different players',
+    32,
+    height - 44,
+    width - 64
+  );
   return canvas;
 }

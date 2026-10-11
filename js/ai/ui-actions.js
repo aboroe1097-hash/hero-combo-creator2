@@ -69,14 +69,18 @@ const SOURCE_LABEL_FALLBACKS = Object.freeze({
 
 // Real routes for the answer buttons. Index-page targets are hub sub-tabs.
 export const VELO_ACTION_ROUTES = Object.freeze({
+  edenSeason: 'eden/',
+  edenVoting: 'vote/',
   vtsScore: 'vtsscore.html',
   buildings: 'index.html#researchTowers?subtab=buildings',
   edenPathing: 'index.html#edenHub?subtab=pathing',
   operationsLab: 'index.html#edenHub?subtab=operations',
-  complaints: 'eden-x2.html#edenX1Complaints',
+  complaints: 'eden/#edenX1Complaints',
 });
 
 const ROUTE_ACTIONS = Object.freeze({
+  edenSeason: ['ai.action.openEden', 'Open Eden'],
+  edenVoting: ['ai.action.openEden', 'Open Eden voting'],
   vtsScore: ['ai.action.openVtsScore', 'Open VtsScore'],
   buildings: ['ai.action.openBuildings', 'Open Buildings planner'],
   edenPathing: ['ai.action.openEdenPathing', 'Open Eden Pathing'],
@@ -86,6 +90,8 @@ const ROUTE_ACTIONS = Object.freeze({
 
 // A toolkit-map answer whose best match is one of these offers its button.
 const TOOLKIT_ROUTE_ACTIONS = Object.freeze({
+  edenSeason: 'edenSeason',
+  edenVoting: 'edenVoting',
   vtsScore: 'vtsScore',
   buildings: 'buildings',
   edenPathing: 'edenPathing',
@@ -241,8 +247,8 @@ export function deriveDeterministicActions(results, translate = (_key, fallback)
   if (haystack.includes('eden')) {
     actions.push({
       type: 'navigate-page',
-      href: 'eden-x1.html',
-      label: translate('ai.action.openEden', 'Open Eden X1'),
+      href: 'eden/',
+      label: translate('ai.action.openEden', 'Open Eden'),
     });
   }
 

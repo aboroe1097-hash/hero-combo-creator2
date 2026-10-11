@@ -626,3 +626,23 @@ test('recent adjustments apply category and player search together', () => {
     ['match', 'player-mismatch']
   );
 });
+
+test('restored conduct preserves the original author and restore audit through later edits', () => {
+  const restoredAt = { toMillis: () => 1234 };
+  const original = normalizeR5Adjustment({
+    id: 'restored-1',
+    season: 'season-x8',
+    player: 'Kika',
+    category: 'banner_help',
+    createdBy: 'original-author',
+    restoredBy: 'restore-operator',
+    restoredAt,
+  });
+  const edited = normalizeR5Adjustment({ ...original, points: 100 });
+  assert.equal(edited.createdBy, 'original-author');
+  assert.equal(edited.restoredBy, 'restore-operator');
+  assert.equal(edited.restoredAt, restoredAt);
+  const ordinary = normalizeR5Adjustment({ season: 'season-x8', player: 'Kika' });
+  assert.equal(Object.hasOwn(ordinary, 'restoredBy'), false);
+  assert.equal(Object.hasOwn(ordinary, 'restoredAt'), false);
+});

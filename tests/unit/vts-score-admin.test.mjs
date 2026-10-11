@@ -177,7 +177,7 @@ test('the leader board PNG renders without a DOM canvas implementation', () => {
 
   const result = drawVtsScoreLeaderCanvas(canvas, summary, { title: 'Board', subtitle: 'sub' });
   assert.equal(result, canvas);
-  assert.equal(canvas.width, 900);
+  assert.equal(canvas.width, 1200);
   assert.ok(canvas.height > 0);
   assert.ok(calls.some(([op, text]) => op === 'fillText' && text === 'Board'));
   assert.ok(calls.some(([op, text]) => op === 'fillText' && text === 'Whale'));

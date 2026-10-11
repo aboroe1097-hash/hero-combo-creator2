@@ -721,12 +721,21 @@ test('deleting a sign-up removes its document and its final upload in one batch'
   // like publishing the board or setting the active season.
   const rules = readFileSync('firestore.rules', 'utf8');
   const submissions = rules.match(/match \/submissions\/\{uid\} \{[\s\S]*?\n {6}\}/)[0];
-  assert.match(submissions, /allow delete: if isSuperAdmin\(\);/);
+  assert.match(
+    submissions,
+    /allow delete: if operationalWritesAllowed\('competition'\) && \(isSuperAdmin\(\)\);/
+  );
   assert.doesNotMatch(submissions, /allow delete: if isAdmin\(\);/);
   const raceScores = rules.match(/match \/raceScores\/\{submissionUid\} \{[\s\S]*?\n {6}\}/)[0];
   assert.match(raceScores, /allow read: if isAdmin\(\);/);
-  assert.match(raceScores, /allow create, update: if isAdmin\(\);/);
-  assert.match(raceScores, /allow delete: if isSuperAdmin\(\);/);
+  assert.match(
+    raceScores,
+    /allow create, update: if operationalWritesAllowed\('competition'\) && \(isAdmin\(\)\);/
+  );
+  assert.match(
+    raceScores,
+    /allow delete: if operationalWritesAllowed\('competition'\) && \(isSuperAdmin\(\)\);/
+  );
   assert.doesNotMatch(raceScores, /allow read, write:/);
 });
 
