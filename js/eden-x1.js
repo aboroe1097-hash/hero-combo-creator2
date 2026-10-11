@@ -92,7 +92,7 @@ import {
 } from './eden-public-season.js';
 import { SEASON_REGISTRY_PATH, normalizeSeasonRegistry } from './eden-seasons.js';
 
-export const APP_VERSION = '16.6.18';
+export const APP_VERSION = '16.6.19';
 // Every new season uses the published projection; legacy X1 retains its archive.
 const EDEN_WORKSPACE_ID = resolvePublicEdenWorkspace({
   workspace: document.body?.dataset?.edenWorkspace,

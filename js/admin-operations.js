@@ -14,26 +14,42 @@ const escapeHtml = (value) =>
 export function renderAdminOperations(mount, { db, firestore, isSuperAdmin = false, uid = '' }) {
   let destroyed = false;
   let config = normalizeOperationsConfig();
-  mount.innerHTML = `<section class="dash-card"><h3>Site operations</h3>
-    <p>Pause team activity or display a public notice without a release. Super Admins retain recovery access.</p>
-    <p data-operations-status role="status">Connecting…</p>
+  const featureLabels = {
+    uploads: 'Uploads & OCR',
+    votes: 'Voting',
+    comments: 'Comments',
+    ai: 'AI assistant',
+    competition: 'VTS competition',
+    combos: 'Combo publishing',
+  };
+  mount.innerHTML = `<section class="dash-card"><div class="dash-card-hdr"><div><h2 class="dash-card-title">Website health & operations</h2>
+    <p>Display a notice or temporarily pause activity. Super Admins retain recovery access.</p></div></div>
+    <p data-operations-status role="status" aria-live="polite">Connecting…</p>
+    <p data-operations-summary></p>
     ${
       isSuperAdmin
-        ? `<form data-operations-form>
-      <label>Public notice <textarea name="notice" maxlength="2000" rows="3"></textarea></label>
-      <label><input type="checkbox" name="readOnly"> Pause team and public changes</label>
-      <fieldset><legend>Pause individual features</legend>${OPERATIONS_FEATURES.map((feature) => `<label><input type="checkbox" name="feature" value="${feature}"> ${feature}</label>`).join('')}</fieldset>
-      <label>Automatically restore normal operation <input type="datetime-local" name="expiry"></label>
-      <p>Leave expiry blank to keep these settings until a Super Admin changes them.</p>
-      <button type="submit">Save operations settings</button>
+        ? `<form data-operations-form class="dash-operations-form">
+      <label class="dash-form-field dash-form-wide">Public notice <textarea class="dash-input" name="notice" maxlength="2000" rows="3" autocomplete="off" aria-describedby="operationsNoticeHint"></textarea><small id="operationsNoticeHint">Shown to everyone. Keep private diagnostics in the error list below.</small></label>
+      <label class="dash-form-check dash-form-wide"><input type="checkbox" name="readOnly"> <span>Pause team and public changes<br><small>Use for an incident affecting several tools.</small></span></label>
+      <fieldset class="dash-form-wide"><legend>Pause individual features</legend>${OPERATIONS_FEATURES.map((feature) => `<label class="dash-form-check"><input type="checkbox" name="feature" value="${feature}"> <span>${featureLabels[feature]}</span></label>`).join('')}</fieldset>
+      <label class="dash-form-field dash-form-wide">Automatically restore normal operation <input class="dash-input" type="datetime-local" name="expiry" aria-describedby="operationsExpiryHint"><small id="operationsExpiryHint">Leave blank to keep settings active until a Super Admin changes them.</small></label>
+      <button class="dash-btn dash-btn-primary dash-form-wide" type="submit">Save operations settings</button>
     </form>`
         : '<p>Only a Super Admin can change operation settings.</p>'
     }
-    <h3>Recent site errors</h3><p>Keep diagnostic details private. Resolve an item after checking the affected feature.</p>
-    <button type="button" data-refresh-errors>Refresh errors</button><div data-operation-errors></div></section>`;
+    </section><section class="dash-card"><h2 class="dash-card-title">Recent site errors</h2><p>Newest 30 reports. Resolve removes a report after investigation.</p>
+    <button class="dash-btn" type="button" data-refresh-errors>Refresh errors</button><div class="dash-operations-errors" data-operation-errors aria-live="polite"></div></section>`;
   const status = mount.querySelector('[data-operations-status]');
   const form = mount.querySelector('form');
   const configRef = firestore.doc(db, OPERATIONS_CONFIG_PATH);
+  function renderSummary(value) {
+    mount.querySelector('[data-operations-summary]').textContent = [
+      value.notice ? `Public notice: ${value.notice}` : 'No public notice.',
+      value.disabledFeatures.length
+        ? `Paused features: ${value.disabledFeatures.map((feature) => featureLabels[feature]).join(', ')}.`
+        : 'No individual features paused.',
+    ].join(' ');
+  }
   let dirty = false;
   let conflict = false;
   const unsubscribe = firestore.onSnapshot(
@@ -41,6 +57,7 @@ export function renderAdminOperations(mount, { db, firestore, isSuperAdmin = fal
     (snapshot) => {
       if (destroyed) return;
       const next = normalizeOperationsConfig(snapshot.data());
+      renderSummary(next);
       if (dirty && next.revision !== config.revision) {
         conflict = true;
         status.textContent =
@@ -103,6 +120,7 @@ export function renderAdminOperations(mount, { db, firestore, isSuperAdmin = fal
       dirty = false;
       conflict = false;
       config = normalizeOperationsConfig(data);
+      renderSummary(config);
       status.textContent = 'Operation settings saved.';
     } catch (error) {
       status.textContent = error.message;
@@ -126,7 +144,7 @@ export function renderAdminOperations(mount, { db, firestore, isSuperAdmin = fal
         : result.docs
             .map((entry) => {
               const item = entry.data();
-              return `<article><strong>${escapeHtml(item.source)}</strong><p>${escapeHtml(item.error?.message)}</p><small>${escapeHtml(item.path)}</small> <button type="button" data-resolve-error="${escapeHtml(entry.id)}">Resolve</button></article>`;
+              return `<article><strong>${escapeHtml(item.source)}</strong><p>${escapeHtml(item.error?.message)}</p><small>${escapeHtml(item.path)}</small> <button class="dash-btn" type="button" data-resolve-error="${escapeHtml(entry.id)}">Resolve report</button></article>`;
             })
             .join('');
     } catch (error) {
@@ -137,6 +155,7 @@ export function renderAdminOperations(mount, { db, firestore, isSuperAdmin = fal
   mount.querySelector('[data-operation-errors]').addEventListener('click', async (event) => {
     const button = event.target.closest('[data-resolve-error]');
     if (!button) return;
+    if (!window.confirm('Remove this error report after investigation?')) return;
     button.disabled = true;
     try {
       await firestore.deleteDoc(firestore.doc(db, 'errors', button.dataset.resolveError));

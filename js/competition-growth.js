@@ -436,7 +436,19 @@ export function computeGrowthRow(player, { baseline, raceScore = null, window = 
   let finalProblem = null;
   if (!raceScore) finalProblem = 'no-reupload';
   else if (!reuploadValues) finalProblem = 'invalid-reupload';
-  else if (!inWindow(uploadMillis(raceScore), window)) finalProblem = 'outside-window';
+  else if (
+    !inWindow(uploadMillis(raceScore), window) &&
+    !(
+      uploadMillis(raceScore) >= toMillis(window?.reuploadClosesAt ?? window?.closesAt) &&
+      raceScore?.adminEntry?.schemaVersion === 1 &&
+      raceScore.adminEntry.acceptedLate === true &&
+      typeof raceScore.adminEntry.byUid === 'string' &&
+      raceScore.adminEntry.byUid.trim() &&
+      typeof raceScore.adminEntry.reason === 'string' &&
+      raceScore.adminEntry.reason.trim()
+    )
+  )
+    finalProblem = 'outside-window';
   const usableReupload = finalProblem ? null : reuploadValues;
   // Waypoint values are the competition numbers as saved: dead troops are
   // already folded into Troop Power and Total Power when the record was saved,

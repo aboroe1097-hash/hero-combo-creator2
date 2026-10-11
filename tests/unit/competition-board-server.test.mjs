@@ -504,3 +504,41 @@ test('the server board matches last-season uploads by name only, including the l
   assert.equal(anne.match.how, 'loose-name');
   assert.equal(anne.trackerPct, 25);
 });
+
+test('explicit Admin late acceptance is consistent across server and browser', () => {
+  const player = submission('late', 'Late member', 100000000);
+  for (const impl of [browser, { computeGrowthRow }]) {
+    const options = {
+      baseline: { values: power(100000000), source: 'signup', match: null },
+      window: SCHEDULE,
+    };
+    const score = upload('late', 'Late member', 120000000, SCHEDULE.reuploadClosesAt + 1000);
+    const entry = {
+      schemaVersion: 1,
+      byUid: 'admin',
+      reason: 'Member unable to upload',
+      acceptedLate: true,
+    };
+    const accepted = impl.computeGrowthRow(player, {
+      ...options,
+      raceScore: { ...score, adminEntry: entry },
+    });
+    assert.notEqual(accepted.finalProblem, 'outside-window');
+    for (const adminEntry of [
+      undefined,
+      { ...entry, byUid: '' },
+      { ...entry, acceptedLate: false },
+    ]) {
+      const row = impl.computeGrowthRow(player, {
+        ...options,
+        raceScore: { ...score, adminEntry },
+      });
+      assert.equal(row.finalProblem, 'outside-window');
+    }
+    const early = impl.computeGrowthRow(player, {
+      ...options,
+      raceScore: { ...score, updatedAt: SCHEDULE.reuploadOpensAt - 1, adminEntry: entry },
+    });
+    assert.equal(early.finalProblem, 'outside-window');
+  }
+});

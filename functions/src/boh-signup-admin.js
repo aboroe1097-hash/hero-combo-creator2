@@ -25,6 +25,12 @@ import {
   extractBearerToken,
   isAllowedAllStarBohOrigin,
 } from './all-star-boh-auth.js';
+import { VtsScoreError } from './vts-score.js';
+import {
+  isCompetitionAdminEntryAction,
+  readCompetitionAdminEntry,
+  saveCompetitionAdminEntry,
+} from './competition-admin-entry.js';
 
 export const BOH_SIGNUP_ADMIN_SCHEMA_VERSION = 1;
 export const BOH_SIGNUP_ADMIN_MAX_REQUEST_BYTES = 8192;
@@ -359,6 +365,7 @@ export function readBohSignupAdminRequest(request) {
     }
   }
   const action = typeof body?.action === 'string' ? body.action.trim() : '';
+  if (isCompetitionAdminEntryAction(action)) return readCompetitionAdminEntry(body);
   if (!BOH_SIGNUP_ADMIN_ACTIONS.includes(action)) {
     throw adminError(400, 'invalid_request', 'Invalid signup action.');
   }
@@ -667,7 +674,11 @@ async function updateManualSignup(dependencies, uid, input) {
     // troop roster, heroes and research. Only hand-filed signups are editable:
     // they carry the admin's uid in updatedBy while uid is the member/name id,
     // whereas a member's own row was written by its own uid.
-    if (!existing.updatedBy || existing.updatedBy === existing.uid) {
+    if (
+      existing.adminEntry?.memberOwned === true ||
+      !existing.updatedBy ||
+      existing.updatedBy === existing.uid
+    ) {
       throw adminError(409, 'member_owned', 'Only signups added by leadership can be edited here.');
     }
     const revision =
@@ -691,7 +702,7 @@ async function updateManualSignup(dependencies, uid, input) {
 }
 
 function safeError(error) {
-  if (error instanceof BohSignupAdminError) return error;
+  if (error instanceof BohSignupAdminError || error instanceof VtsScoreError) return error;
   return adminError(503, 'service_unavailable', 'The signup service is unavailable.');
 }
 
@@ -712,6 +723,10 @@ export function createBohSignupAdminHandler(dependencies) {
     try {
       const callerUid = await verifyIdentity(request, runtime);
       const input = readBohSignupAdminRequest(request);
+      if (isCompetitionAdminEntryAction(input.action)) {
+        const entry = await saveCompetitionAdminEntry(runtime, callerUid, input);
+        return sendJson(response, 200, { schemaVersion: 1, entry });
+      }
       const result =
         input.action === 'create'
           ? await createManualSignup(runtime, callerUid, input)

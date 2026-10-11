@@ -9,7 +9,7 @@ import { installShowToast, resolveIntlLocale } from './utils.js';
 import { initUndoToasts } from './app-undo.js';
 import { setCurrentLanguage } from './state.js';
 
-export const APP_VERSION = '16.6.18';
+export const APP_VERSION = '16.6.19';
 const THEME_STORAGE_KEY = 'vts_theme';
 const STALE_ASSET_RECOVERY_KEY = 'vts_admin_stale_asset_recovery_v1';
 const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#070b16' };
@@ -193,7 +193,7 @@ async function loadAdminTemplate() {
   const timer = setTimeout(() => controller.abort(), ADMIN_TEMPLATE_TIMEOUT_MS);
   let res;
   try {
-    res = await fetch('tabs/admin.html?v=20261011_130234', { signal: controller.signal });
+    res = await fetch('tabs/admin.html?v=20261011_160911', { signal: controller.signal });
   } catch (error) {
     if (error?.name === 'AbortError') {
       throw new Error(`Admin template timed out after ${ADMIN_TEMPLATE_TIMEOUT_MS}ms`);
@@ -230,7 +230,7 @@ async function bootAdminPage() {
   await loadAdminTemplate();
   bindAdminLanguageSelector();
   await requestAdminLanguage(getLanguage());
-  const mod = await import('./ocr-dashboard.js?v=20261011_130234');
+  const mod = await import('./ocr-dashboard.js?v=20261011_160911');
   await mod.bootOcrDashboard();
 }
 

@@ -6760,15 +6760,19 @@ test.describe('app smoke tabs', () => {
     await openAdmin(page);
     await openLocalAdminDashboard(page);
     await seedAllianceViewContributions(page, fixture);
-    // Arrow keys rove within one tab group. Alliance View now leads the new
-    // Alliance management group (allianceView, allStarBoh, throneBuffs) in its
-    // own nav, so focus it directly and activate it with the keyboard rather
-    // than roving in from a season tab that no longer shares its rail.
-    const allianceTab = page.locator('.dash-subtab-btn[data-subtab="allianceView"]');
-    await allianceTab.focus();
-    await page.keyboard.press('Enter');
-    await expect(allianceTab).toBeFocused();
-    await expect(allianceTab).toHaveAttribute('aria-selected', 'true');
+    // Mobile uses the native tool picker; the desktop tab rail is hidden.
+    // Reach Alliance View with an actual arrow key and retain picker focus so
+    // further tool changes remain keyboard-accessible.
+    const picker = page.locator('#dashToolSelect');
+    const previous = await picker.evaluate((select) => {
+      const options = [...select.options];
+      return options[options.findIndex((option) => option.value === 'allianceView') - 1].value;
+    });
+    await picker.selectOption(previous);
+    await picker.focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(picker).toHaveValue('allianceView');
+    await expect(picker).toBeFocused();
     await waitForAllianceViewReady(page);
     await importAllianceRoster(page, 'v3s', createSyntheticAllianceRosterCsv('v3s', 4), 4);
 

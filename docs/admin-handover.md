@@ -24,6 +24,10 @@ Deploy the Firestore rules first, then the changed Firebase Functions and both A
 
 Season creation and publication do not require a new website release once this frontend and its corresponding backend rules have deployed.
 
+## Finding your tools
+
+On phones, use **Open admin tool** to move between Eden and alliance programs. The selected tool stays in the URL after refresh. Context above the active panel identifies its scope; changing the Eden workspace does not change signups, VtsScore, throne assignments or other alliance-wide records. **Preview working season** shows saved draft changes before publication.
+
 ## Daily operation
 
 - **Competition review:** VtsScore exports preserve raw signup, upload and match records with document provenance. Use the reconciliation report to investigate duplicate identities, missing records, mismatched totals and extreme growth. Review warnings do not alter records or competition rankings. Set the dragon tier boundary and optional growth-warning limits in VtsScore; exported images record the selected threshold.
@@ -66,3 +70,11 @@ Until the cloud operator confirms a recent successful backup and a recovery rehe
 The infrastructure operator can run `node scripts/setup-firestore-backups.mjs` to inspect the fixed production target `abocombo/(default)` and preview creating a daily schedule with 14-week retention. Nothing changes by default. After reviewing billing and the target, run the same command with `--apply` to create and verify the schedule. Repeating it leaves an already matching schedule unchanged; an existing daily schedule with different retention requires manual review. This helper does not enable billing, change IAM, restore data, or verify a completed backup.
 
 Use an authenticated Google Cloud CLI session with the `roles/datastore.backupSchedulesAdmin` role to manage schedules. A recovery operator additionally needs the documented backup viewing and restore permissions; give those separately rather than granting project Owner. See [Firestore backup IAM roles](https://firebase.google.com/docs/firestore/backups#required_roles). The script does not display login credentials or raw cloud responses.
+
+## Submitting missing member powers
+
+In **VtsScore**, choose **Submit for member** next to a member. In **2027 signups**, choose **Submit powers / screenshot**. Select the signup baseline or final result, read a screenshot or type the powers, check the exact dead troop counts, provide a reason and confirm review. The screenshot is processed once and is not stored. The saved record retains the member's identity, other signup answers and public-comparison consent. An Admin correction does not grant permission to edit all member answers.
+
+Final results cannot be filed before the upload window opens. After the deadline, explicitly accept the late final result to include it in growth rankings. Concurrent edits require reloading before saving. Both Admins and Super Admins can submit powers; member submission permissions stay the same.
+
+This release requires separate deployment of **Firebase Functions `bohSignupAdmin` and `vtsScore`**, plus the **Cloudflare OCR Worker**, after merge. GitHub Pages deploys the editor only. Deploy both backend changes before using this feature; no Firestore rules deployment is needed. Follow the [Firebase deploy runbook](firebase-deploy-runbook.md) and the Worker's existing Wrangler configuration.

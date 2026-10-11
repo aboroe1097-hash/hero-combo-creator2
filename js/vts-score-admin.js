@@ -144,6 +144,7 @@ export function buildAdminVtsScoreRows(submissionsInput = [], raceScoresInput = 
         growthPercent: totalComparison.growthPercent,
         submitted: fullBreakdown,
         hasUpload: Boolean(score),
+        adminEntered: Boolean(score?.adminEntry?.byUid),
         legacyUpload: Boolean(score) && !fullBreakdown,
         submittedAt: score?.updatedAt || score?.updatedAtMs || null,
         revision: integer(score?.revision),

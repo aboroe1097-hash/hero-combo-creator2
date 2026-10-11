@@ -889,9 +889,13 @@ function bindAdminCommandCenter() {
   root.addEventListener('click', async (event) => {
     const action = event.target.closest('[data-admin-action]')?.dataset.adminAction;
     if (!action) return;
-    if (action === 'uploads') switchDashSubtab('uploadStructures');
-    if (action === 'season' || action === 'recovery') switchDashSubtab('seasonLifecycle');
-    if (action === 'operations') switchDashSubtab('operations');
+    if (action === 'uploads') switchDashSubtab('uploadStructures', { focus: true });
+    if (action === 'season' || action === 'recovery') {
+      seasonPanelFocusTarget =
+        action === 'recovery' ? 'dashSeasonRecoveryCard' : 'dashSeasonStartCard';
+      switchDashSubtab('seasonLifecycle', { focus: true });
+    }
+    if (action === 'operations') switchDashSubtab('operations', { focus: true });
     if (action === 'preview') {
       // Open from the click itself so the browser does not block the new tab
       // after asynchronous cloud reads. The content remains same-origin.
@@ -978,6 +982,7 @@ function applySuperAdminSurfaces(superadmin) {
     const root = $id('dashBohSignupsRoot');
     if (root) renderBohSignupsSnapshot(root, state.bohSignupsSnapshot);
   }
+  syncAdminToolNavigation();
   return superadmin;
 }
 
@@ -1244,6 +1249,10 @@ async function ensureCombosMounted() {
 }
 
 async function ensureThroneBuffsMounted() {
+  const mount = $id('dashThroneRoot');
+  if (!mount) return;
+  if (!mount.firstElementChild)
+    mount.innerHTML = `<p class="dash-empty" role="status">${esc(dashT('adminLoading'))}</p>`;
   if (!throneBuffsModulePromise) {
     throneBuffsModulePromise = Promise.all([
       import('./admin-throne-buffs.js'),
@@ -1258,8 +1267,6 @@ async function ensureThroneBuffsMounted() {
   }
   try {
     const module = await throneBuffsModulePromise;
-    const mount = $id('dashThroneRoot');
-    if (!mount) return;
     // The Throne Buffs UI reads its strings through the dashboard's own
     // translator, so publish it once for the module's embedded t() helper.
     window.dashT = dashT;
@@ -4338,14 +4345,72 @@ const SUPERADMIN_DASH_SUBTABS = new Set([
   'seasonLifecycle',
 ]);
 
-function switchDashSubtab(name) {
+let seasonPanelFocusTarget = '';
+
+function focusAdminTool(element) {
+  if (!element) return;
+  element.tabIndex = -1;
+  element.focus({ preventScroll: true });
+  element.scrollIntoView({ block: 'start', behavior: 'instant' });
+}
+
+function syncAdminToolNavigation() {
+  const picker = $id('dashToolSelect');
+  const groups = [...document.querySelectorAll('#ocrDashboardRoot .dash-subtab-group')];
+  const available = (button) => !button.disabled && !button.closest('[hidden]');
+  for (const group of groups) {
+    const allTabs = [...group.querySelectorAll('.dash-subtab-btn')];
+    allTabs.forEach((tab) => {
+      tab.tabIndex = -1;
+    });
+    const tabs = allTabs.filter(available);
+    const entry = tabs.find((tab) => tab.classList.contains('dash-subtab-active')) || tabs[0];
+    tabs.forEach((tab) => {
+      tab.tabIndex = tab === entry ? 0 : -1;
+    });
+  }
+  if (picker) {
+    const options = groups
+      .map((group) => {
+        const tabs = [...group.querySelectorAll('.dash-subtab-btn')].filter(available);
+        if (!tabs.length) return '';
+        const scope = group.closest('[data-subtab-scope="global"]') ? 'Alliance' : 'Eden';
+        const title = group.querySelector('.dash-subtab-group-title')?.textContent.trim() || scope;
+        return `<optgroup label="${esc(`${scope} · ${title}`)}">${tabs
+          .map(
+            (tab) =>
+              `<option value="${esc(tab.dataset.subtab)}">${esc(tab.textContent.trim().replace(/\s+/g, ' '))}</option>`
+          )
+          .join('')}</optgroup>`;
+      })
+      .join('');
+    if (picker.dataset.options !== options) {
+      picker.innerHTML = options;
+      picker.dataset.options = options;
+    }
+  }
+  const active = document.querySelector('#ocrDashboardRoot .dash-subtab-active');
+  if (picker && active) picker.value = active.dataset.subtab;
+  const context = $id('dashToolContext');
+  if (context && active) {
+    const label = active.textContent.trim().replace(/\s+/g, ' ');
+    const global = active.closest('[data-subtab-scope="global"]');
+    context.textContent = global
+      ? `${label} · Alliance-wide records. The Eden season selector does not change this tool.`
+      : `${label} · ${currentEdenWorkspaceView().label}. Changes apply to this selected Eden season.`;
+  }
+}
+
+function switchDashSubtab(name, { focus = false } = {}) {
+  const panel = $id('dashSubtab' + name.charAt(0).toUpperCase() + name.slice(1));
+  if (!panel) return;
   if (SUPERADMIN_DASH_SUBTABS.has(name) && dashSuperAdmin !== true) {
     // The claim resolves asynchronously. Refusing while it is merely unknown
     // would lock a real superadmin out of their own tab whenever they clicked
     // faster than the token check, so resolve first and decide once.
     if (dashSuperAdmin === null) {
       void refreshSuperAdminSurfaces().then((allowed) => {
-        if (allowed) switchDashSubtab(name);
+        if (allowed) switchDashSubtab(name, { focus });
         else window.showToast?.(dashT('adminRolesSuperadminRequired'), 'error', 6000);
       });
       return;
@@ -4362,7 +4427,6 @@ function switchDashSubtab(name) {
     b.setAttribute('aria-selected', 'false');
     b.tabIndex = -1;
   });
-  const panel = $id('dashSubtab' + name.charAt(0).toUpperCase() + name.slice(1));
   if (panel) panel.classList.remove('hidden');
   const btn = document.querySelector(`#ocrDashboardRoot .dash-subtab-btn[data-subtab="${name}"]`);
   if (btn) {
@@ -4377,10 +4441,15 @@ function switchDashSubtab(name) {
   document.querySelectorAll('#ocrDashboardRoot .dash-subtab-nav').forEach((nav) => {
     nav.classList.toggle('dash-subtab-nav-docked', nav === activeNav);
   });
+  syncAdminToolNavigation();
+  const url = new URL(window.location.href);
+  url.searchParams.set('tool', name);
+  window.history.replaceState(null, '', url);
   if (name !== 'analytics') state._analyticsAnimated = false;
   // Let the newly selected panel paint before any data-heavy table/chart work.
   // Previously every hidden admin panel rendered synchronously inside the click.
   requestAnimationFrame(() => requestAnimationFrame(() => renderDashboardSubtab(name)));
+  if (focus) requestAnimationFrame(() => focusAdminTool(panel));
   if (name === 'edenVotes') {
     if (state.adminIsAdmin === true) loadEdenX1VoteAdminData();
   }
@@ -4394,15 +4463,20 @@ window.seedDashboardForSmokeTest = function (dashData, rosterSnapshots = []) {
 function bindSubtabNavigation() {
   // Each labelled group is its own tablist, so arrow-key roving focus stays
   // inside one area instead of walking the whole former 11-tab rail.
-  document
-    .querySelectorAll('#ocrDashboardRoot .dash-subtab-group-tabs')
-    .forEach((group) => group.setAttribute('role', 'tablist'));
+  document.querySelectorAll('#ocrDashboardRoot .dash-subtab-group-tabs').forEach((group) => {
+    group.setAttribute('role', 'tablist');
+    group.setAttribute(
+      'aria-label',
+      group.closest('.dash-subtab-group')?.querySelector('h3')?.textContent.trim() || 'Admin tools'
+    );
+  });
   const nav = document.querySelector(
     '#ocrDashboardRoot .dash-subtab-nav:not(.dash-subtab-nav-grouped)'
   );
   if (nav) nav.setAttribute('role', 'tablist');
   document.querySelectorAll('#ocrDashboardRoot .dash-subtab-panel').forEach((panel) => {
     panel.setAttribute('role', 'tabpanel');
+    panel.setAttribute('tabindex', '-1');
   });
   const initiallyActiveNav = document
     .querySelector('#ocrDashboardRoot .dash-subtab-btn.dash-subtab-active')
@@ -4412,6 +4486,11 @@ function bindSubtabNavigation() {
   });
   document.querySelectorAll('#ocrDashboardRoot .dash-subtab-btn').forEach((btn) => {
     btn.setAttribute('role', 'tab');
+    const panelId =
+      'dashSubtab' + btn.dataset.subtab.charAt(0).toUpperCase() + btn.dataset.subtab.slice(1);
+    btn.id ||= `${panelId}Tab`;
+    btn.setAttribute('aria-controls', panelId);
+    $id(panelId)?.setAttribute('aria-labelledby', btn.id);
     btn.setAttribute(
       'aria-selected',
       btn.classList.contains('dash-subtab-active') ? 'true' : 'false'
@@ -4419,12 +4498,14 @@ function bindSubtabNavigation() {
     btn.tabIndex = btn.classList.contains('dash-subtab-active') ? 0 : -1;
     if (btn.dataset.subtabBound) return;
     btn.dataset.subtabBound = '1';
-    btn.onclick = () => switchDashSubtab(btn.dataset.subtab);
+    btn.onclick = () => switchDashSubtab(btn.dataset.subtab, { focus: true });
     btn.onkeydown = (event) => {
       if (!['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].includes(event.key))
         return;
       const scope = btn.closest('[role="tablist"]') || document;
-      const tabs = Array.from(scope.querySelectorAll('.dash-subtab-btn'));
+      const tabs = Array.from(scope.querySelectorAll('.dash-subtab-btn')).filter(
+        (tab) => !tab.disabled && !tab.closest('[hidden]')
+      );
       const current = tabs.indexOf(btn);
       if (current < 0) return;
       event.preventDefault();
@@ -4438,9 +4519,13 @@ function bindSubtabNavigation() {
               ? (current - 1 + tabs.length) % tabs.length
               : (current + 1) % tabs.length;
       tabs[nextIndex]?.focus();
-      tabs[nextIndex]?.click();
+      if (tabs[nextIndex]) switchDashSubtab(tabs[nextIndex].dataset.subtab);
     };
   });
+  const picker = $id('dashToolSelect');
+  // Keep focus in the native picker so repeated arrow-key changes remain usable.
+  if (picker) picker.onchange = () => switchDashSubtab(picker.value);
+  syncAdminToolNavigation();
 }
 
 // --- Eden workspace command strip ---
@@ -5350,31 +5435,31 @@ function renderEdenSeasonLifecyclePanel() {
       )}</button>`
     : `<p class="dash-empty">${esc(dashT('adminSeasonRecallHint'))}</p>`;
   root.innerHTML = `
-    <section class="dash-season-start-card">
+    <section class="dash-season-start-card" id="dashSeasonStartCard" tabindex="-1">
       <div><p class="dash-command-eyebrow">SUPER ADMIN · NEW SEASON</p><h2>Start your next Eden season</h2>
       <p>Prepare the dashboard, uploads and public hub together. Your current season stays online until you publish.</p></div>
       <div class="dash-season-start-fields">
-        <label>Season number <input id="dashNewSeasonNumber" class="dash-input" type="number" min="3" max="9999" value="${esc(nextEdenSeasonId(registry).replace('season-x', ''))}" /></label>
-        <label>Display name <input id="dashNewSeasonLabel" class="dash-input" maxlength="60" placeholder="Eden ${esc(nextEdenSeasonId(registry).replace('season-', '').toUpperCase())}" /></label>
-        <label><input id="dashNewSeasonCopyRoster" type="checkbox" /> Copy roster baseline</label>
-        <label><input id="dashNewSeasonCopySettings" type="checkbox" /> Copy scoring and reward settings</label>
+        <label>Season number <input id="dashNewSeasonNumber" name="seasonNumber" class="dash-input" type="number" min="3" max="9999" step="1" value="${esc(nextEdenSeasonId(registry).replace('season-x', ''))}" /></label>
+        <label>Display name <input id="dashNewSeasonLabel" name="seasonLabel" class="dash-input" maxlength="60" autocomplete="off" placeholder="Eden ${esc(nextEdenSeasonId(registry).replace('season-', '').toUpperCase())}" /></label>
+        <label class="dash-form-check"><input id="dashNewSeasonCopyRoster" type="checkbox" /> <span>Copy roster baseline<br /><small>Member identities only; season totals start empty.</small></span></label>
+        <label class="dash-form-check"><input id="dashNewSeasonCopySettings" type="checkbox" /> <span>Copy scoring and reward settings<br /><small>Votes and uploaded results always start empty.</small></span></label>
       </div>
       <button class="dash-btn dash-btn-primary" id="dashSeasonStartBtn" type="button">Start ${esc(nextEdenSeasonId(registry).replace('season-', '').toUpperCase())} season</button>
     </section>
     <section class="dash-card dash-card-align-start">
       <h2>Season management vote results</h2>
       <p>Import a CSV with Name,Votes columns for this season. Preview it before saving; publish separately to update the public hub.</p>
-      <label>Results CSV <input id="dashManagementVotesFile" class="dash-input" type="file" accept=".csv,text/csv" /></label>
+      <label class="dash-form-field">Results CSV <input id="dashManagementVotesFile" class="dash-input" type="file" accept=".csv,text/csv" /></label>
       <output id="dashManagementVotesPreview" aria-live="polite"></output>
       <button class="dash-btn" id="dashManagementVotesSaveBtn" type="button" disabled>Save reviewed results</button>
     </section>
     <section class="dash-card dash-card-align-start">
       <h2>Recover a publication</h2><p>Restore a previous public revision without changing working uploads.</p>
-      <label>Publication revision <input id="dashPublicationRevision" class="dash-input" type="number" min="1" step="1" /></label>
+      <label class="dash-form-field">Publication revision <input id="dashPublicationRevision" class="dash-input" type="number" min="1" step="1" /></label>
       <button class="dash-btn" id="dashPublicationRollbackBtn" type="button" ${readOnly ? 'disabled' : ''}>Restore public revision</button>
       <p id="dashPublicationHistoryStatus" aria-live="polite">Loading saved revisions…</p>
     </section>
-    <div class="dash-card dash-card-align-start">
+    <div class="dash-card dash-card-align-start dash-season-timeline">
       <div class="dash-card-hdr">
         <div class="dash-card-hdr-wrap">
           <h2 class="dash-card-title">${esc(dashT('adminSeasonLifecycleTitle'))}</h2>
@@ -5440,7 +5525,7 @@ function renderEdenSeasonLifecyclePanel() {
           : `<p class="dash-empty">${esc(dashT('adminSeasonLifecycleEmpty'))}</p>`
       }
     </div>
-    <div class="dash-card dash-card-align-start">
+    <div class="dash-card dash-card-align-start" id="dashSeasonRecoveryCard" tabindex="-1">
       <div class="dash-card-hdr">
         <div class="dash-card-hdr-wrap">
           <h2 class="dash-card-title">${esc(dashT('adminSeasonRecallTitle'))}</h2>
@@ -5460,6 +5545,10 @@ function renderEdenSeasonLifecyclePanel() {
     </div>
   `;
   bindEdenSeasonLifecycleControls(root);
+  if (seasonPanelFocusTarget) {
+    focusAdminTool($id(seasonPanelFocusTarget));
+    seasonPanelFocusTarget = '';
+  }
   void loadPublicationHistory();
 }
 
@@ -8543,6 +8632,28 @@ function setVtsScoreStatus(message = '', type = 'info') {
   el.className = `dash-upload-status ${message ? type : 'hidden'}`;
 }
 
+async function openAdminPowerEditor({ root, snapshot, submissionUid, mode = 'power-final' }) {
+  try {
+    const { openCompetitionAdminEntry } = await import('./competition-admin-entry.js');
+    openCompetitionAdminEntry({
+      root,
+      snapshot,
+      submissionUid,
+      mode,
+      endpoint: BOH_SIGNUP_ADMIN_ENDPOINT,
+      post: (endpoint, payload) => postAdminFunction(endpoint, payload, 'entry_failed'),
+      onSaved: async () => {
+        state.vtsScoreSnapshot = null;
+        state.bohSignupsSnapshot = null;
+        if (root.id === 'dashVtsScoreRoot') await loadVtsScoreAdminSnapshot({ force: true });
+        else await loadBohSignupsAdmin({ force: true });
+      },
+    });
+  } catch (error) {
+    showCloudSyncFailure(error, 'Member power editor failed');
+  }
+}
+
 function ensureVtsScoreView() {
   if (vtsScoreView) return vtsScoreView;
   vtsScoreView = createVtsScoreAdminView({
@@ -8552,6 +8663,7 @@ function ensureVtsScoreView() {
     },
     locale: () => getDashboardLang(),
     setStatus: (message, type) => setVtsScoreStatus(message, type),
+    onEntry: (options) => void openAdminPowerEditor(options),
     growth: {
       load: () => loadCompetitionGrowthSnapshot(),
     },
@@ -8755,6 +8867,7 @@ async function postAdminFunction(endpoint, payload, fallbackCode) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(90000),
   });
   const body = await response.json().catch(() => null);
   if (!response.ok) {
@@ -8889,6 +9002,25 @@ function bindBohSignupsControls() {
       const signupFor = (uid) =>
         (state.bohSignupsSnapshot?.signups || []).find((entry) => entry.submissionUid === uid) ||
         null;
+
+      const powerButton = event.target.closest('[data-boh-signup-power]');
+      if (powerButton) {
+        powerButton.disabled = true;
+        try {
+          const snapshot = await loadVtsScoreSnapshot(state.bohSignupsSnapshot?.season);
+          await openAdminPowerEditor({
+            root,
+            snapshot,
+            submissionUid: powerButton.dataset.bohSignupPower,
+            mode: 'power-baseline',
+          });
+        } catch (error) {
+          setBohSignupsStatus(error.message, 'error');
+        } finally {
+          powerButton.disabled = false;
+        }
+        return;
+      }
 
       const deleteButton = event.target.closest('[data-boh-signup-delete]');
       if (deleteButton) {
@@ -9816,6 +9948,7 @@ export async function bootOcrDashboard() {
   $id('dashSignOutBtn')?.addEventListener('click', doSignOut);
   applyEdenSeasonCopy();
   bindSubtabNavigation();
+  bindAdminCommandCenter();
   bindEdenWorkspaceStrip();
   bindConductControls();
   bindExGuildControls();
@@ -10513,6 +10646,12 @@ export async function bootOcrDashboard() {
   }
   bindAdminCommandCenter();
   if (state.adminIsAdmin === true) await refreshSuperAdminSurfaces();
+  const requestedTool = new URL(window.location.href).searchParams.get('tool');
+  if (
+    requestedTool &&
+    document.querySelector(`#ocrDashboardRoot [data-subtab="${CSS.escape(requestedTool)}"]`)
+  )
+    switchDashSubtab(requestedTool);
   void updateApiStatus();
 }
 

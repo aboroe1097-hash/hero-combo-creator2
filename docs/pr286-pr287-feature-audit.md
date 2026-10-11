@@ -1,0 +1,62 @@
+# PR #286 / #287 functional and interface audit
+
+Audited on 2026-10-11 from production commit `1d93f7d1` (16.6.18). Follow-up release: 16.6.19.
+
+## Findings addressed
+
+- `tabs/admin.html`: the working-preview shortcut was labeled as the public view, although it reads saved working data. It now explicitly says **Preview working season**.
+- `js/ocr-dashboard.js`: only the globally selected tab was keyboard-focusable. Other tab groups had no keyboard entry; arrow navigation included hidden leadership controls. Each permitted group now has an entry, unavailable controls are skipped, and tabs identify their panels.
+- `css/admin-command-center.css`: the mobile command card occupied almost an entire phone screen, followed by competing navigation rails. Compact shortcuts and a native grouped tool picker make every permitted tool reachable without the fixed horizontal dock.
+- `tabs/admin.html`: signups appeared inside the Eden workspace even though they use the competition's independent records. They now belong to alliance operations. Context text explains whether the selected tool follows Eden or alliance-wide records.
+- `js/ocr-dashboard.js`: shortcuts switched panels without taking the operator to the relevant form. Season creation and recovery now focus their respective cards. The tool selection is retained in the URL and restored after authentication.
+- `js/ocr-dashboard.js`: the dashboard could become visible before its command shortcuts were bound. Binding now happens before authentication restores the dashboard, so an early click is handled.
+- `css/admin-command-center.css`, `js/admin-operations.js`: season creation, result imports, recovery and incident controls had inconsistent form sizing, spacing and action styles. Forms now use responsive columns, consistent controls and clear copy explaining what a season copies.
+- `js/admin-operations.js`: the new effective-settings summary now refreshes after saves and concurrent updates, including when the editing form has unsaved changes.
+- `js/admin-operations.js`: resolving a report immediately deleted it. Removal now requires confirmation. Ordinary Admins can also read the effective notice and individual pauses without receiving editing controls.
+
+## Functional coverage
+
+| Surface | Verification |
+| --- | --- |
+| Future Eden seasons | Isolated draft initialization, retry safety, clean totals, optional copying, publication and prior-season preservation through unit and emulator checks; rendered X8 creation flow through browser fixtures |
+| Publication and recovery | Cloud snapshot composition, atomic publication, immutable revisions, rollback and stale-writer checks; backup coverage and restore conflict tests |
+| X2 management migration | Missing import, reviewed import precedence, failed/empty fetches, concurrent imports and voting-season changes |
+| Generic public hubs | Published X8 discovery, historical hub links, arbitrary labels, mobile width, unpublished-data protection and valid workspace routing |
+| Private preview | Guest/member rejection, Admin access, disabled voting, no public reads and no persisted draft cache |
+| Independent vote privacy | Member and management counts independently redacted from public data and rendered results, including both hidden |
+| VtsScore review | Full raw JSON/CSV provenance, reconciliation, extreme-growth warnings, inclusive configurable Dragon threshold, shared-setting conflicts and category images |
+| Throne assignments | Ordinary Admin access, shared weekly records, stale revision rejection, member rejection and icon-based image export |
+| Leadership roles | Auth-authoritative role listing, forged profile resistance, current privilege checks, self-demotion protection and refresh-session revocation |
+| Runtime controls | Expiry and pause behavior, Super Admin recovery, worker/function gates, concurrent setting refusal and report-removal confirmation |
+| Error reporting | Retry queue retains undelivered reports; existing regression tests |
+
+Browser cloud fixtures execute the application's production controllers against isolated records. They never write to the live database. Firestore emulator checks exercise actual rules with separate Admin, Super Admin and member identities.
+
+## Live read-only checks
+
+- Role listing/changes, signup administration, complaints and VtsScore Firebase Functions report ACTIVE.
+- Released Firestore rules match the checkout: **170,087 bytes**, release timestamp `2026-10-11T12:41:01.937639Z`.
+- `admin.html`, `eden-season.html` and `vtsscore.html` return HTTP 200.
+- AI health reports enabled; OCR status reports primary, fallback and App Check configuration available.
+
+Health responses establish service availability and configuration, not successful paid provider inference. This audit does not alter live seasons, roles, notices, competition data or throne assignments. Account recovery, billing and disaster restoration remain operator rehearsals described in the handover guide.
+
+## Verification record
+
+Baseline: `check:fast` passed all 2,300 unit tests; 24 focused browser cases passed. The publication/projection/operations selection passed 31 tests, and the backup/recall/privacy/throne/role/worker/VtsScore selection passed 39 tests.
+
+Fresh Firestore emulator rehearsal: **33 Eden lifecycle/access checks and 28 throne/settings/privacy checks passed**. Denied-write messages in the emulator log are expected negative-access assertions.
+
+Final `check:fast` passed **2,300/2,300 unit tests**, version consistency, lint, formatting and translation checks. The seven new browser workflows passed, and the revised command center passed on desktop and mobile in both themes. The settings-summary regression passed after its correction. Browser captures were visually reviewed for season/recovery forms, website health, winner/category exports, the Top 20 poster and multilingual throne assignments.
+
+Local browser retries experienced loading/capture timeouts during simultaneous build work; the affected desktop and operations cases passed when run separately. Production build and version consistency passed. Size verification for the final release measured **12,104.1 KiB total JavaScript and 862 deployed files**. The aggregate JavaScript cap moves from 12,092 to 12,108 KiB, retaining approximately 4 KiB of CI margin. The shared member-power editor adds one intentional lazy chunk; the file-count cap increases by one. Existing power/OCR validation is reused, and route, CSS and media caps remain unchanged. Both corresponding size-budget unit assertions match the measured limits. The size check passes.
+
+The subsequent on-behalf feature passed focused server tests for Admin/member permissions, strict field validation, member-data preservation, stale revisions, active-season changes, late approval and original final-author preservation. All 2,310 unit checks pass. Four new browser checks cover manual final submission, screenshot-assisted signup correction, and both real Admin entrypoints on mobile in dark and light themes. Browser payloads pass the actual server validator; cloud saves and paid OCR inference use isolated doubles. No member data or live provider inference was used for this feature's tests.
+
+CI follow-up: PR #288 exposed an outdated JavaScript-budget assertion; the replacement branch also exposed a mobile Alliance View test that still focused the hidden desktop rail. Both budget assertions now match the final measured limits. The mobile test uses the visible native picker and a real arrow key; the picker retains focus during changes instead of moving it to the panel. That focused keyboard/RTL/layout check passes.
+
+Unfiltered Windows verification encountered old Combo/Hero screenshot baseline failures. The final broad verification uses the repository's CI mode, which explicitly skips platform-specific visual snapshots. The new Admin forms were independently checked and visually reviewed in dark and light themes.
+
+The interface corrections alone require no backend change. The subsequent requested Admin on-behalf power editor adds a protected `bohSignupAdmin` contract and an Admin exception in screenshot OCR authorization. Deploy Firebase Functions `bohSignupAdmin` and `vtsScore`, and the Cloudflare OCR Worker separately after merge. Firestore rules are unchanged. The editor preserves member signup answers and consent, checks revisions transactionally and records explicit late-final acceptance for both ranking implementations.
+
+UI review used the [Web Interface Guidelines](https://github.com/vercel-labs/web-interface-guidelines/blob/main/command.md).

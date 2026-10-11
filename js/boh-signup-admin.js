@@ -260,7 +260,10 @@ export function renderBohSignupRows(signups, t, { superadmin = false } = {}) {
       // form also has entryMethod 'manual'. The admin Function stamps updatedBy
       // with the admin's uid while uid stays the member/name id, so only rows
       // whose writer is someone else are leadership's own.
-      const byLeadership = Boolean(signup.updatedBy) && signup.updatedBy !== signup.uid;
+      const byLeadership =
+        signup.adminEntry?.memberOwned !== true &&
+        Boolean(signup.updatedBy) &&
+        signup.updatedBy !== signup.uid;
       // A comparison needs the dead-troop component: member editors that were
       // left untouched save an all-zero map, hand-filed rows save none at all,
       // and both understate the player until leadership chases the values.
@@ -284,7 +287,7 @@ export function renderBohSignupRows(signups, t, { superadmin = false } = {}) {
             ? esc(t('adminBohSignupManualChip', {}, 'Added by leadership'))
             : esc(t('adminBohSignupMemberChip', {}, 'Member form'))
         }</td>
-        <td class="dash-boh-actions-cell">${
+        <td class="dash-boh-actions-cell"><button class="dash-btn" type="button" data-boh-signup-power="${esc(signup.submissionUid)}">Submit powers / screenshot</button>${
           // A member's own signup carries fields the admin form cannot show, so
           // only rows leadership added by hand can be edited from here.
           byLeadership

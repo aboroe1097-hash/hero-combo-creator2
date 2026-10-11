@@ -94,6 +94,7 @@ async function signedTokens(overrides = {}) {
     exp: now + 300,
     auth_time: now - 1,
     firebase: { sign_in_provider: 'anonymous' },
+    ...(overrides.admin === undefined ? {} : { admin: overrides.admin }),
   });
   const appCheckToken = await signer.token({
     iss: `https://firebaseappcheck.googleapis.com/${PROJECT_NUMBER}`,
@@ -1325,4 +1326,24 @@ test('provider failures never log or echo raw screenshot/provider content', asyn
     console.warn = originalConsole.warn;
     console.error = originalConsole.error;
   }
+});
+
+test('verified Admins read a member screenshot without a member grant, with App Check still required', async () => {
+  const tokens = await signedTokens({ admin: true });
+  await withMockFetch(
+    () => Response.json(providerEnvelope()),
+    async (providerCalls, grantCalls) => {
+      const response = await worker.fetch(authorizedRequest(validBody(), tokens), baseEnv());
+      assert.equal(response.status, 200);
+      assert.equal(providerCalls.length, 1);
+      assert.equal(grantCalls.length, 0);
+      const denied = await worker.fetch(
+        authorizedRequest(validBody(), tokens, { headers: { 'X-Firebase-AppCheck': '' } }),
+        baseEnv()
+      );
+      assert.notEqual(denied.status, 200);
+      assert.equal(providerCalls.length, 1);
+    },
+    null
+  );
 });
