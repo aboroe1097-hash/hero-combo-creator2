@@ -59,7 +59,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.63.0",
+    "@playwright/test": "^1.64.0",
     "acorn": "^8.18.0",
     "autoprefixer": "^10.6.1",
     "cssnano": "^9.3.2",
